@@ -1,0 +1,61 @@
+@import "../lib/component_metadata.sal"
+@import "../lib/component_metadata.sai"
+@import "../lib/system_param_table_erased.sla"
+
+@derive(Component)
+struct TableErasedDerivedPosition { x: i32, y: i32 }
+
+@derive(Component)
+struct TableErasedDerivedVelocity { dx: i32, dy: i32 }
+
+struct TableErasedDerivedTime { tick: i32 }
+struct TableErasedDerivedEvent { amount: i32 }
+
+fn table_erased_derive_time_default() -> TableErasedDerivedTime { return TableErasedDerivedTime { tick: 0 }; }
+fn table_erased_derive_event_default() -> TableErasedDerivedEvent { return TableErasedDerivedEvent { amount: 0 }; }
+fn table_erased_derive_position_drop(raw: *u8) -> void { let typed = raw as *TableErasedDerivedPosition; let boxed = unsafe { Box::from_raw(typed) }; }
+fn table_erased_derive_velocity_drop(raw: *u8) -> void { let typed = raw as *TableErasedDerivedVelocity; let boxed = unsafe { Box::from_raw(typed) }; }
+
+fn table_erased_derive_world_new() -> TableErasedWorld<TableErasedDerivedTime, TableErasedDerivedEvent> {
+    return table_erased_world_new<TableErasedDerivedTime, TableErasedDerivedEvent>(table_erased_derive_time_default(), table_erased_derive_event_default());
+}
+
+fn table_erased_derive_component_demo() -> i32 {
+    let position_type = TableErasedDerivedPosition::component_type_id();
+    let velocity_type = TableErasedDerivedVelocity::component_type_id();
+    if position_type <= 0 { panic(12200); };
+    if velocity_type <= 0 { panic(12201); };
+    if position_type == velocity_type { panic(12202); };
+    if TableErasedDerivedPosition::component_type_id() != position_type { panic(12203); };
+    if TableErasedDerivedPosition::component_storage_kind() != 0 { panic(12204); };
+
+    let w0 = table_erased_derive_world_new();
+    let (w1, position_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w0, position_type, table_erased_derive_position_drop);
+    let (w2, velocity_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w1, velocity_type, table_erased_derive_velocity_drop);
+    if table_erased_world_component_id_for_type<TableErasedDerivedTime, TableErasedDerivedEvent>(w2, position_type) != position_info.id { panic(12205); };
+    if table_erased_world_component_id_for_type<TableErasedDerivedTime, TableErasedDerivedEvent>(w2, velocity_type) != velocity_info.id { panic(12206); };
+
+    let (w3, first) = table_erased_world_spawn<TableErasedDerivedTime, TableErasedDerivedEvent>(w2);
+    let (w4, second) = table_erased_world_spawn<TableErasedDerivedTime, TableErasedDerivedEvent>(w3);
+    let w5 = table_erased_world_insert_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w4, first, position_type, TableErasedDerivedPosition { x: 3, y: 0 });
+    let w6 = table_erased_world_insert_auto<TableErasedDerivedVelocity, TableErasedDerivedTime, TableErasedDerivedEvent>(w5, first, velocity_type, TableErasedDerivedVelocity { dx: 5, dy: 0 });
+    let w7 = table_erased_world_insert_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w6, second, position_type, TableErasedDerivedPosition { x: 10, y: 0 });
+    let before = w7.registry.change_tick;
+    let w8 = table_erased_world_increment_tick<TableErasedDerivedTime, TableErasedDerivedEvent>(w7);
+    let w9 = table_erased_world_insert_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w8, first, position_type, TableErasedDerivedPosition { x: 8, y: 0 });
+    let positions = table_erased_world_query_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w9, position_type);
+    let changed = table_erased_world_query_changed_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w9, position_type, before);
+    let pairs = table_erased_world_query_pair_auto<TableErasedDerivedPosition, TableErasedDerivedVelocity, TableErasedDerivedTime, TableErasedDerivedEvent>(w9, position_type, velocity_type);
+    let out = table_erased_world_get_auto<TableErasedDerivedPosition, TableErasedDerivedTime, TableErasedDerivedEvent>(w9, first, position_type);
+    if len(positions.items) != 2 { panic(12207); };
+    if len(changed.items) != 1 { panic(12208); };
+    if len(pairs.items) != 1 { panic(12209); };
+    if out.x != 8 { panic(12210); };
+    return out.x + pairs.items[0].second.dx + (len(positions.items) as i32) + (len(changed.items) as i32);
+}
+
+fn main() -> i32 { return table_erased_derive_component_demo(); }
+
+@test "table erased derive component metadata demo"() {
+    if table_erased_derive_component_demo() != 16 { panic(12211); };
+}
