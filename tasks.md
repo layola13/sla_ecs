@@ -63,12 +63,14 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified `ArchetypeValueSchedule<T, R, M>` with stored system function pointers and component-id/resource/message access conflict tracking over `ArchetypeValueWorld`.
 - [x] Implement verified archetype-backed system parameter adapters for injected pair-mut query params, resource params, message writer params, adapter writeback, and schedule execution.
 - [x] Extend verified archetype-backed system parameter adapters with `ResMut` injection plus `MessageReader` cursor advancement and writeback.
+- [x] Extend verified archetype-backed system parameter adapters with `Commands`, standalone `MessageWriter`, and filtered query resource params for `Without`, `Added`, and `Changed`.
 
 ## Phase 4: Resources, Messages, Examples
 
 - [x] Implement fixed-capacity typed unique resources: insert, get, replace, remove.
 - [x] Implement verified DynamicWorld `Res<T>` / `ResMut<T>` wrappers and resource added/changed detection.
 - [x] Implement fixed-capacity `Messages<T>` and reader cursor behavior.
+- [x] Add verified `MessageWriter<T>` batching and apply semantics for message system parameters.
 - [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
 - [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.

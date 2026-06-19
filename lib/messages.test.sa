@@ -1,3 +1,4 @@
+@import "sa_std/vec.sa"
 @import "sa_std/string.sa"
 @import "sa_std/string_format.sa"
 @import "sa_std/io/print.sai"
@@ -7,11 +8,15 @@
 [MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
     call @sa_mem_set(&%array_ptr, %value, %length)
 [END_MACRO]
+@import "sa_std/vec.sa"
 @const SLA_FNPTR_VT_message_reader_new = vtable { call = @sla__message_reader_new }
 @const SLA_FNPTR_VT_test_damage_messages_new = vtable { call = @sla__test_damage_messages_new }
 @const SLA_FNPTR_VT_test_damage_default = vtable { call = @sla__test_damage_default }
 @const SLA_FNPTR_VT_messages_new_TestDamageMessage = vtable { call = @sla__messages_new_TestDamageMessage }
 @const SLA_FNPTR_VT_messages_write_TestDamageMessage = vtable { call = @sla__messages_write_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_new_TestDamageMessage = vtable { call = @sla__message_writer_new_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_send_TestDamageMessage = vtable { call = @sla__message_writer_send_TestDamageMessage }
+@const SLA_FNPTR_VT_messages_apply_writer_TestDamageMessage = vtable { call = @sla__messages_apply_writer_TestDamageMessage }
 @const SLA_FNPTR_VT_messages_read_next_TestDamageMessage = vtable { call = @sla__messages_read_next_TestDamageMessage }
 @sla__message_reader_new() -> ptr:
 L_ENTRY:
@@ -100,266 +105,404 @@ L_MERGE_2:
     !slot
     return messages
 
+@sla__message_writer_new_TestDamageMessage() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_20
+    values = tmp_20
+    tmp_21 = alloc 8
+    store tmp_21+0, values as ptr
+    return tmp_21
+
+@sla__message_writer_send_TestDamageMessage(writer: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_22 = load writer+0 as ptr
+    EXPAND VEC_PUSH tmp_22, value, 8
+    !tmp_22
+    !value
+    return writer
+
+@sla__messages_apply_writer_TestDamageMessage(messages: ptr, writer: ptr) -> ptr:
+L_ENTRY:
+    tmp_23 = 0
+    i = tmp_23
+    tmp_24 = load writer+0 as ptr
+    EXPAND VEC_LEN tmp_25, tmp_24
+    !tmp_24
+    tmp_26 = tmp_25 as i64
+    cnt = tmp_26
+    jmp L_WHILE_HEAD_3
+
+L_WHILE_HEAD_3:
+    tmp_27 = slt i, cnt
+    br tmp_27 -> L_WHILE_BODY_4, L_WHILE_COND_FALSE_5
+
+L_WHILE_BODY_4:
+    !tmp_27
+    tmp_28 = load writer+0 as ptr
+    EXPAND VEC_GET tmp_29, tmp_28, i
+    !tmp_28
+    tmp_30 = tmp_29 as ptr
+    tmp_31 = call @sla__messages_write_TestDamageMessage(messages, tmp_30)
+    !tmp_30
+    !messages
+    messages = tmp_31
+    tmp_32 = 1
+    tmp_33 = add i, tmp_32
+    !tmp_32
+    !i
+    i = tmp_33
+    jmp L_WHILE_HEAD_3
+
+L_WHILE_COND_FALSE_5:
+    !tmp_27
+    jmp L_WHILE_EXIT_6
+
+L_WHILE_EXIT_6:
+    !cnt
+    !i
+    !writer
+    return messages
+
 @sla__messages_read_next_TestDamageMessage(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_20 = load reader+0 as i64
-    tmp_21 = load messages+0 as i64
-    tmp_22 = sge tmp_20, tmp_21
-    !tmp_20
-    !tmp_21
-    br tmp_22 -> L_THEN_3, L_ELSE_4
-
-L_THEN_3:
-    !tmp_22
-    tmp_23 = alloc 24
-    tmp_24 = 0
-    store tmp_23+0, tmp_24 as u8
-    !tmp_24
-    store tmp_23+8, default_value as ptr
-    store tmp_23+16, reader as ptr
-    !messages
-    return tmp_23
-
-L_ELSE_4:
-    !tmp_22
-    jmp L_MERGE_5
-
-L_MERGE_5:
-    tmp_26 = load messages+8 as ptr
-    tmp_27 = load reader+0 as i64
-    tmp_28 = mul tmp_27, 8
-    tmp_29 = ptr_add tmp_26, tmp_28
-    !tmp_28
-    !tmp_27
-    tmp_30 = load tmp_29+0 as ptr
-    !tmp_29
-    !tmp_26
-    value = tmp_30
-    tmp_31 = load reader+0 as i64
-    tmp_32 = 1
-    tmp_33 = add tmp_31, tmp_32
-    !tmp_31
-    !tmp_32
-    store reader+0, tmp_33 as i64
-    !tmp_33
-    tmp_34 = alloc 24
-    tmp_35 = 1
-    store tmp_34+0, tmp_35 as u8
+    tmp_34 = load reader+0 as i64
+    tmp_35 = load messages+0 as i64
+    tmp_36 = sge tmp_34, tmp_35
+    !tmp_34
     !tmp_35
-    store tmp_34+8, value as ptr
-    store tmp_34+16, reader as ptr
-    !messages
-    !default_value
-    return tmp_34
-
-@test "messages generic constructor"():
-L_TEST_ENTRY_6:
-    tmp_36 = call @sla__test_damage_default()
-    tmp_37 = call @sla__messages_new_TestDamageMessage(tmp_36)
-    !tmp_36
-    m = tmp_37
-    tmp_38 = load m+0 as i64
-    tmp_39 = 0
-    tmp_40 = ne tmp_38, tmp_39
-    !tmp_38
-    !tmp_39
-    br tmp_40 -> L_THEN_7, L_ELSE_8
+    br tmp_36 -> L_THEN_7, L_ELSE_8
 
 L_THEN_7:
-    !tmp_40
-    panic(2390)
+    !tmp_36
+    tmp_37 = alloc 24
+    tmp_38 = 0
+    store tmp_37+0, tmp_38 as u8
+    !tmp_38
+    store tmp_37+8, default_value as ptr
+    store tmp_37+16, reader as ptr
+    !messages
+    return tmp_37
 
 L_ELSE_8:
-    !tmp_40
+    !tmp_36
     jmp L_MERGE_9
 
 L_MERGE_9:
+    tmp_40 = load messages+8 as ptr
+    tmp_41 = load reader+0 as i64
+    tmp_42 = mul tmp_41, 8
+    tmp_43 = ptr_add tmp_40, tmp_42
+    !tmp_42
+    !tmp_41
+    tmp_44 = load tmp_43+0 as ptr
+    !tmp_43
+    !tmp_40
+    value = tmp_44
+    tmp_45 = load reader+0 as i64
+    tmp_46 = 1
+    tmp_47 = add tmp_45, tmp_46
+    !tmp_45
+    !tmp_46
+    store reader+0, tmp_47 as i64
+    !tmp_47
+    tmp_48 = alloc 24
+    tmp_49 = 1
+    store tmp_48+0, tmp_49 as u8
+    !tmp_49
+    store tmp_48+8, value as ptr
+    store tmp_48+16, reader as ptr
+    !messages
+    !default_value
+    return tmp_48
+
+@test "messages generic constructor"():
+L_TEST_ENTRY_10:
+    tmp_50 = call @sla__test_damage_default()
+    tmp_51 = call @sla__messages_new_TestDamageMessage(tmp_50)
+    !tmp_50
+    m = tmp_51
+    tmp_52 = load m+0 as i64
+    tmp_53 = 0
+    tmp_54 = ne tmp_52, tmp_53
+    !tmp_52
+    !tmp_53
+    br tmp_54 -> L_THEN_11, L_ELSE_12
+
+L_THEN_11:
+    !tmp_54
+    panic(2390)
+
+L_ELSE_12:
+    !tmp_54
+    jmp L_MERGE_13
+
+L_MERGE_13:
     !m
     return
 
 @test "messages writer appends"():
-L_TEST_ENTRY_10:
-    tmp_43 = call @sla__test_damage_messages_new()
-    m0 = tmp_43
-    tmp_44 = alloc 4
-    tmp_45 = 5
-    store tmp_44+0, tmp_45 as i32
-    !tmp_45
-    tmp_46 = call @sla__messages_write_TestDamageMessage(m0, tmp_44)
-    !tmp_44
-    m1 = tmp_46
-    tmp_47 = alloc 4
-    tmp_48 = 7
-    store tmp_47+0, tmp_48 as i32
-    !tmp_48
-    tmp_49 = call @sla__messages_write_TestDamageMessage(m1, tmp_47)
-    !tmp_47
-    m2 = tmp_49
-    tmp_50 = load m2+0 as i64
-    tmp_51 = 2
-    tmp_52 = ne tmp_50, tmp_51
-    !tmp_50
-    !tmp_51
-    br tmp_52 -> L_THEN_11, L_ELSE_12
+L_TEST_ENTRY_14:
+    tmp_57 = call @sla__test_damage_messages_new()
+    m0 = tmp_57
+    tmp_58 = alloc 4
+    tmp_59 = 5
+    store tmp_58+0, tmp_59 as i32
+    !tmp_59
+    tmp_60 = call @sla__messages_write_TestDamageMessage(m0, tmp_58)
+    !tmp_58
+    m1 = tmp_60
+    tmp_61 = alloc 4
+    tmp_62 = 7
+    store tmp_61+0, tmp_62 as i32
+    !tmp_62
+    tmp_63 = call @sla__messages_write_TestDamageMessage(m1, tmp_61)
+    !tmp_61
+    m2 = tmp_63
+    tmp_64 = load m2+0 as i64
+    tmp_65 = 2
+    tmp_66 = ne tmp_64, tmp_65
+    !tmp_64
+    !tmp_65
+    br tmp_66 -> L_THEN_15, L_ELSE_16
 
-L_THEN_11:
-    !tmp_52
+L_THEN_15:
+    !tmp_66
     panic(2400)
 
-L_ELSE_12:
-    !tmp_52
-    jmp L_MERGE_13
+L_ELSE_16:
+    !tmp_66
+    jmp L_MERGE_17
 
-L_MERGE_13:
+L_MERGE_17:
     !m2
     !m0
     !m1
     return
 
-@test "message reader cursor advances independently"():
-L_TEST_ENTRY_14:
-    tmp_55 = call @sla__test_damage_messages_new()
-    m0 = tmp_55
-    tmp_56 = alloc 4
-    tmp_57 = 5
-    store tmp_56+0, tmp_57 as i32
-    !tmp_57
-    tmp_58 = call @sla__messages_write_TestDamageMessage(m0, tmp_56)
-    !tmp_56
-    m1 = tmp_58
-    tmp_59 = alloc 4
-    tmp_60 = 7
-    store tmp_59+0, tmp_60 as i32
-    !tmp_60
-    tmp_61 = call @sla__messages_write_TestDamageMessage(m1, tmp_59)
-    !tmp_59
-    m2 = tmp_61
-    tmp_62 = call @sla__message_reader_new()
-    r0 = tmp_62
-    tmp_63 = call @sla__message_reader_new()
-    r_other = tmp_63
-    tmp_64 = call @sla__test_damage_default()
-    tmp_65 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_64)
-    !tmp_64
-    read1 = tmp_65
-    tmp_66 = load read1+0 as u8
-    tmp_67 = 1
-    tmp_68 = ne tmp_66, tmp_67
-    !tmp_66
-    !tmp_67
-    br tmp_68 -> L_THEN_15, L_ELSE_16
-
-L_THEN_15:
-    !tmp_68
-    panic(2410)
-
-L_ELSE_16:
-    !tmp_68
-    jmp L_MERGE_17
-
-L_MERGE_17:
-    tmp_71 = load read1+8 as ptr
-    tmp_72 = load tmp_71+0 as i32
-    !tmp_71
-    tmp_73 = 5
-    tmp_74 = ne tmp_72, tmp_73
+@test "message writer param batches appends"():
+L_TEST_ENTRY_18:
+    tmp_69 = call @sla__test_damage_messages_new()
+    m0 = tmp_69
+    tmp_70 = call @sla__message_writer_new_TestDamageMessage()
+    w0 = tmp_70
+    tmp_71 = alloc 4
+    tmp_72 = 3
+    store tmp_71+0, tmp_72 as i32
     !tmp_72
-    !tmp_73
-    br tmp_74 -> L_THEN_18, L_ELSE_19
-
-L_THEN_18:
+    tmp_73 = call @sla__message_writer_send_TestDamageMessage(w0, tmp_71)
+    !tmp_71
+    w1 = tmp_73
+    tmp_74 = alloc 4
+    tmp_75 = 9
+    store tmp_74+0, tmp_75 as i32
+    !tmp_75
+    tmp_76 = call @sla__message_writer_send_TestDamageMessage(w1, tmp_74)
     !tmp_74
-    panic(2411)
-
-L_ELSE_19:
-    !tmp_74
-    jmp L_MERGE_20
-
-L_MERGE_20:
-    tmp_77 = load read1+16 as ptr
-    tmp_78 = call @sla__test_damage_default()
-    tmp_79 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_77, tmp_78)
-    !tmp_77
-    !tmp_78
-    read2 = tmp_79
-    tmp_80 = load read2+0 as u8
-    tmp_81 = 1
-    tmp_82 = ne tmp_80, tmp_81
-    !tmp_80
+    w2 = tmp_76
+    tmp_77 = call @sla__messages_apply_writer_TestDamageMessage(m0, w2)
+    m1 = tmp_77
+    tmp_78 = call @sla__message_reader_new()
+    r0 = tmp_78
+    tmp_79 = call @sla__test_damage_default()
+    tmp_80 = call @sla__messages_read_next_TestDamageMessage(m1, r0, tmp_79)
+    !tmp_79
+    read1 = tmp_80
+    tmp_81 = load read1+16 as ptr
+    tmp_82 = call @sla__test_damage_default()
+    tmp_83 = call @sla__messages_read_next_TestDamageMessage(m1, tmp_81, tmp_82)
     !tmp_81
-    br tmp_82 -> L_THEN_21, L_ELSE_22
-
-L_THEN_21:
     !tmp_82
-    panic(2412)
-
-L_ELSE_22:
-    !tmp_82
-    jmp L_MERGE_23
-
-L_MERGE_23:
-    tmp_85 = load read2+8 as ptr
-    tmp_86 = load tmp_85+0 as i32
+    read2 = tmp_83
+    tmp_84 = load read1+8 as ptr
+    tmp_85 = load tmp_84+0 as i32
+    !tmp_84
+    tmp_86 = 3
+    tmp_87 = ne tmp_85, tmp_86
     !tmp_85
-    tmp_87 = 7
-    tmp_88 = ne tmp_86, tmp_87
     !tmp_86
+    br tmp_87 -> L_THEN_19, L_ELSE_20
+
+L_THEN_19:
     !tmp_87
-    br tmp_88 -> L_THEN_24, L_ELSE_25
+    panic(2420)
 
-L_THEN_24:
-    !tmp_88
-    panic(2413)
+L_ELSE_20:
+    !tmp_87
+    jmp L_MERGE_21
 
-L_ELSE_25:
-    !tmp_88
-    jmp L_MERGE_26
-
-L_MERGE_26:
-    tmp_91 = load read2+16 as ptr
-    tmp_92 = call @sla__test_damage_default()
-    tmp_93 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_91, tmp_92)
+L_MERGE_21:
+    tmp_90 = load read2+8 as ptr
+    tmp_91 = load tmp_90+0 as i32
+    !tmp_90
+    tmp_92 = 9
+    tmp_93 = ne tmp_91, tmp_92
     !tmp_91
     !tmp_92
-    read3 = tmp_93
-    tmp_94 = load read3+0 as u8
-    tmp_95 = 0
-    tmp_96 = ne tmp_94, tmp_95
-    !tmp_94
-    !tmp_95
-    br tmp_96 -> L_THEN_27, L_ELSE_28
+    br tmp_93 -> L_THEN_22, L_ELSE_23
 
-L_THEN_27:
-    !tmp_96
+L_THEN_22:
+    !tmp_93
+    panic(2421)
+
+L_ELSE_23:
+    !tmp_93
+    jmp L_MERGE_24
+
+L_MERGE_24:
+    !read1
+    !m0
+    !w0
+    !m1
+    !w1
+    !w2
+    !read2
+    !r0
+    return
+
+@test "message reader cursor advances independently"():
+L_TEST_ENTRY_25:
+    tmp_96 = call @sla__test_damage_messages_new()
+    m0 = tmp_96
+    tmp_97 = alloc 4
+    tmp_98 = 5
+    store tmp_97+0, tmp_98 as i32
+    !tmp_98
+    tmp_99 = call @sla__messages_write_TestDamageMessage(m0, tmp_97)
+    !tmp_97
+    m1 = tmp_99
+    tmp_100 = alloc 4
+    tmp_101 = 7
+    store tmp_100+0, tmp_101 as i32
+    !tmp_101
+    tmp_102 = call @sla__messages_write_TestDamageMessage(m1, tmp_100)
+    !tmp_100
+    m2 = tmp_102
+    tmp_103 = call @sla__message_reader_new()
+    r0 = tmp_103
+    tmp_104 = call @sla__message_reader_new()
+    r_other = tmp_104
+    tmp_105 = call @sla__test_damage_default()
+    tmp_106 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_105)
+    !tmp_105
+    read1 = tmp_106
+    tmp_107 = load read1+0 as u8
+    tmp_108 = 1
+    tmp_109 = ne tmp_107, tmp_108
+    !tmp_107
+    !tmp_108
+    br tmp_109 -> L_THEN_26, L_ELSE_27
+
+L_THEN_26:
+    !tmp_109
+    panic(2410)
+
+L_ELSE_27:
+    !tmp_109
+    jmp L_MERGE_28
+
+L_MERGE_28:
+    tmp_112 = load read1+8 as ptr
+    tmp_113 = load tmp_112+0 as i32
+    !tmp_112
+    tmp_114 = 5
+    tmp_115 = ne tmp_113, tmp_114
+    !tmp_113
+    !tmp_114
+    br tmp_115 -> L_THEN_29, L_ELSE_30
+
+L_THEN_29:
+    !tmp_115
+    panic(2411)
+
+L_ELSE_30:
+    !tmp_115
+    jmp L_MERGE_31
+
+L_MERGE_31:
+    tmp_118 = load read1+16 as ptr
+    tmp_119 = call @sla__test_damage_default()
+    tmp_120 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_118, tmp_119)
+    !tmp_118
+    !tmp_119
+    read2 = tmp_120
+    tmp_121 = load read2+0 as u8
+    tmp_122 = 1
+    tmp_123 = ne tmp_121, tmp_122
+    !tmp_121
+    !tmp_122
+    br tmp_123 -> L_THEN_32, L_ELSE_33
+
+L_THEN_32:
+    !tmp_123
+    panic(2412)
+
+L_ELSE_33:
+    !tmp_123
+    jmp L_MERGE_34
+
+L_MERGE_34:
+    tmp_126 = load read2+8 as ptr
+    tmp_127 = load tmp_126+0 as i32
+    !tmp_126
+    tmp_128 = 7
+    tmp_129 = ne tmp_127, tmp_128
+    !tmp_127
+    !tmp_128
+    br tmp_129 -> L_THEN_35, L_ELSE_36
+
+L_THEN_35:
+    !tmp_129
+    panic(2413)
+
+L_ELSE_36:
+    !tmp_129
+    jmp L_MERGE_37
+
+L_MERGE_37:
+    tmp_132 = load read2+16 as ptr
+    tmp_133 = call @sla__test_damage_default()
+    tmp_134 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_132, tmp_133)
+    !tmp_132
+    !tmp_133
+    read3 = tmp_134
+    tmp_135 = load read3+0 as u8
+    tmp_136 = 0
+    tmp_137 = ne tmp_135, tmp_136
+    !tmp_135
+    !tmp_136
+    br tmp_137 -> L_THEN_38, L_ELSE_39
+
+L_THEN_38:
+    !tmp_137
     panic(2414)
 
-L_ELSE_28:
-    !tmp_96
-    jmp L_MERGE_29
+L_ELSE_39:
+    !tmp_137
+    jmp L_MERGE_40
 
-L_MERGE_29:
-    tmp_99 = call @sla__test_damage_default()
-    tmp_100 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_99)
-    !tmp_99
-    other = tmp_100
-    tmp_101 = load other+8 as ptr
-    tmp_102 = load tmp_101+0 as i32
-    !tmp_101
-    tmp_103 = 5
-    tmp_104 = ne tmp_102, tmp_103
-    !tmp_102
-    !tmp_103
-    br tmp_104 -> L_THEN_30, L_ELSE_31
+L_MERGE_40:
+    tmp_140 = call @sla__test_damage_default()
+    tmp_141 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_140)
+    !tmp_140
+    other = tmp_141
+    tmp_142 = load other+8 as ptr
+    tmp_143 = load tmp_142+0 as i32
+    !tmp_142
+    tmp_144 = 5
+    tmp_145 = ne tmp_143, tmp_144
+    !tmp_143
+    !tmp_144
+    br tmp_145 -> L_THEN_41, L_ELSE_42
 
-L_THEN_30:
-    !tmp_104
+L_THEN_41:
+    !tmp_145
     panic(2415)
 
-L_ELSE_31:
-    !tmp_104
-    jmp L_MERGE_32
+L_ELSE_42:
+    !tmp_145
+    jmp L_MERGE_43
 
-L_MERGE_32:
+L_MERGE_43:
     !m2
     !m0
     !read1

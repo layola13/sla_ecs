@@ -1,3 +1,4 @@
+@import "sa_std/vec.sa"
 @import "sa_std/string.sa"
 @import "sa_std/string_format.sa"
 @import "sa_std/io/print.sai"
@@ -7,6 +8,7 @@
 [MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
     call @sa_mem_set(&%array_ptr, %value, %length)
 [END_MACRO]
+@import "sa_std/vec.sa"
 @const SLA_FNPTR_VT_entity_new = vtable { call = @sla__entity_new }
 @const SLA_FNPTR_VT_entity_placeholder = vtable { call = @sla__entity_placeholder }
 @const SLA_FNPTR_VT_entity_index = vtable { call = @sla__entity_index }
@@ -45,6 +47,9 @@
 @const SLA_FNPTR_VT_resource_remove_TestTime = vtable { call = @sla__resource_remove_TestTime }
 @const SLA_FNPTR_VT_messages_new_TestDamageMessage = vtable { call = @sla__messages_new_TestDamageMessage }
 @const SLA_FNPTR_VT_messages_write_TestDamageMessage = vtable { call = @sla__messages_write_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_new_TestDamageMessage = vtable { call = @sla__message_writer_new_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_send_TestDamageMessage = vtable { call = @sla__message_writer_send_TestDamageMessage }
+@const SLA_FNPTR_VT_messages_apply_writer_TestDamageMessage = vtable { call = @sla__messages_apply_writer_TestDamageMessage }
 @const SLA_FNPTR_VT_messages_read_next_TestDamageMessage = vtable { call = @sla__messages_read_next_TestDamageMessage }
 @const SLA_FNPTR_VT_store_new_WorldPos = vtable { call = @sla__store_new_WorldPos }
 @const SLA_FNPTR_VT_store_new_WorldVel = vtable { call = @sla__store_new_WorldVel }
@@ -1087,455 +1092,513 @@ L_MERGE_61:
     !slot
     return messages
 
+@sla__message_writer_new_TestDamageMessage() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_274
+    values = tmp_274
+    tmp_275 = alloc 8
+    store tmp_275+0, values as ptr
+    return tmp_275
+
+@sla__message_writer_send_TestDamageMessage(writer: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_276 = load writer+0 as ptr
+    EXPAND VEC_PUSH tmp_276, value, 8
+    !tmp_276
+    !value
+    return writer
+
+@sla__messages_apply_writer_TestDamageMessage(messages: ptr, writer: ptr) -> ptr:
+L_ENTRY:
+    tmp_277 = 0
+    i = tmp_277
+    tmp_278 = load writer+0 as ptr
+    EXPAND VEC_LEN tmp_279, tmp_278
+    !tmp_278
+    tmp_280 = tmp_279 as i64
+    cnt = tmp_280
+    jmp L_WHILE_HEAD_62
+
+L_WHILE_HEAD_62:
+    tmp_281 = slt i, cnt
+    br tmp_281 -> L_WHILE_BODY_63, L_WHILE_COND_FALSE_64
+
+L_WHILE_BODY_63:
+    !tmp_281
+    tmp_282 = load writer+0 as ptr
+    EXPAND VEC_GET tmp_283, tmp_282, i
+    !tmp_282
+    tmp_284 = tmp_283 as ptr
+    tmp_285 = call @sla__messages_write_TestDamageMessage(messages, tmp_284)
+    !tmp_284
+    !messages
+    messages = tmp_285
+    tmp_286 = 1
+    tmp_287 = add i, tmp_286
+    !tmp_286
+    !i
+    i = tmp_287
+    jmp L_WHILE_HEAD_62
+
+L_WHILE_COND_FALSE_64:
+    !tmp_281
+    jmp L_WHILE_EXIT_65
+
+L_WHILE_EXIT_65:
+    !cnt
+    !i
+    !writer
+    return messages
+
 @sla__messages_read_next_TestDamageMessage(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_274 = load reader+0 as i64
-    tmp_275 = load messages+0 as i64
-    tmp_276 = sge tmp_274, tmp_275
-    !tmp_274
-    !tmp_275
-    br tmp_276 -> L_THEN_62, L_ELSE_63
-
-L_THEN_62:
-    !tmp_276
-    tmp_277 = alloc 24
-    tmp_278 = 0
-    store tmp_277+0, tmp_278 as u8
-    !tmp_278
-    store tmp_277+8, default_value as ptr
-    store tmp_277+16, reader as ptr
-    !messages
-    return tmp_277
-
-L_ELSE_63:
-    !tmp_276
-    jmp L_MERGE_64
-
-L_MERGE_64:
-    tmp_280 = load messages+8 as ptr
-    tmp_281 = load reader+0 as i64
-    tmp_282 = mul tmp_281, 8
-    tmp_283 = ptr_add tmp_280, tmp_282
-    !tmp_282
-    !tmp_281
-    tmp_284 = load tmp_283+0 as ptr
-    !tmp_283
-    !tmp_280
-    value = tmp_284
-    tmp_285 = load reader+0 as i64
-    tmp_286 = 1
-    tmp_287 = add tmp_285, tmp_286
-    !tmp_285
-    !tmp_286
-    store reader+0, tmp_287 as i64
-    !tmp_287
-    tmp_288 = alloc 24
-    tmp_289 = 1
-    store tmp_288+0, tmp_289 as u8
+    tmp_288 = load reader+0 as i64
+    tmp_289 = load messages+0 as i64
+    tmp_290 = sge tmp_288, tmp_289
+    !tmp_288
     !tmp_289
-    store tmp_288+8, value as ptr
-    store tmp_288+16, reader as ptr
+    br tmp_290 -> L_THEN_66, L_ELSE_67
+
+L_THEN_66:
+    !tmp_290
+    tmp_291 = alloc 24
+    tmp_292 = 0
+    store tmp_291+0, tmp_292 as u8
+    !tmp_292
+    store tmp_291+8, default_value as ptr
+    store tmp_291+16, reader as ptr
+    !messages
+    return tmp_291
+
+L_ELSE_67:
+    !tmp_290
+    jmp L_MERGE_68
+
+L_MERGE_68:
+    tmp_294 = load messages+8 as ptr
+    tmp_295 = load reader+0 as i64
+    tmp_296 = mul tmp_295, 8
+    tmp_297 = ptr_add tmp_294, tmp_296
+    !tmp_296
+    !tmp_295
+    tmp_298 = load tmp_297+0 as ptr
+    !tmp_297
+    !tmp_294
+    value = tmp_298
+    tmp_299 = load reader+0 as i64
+    tmp_300 = 1
+    tmp_301 = add tmp_299, tmp_300
+    !tmp_299
+    !tmp_300
+    store reader+0, tmp_301 as i64
+    !tmp_301
+    tmp_302 = alloc 24
+    tmp_303 = 1
+    store tmp_302+0, tmp_303 as u8
+    !tmp_303
+    store tmp_302+8, value as ptr
+    store tmp_302+16, reader as ptr
     !messages
     !default_value
-    return tmp_288
+    return tmp_302
 
 @sla__store_new_WorldPos(default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_290 = alloc 24
-    tmp_291 = 0
-    store tmp_290+0, tmp_291 as i64
-    !tmp_291
-    tmp_292 = alloc 64
-    tmp_293 = 0
-    store tmp_292+0, tmp_293 as i32
-    store tmp_292+4, tmp_293 as i32
-    store tmp_292+8, tmp_293 as i32
-    store tmp_292+12, tmp_293 as i32
-    store tmp_292+16, tmp_293 as i32
-    store tmp_292+20, tmp_293 as i32
-    store tmp_292+24, tmp_293 as i32
-    store tmp_292+28, tmp_293 as i32
-    store tmp_292+32, tmp_293 as i32
-    store tmp_292+36, tmp_293 as i32
-    store tmp_292+40, tmp_293 as i32
-    store tmp_292+44, tmp_293 as i32
-    store tmp_292+48, tmp_293 as i32
-    store tmp_292+52, tmp_293 as i32
-    store tmp_292+56, tmp_293 as i32
-    store tmp_292+60, tmp_293 as i32
-    !tmp_293
-    store tmp_290+8, tmp_292 as ptr
-    !tmp_292
-    tmp_294 = alloc 128
-    store tmp_294+0, default_value as ptr
-    store tmp_294+8, default_value as ptr
-    store tmp_294+16, default_value as ptr
-    store tmp_294+24, default_value as ptr
-    store tmp_294+32, default_value as ptr
-    store tmp_294+40, default_value as ptr
-    store tmp_294+48, default_value as ptr
-    store tmp_294+56, default_value as ptr
-    store tmp_294+64, default_value as ptr
-    store tmp_294+72, default_value as ptr
-    store tmp_294+80, default_value as ptr
-    store tmp_294+88, default_value as ptr
-    store tmp_294+96, default_value as ptr
-    store tmp_294+104, default_value as ptr
-    store tmp_294+112, default_value as ptr
-    store tmp_294+120, default_value as ptr
-    store tmp_290+16, tmp_294 as ptr
-    !tmp_294
-    return tmp_290
+    tmp_304 = alloc 24
+    tmp_305 = 0
+    store tmp_304+0, tmp_305 as i64
+    !tmp_305
+    tmp_306 = alloc 64
+    tmp_307 = 0
+    store tmp_306+0, tmp_307 as i32
+    store tmp_306+4, tmp_307 as i32
+    store tmp_306+8, tmp_307 as i32
+    store tmp_306+12, tmp_307 as i32
+    store tmp_306+16, tmp_307 as i32
+    store tmp_306+20, tmp_307 as i32
+    store tmp_306+24, tmp_307 as i32
+    store tmp_306+28, tmp_307 as i32
+    store tmp_306+32, tmp_307 as i32
+    store tmp_306+36, tmp_307 as i32
+    store tmp_306+40, tmp_307 as i32
+    store tmp_306+44, tmp_307 as i32
+    store tmp_306+48, tmp_307 as i32
+    store tmp_306+52, tmp_307 as i32
+    store tmp_306+56, tmp_307 as i32
+    store tmp_306+60, tmp_307 as i32
+    !tmp_307
+    store tmp_304+8, tmp_306 as ptr
+    !tmp_306
+    tmp_308 = alloc 128
+    store tmp_308+0, default_value as ptr
+    store tmp_308+8, default_value as ptr
+    store tmp_308+16, default_value as ptr
+    store tmp_308+24, default_value as ptr
+    store tmp_308+32, default_value as ptr
+    store tmp_308+40, default_value as ptr
+    store tmp_308+48, default_value as ptr
+    store tmp_308+56, default_value as ptr
+    store tmp_308+64, default_value as ptr
+    store tmp_308+72, default_value as ptr
+    store tmp_308+80, default_value as ptr
+    store tmp_308+88, default_value as ptr
+    store tmp_308+96, default_value as ptr
+    store tmp_308+104, default_value as ptr
+    store tmp_308+112, default_value as ptr
+    store tmp_308+120, default_value as ptr
+    store tmp_304+16, tmp_308 as ptr
+    !tmp_308
+    return tmp_304
 
 @sla__store_new_WorldVel(default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_295 = alloc 24
-    tmp_296 = 0
-    store tmp_295+0, tmp_296 as i64
-    !tmp_296
-    tmp_297 = alloc 64
-    tmp_298 = 0
-    store tmp_297+0, tmp_298 as i32
-    store tmp_297+4, tmp_298 as i32
-    store tmp_297+8, tmp_298 as i32
-    store tmp_297+12, tmp_298 as i32
-    store tmp_297+16, tmp_298 as i32
-    store tmp_297+20, tmp_298 as i32
-    store tmp_297+24, tmp_298 as i32
-    store tmp_297+28, tmp_298 as i32
-    store tmp_297+32, tmp_298 as i32
-    store tmp_297+36, tmp_298 as i32
-    store tmp_297+40, tmp_298 as i32
-    store tmp_297+44, tmp_298 as i32
-    store tmp_297+48, tmp_298 as i32
-    store tmp_297+52, tmp_298 as i32
-    store tmp_297+56, tmp_298 as i32
-    store tmp_297+60, tmp_298 as i32
-    !tmp_298
-    store tmp_295+8, tmp_297 as ptr
-    !tmp_297
-    tmp_299 = alloc 128
-    store tmp_299+0, default_value as ptr
-    store tmp_299+8, default_value as ptr
-    store tmp_299+16, default_value as ptr
-    store tmp_299+24, default_value as ptr
-    store tmp_299+32, default_value as ptr
-    store tmp_299+40, default_value as ptr
-    store tmp_299+48, default_value as ptr
-    store tmp_299+56, default_value as ptr
-    store tmp_299+64, default_value as ptr
-    store tmp_299+72, default_value as ptr
-    store tmp_299+80, default_value as ptr
-    store tmp_299+88, default_value as ptr
-    store tmp_299+96, default_value as ptr
-    store tmp_299+104, default_value as ptr
-    store tmp_299+112, default_value as ptr
-    store tmp_299+120, default_value as ptr
-    store tmp_295+16, tmp_299 as ptr
-    !tmp_299
-    return tmp_295
+    tmp_309 = alloc 24
+    tmp_310 = 0
+    store tmp_309+0, tmp_310 as i64
+    !tmp_310
+    tmp_311 = alloc 64
+    tmp_312 = 0
+    store tmp_311+0, tmp_312 as i32
+    store tmp_311+4, tmp_312 as i32
+    store tmp_311+8, tmp_312 as i32
+    store tmp_311+12, tmp_312 as i32
+    store tmp_311+16, tmp_312 as i32
+    store tmp_311+20, tmp_312 as i32
+    store tmp_311+24, tmp_312 as i32
+    store tmp_311+28, tmp_312 as i32
+    store tmp_311+32, tmp_312 as i32
+    store tmp_311+36, tmp_312 as i32
+    store tmp_311+40, tmp_312 as i32
+    store tmp_311+44, tmp_312 as i32
+    store tmp_311+48, tmp_312 as i32
+    store tmp_311+52, tmp_312 as i32
+    store tmp_311+56, tmp_312 as i32
+    store tmp_311+60, tmp_312 as i32
+    !tmp_312
+    store tmp_309+8, tmp_311 as ptr
+    !tmp_311
+    tmp_313 = alloc 128
+    store tmp_313+0, default_value as ptr
+    store tmp_313+8, default_value as ptr
+    store tmp_313+16, default_value as ptr
+    store tmp_313+24, default_value as ptr
+    store tmp_313+32, default_value as ptr
+    store tmp_313+40, default_value as ptr
+    store tmp_313+48, default_value as ptr
+    store tmp_313+56, default_value as ptr
+    store tmp_313+64, default_value as ptr
+    store tmp_313+72, default_value as ptr
+    store tmp_313+80, default_value as ptr
+    store tmp_313+88, default_value as ptr
+    store tmp_313+96, default_value as ptr
+    store tmp_313+104, default_value as ptr
+    store tmp_313+112, default_value as ptr
+    store tmp_313+120, default_value as ptr
+    store tmp_309+16, tmp_313 as ptr
+    !tmp_313
+    return tmp_309
 
 @sla__resource_slot_new_WorldTime(default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_300 = alloc 16
-    tmp_301 = 0
-    store tmp_300+0, tmp_301 as u8
-    !tmp_301
-    store tmp_300+8, default_value as ptr
-    return tmp_300
+    tmp_314 = alloc 16
+    tmp_315 = 0
+    store tmp_314+0, tmp_315 as u8
+    !tmp_315
+    store tmp_314+8, default_value as ptr
+    return tmp_314
 
 @sla__messages_new_WorldDamage(default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_302 = alloc 16
-    tmp_303 = 0
-    store tmp_302+0, tmp_303 as i64
-    !tmp_303
-    tmp_304 = alloc 128
-    store tmp_304+0, default_value as ptr
-    store tmp_304+8, default_value as ptr
-    store tmp_304+16, default_value as ptr
-    store tmp_304+24, default_value as ptr
-    store tmp_304+32, default_value as ptr
-    store tmp_304+40, default_value as ptr
-    store tmp_304+48, default_value as ptr
-    store tmp_304+56, default_value as ptr
-    store tmp_304+64, default_value as ptr
-    store tmp_304+72, default_value as ptr
-    store tmp_304+80, default_value as ptr
-    store tmp_304+88, default_value as ptr
-    store tmp_304+96, default_value as ptr
-    store tmp_304+104, default_value as ptr
-    store tmp_304+112, default_value as ptr
-    store tmp_304+120, default_value as ptr
-    store tmp_302+8, tmp_304 as ptr
-    !tmp_304
-    return tmp_302
+    tmp_316 = alloc 16
+    tmp_317 = 0
+    store tmp_316+0, tmp_317 as i64
+    !tmp_317
+    tmp_318 = alloc 128
+    store tmp_318+0, default_value as ptr
+    store tmp_318+8, default_value as ptr
+    store tmp_318+16, default_value as ptr
+    store tmp_318+24, default_value as ptr
+    store tmp_318+32, default_value as ptr
+    store tmp_318+40, default_value as ptr
+    store tmp_318+48, default_value as ptr
+    store tmp_318+56, default_value as ptr
+    store tmp_318+64, default_value as ptr
+    store tmp_318+72, default_value as ptr
+    store tmp_318+80, default_value as ptr
+    store tmp_318+88, default_value as ptr
+    store tmp_318+96, default_value as ptr
+    store tmp_318+104, default_value as ptr
+    store tmp_318+112, default_value as ptr
+    store tmp_318+120, default_value as ptr
+    store tmp_316+8, tmp_318 as ptr
+    !tmp_318
+    return tmp_316
 
 @sla__world_new_WorldPos_WorldVel_WorldTime_WorldDamage(default_a: ptr, default_b: ptr, default_r: ptr, default_m: ptr) -> ptr:
 L_ENTRY:
-    tmp_305 = alloc 80
-    tmp_306 = call @sla__allocator_new()
-    store tmp_305+0, tmp_306 as ptr
-    !tmp_306
-    tmp_307 = call @sla__store_new_WorldPos(default_a)
-    store tmp_305+8, tmp_307 as ptr
-    !tmp_307
-    tmp_308 = call @sla__store_new_WorldVel(default_b)
-    store tmp_305+16, tmp_308 as ptr
-    !tmp_308
-    tmp_309 = call @sla__resource_slot_new_WorldTime(default_r)
-    store tmp_305+24, tmp_309 as ptr
-    !tmp_309
-    tmp_310 = call @sla__messages_new_WorldDamage(default_m)
-    store tmp_305+32, tmp_310 as ptr
-    !tmp_310
-    tmp_311 = 1
-    store tmp_305+40, tmp_311 as i32
-    !tmp_311
-    tmp_312 = alloc 64
-    tmp_313 = 0
-    store tmp_312+0, tmp_313 as i32
-    store tmp_312+4, tmp_313 as i32
-    store tmp_312+8, tmp_313 as i32
-    store tmp_312+12, tmp_313 as i32
-    store tmp_312+16, tmp_313 as i32
-    store tmp_312+20, tmp_313 as i32
-    store tmp_312+24, tmp_313 as i32
-    store tmp_312+28, tmp_313 as i32
-    store tmp_312+32, tmp_313 as i32
-    store tmp_312+36, tmp_313 as i32
-    store tmp_312+40, tmp_313 as i32
-    store tmp_312+44, tmp_313 as i32
-    store tmp_312+48, tmp_313 as i32
-    store tmp_312+52, tmp_313 as i32
-    store tmp_312+56, tmp_313 as i32
-    store tmp_312+60, tmp_313 as i32
-    !tmp_313
-    store tmp_305+48, tmp_312 as ptr
-    !tmp_312
-    tmp_314 = alloc 64
-    tmp_315 = 0
-    store tmp_314+0, tmp_315 as i32
-    store tmp_314+4, tmp_315 as i32
-    store tmp_314+8, tmp_315 as i32
-    store tmp_314+12, tmp_315 as i32
-    store tmp_314+16, tmp_315 as i32
-    store tmp_314+20, tmp_315 as i32
-    store tmp_314+24, tmp_315 as i32
-    store tmp_314+28, tmp_315 as i32
-    store tmp_314+32, tmp_315 as i32
-    store tmp_314+36, tmp_315 as i32
-    store tmp_314+40, tmp_315 as i32
-    store tmp_314+44, tmp_315 as i32
-    store tmp_314+48, tmp_315 as i32
-    store tmp_314+52, tmp_315 as i32
-    store tmp_314+56, tmp_315 as i32
-    store tmp_314+60, tmp_315 as i32
-    !tmp_315
-    store tmp_305+56, tmp_314 as ptr
-    !tmp_314
-    tmp_316 = alloc 64
-    tmp_317 = 0
-    store tmp_316+0, tmp_317 as i32
-    store tmp_316+4, tmp_317 as i32
-    store tmp_316+8, tmp_317 as i32
-    store tmp_316+12, tmp_317 as i32
-    store tmp_316+16, tmp_317 as i32
-    store tmp_316+20, tmp_317 as i32
-    store tmp_316+24, tmp_317 as i32
-    store tmp_316+28, tmp_317 as i32
-    store tmp_316+32, tmp_317 as i32
-    store tmp_316+36, tmp_317 as i32
-    store tmp_316+40, tmp_317 as i32
-    store tmp_316+44, tmp_317 as i32
-    store tmp_316+48, tmp_317 as i32
-    store tmp_316+52, tmp_317 as i32
-    store tmp_316+56, tmp_317 as i32
-    store tmp_316+60, tmp_317 as i32
-    !tmp_317
-    store tmp_305+64, tmp_316 as ptr
-    !tmp_316
-    tmp_318 = alloc 64
-    tmp_319 = 0
-    store tmp_318+0, tmp_319 as i32
-    store tmp_318+4, tmp_319 as i32
-    store tmp_318+8, tmp_319 as i32
-    store tmp_318+12, tmp_319 as i32
-    store tmp_318+16, tmp_319 as i32
-    store tmp_318+20, tmp_319 as i32
-    store tmp_318+24, tmp_319 as i32
-    store tmp_318+28, tmp_319 as i32
-    store tmp_318+32, tmp_319 as i32
-    store tmp_318+36, tmp_319 as i32
-    store tmp_318+40, tmp_319 as i32
-    store tmp_318+44, tmp_319 as i32
-    store tmp_318+48, tmp_319 as i32
-    store tmp_318+52, tmp_319 as i32
-    store tmp_318+56, tmp_319 as i32
-    store tmp_318+60, tmp_319 as i32
-    !tmp_319
-    store tmp_305+72, tmp_318 as ptr
-    !tmp_318
-    return tmp_305
+    tmp_319 = alloc 80
+    tmp_320 = call @sla__allocator_new()
+    store tmp_319+0, tmp_320 as ptr
+    !tmp_320
+    tmp_321 = call @sla__store_new_WorldPos(default_a)
+    store tmp_319+8, tmp_321 as ptr
+    !tmp_321
+    tmp_322 = call @sla__store_new_WorldVel(default_b)
+    store tmp_319+16, tmp_322 as ptr
+    !tmp_322
+    tmp_323 = call @sla__resource_slot_new_WorldTime(default_r)
+    store tmp_319+24, tmp_323 as ptr
+    !tmp_323
+    tmp_324 = call @sla__messages_new_WorldDamage(default_m)
+    store tmp_319+32, tmp_324 as ptr
+    !tmp_324
+    tmp_325 = 1
+    store tmp_319+40, tmp_325 as i32
+    !tmp_325
+    tmp_326 = alloc 64
+    tmp_327 = 0
+    store tmp_326+0, tmp_327 as i32
+    store tmp_326+4, tmp_327 as i32
+    store tmp_326+8, tmp_327 as i32
+    store tmp_326+12, tmp_327 as i32
+    store tmp_326+16, tmp_327 as i32
+    store tmp_326+20, tmp_327 as i32
+    store tmp_326+24, tmp_327 as i32
+    store tmp_326+28, tmp_327 as i32
+    store tmp_326+32, tmp_327 as i32
+    store tmp_326+36, tmp_327 as i32
+    store tmp_326+40, tmp_327 as i32
+    store tmp_326+44, tmp_327 as i32
+    store tmp_326+48, tmp_327 as i32
+    store tmp_326+52, tmp_327 as i32
+    store tmp_326+56, tmp_327 as i32
+    store tmp_326+60, tmp_327 as i32
+    !tmp_327
+    store tmp_319+48, tmp_326 as ptr
+    !tmp_326
+    tmp_328 = alloc 64
+    tmp_329 = 0
+    store tmp_328+0, tmp_329 as i32
+    store tmp_328+4, tmp_329 as i32
+    store tmp_328+8, tmp_329 as i32
+    store tmp_328+12, tmp_329 as i32
+    store tmp_328+16, tmp_329 as i32
+    store tmp_328+20, tmp_329 as i32
+    store tmp_328+24, tmp_329 as i32
+    store tmp_328+28, tmp_329 as i32
+    store tmp_328+32, tmp_329 as i32
+    store tmp_328+36, tmp_329 as i32
+    store tmp_328+40, tmp_329 as i32
+    store tmp_328+44, tmp_329 as i32
+    store tmp_328+48, tmp_329 as i32
+    store tmp_328+52, tmp_329 as i32
+    store tmp_328+56, tmp_329 as i32
+    store tmp_328+60, tmp_329 as i32
+    !tmp_329
+    store tmp_319+56, tmp_328 as ptr
+    !tmp_328
+    tmp_330 = alloc 64
+    tmp_331 = 0
+    store tmp_330+0, tmp_331 as i32
+    store tmp_330+4, tmp_331 as i32
+    store tmp_330+8, tmp_331 as i32
+    store tmp_330+12, tmp_331 as i32
+    store tmp_330+16, tmp_331 as i32
+    store tmp_330+20, tmp_331 as i32
+    store tmp_330+24, tmp_331 as i32
+    store tmp_330+28, tmp_331 as i32
+    store tmp_330+32, tmp_331 as i32
+    store tmp_330+36, tmp_331 as i32
+    store tmp_330+40, tmp_331 as i32
+    store tmp_330+44, tmp_331 as i32
+    store tmp_330+48, tmp_331 as i32
+    store tmp_330+52, tmp_331 as i32
+    store tmp_330+56, tmp_331 as i32
+    store tmp_330+60, tmp_331 as i32
+    !tmp_331
+    store tmp_319+64, tmp_330 as ptr
+    !tmp_330
+    tmp_332 = alloc 64
+    tmp_333 = 0
+    store tmp_332+0, tmp_333 as i32
+    store tmp_332+4, tmp_333 as i32
+    store tmp_332+8, tmp_333 as i32
+    store tmp_332+12, tmp_333 as i32
+    store tmp_332+16, tmp_333 as i32
+    store tmp_332+20, tmp_333 as i32
+    store tmp_332+24, tmp_333 as i32
+    store tmp_332+28, tmp_333 as i32
+    store tmp_332+32, tmp_333 as i32
+    store tmp_332+36, tmp_333 as i32
+    store tmp_332+40, tmp_333 as i32
+    store tmp_332+44, tmp_333 as i32
+    store tmp_332+48, tmp_333 as i32
+    store tmp_332+52, tmp_333 as i32
+    store tmp_332+56, tmp_333 as i32
+    store tmp_332+60, tmp_333 as i32
+    !tmp_333
+    store tmp_319+72, tmp_332 as ptr
+    !tmp_332
+    return tmp_319
 
 @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr) -> ptr:
 L_ENTRY:
-    tmp_320 = load world+0 as ptr
-    tmp_321 = call @sla__alloc_entity(tmp_320)
-    !tmp_320
-    allocator = load tmp_321+0 as ptr
-    entity = load tmp_321+8 as ptr
-    !tmp_321
+    tmp_334 = load world+0 as ptr
+    tmp_335 = call @sla__alloc_entity(tmp_334)
+    !tmp_334
+    allocator = load tmp_335+0 as ptr
+    entity = load tmp_335+8 as ptr
+    !tmp_335
     store world+0, allocator as ptr
     !allocator
-    tmp_322 = alloc 16
-    store tmp_322+0, world as ptr
-    store tmp_322+8, entity as ptr
-    return tmp_322
+    tmp_336 = alloc 16
+    store tmp_336+0, world as ptr
+    store tmp_336+8, entity as ptr
+    return tmp_336
 
 @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> u8:
 L_ENTRY:
-    tmp_323 = load world+0 as ptr
-    tmp_324 = call @sla__is_alive(tmp_323, entity)
-    !tmp_323
+    tmp_337 = load world+0 as ptr
+    tmp_338 = call @sla__is_alive(tmp_337, entity)
+    !tmp_337
     !world
-    return tmp_324
+    return tmp_338
 
 @sla__store_slot_of_WorldPos(s: ptr, eid: i32) -> i64:
 L_ENTRY:
-    tmp_325 = 0
-    i = tmp_325
-    jmp L_WHILE_HEAD_65
+    tmp_339 = 0
+    i = tmp_339
+    jmp L_WHILE_HEAD_69
 
-L_WHILE_HEAD_65:
-    tmp_326 = load s+0 as i64
-    tmp_327 = slt i, tmp_326
-    !tmp_326
-    br tmp_327 -> L_WHILE_BODY_66, L_WHILE_COND_FALSE_67
+L_WHILE_HEAD_69:
+    tmp_340 = load s+0 as i64
+    tmp_341 = slt i, tmp_340
+    !tmp_340
+    br tmp_341 -> L_WHILE_BODY_70, L_WHILE_COND_FALSE_71
 
-L_WHILE_BODY_66:
-    !tmp_327
-    tmp_328 = load s+8 as ptr
-    tmp_329 = mul i, 4
-    tmp_330 = ptr_add tmp_328, tmp_329
-    !tmp_329
-    tmp_331 = load tmp_330+0 as i32
-    !tmp_330
-    !tmp_328
-    tmp_332 = eq tmp_331, eid
-    !tmp_331
-    br tmp_332 -> L_THEN_69, L_ELSE_70
+L_WHILE_BODY_70:
+    !tmp_341
+    tmp_342 = load s+8 as ptr
+    tmp_343 = mul i, 4
+    tmp_344 = ptr_add tmp_342, tmp_343
+    !tmp_343
+    tmp_345 = load tmp_344+0 as i32
+    !tmp_344
+    !tmp_342
+    tmp_346 = eq tmp_345, eid
+    !tmp_345
+    br tmp_346 -> L_THEN_73, L_ELSE_74
 
-L_THEN_69:
-    !tmp_332
+L_THEN_73:
+    !tmp_346
     !s
     !eid
     return i
 
-L_ELSE_70:
-    !tmp_332
-    jmp L_MERGE_71
+L_ELSE_74:
+    !tmp_346
+    jmp L_MERGE_75
 
-L_MERGE_71:
-    tmp_334 = 1
-    tmp_335 = add i, tmp_334
-    !tmp_334
+L_MERGE_75:
+    tmp_348 = 1
+    tmp_349 = add i, tmp_348
+    !tmp_348
     !i
-    i = tmp_335
-    jmp L_WHILE_HEAD_65
+    i = tmp_349
+    jmp L_WHILE_HEAD_69
 
-L_WHILE_COND_FALSE_67:
-    !tmp_327
-    jmp L_WHILE_EXIT_68
+L_WHILE_COND_FALSE_71:
+    !tmp_341
+    jmp L_WHILE_EXIT_72
 
-L_WHILE_EXIT_68:
-    tmp_336 = 0
-    tmp_337 = 1
-    tmp_338 = sub tmp_336, tmp_337
-    !tmp_336
-    !tmp_337
+L_WHILE_EXIT_72:
+    tmp_350 = 0
+    tmp_351 = 1
+    tmp_352 = sub tmp_350, tmp_351
+    !tmp_350
+    !tmp_351
     !i
     !s
     !eid
-    return tmp_338
+    return tmp_352
 
 @sla__store_remove_WorldPos(s: ptr, eid: i32) -> ptr:
 L_ENTRY:
-    tmp_339 = call @sla__store_slot_of_WorldPos(s, eid)
-    slot = tmp_339
-    tmp_340 = 0
-    tmp_341 = slt slot, tmp_340
-    !tmp_340
-    br tmp_341 -> L_THEN_72, L_ELSE_73
+    tmp_353 = call @sla__store_slot_of_WorldPos(s, eid)
+    slot = tmp_353
+    tmp_354 = 0
+    tmp_355 = slt slot, tmp_354
+    !tmp_354
+    br tmp_355 -> L_THEN_76, L_ELSE_77
 
-L_THEN_72:
-    !tmp_341
+L_THEN_76:
+    !tmp_355
     !slot
     !eid
     return s
 
-L_ELSE_73:
-    !tmp_341
-    jmp L_MERGE_74
-
-L_MERGE_74:
-    tmp_343 = load s+0 as i64
-    tmp_344 = 1
-    tmp_345 = sub tmp_343, tmp_344
-    !tmp_343
-    !tmp_344
-    last = tmp_345
-    tmp_346 = ne slot, last
-    br tmp_346 -> L_THEN_75, L_ELSE_76
-
-L_THEN_75:
-    !tmp_346
-    tmp_347 = load s+8 as ptr
-    tmp_348 = mul slot, 4
-    tmp_349 = ptr_add tmp_347, tmp_348
-    !tmp_348
-    tmp_350 = load s+8 as ptr
-    tmp_351 = mul last, 4
-    tmp_352 = ptr_add tmp_350, tmp_351
-    !tmp_351
-    tmp_353 = load tmp_352+0 as i32
-    !tmp_352
-    !tmp_350
-    store tmp_349+0, tmp_353 as i32
-    !tmp_349
-    !tmp_347
-    !tmp_353
-    tmp_354 = load s+16 as ptr
-    tmp_355 = mul slot, 8
-    tmp_356 = ptr_add tmp_354, tmp_355
+L_ELSE_77:
     !tmp_355
-    tmp_357 = load s+16 as ptr
-    tmp_358 = mul last, 8
-    tmp_359 = ptr_add tmp_357, tmp_358
-    !tmp_358
-    tmp_360 = load tmp_359+0 as ptr
-    !tmp_359
+    jmp L_MERGE_78
+
+L_MERGE_78:
+    tmp_357 = load s+0 as i64
+    tmp_358 = 1
+    tmp_359 = sub tmp_357, tmp_358
     !tmp_357
-    store tmp_356+0, tmp_360 as ptr
-    !tmp_356
-    !tmp_354
+    !tmp_358
+    last = tmp_359
+    tmp_360 = ne slot, last
+    br tmp_360 -> L_THEN_79, L_ELSE_80
+
+L_THEN_79:
     !tmp_360
-    jmp L_MERGE_77
-
-L_ELSE_76:
-    !tmp_346
-    jmp L_MERGE_77
-
-L_MERGE_77:
-    tmp_362 = load s+8 as ptr
-    tmp_363 = mul last, 4
-    tmp_364 = ptr_add tmp_362, tmp_363
-    !tmp_363
-    tmp_365 = 0
-    store tmp_364+0, tmp_365 as i32
-    !tmp_364
+    tmp_361 = load s+8 as ptr
+    tmp_362 = mul slot, 4
+    tmp_363 = ptr_add tmp_361, tmp_362
     !tmp_362
+    tmp_364 = load s+8 as ptr
+    tmp_365 = mul last, 4
+    tmp_366 = ptr_add tmp_364, tmp_365
     !tmp_365
+    tmp_367 = load tmp_366+0 as i32
+    !tmp_366
+    !tmp_364
+    store tmp_363+0, tmp_367 as i32
+    !tmp_363
+    !tmp_361
+    !tmp_367
+    tmp_368 = load s+16 as ptr
+    tmp_369 = mul slot, 8
+    tmp_370 = ptr_add tmp_368, tmp_369
+    !tmp_369
+    tmp_371 = load s+16 as ptr
+    tmp_372 = mul last, 8
+    tmp_373 = ptr_add tmp_371, tmp_372
+    !tmp_372
+    tmp_374 = load tmp_373+0 as ptr
+    !tmp_373
+    !tmp_371
+    store tmp_370+0, tmp_374 as ptr
+    !tmp_370
+    !tmp_368
+    !tmp_374
+    jmp L_MERGE_81
+
+L_ELSE_80:
+    !tmp_360
+    jmp L_MERGE_81
+
+L_MERGE_81:
+    tmp_376 = load s+8 as ptr
+    tmp_377 = mul last, 4
+    tmp_378 = ptr_add tmp_376, tmp_377
+    !tmp_377
+    tmp_379 = 0
+    store tmp_378+0, tmp_379 as i32
+    !tmp_378
+    !tmp_376
+    !tmp_379
     store s+0, last as i64
     !last
     !slot
@@ -1544,91 +1607,91 @@ L_MERGE_77:
 
 @sla__world_remove_a_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_366 = load world+8 as ptr
-    tmp_367 = load entity+0 as i32
-    tmp_368 = call @sla__store_slot_of_WorldPos(tmp_366, tmp_367)
-    !tmp_366
-    !tmp_367
-    slot = tmp_368
-    tmp_369 = 0
-    tmp_370 = slt slot, tmp_369
-    !tmp_369
-    br tmp_370 -> L_THEN_78, L_ELSE_79
+    tmp_380 = load world+8 as ptr
+    tmp_381 = load entity+0 as i32
+    tmp_382 = call @sla__store_slot_of_WorldPos(tmp_380, tmp_381)
+    !tmp_380
+    !tmp_381
+    slot = tmp_382
+    tmp_383 = 0
+    tmp_384 = slt slot, tmp_383
+    !tmp_383
+    br tmp_384 -> L_THEN_82, L_ELSE_83
 
-L_THEN_78:
-    !tmp_370
+L_THEN_82:
+    !tmp_384
     !slot
     !entity
     return world
 
-L_ELSE_79:
-    !tmp_370
-    jmp L_MERGE_80
-
-L_MERGE_80:
-    tmp_372 = load world+8 as ptr
-    tmp_373 = load tmp_372+0 as i64
-    !tmp_372
-    tmp_374 = 1
-    tmp_375 = sub tmp_373, tmp_374
-    !tmp_373
-    !tmp_374
-    last = tmp_375
-    tmp_376 = load world+8 as ptr
-    tmp_377 = load entity+0 as i32
-    tmp_378 = call @sla__store_remove_WorldPos(tmp_376, tmp_377)
-    !tmp_376
-    !tmp_377
-    store world+8, tmp_378 as ptr
-    !tmp_378
-    tmp_379 = load world+48 as ptr
-    tmp_380 = mul slot, 4
-    tmp_381 = ptr_add tmp_379, tmp_380
-    !tmp_380
-    tmp_382 = load world+48 as ptr
-    tmp_383 = mul last, 4
-    tmp_384 = ptr_add tmp_382, tmp_383
-    !tmp_383
-    tmp_385 = load tmp_384+0 as i32
+L_ELSE_83:
     !tmp_384
-    !tmp_382
-    store tmp_381+0, tmp_385 as i32
-    !tmp_381
-    !tmp_379
-    !tmp_385
-    tmp_386 = load world+56 as ptr
-    tmp_387 = mul slot, 4
-    tmp_388 = ptr_add tmp_386, tmp_387
-    !tmp_387
-    tmp_389 = load world+56 as ptr
-    tmp_390 = mul last, 4
-    tmp_391 = ptr_add tmp_389, tmp_390
-    !tmp_390
-    tmp_392 = load tmp_391+0 as i32
-    !tmp_391
-    !tmp_389
-    store tmp_388+0, tmp_392 as i32
-    !tmp_388
+    jmp L_MERGE_84
+
+L_MERGE_84:
+    tmp_386 = load world+8 as ptr
+    tmp_387 = load tmp_386+0 as i64
     !tmp_386
+    tmp_388 = 1
+    tmp_389 = sub tmp_387, tmp_388
+    !tmp_387
+    !tmp_388
+    last = tmp_389
+    tmp_390 = load world+8 as ptr
+    tmp_391 = load entity+0 as i32
+    tmp_392 = call @sla__store_remove_WorldPos(tmp_390, tmp_391)
+    !tmp_390
+    !tmp_391
+    store world+8, tmp_392 as ptr
     !tmp_392
     tmp_393 = load world+48 as ptr
-    tmp_394 = mul last, 4
+    tmp_394 = mul slot, 4
     tmp_395 = ptr_add tmp_393, tmp_394
     !tmp_394
-    tmp_396 = 0
-    store tmp_395+0, tmp_396 as i32
+    tmp_396 = load world+48 as ptr
+    tmp_397 = mul last, 4
+    tmp_398 = ptr_add tmp_396, tmp_397
+    !tmp_397
+    tmp_399 = load tmp_398+0 as i32
+    !tmp_398
+    !tmp_396
+    store tmp_395+0, tmp_399 as i32
     !tmp_395
     !tmp_393
-    !tmp_396
-    tmp_397 = load world+56 as ptr
-    tmp_398 = mul last, 4
-    tmp_399 = ptr_add tmp_397, tmp_398
-    !tmp_398
-    tmp_400 = 0
-    store tmp_399+0, tmp_400 as i32
     !tmp_399
-    !tmp_397
+    tmp_400 = load world+56 as ptr
+    tmp_401 = mul slot, 4
+    tmp_402 = ptr_add tmp_400, tmp_401
+    !tmp_401
+    tmp_403 = load world+56 as ptr
+    tmp_404 = mul last, 4
+    tmp_405 = ptr_add tmp_403, tmp_404
+    !tmp_404
+    tmp_406 = load tmp_405+0 as i32
+    !tmp_405
+    !tmp_403
+    store tmp_402+0, tmp_406 as i32
+    !tmp_402
     !tmp_400
+    !tmp_406
+    tmp_407 = load world+48 as ptr
+    tmp_408 = mul last, 4
+    tmp_409 = ptr_add tmp_407, tmp_408
+    !tmp_408
+    tmp_410 = 0
+    store tmp_409+0, tmp_410 as i32
+    !tmp_409
+    !tmp_407
+    !tmp_410
+    tmp_411 = load world+56 as ptr
+    tmp_412 = mul last, 4
+    tmp_413 = ptr_add tmp_411, tmp_412
+    !tmp_412
+    tmp_414 = 0
+    store tmp_413+0, tmp_414 as i32
+    !tmp_413
+    !tmp_411
+    !tmp_414
     !last
     !slot
     !entity
@@ -1636,139 +1699,139 @@ L_MERGE_80:
 
 @sla__store_slot_of_WorldVel(s: ptr, eid: i32) -> i64:
 L_ENTRY:
-    tmp_401 = 0
-    i = tmp_401
-    jmp L_WHILE_HEAD_81
+    tmp_415 = 0
+    i = tmp_415
+    jmp L_WHILE_HEAD_85
 
-L_WHILE_HEAD_81:
-    tmp_402 = load s+0 as i64
-    tmp_403 = slt i, tmp_402
-    !tmp_402
-    br tmp_403 -> L_WHILE_BODY_82, L_WHILE_COND_FALSE_83
+L_WHILE_HEAD_85:
+    tmp_416 = load s+0 as i64
+    tmp_417 = slt i, tmp_416
+    !tmp_416
+    br tmp_417 -> L_WHILE_BODY_86, L_WHILE_COND_FALSE_87
 
-L_WHILE_BODY_82:
-    !tmp_403
-    tmp_404 = load s+8 as ptr
-    tmp_405 = mul i, 4
-    tmp_406 = ptr_add tmp_404, tmp_405
-    !tmp_405
-    tmp_407 = load tmp_406+0 as i32
-    !tmp_406
-    !tmp_404
-    tmp_408 = eq tmp_407, eid
-    !tmp_407
-    br tmp_408 -> L_THEN_85, L_ELSE_86
+L_WHILE_BODY_86:
+    !tmp_417
+    tmp_418 = load s+8 as ptr
+    tmp_419 = mul i, 4
+    tmp_420 = ptr_add tmp_418, tmp_419
+    !tmp_419
+    tmp_421 = load tmp_420+0 as i32
+    !tmp_420
+    !tmp_418
+    tmp_422 = eq tmp_421, eid
+    !tmp_421
+    br tmp_422 -> L_THEN_89, L_ELSE_90
 
-L_THEN_85:
-    !tmp_408
+L_THEN_89:
+    !tmp_422
     !s
     !eid
     return i
 
-L_ELSE_86:
-    !tmp_408
-    jmp L_MERGE_87
+L_ELSE_90:
+    !tmp_422
+    jmp L_MERGE_91
 
-L_MERGE_87:
-    tmp_410 = 1
-    tmp_411 = add i, tmp_410
-    !tmp_410
+L_MERGE_91:
+    tmp_424 = 1
+    tmp_425 = add i, tmp_424
+    !tmp_424
     !i
-    i = tmp_411
-    jmp L_WHILE_HEAD_81
+    i = tmp_425
+    jmp L_WHILE_HEAD_85
 
-L_WHILE_COND_FALSE_83:
-    !tmp_403
-    jmp L_WHILE_EXIT_84
+L_WHILE_COND_FALSE_87:
+    !tmp_417
+    jmp L_WHILE_EXIT_88
 
-L_WHILE_EXIT_84:
-    tmp_412 = 0
-    tmp_413 = 1
-    tmp_414 = sub tmp_412, tmp_413
-    !tmp_412
-    !tmp_413
+L_WHILE_EXIT_88:
+    tmp_426 = 0
+    tmp_427 = 1
+    tmp_428 = sub tmp_426, tmp_427
+    !tmp_426
+    !tmp_427
     !i
     !s
     !eid
-    return tmp_414
+    return tmp_428
 
 @sla__store_remove_WorldVel(s: ptr, eid: i32) -> ptr:
 L_ENTRY:
-    tmp_415 = call @sla__store_slot_of_WorldVel(s, eid)
-    slot = tmp_415
-    tmp_416 = 0
-    tmp_417 = slt slot, tmp_416
-    !tmp_416
-    br tmp_417 -> L_THEN_88, L_ELSE_89
+    tmp_429 = call @sla__store_slot_of_WorldVel(s, eid)
+    slot = tmp_429
+    tmp_430 = 0
+    tmp_431 = slt slot, tmp_430
+    !tmp_430
+    br tmp_431 -> L_THEN_92, L_ELSE_93
 
-L_THEN_88:
-    !tmp_417
+L_THEN_92:
+    !tmp_431
     !slot
     !eid
     return s
 
-L_ELSE_89:
-    !tmp_417
-    jmp L_MERGE_90
-
-L_MERGE_90:
-    tmp_419 = load s+0 as i64
-    tmp_420 = 1
-    tmp_421 = sub tmp_419, tmp_420
-    !tmp_419
-    !tmp_420
-    last = tmp_421
-    tmp_422 = ne slot, last
-    br tmp_422 -> L_THEN_91, L_ELSE_92
-
-L_THEN_91:
-    !tmp_422
-    tmp_423 = load s+8 as ptr
-    tmp_424 = mul slot, 4
-    tmp_425 = ptr_add tmp_423, tmp_424
-    !tmp_424
-    tmp_426 = load s+8 as ptr
-    tmp_427 = mul last, 4
-    tmp_428 = ptr_add tmp_426, tmp_427
-    !tmp_427
-    tmp_429 = load tmp_428+0 as i32
-    !tmp_428
-    !tmp_426
-    store tmp_425+0, tmp_429 as i32
-    !tmp_425
-    !tmp_423
-    !tmp_429
-    tmp_430 = load s+16 as ptr
-    tmp_431 = mul slot, 8
-    tmp_432 = ptr_add tmp_430, tmp_431
+L_ELSE_93:
     !tmp_431
-    tmp_433 = load s+16 as ptr
-    tmp_434 = mul last, 8
-    tmp_435 = ptr_add tmp_433, tmp_434
-    !tmp_434
-    tmp_436 = load tmp_435+0 as ptr
-    !tmp_435
+    jmp L_MERGE_94
+
+L_MERGE_94:
+    tmp_433 = load s+0 as i64
+    tmp_434 = 1
+    tmp_435 = sub tmp_433, tmp_434
     !tmp_433
-    store tmp_432+0, tmp_436 as ptr
-    !tmp_432
-    !tmp_430
+    !tmp_434
+    last = tmp_435
+    tmp_436 = ne slot, last
+    br tmp_436 -> L_THEN_95, L_ELSE_96
+
+L_THEN_95:
     !tmp_436
-    jmp L_MERGE_93
-
-L_ELSE_92:
-    !tmp_422
-    jmp L_MERGE_93
-
-L_MERGE_93:
-    tmp_438 = load s+8 as ptr
-    tmp_439 = mul last, 4
-    tmp_440 = ptr_add tmp_438, tmp_439
-    !tmp_439
-    tmp_441 = 0
-    store tmp_440+0, tmp_441 as i32
-    !tmp_440
+    tmp_437 = load s+8 as ptr
+    tmp_438 = mul slot, 4
+    tmp_439 = ptr_add tmp_437, tmp_438
     !tmp_438
+    tmp_440 = load s+8 as ptr
+    tmp_441 = mul last, 4
+    tmp_442 = ptr_add tmp_440, tmp_441
     !tmp_441
+    tmp_443 = load tmp_442+0 as i32
+    !tmp_442
+    !tmp_440
+    store tmp_439+0, tmp_443 as i32
+    !tmp_439
+    !tmp_437
+    !tmp_443
+    tmp_444 = load s+16 as ptr
+    tmp_445 = mul slot, 8
+    tmp_446 = ptr_add tmp_444, tmp_445
+    !tmp_445
+    tmp_447 = load s+16 as ptr
+    tmp_448 = mul last, 8
+    tmp_449 = ptr_add tmp_447, tmp_448
+    !tmp_448
+    tmp_450 = load tmp_449+0 as ptr
+    !tmp_449
+    !tmp_447
+    store tmp_446+0, tmp_450 as ptr
+    !tmp_446
+    !tmp_444
+    !tmp_450
+    jmp L_MERGE_97
+
+L_ELSE_96:
+    !tmp_436
+    jmp L_MERGE_97
+
+L_MERGE_97:
+    tmp_452 = load s+8 as ptr
+    tmp_453 = mul last, 4
+    tmp_454 = ptr_add tmp_452, tmp_453
+    !tmp_453
+    tmp_455 = 0
+    store tmp_454+0, tmp_455 as i32
+    !tmp_454
+    !tmp_452
+    !tmp_455
     store s+0, last as i64
     !last
     !slot
@@ -1777,91 +1840,91 @@ L_MERGE_93:
 
 @sla__world_remove_b_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_442 = load world+16 as ptr
-    tmp_443 = load entity+0 as i32
-    tmp_444 = call @sla__store_slot_of_WorldVel(tmp_442, tmp_443)
-    !tmp_442
-    !tmp_443
-    slot = tmp_444
-    tmp_445 = 0
-    tmp_446 = slt slot, tmp_445
-    !tmp_445
-    br tmp_446 -> L_THEN_94, L_ELSE_95
+    tmp_456 = load world+16 as ptr
+    tmp_457 = load entity+0 as i32
+    tmp_458 = call @sla__store_slot_of_WorldVel(tmp_456, tmp_457)
+    !tmp_456
+    !tmp_457
+    slot = tmp_458
+    tmp_459 = 0
+    tmp_460 = slt slot, tmp_459
+    !tmp_459
+    br tmp_460 -> L_THEN_98, L_ELSE_99
 
-L_THEN_94:
-    !tmp_446
+L_THEN_98:
+    !tmp_460
     !slot
     !entity
     return world
 
-L_ELSE_95:
-    !tmp_446
-    jmp L_MERGE_96
-
-L_MERGE_96:
-    tmp_448 = load world+16 as ptr
-    tmp_449 = load tmp_448+0 as i64
-    !tmp_448
-    tmp_450 = 1
-    tmp_451 = sub tmp_449, tmp_450
-    !tmp_449
-    !tmp_450
-    last = tmp_451
-    tmp_452 = load world+16 as ptr
-    tmp_453 = load entity+0 as i32
-    tmp_454 = call @sla__store_remove_WorldVel(tmp_452, tmp_453)
-    !tmp_452
-    !tmp_453
-    store world+16, tmp_454 as ptr
-    !tmp_454
-    tmp_455 = load world+64 as ptr
-    tmp_456 = mul slot, 4
-    tmp_457 = ptr_add tmp_455, tmp_456
-    !tmp_456
-    tmp_458 = load world+64 as ptr
-    tmp_459 = mul last, 4
-    tmp_460 = ptr_add tmp_458, tmp_459
-    !tmp_459
-    tmp_461 = load tmp_460+0 as i32
+L_ELSE_99:
     !tmp_460
-    !tmp_458
-    store tmp_457+0, tmp_461 as i32
-    !tmp_457
-    !tmp_455
-    !tmp_461
-    tmp_462 = load world+72 as ptr
-    tmp_463 = mul slot, 4
-    tmp_464 = ptr_add tmp_462, tmp_463
-    !tmp_463
-    tmp_465 = load world+72 as ptr
-    tmp_466 = mul last, 4
-    tmp_467 = ptr_add tmp_465, tmp_466
-    !tmp_466
-    tmp_468 = load tmp_467+0 as i32
-    !tmp_467
-    !tmp_465
-    store tmp_464+0, tmp_468 as i32
-    !tmp_464
+    jmp L_MERGE_100
+
+L_MERGE_100:
+    tmp_462 = load world+16 as ptr
+    tmp_463 = load tmp_462+0 as i64
     !tmp_462
+    tmp_464 = 1
+    tmp_465 = sub tmp_463, tmp_464
+    !tmp_463
+    !tmp_464
+    last = tmp_465
+    tmp_466 = load world+16 as ptr
+    tmp_467 = load entity+0 as i32
+    tmp_468 = call @sla__store_remove_WorldVel(tmp_466, tmp_467)
+    !tmp_466
+    !tmp_467
+    store world+16, tmp_468 as ptr
     !tmp_468
     tmp_469 = load world+64 as ptr
-    tmp_470 = mul last, 4
+    tmp_470 = mul slot, 4
     tmp_471 = ptr_add tmp_469, tmp_470
     !tmp_470
-    tmp_472 = 0
-    store tmp_471+0, tmp_472 as i32
+    tmp_472 = load world+64 as ptr
+    tmp_473 = mul last, 4
+    tmp_474 = ptr_add tmp_472, tmp_473
+    !tmp_473
+    tmp_475 = load tmp_474+0 as i32
+    !tmp_474
+    !tmp_472
+    store tmp_471+0, tmp_475 as i32
     !tmp_471
     !tmp_469
-    !tmp_472
-    tmp_473 = load world+72 as ptr
-    tmp_474 = mul last, 4
-    tmp_475 = ptr_add tmp_473, tmp_474
-    !tmp_474
-    tmp_476 = 0
-    store tmp_475+0, tmp_476 as i32
     !tmp_475
-    !tmp_473
+    tmp_476 = load world+72 as ptr
+    tmp_477 = mul slot, 4
+    tmp_478 = ptr_add tmp_476, tmp_477
+    !tmp_477
+    tmp_479 = load world+72 as ptr
+    tmp_480 = mul last, 4
+    tmp_481 = ptr_add tmp_479, tmp_480
+    !tmp_480
+    tmp_482 = load tmp_481+0 as i32
+    !tmp_481
+    !tmp_479
+    store tmp_478+0, tmp_482 as i32
+    !tmp_478
     !tmp_476
+    !tmp_482
+    tmp_483 = load world+64 as ptr
+    tmp_484 = mul last, 4
+    tmp_485 = ptr_add tmp_483, tmp_484
+    !tmp_484
+    tmp_486 = 0
+    store tmp_485+0, tmp_486 as i32
+    !tmp_485
+    !tmp_483
+    !tmp_486
+    tmp_487 = load world+72 as ptr
+    tmp_488 = mul last, 4
+    tmp_489 = ptr_add tmp_487, tmp_488
+    !tmp_488
+    tmp_490 = 0
+    store tmp_489+0, tmp_490 as i32
+    !tmp_489
+    !tmp_487
+    !tmp_490
     !last
     !slot
     !entity
@@ -1869,241 +1932,202 @@ L_MERGE_96:
 
 @sla__world_despawn_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_477 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    tmp_478 = 1
-    tmp_479 = ne tmp_477, tmp_478
-    !tmp_477
-    !tmp_478
-    br tmp_479 -> L_THEN_97, L_ELSE_98
+    tmp_491 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    tmp_492 = 1
+    tmp_493 = ne tmp_491, tmp_492
+    !tmp_491
+    !tmp_492
+    br tmp_493 -> L_THEN_101, L_ELSE_102
 
-L_THEN_97:
-    !tmp_479
+L_THEN_101:
+    !tmp_493
     !entity
     return world
 
-L_ELSE_98:
-    !tmp_479
-    jmp L_MERGE_99
+L_ELSE_102:
+    !tmp_493
+    jmp L_MERGE_103
 
-L_MERGE_99:
-    tmp_481 = call @sla__world_remove_a_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+L_MERGE_103:
+    tmp_495 = call @sla__world_remove_a_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
     !world
-    world = tmp_481
-    tmp_482 = call @sla__world_remove_b_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    world = tmp_495
+    tmp_496 = call @sla__world_remove_b_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
     !world
-    world = tmp_482
-    tmp_483 = load world+0 as ptr
-    tmp_484 = call @sla__free_entity(tmp_483, entity)
-    !tmp_483
-    store world+0, tmp_484 as ptr
-    !tmp_484
+    world = tmp_496
+    tmp_497 = load world+0 as ptr
+    tmp_498 = call @sla__free_entity(tmp_497, entity)
+    !tmp_497
+    store world+0, tmp_498 as ptr
+    !tmp_498
     !entity
     return world
 
 @sla__store_has_WorldPos(s: ptr, eid: i32) -> u8:
 L_ENTRY:
-    tmp_485 = call @sla__store_slot_of_WorldPos(s, eid)
-    tmp_486 = 0
-    tmp_487 = sge tmp_485, tmp_486
-    !tmp_485
-    !tmp_486
-    return tmp_487
+    tmp_499 = call @sla__store_slot_of_WorldPos(s, eid)
+    tmp_500 = 0
+    tmp_501 = sge tmp_499, tmp_500
+    !tmp_499
+    !tmp_500
+    return tmp_501
 
 @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> u8:
 L_ENTRY:
-    tmp_488 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    tmp_489 = 1
-    tmp_490 = ne tmp_488, tmp_489
-    !tmp_488
-    !tmp_489
-    br tmp_490 -> L_THEN_100, L_ELSE_101
+    tmp_502 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    tmp_503 = 1
+    tmp_504 = ne tmp_502, tmp_503
+    !tmp_502
+    !tmp_503
+    br tmp_504 -> L_THEN_104, L_ELSE_105
 
-L_THEN_100:
-    !tmp_490
-    tmp_491 = 0
+L_THEN_104:
+    !tmp_504
+    tmp_505 = 0
     !entity
     !world
-    return tmp_491
+    return tmp_505
 
-L_ELSE_101:
-    !tmp_490
-    jmp L_MERGE_102
+L_ELSE_105:
+    !tmp_504
+    jmp L_MERGE_106
 
-L_MERGE_102:
-    tmp_493 = load world+8 as ptr
-    tmp_494 = load entity+0 as i32
-    tmp_495 = call @sla__store_has_WorldPos(tmp_493, tmp_494)
-    !tmp_493
-    !tmp_494
+L_MERGE_106:
+    tmp_507 = load world+8 as ptr
+    tmp_508 = load entity+0 as i32
+    tmp_509 = call @sla__store_has_WorldPos(tmp_507, tmp_508)
+    !tmp_507
+    !tmp_508
     !entity
     !world
-    return tmp_495
+    return tmp_509
 
 @sla__store_write_WorldPos(s: ptr, slot: i64, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_496 = 0
-    tmp_497 = slt slot, tmp_496
-    !tmp_496
-    br tmp_497 -> L_THEN_103, L_ELSE_104
+    tmp_510 = 0
+    tmp_511 = slt slot, tmp_510
+    !tmp_510
+    br tmp_511 -> L_THEN_107, L_ELSE_108
 
-L_THEN_103:
-    !tmp_497
+L_THEN_107:
+    !tmp_511
     panic(4003)
 
-L_ELSE_104:
-    !tmp_497
-    jmp L_MERGE_105
+L_ELSE_108:
+    !tmp_511
+    jmp L_MERGE_109
 
-L_MERGE_105:
-    tmp_500 = load s+0 as i64
-    tmp_501 = sge slot, tmp_500
-    !tmp_500
-    br tmp_501 -> L_THEN_106, L_ELSE_107
+L_MERGE_109:
+    tmp_514 = load s+0 as i64
+    tmp_515 = sge slot, tmp_514
+    !tmp_514
+    br tmp_515 -> L_THEN_110, L_ELSE_111
 
-L_THEN_106:
-    !tmp_501
+L_THEN_110:
+    !tmp_515
     panic(4004)
 
-L_ELSE_107:
-    !tmp_501
-    jmp L_MERGE_108
+L_ELSE_111:
+    !tmp_515
+    jmp L_MERGE_112
 
-L_MERGE_108:
-    tmp_504 = load s+16 as ptr
-    tmp_505 = mul slot, 8
-    tmp_506 = ptr_add tmp_504, tmp_505
-    !tmp_505
-    store tmp_506+0, value as ptr
-    !tmp_506
-    !tmp_504
+L_MERGE_112:
+    tmp_518 = load s+16 as ptr
+    tmp_519 = mul slot, 8
+    tmp_520 = ptr_add tmp_518, tmp_519
+    !tmp_519
+    store tmp_520+0, value as ptr
+    !tmp_520
+    !tmp_518
     !value
     !slot
     return s
 
 @sla__store_insert_WorldPos(s: ptr, eid: i32, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_507 = load s+0 as i64
-    tmp_508 = 16
-    tmp_509 = sge tmp_507, tmp_508
-    !tmp_507
-    !tmp_508
-    br tmp_509 -> L_THEN_109, L_ELSE_110
+    tmp_521 = load s+0 as i64
+    tmp_522 = 16
+    tmp_523 = sge tmp_521, tmp_522
+    !tmp_521
+    !tmp_522
+    br tmp_523 -> L_THEN_113, L_ELSE_114
 
-L_THEN_109:
-    !tmp_509
+L_THEN_113:
+    !tmp_523
     panic(4001)
 
-L_ELSE_110:
-    !tmp_509
-    jmp L_MERGE_111
+L_ELSE_114:
+    !tmp_523
+    jmp L_MERGE_115
 
-L_MERGE_111:
-    tmp_512 = load s+8 as ptr
-    tmp_513 = load s+0 as i64
-    tmp_514 = mul tmp_513, 4
-    tmp_515 = ptr_add tmp_512, tmp_514
-    !tmp_514
-    !tmp_513
-    store tmp_515+0, eid as i32
-    !tmp_515
-    !tmp_512
-    tmp_516 = load s+16 as ptr
-    tmp_517 = load s+0 as i64
-    tmp_518 = mul tmp_517, 8
-    tmp_519 = ptr_add tmp_516, tmp_518
-    !tmp_518
-    !tmp_517
-    store tmp_519+0, value as ptr
-    !tmp_519
-    !tmp_516
+L_MERGE_115:
+    tmp_526 = load s+8 as ptr
+    tmp_527 = load s+0 as i64
+    tmp_528 = mul tmp_527, 4
+    tmp_529 = ptr_add tmp_526, tmp_528
+    !tmp_528
+    !tmp_527
+    store tmp_529+0, eid as i32
+    !tmp_529
+    !tmp_526
+    tmp_530 = load s+16 as ptr
+    tmp_531 = load s+0 as i64
+    tmp_532 = mul tmp_531, 8
+    tmp_533 = ptr_add tmp_530, tmp_532
+    !tmp_532
+    !tmp_531
+    store tmp_533+0, value as ptr
+    !tmp_533
+    !tmp_530
     !value
-    tmp_520 = load s+0 as i64
-    tmp_521 = 1
-    tmp_522 = add tmp_520, tmp_521
-    !tmp_520
-    !tmp_521
-    store s+0, tmp_522 as i64
-    !tmp_522
+    tmp_534 = load s+0 as i64
+    tmp_535 = 1
+    tmp_536 = add tmp_534, tmp_535
+    !tmp_534
+    !tmp_535
+    store s+0, tmp_536 as i64
+    !tmp_536
     !eid
     return s
 
 @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_523 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    tmp_524 = 1
-    tmp_525 = ne tmp_523, tmp_524
-    !tmp_523
-    !tmp_524
-    br tmp_525 -> L_THEN_112, L_ELSE_113
+    tmp_537 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    tmp_538 = 1
+    tmp_539 = ne tmp_537, tmp_538
+    !tmp_537
+    !tmp_538
+    br tmp_539 -> L_THEN_116, L_ELSE_117
 
-L_THEN_112:
-    !tmp_525
+L_THEN_116:
+    !tmp_539
     panic(7001)
 
-L_ELSE_113:
-    !tmp_525
-    jmp L_MERGE_114
+L_ELSE_117:
+    !tmp_539
+    jmp L_MERGE_118
 
-L_MERGE_114:
-    tmp_528 = load world+8 as ptr
-    tmp_529 = load entity+0 as i32
-    tmp_530 = call @sla__store_slot_of_WorldPos(tmp_528, tmp_529)
-    !tmp_528
-    !tmp_529
-    slot = tmp_530
-    tmp_531 = 0
-    tmp_532 = sge slot, tmp_531
-    !tmp_531
-    br tmp_532 -> L_THEN_115, L_ELSE_116
-
-L_THEN_115:
-    !tmp_532
-    tmp_533 = load world+8 as ptr
-    tmp_534 = call @sla__store_write_WorldPos(tmp_533, slot, value)
-    !tmp_533
-    store world+8, tmp_534 as ptr
-    !tmp_534
-    tmp_535 = load world+56 as ptr
-    tmp_536 = mul slot, 4
-    tmp_537 = ptr_add tmp_535, tmp_536
-    !tmp_536
-    tmp_538 = load world+40 as i32
-    store tmp_537+0, tmp_538 as i32
-    !tmp_537
-    !tmp_535
-    !tmp_538
-    !slot
-    !entity
-    !value
-    return world
-
-L_ELSE_116:
-    !tmp_532
-    jmp L_MERGE_117
-
-L_MERGE_117:
-    tmp_540 = load world+8 as ptr
-    tmp_541 = load tmp_540+0 as i64
-    !tmp_540
-    new_slot = tmp_541
+L_MERGE_118:
     tmp_542 = load world+8 as ptr
     tmp_543 = load entity+0 as i32
-    tmp_544 = call @sla__store_insert_WorldPos(tmp_542, tmp_543, value)
+    tmp_544 = call @sla__store_slot_of_WorldPos(tmp_542, tmp_543)
     !tmp_542
     !tmp_543
-    store world+8, tmp_544 as ptr
-    !tmp_544
-    tmp_545 = load world+48 as ptr
-    tmp_546 = mul new_slot, 4
-    tmp_547 = ptr_add tmp_545, tmp_546
-    !tmp_546
-    tmp_548 = load world+40 as i32
-    store tmp_547+0, tmp_548 as i32
-    !tmp_547
+    slot = tmp_544
+    tmp_545 = 0
+    tmp_546 = sge slot, tmp_545
     !tmp_545
+    br tmp_546 -> L_THEN_119, L_ELSE_120
+
+L_THEN_119:
+    !tmp_546
+    tmp_547 = load world+8 as ptr
+    tmp_548 = call @sla__store_write_WorldPos(tmp_547, slot, value)
+    !tmp_547
+    store world+8, tmp_548 as ptr
     !tmp_548
     tmp_549 = load world+56 as ptr
-    tmp_550 = mul new_slot, 4
+    tmp_550 = mul slot, 4
     tmp_551 = ptr_add tmp_549, tmp_550
     !tmp_550
     tmp_552 = load world+40 as i32
@@ -2111,6 +2135,45 @@ L_MERGE_117:
     !tmp_551
     !tmp_549
     !tmp_552
+    !slot
+    !entity
+    !value
+    return world
+
+L_ELSE_120:
+    !tmp_546
+    jmp L_MERGE_121
+
+L_MERGE_121:
+    tmp_554 = load world+8 as ptr
+    tmp_555 = load tmp_554+0 as i64
+    !tmp_554
+    new_slot = tmp_555
+    tmp_556 = load world+8 as ptr
+    tmp_557 = load entity+0 as i32
+    tmp_558 = call @sla__store_insert_WorldPos(tmp_556, tmp_557, value)
+    !tmp_556
+    !tmp_557
+    store world+8, tmp_558 as ptr
+    !tmp_558
+    tmp_559 = load world+48 as ptr
+    tmp_560 = mul new_slot, 4
+    tmp_561 = ptr_add tmp_559, tmp_560
+    !tmp_560
+    tmp_562 = load world+40 as i32
+    store tmp_561+0, tmp_562 as i32
+    !tmp_561
+    !tmp_559
+    !tmp_562
+    tmp_563 = load world+56 as ptr
+    tmp_564 = mul new_slot, 4
+    tmp_565 = ptr_add tmp_563, tmp_564
+    !tmp_564
+    tmp_566 = load world+40 as i32
+    store tmp_565+0, tmp_566 as i32
+    !tmp_565
+    !tmp_563
+    !tmp_566
     !new_slot
     !slot
     !entity
@@ -2119,169 +2182,130 @@ L_MERGE_117:
 
 @sla__store_write_WorldVel(s: ptr, slot: i64, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_553 = 0
-    tmp_554 = slt slot, tmp_553
-    !tmp_553
-    br tmp_554 -> L_THEN_118, L_ELSE_119
+    tmp_567 = 0
+    tmp_568 = slt slot, tmp_567
+    !tmp_567
+    br tmp_568 -> L_THEN_122, L_ELSE_123
 
-L_THEN_118:
-    !tmp_554
+L_THEN_122:
+    !tmp_568
     panic(4003)
 
-L_ELSE_119:
-    !tmp_554
-    jmp L_MERGE_120
+L_ELSE_123:
+    !tmp_568
+    jmp L_MERGE_124
 
-L_MERGE_120:
-    tmp_557 = load s+0 as i64
-    tmp_558 = sge slot, tmp_557
-    !tmp_557
-    br tmp_558 -> L_THEN_121, L_ELSE_122
+L_MERGE_124:
+    tmp_571 = load s+0 as i64
+    tmp_572 = sge slot, tmp_571
+    !tmp_571
+    br tmp_572 -> L_THEN_125, L_ELSE_126
 
-L_THEN_121:
-    !tmp_558
+L_THEN_125:
+    !tmp_572
     panic(4004)
 
-L_ELSE_122:
-    !tmp_558
-    jmp L_MERGE_123
+L_ELSE_126:
+    !tmp_572
+    jmp L_MERGE_127
 
-L_MERGE_123:
-    tmp_561 = load s+16 as ptr
-    tmp_562 = mul slot, 8
-    tmp_563 = ptr_add tmp_561, tmp_562
-    !tmp_562
-    store tmp_563+0, value as ptr
-    !tmp_563
-    !tmp_561
+L_MERGE_127:
+    tmp_575 = load s+16 as ptr
+    tmp_576 = mul slot, 8
+    tmp_577 = ptr_add tmp_575, tmp_576
+    !tmp_576
+    store tmp_577+0, value as ptr
+    !tmp_577
+    !tmp_575
     !value
     !slot
     return s
 
 @sla__store_insert_WorldVel(s: ptr, eid: i32, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_564 = load s+0 as i64
-    tmp_565 = 16
-    tmp_566 = sge tmp_564, tmp_565
-    !tmp_564
-    !tmp_565
-    br tmp_566 -> L_THEN_124, L_ELSE_125
+    tmp_578 = load s+0 as i64
+    tmp_579 = 16
+    tmp_580 = sge tmp_578, tmp_579
+    !tmp_578
+    !tmp_579
+    br tmp_580 -> L_THEN_128, L_ELSE_129
 
-L_THEN_124:
-    !tmp_566
+L_THEN_128:
+    !tmp_580
     panic(4001)
 
-L_ELSE_125:
-    !tmp_566
-    jmp L_MERGE_126
+L_ELSE_129:
+    !tmp_580
+    jmp L_MERGE_130
 
-L_MERGE_126:
-    tmp_569 = load s+8 as ptr
-    tmp_570 = load s+0 as i64
-    tmp_571 = mul tmp_570, 4
-    tmp_572 = ptr_add tmp_569, tmp_571
-    !tmp_571
-    !tmp_570
-    store tmp_572+0, eid as i32
-    !tmp_572
-    !tmp_569
-    tmp_573 = load s+16 as ptr
-    tmp_574 = load s+0 as i64
-    tmp_575 = mul tmp_574, 8
-    tmp_576 = ptr_add tmp_573, tmp_575
-    !tmp_575
-    !tmp_574
-    store tmp_576+0, value as ptr
-    !tmp_576
-    !tmp_573
+L_MERGE_130:
+    tmp_583 = load s+8 as ptr
+    tmp_584 = load s+0 as i64
+    tmp_585 = mul tmp_584, 4
+    tmp_586 = ptr_add tmp_583, tmp_585
+    !tmp_585
+    !tmp_584
+    store tmp_586+0, eid as i32
+    !tmp_586
+    !tmp_583
+    tmp_587 = load s+16 as ptr
+    tmp_588 = load s+0 as i64
+    tmp_589 = mul tmp_588, 8
+    tmp_590 = ptr_add tmp_587, tmp_589
+    !tmp_589
+    !tmp_588
+    store tmp_590+0, value as ptr
+    !tmp_590
+    !tmp_587
     !value
-    tmp_577 = load s+0 as i64
-    tmp_578 = 1
-    tmp_579 = add tmp_577, tmp_578
-    !tmp_577
-    !tmp_578
-    store s+0, tmp_579 as i64
-    !tmp_579
+    tmp_591 = load s+0 as i64
+    tmp_592 = 1
+    tmp_593 = add tmp_591, tmp_592
+    !tmp_591
+    !tmp_592
+    store s+0, tmp_593 as i64
+    !tmp_593
     !eid
     return s
 
 @sla__world_insert_b_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_580 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    tmp_581 = 1
-    tmp_582 = ne tmp_580, tmp_581
-    !tmp_580
-    !tmp_581
-    br tmp_582 -> L_THEN_127, L_ELSE_128
+    tmp_594 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    tmp_595 = 1
+    tmp_596 = ne tmp_594, tmp_595
+    !tmp_594
+    !tmp_595
+    br tmp_596 -> L_THEN_131, L_ELSE_132
 
-L_THEN_127:
-    !tmp_582
+L_THEN_131:
+    !tmp_596
     panic(7002)
 
-L_ELSE_128:
-    !tmp_582
-    jmp L_MERGE_129
+L_ELSE_132:
+    !tmp_596
+    jmp L_MERGE_133
 
-L_MERGE_129:
-    tmp_585 = load world+16 as ptr
-    tmp_586 = load entity+0 as i32
-    tmp_587 = call @sla__store_slot_of_WorldVel(tmp_585, tmp_586)
-    !tmp_585
-    !tmp_586
-    slot = tmp_587
-    tmp_588 = 0
-    tmp_589 = sge slot, tmp_588
-    !tmp_588
-    br tmp_589 -> L_THEN_130, L_ELSE_131
-
-L_THEN_130:
-    !tmp_589
-    tmp_590 = load world+16 as ptr
-    tmp_591 = call @sla__store_write_WorldVel(tmp_590, slot, value)
-    !tmp_590
-    store world+16, tmp_591 as ptr
-    !tmp_591
-    tmp_592 = load world+72 as ptr
-    tmp_593 = mul slot, 4
-    tmp_594 = ptr_add tmp_592, tmp_593
-    !tmp_593
-    tmp_595 = load world+40 as i32
-    store tmp_594+0, tmp_595 as i32
-    !tmp_594
-    !tmp_592
-    !tmp_595
-    !slot
-    !entity
-    !value
-    return world
-
-L_ELSE_131:
-    !tmp_589
-    jmp L_MERGE_132
-
-L_MERGE_132:
-    tmp_597 = load world+16 as ptr
-    tmp_598 = load tmp_597+0 as i64
-    !tmp_597
-    new_slot = tmp_598
+L_MERGE_133:
     tmp_599 = load world+16 as ptr
     tmp_600 = load entity+0 as i32
-    tmp_601 = call @sla__store_insert_WorldVel(tmp_599, tmp_600, value)
+    tmp_601 = call @sla__store_slot_of_WorldVel(tmp_599, tmp_600)
     !tmp_599
     !tmp_600
-    store world+16, tmp_601 as ptr
-    !tmp_601
-    tmp_602 = load world+64 as ptr
-    tmp_603 = mul new_slot, 4
-    tmp_604 = ptr_add tmp_602, tmp_603
-    !tmp_603
-    tmp_605 = load world+40 as i32
-    store tmp_604+0, tmp_605 as i32
-    !tmp_604
+    slot = tmp_601
+    tmp_602 = 0
+    tmp_603 = sge slot, tmp_602
     !tmp_602
+    br tmp_603 -> L_THEN_134, L_ELSE_135
+
+L_THEN_134:
+    !tmp_603
+    tmp_604 = load world+16 as ptr
+    tmp_605 = call @sla__store_write_WorldVel(tmp_604, slot, value)
+    !tmp_604
+    store world+16, tmp_605 as ptr
     !tmp_605
     tmp_606 = load world+72 as ptr
-    tmp_607 = mul new_slot, 4
+    tmp_607 = mul slot, 4
     tmp_608 = ptr_add tmp_606, tmp_607
     !tmp_607
     tmp_609 = load world+40 as i32
@@ -2289,6 +2313,45 @@ L_MERGE_132:
     !tmp_608
     !tmp_606
     !tmp_609
+    !slot
+    !entity
+    !value
+    return world
+
+L_ELSE_135:
+    !tmp_603
+    jmp L_MERGE_136
+
+L_MERGE_136:
+    tmp_611 = load world+16 as ptr
+    tmp_612 = load tmp_611+0 as i64
+    !tmp_611
+    new_slot = tmp_612
+    tmp_613 = load world+16 as ptr
+    tmp_614 = load entity+0 as i32
+    tmp_615 = call @sla__store_insert_WorldVel(tmp_613, tmp_614, value)
+    !tmp_613
+    !tmp_614
+    store world+16, tmp_615 as ptr
+    !tmp_615
+    tmp_616 = load world+64 as ptr
+    tmp_617 = mul new_slot, 4
+    tmp_618 = ptr_add tmp_616, tmp_617
+    !tmp_617
+    tmp_619 = load world+40 as i32
+    store tmp_618+0, tmp_619 as i32
+    !tmp_618
+    !tmp_616
+    !tmp_619
+    tmp_620 = load world+72 as ptr
+    tmp_621 = mul new_slot, 4
+    tmp_622 = ptr_add tmp_620, tmp_621
+    !tmp_621
+    tmp_623 = load world+40 as i32
+    store tmp_622+0, tmp_623 as i32
+    !tmp_622
+    !tmp_620
+    !tmp_623
     !new_slot
     !slot
     !entity
@@ -2298,179 +2361,179 @@ L_MERGE_132:
 @sla__world_pair_query_new_WorldPos_WorldVel(default_a: ptr, default_b: ptr) -> ptr:
 L_ENTRY:
     default_item = alloc 40
-    tmp_610 = call @sla__entity_placeholder()
-    store default_item+0, tmp_610 as ptr
-    !tmp_610
-    tmp_611 = 0
-    tmp_612 = 1
-    tmp_613 = sub tmp_611, tmp_612
-    !tmp_611
-    !tmp_612
-    store default_item+8, tmp_613 as i64
-    !tmp_613
-    tmp_614 = 0
-    tmp_615 = 1
-    tmp_616 = sub tmp_614, tmp_615
-    !tmp_614
-    !tmp_615
-    store default_item+16, tmp_616 as i64
-    !tmp_616
+    tmp_624 = call @sla__entity_placeholder()
+    store default_item+0, tmp_624 as ptr
+    !tmp_624
+    tmp_625 = 0
+    tmp_626 = 1
+    tmp_627 = sub tmp_625, tmp_626
+    !tmp_625
+    !tmp_626
+    store default_item+8, tmp_627 as i64
+    !tmp_627
+    tmp_628 = 0
+    tmp_629 = 1
+    tmp_630 = sub tmp_628, tmp_629
+    !tmp_628
+    !tmp_629
+    store default_item+16, tmp_630 as i64
+    !tmp_630
     store default_item+24, default_a as ptr
     store default_item+32, default_b as ptr
-    tmp_617 = alloc 16
-    tmp_618 = 0
-    store tmp_617+0, tmp_618 as i64
-    !tmp_618
-    tmp_619 = alloc 128
-    store tmp_619+0, default_item as ptr
-    store tmp_619+8, default_item as ptr
-    store tmp_619+16, default_item as ptr
-    store tmp_619+24, default_item as ptr
-    store tmp_619+32, default_item as ptr
-    store tmp_619+40, default_item as ptr
-    store tmp_619+48, default_item as ptr
-    store tmp_619+56, default_item as ptr
-    store tmp_619+64, default_item as ptr
-    store tmp_619+72, default_item as ptr
-    store tmp_619+80, default_item as ptr
-    store tmp_619+88, default_item as ptr
-    store tmp_619+96, default_item as ptr
-    store tmp_619+104, default_item as ptr
-    store tmp_619+112, default_item as ptr
-    store tmp_619+120, default_item as ptr
-    store tmp_617+8, tmp_619 as ptr
-    !tmp_619
+    tmp_631 = alloc 16
+    tmp_632 = 0
+    store tmp_631+0, tmp_632 as i64
+    !tmp_632
+    tmp_633 = alloc 128
+    store tmp_633+0, default_item as ptr
+    store tmp_633+8, default_item as ptr
+    store tmp_633+16, default_item as ptr
+    store tmp_633+24, default_item as ptr
+    store tmp_633+32, default_item as ptr
+    store tmp_633+40, default_item as ptr
+    store tmp_633+48, default_item as ptr
+    store tmp_633+56, default_item as ptr
+    store tmp_633+64, default_item as ptr
+    store tmp_633+72, default_item as ptr
+    store tmp_633+80, default_item as ptr
+    store tmp_633+88, default_item as ptr
+    store tmp_633+96, default_item as ptr
+    store tmp_633+104, default_item as ptr
+    store tmp_633+112, default_item as ptr
+    store tmp_633+120, default_item as ptr
+    store tmp_631+8, tmp_633 as ptr
+    !tmp_633
     !default_a
     !default_b
-    return tmp_617
+    return tmp_631
 
 @sla__world_query_a_b_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, default_a: ptr, default_b: ptr) -> ptr:
 L_ENTRY:
-    tmp_620 = call @sla__world_pair_query_new_WorldPos_WorldVel(default_a, default_b)
-    query = tmp_620
-    tmp_621 = 0
-    i = tmp_621
-    jmp L_WHILE_HEAD_133
+    tmp_634 = call @sla__world_pair_query_new_WorldPos_WorldVel(default_a, default_b)
+    query = tmp_634
+    tmp_635 = 0
+    i = tmp_635
+    jmp L_WHILE_HEAD_137
 
-L_WHILE_HEAD_133:
-    tmp_622 = load world+8 as ptr
-    tmp_623 = load tmp_622+0 as i64
-    !tmp_622
-    tmp_624 = slt i, tmp_623
-    !tmp_623
-    br tmp_624 -> L_WHILE_BODY_134, L_WHILE_COND_FALSE_135
-
-L_WHILE_BODY_134:
-    !tmp_624
-    tmp_625 = load world+8 as ptr
-    tmp_626 = load tmp_625+8 as ptr
-    !tmp_625
-    tmp_627 = mul i, 4
-    tmp_628 = ptr_add tmp_626, tmp_627
-    !tmp_627
-    tmp_629 = load tmp_628+0 as i32
-    !tmp_628
-    !tmp_626
-    eid = tmp_629
-    tmp_630 = load world+16 as ptr
-    tmp_631 = call @sla__store_slot_of_WorldVel(tmp_630, eid)
-    !tmp_630
-    b_slot = tmp_631
-    tmp_632 = 0
-    tmp_633 = sge b_slot, tmp_632
-    !tmp_632
-    br tmp_633 -> L_THEN_137, L_ELSE_138
-
-L_THEN_137:
-    !tmp_633
-    tmp_634 = load world+0 as ptr
-    tmp_635 = load tmp_634+8 as ptr
-    !tmp_634
-    tmp_636 = mul eid, 4
-    tmp_637 = ptr_add tmp_635, tmp_636
+L_WHILE_HEAD_137:
+    tmp_636 = load world+8 as ptr
+    tmp_637 = load tmp_636+0 as i64
     !tmp_636
-    tmp_638 = load tmp_637+0 as i32
+    tmp_638 = slt i, tmp_637
     !tmp_637
-    !tmp_635
-    tmp_639 = call @sla__entity_new(eid, tmp_638)
+    br tmp_638 -> L_WHILE_BODY_138, L_WHILE_COND_FALSE_139
+
+L_WHILE_BODY_138:
     !tmp_638
-    entity = tmp_639
-    tmp_640 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    br tmp_640 -> L_THEN_140, L_ELSE_141
-
-L_THEN_140:
-    !tmp_640
-    tmp_641 = load query+0 as i64
-    out = tmp_641
-    tmp_642 = load query+8 as ptr
-    tmp_643 = mul out, 8
-    tmp_644 = ptr_add tmp_642, tmp_643
-    !tmp_643
-    tmp_645 = alloc 40
-    store tmp_645+0, entity as ptr
-    store tmp_645+8, i as i64
-    store tmp_645+16, b_slot as i64
-    tmp_646 = load world+8 as ptr
-    tmp_647 = load tmp_646+16 as ptr
-    !tmp_646
-    tmp_648 = mul i, 8
-    tmp_649 = ptr_add tmp_647, tmp_648
-    !tmp_648
-    tmp_650 = load tmp_649+0 as ptr
-    !tmp_649
-    !tmp_647
-    store tmp_645+24, tmp_650 as ptr
-    !tmp_650
-    tmp_651 = load world+16 as ptr
-    tmp_652 = load tmp_651+16 as ptr
-    !tmp_651
-    tmp_653 = mul b_slot, 8
-    tmp_654 = ptr_add tmp_652, tmp_653
-    !tmp_653
-    tmp_655 = load tmp_654+0 as ptr
-    !tmp_654
-    !tmp_652
-    store tmp_645+32, tmp_655 as ptr
-    !tmp_655
-    store tmp_644+0, tmp_645 as ptr
-    !tmp_644
+    tmp_639 = load world+8 as ptr
+    tmp_640 = load tmp_639+8 as ptr
+    !tmp_639
+    tmp_641 = mul i, 4
+    tmp_642 = ptr_add tmp_640, tmp_641
+    !tmp_641
+    tmp_643 = load tmp_642+0 as i32
     !tmp_642
-    !tmp_645
-    tmp_656 = 1
-    tmp_657 = add out, tmp_656
-    !tmp_656
-    store query+0, tmp_657 as i64
-    !tmp_657
-    !out
-    jmp L_MERGE_142
-
-L_ELSE_141:
     !tmp_640
-    jmp L_MERGE_142
+    eid = tmp_643
+    tmp_644 = load world+16 as ptr
+    tmp_645 = call @sla__store_slot_of_WorldVel(tmp_644, eid)
+    !tmp_644
+    b_slot = tmp_645
+    tmp_646 = 0
+    tmp_647 = sge b_slot, tmp_646
+    !tmp_646
+    br tmp_647 -> L_THEN_141, L_ELSE_142
 
-L_MERGE_142:
-    !entity
-    jmp L_MERGE_139
+L_THEN_141:
+    !tmp_647
+    tmp_648 = load world+0 as ptr
+    tmp_649 = load tmp_648+8 as ptr
+    !tmp_648
+    tmp_650 = mul eid, 4
+    tmp_651 = ptr_add tmp_649, tmp_650
+    !tmp_650
+    tmp_652 = load tmp_651+0 as i32
+    !tmp_651
+    !tmp_649
+    tmp_653 = call @sla__entity_new(eid, tmp_652)
+    !tmp_652
+    entity = tmp_653
+    tmp_654 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    br tmp_654 -> L_THEN_144, L_ELSE_145
 
-L_ELSE_138:
-    !tmp_633
-    jmp L_MERGE_139
-
-L_MERGE_139:
-    tmp_660 = 1
-    tmp_661 = add i, tmp_660
+L_THEN_144:
+    !tmp_654
+    tmp_655 = load query+0 as i64
+    out = tmp_655
+    tmp_656 = load query+8 as ptr
+    tmp_657 = mul out, 8
+    tmp_658 = ptr_add tmp_656, tmp_657
+    !tmp_657
+    tmp_659 = alloc 40
+    store tmp_659+0, entity as ptr
+    store tmp_659+8, i as i64
+    store tmp_659+16, b_slot as i64
+    tmp_660 = load world+8 as ptr
+    tmp_661 = load tmp_660+16 as ptr
     !tmp_660
+    tmp_662 = mul i, 8
+    tmp_663 = ptr_add tmp_661, tmp_662
+    !tmp_662
+    tmp_664 = load tmp_663+0 as ptr
+    !tmp_663
+    !tmp_661
+    store tmp_659+24, tmp_664 as ptr
+    !tmp_664
+    tmp_665 = load world+16 as ptr
+    tmp_666 = load tmp_665+16 as ptr
+    !tmp_665
+    tmp_667 = mul b_slot, 8
+    tmp_668 = ptr_add tmp_666, tmp_667
+    !tmp_667
+    tmp_669 = load tmp_668+0 as ptr
+    !tmp_668
+    !tmp_666
+    store tmp_659+32, tmp_669 as ptr
+    !tmp_669
+    store tmp_658+0, tmp_659 as ptr
+    !tmp_658
+    !tmp_656
+    !tmp_659
+    tmp_670 = 1
+    tmp_671 = add out, tmp_670
+    !tmp_670
+    store query+0, tmp_671 as i64
+    !tmp_671
+    !out
+    jmp L_MERGE_146
+
+L_ELSE_145:
+    !tmp_654
+    jmp L_MERGE_146
+
+L_MERGE_146:
+    !entity
+    jmp L_MERGE_143
+
+L_ELSE_142:
+    !tmp_647
+    jmp L_MERGE_143
+
+L_MERGE_143:
+    tmp_674 = 1
+    tmp_675 = add i, tmp_674
+    !tmp_674
     !i
-    i = tmp_661
+    i = tmp_675
     !eid
     !b_slot
-    jmp L_WHILE_HEAD_133
+    jmp L_WHILE_HEAD_137
 
-L_WHILE_COND_FALSE_135:
-    !tmp_624
-    jmp L_WHILE_EXIT_136
+L_WHILE_COND_FALSE_139:
+    !tmp_638
+    jmp L_WHILE_EXIT_140
 
-L_WHILE_EXIT_136:
+L_WHILE_EXIT_140:
     !i
     !default_a
     !default_b
@@ -2479,420 +2542,420 @@ L_WHILE_EXIT_136:
 
 @sla__world_increment_tick_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr) -> ptr:
 L_ENTRY:
-    tmp_662 = load world+40 as i32
-    tmp_663 = 1
-    tmp_664 = add tmp_662, tmp_663
-    !tmp_662
-    !tmp_663
-    store world+40, tmp_664 as i32
-    !tmp_664
+    tmp_676 = load world+40 as i32
+    tmp_677 = 1
+    tmp_678 = add tmp_676, tmp_677
+    !tmp_676
+    !tmp_677
+    store world+40, tmp_678 as i32
+    !tmp_678
     return world
 
 @sla__world_pair_write_a_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, item: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_665 = load item+0 as ptr
-    tmp_666 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, tmp_665)
-    !tmp_665
-    tmp_667 = 1
-    tmp_668 = ne tmp_666, tmp_667
-    !tmp_666
-    !tmp_667
-    br tmp_668 -> L_THEN_143, L_ELSE_144
+    tmp_679 = load item+0 as ptr
+    tmp_680 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(world, tmp_679)
+    !tmp_679
+    tmp_681 = 1
+    tmp_682 = ne tmp_680, tmp_681
+    !tmp_680
+    !tmp_681
+    br tmp_682 -> L_THEN_147, L_ELSE_148
 
-L_THEN_143:
-    !tmp_668
+L_THEN_147:
+    !tmp_682
     !item
     !value
     return world
 
-L_ELSE_144:
-    !tmp_668
-    jmp L_MERGE_145
+L_ELSE_148:
+    !tmp_682
+    jmp L_MERGE_149
 
-L_MERGE_145:
-    tmp_670 = load world+8 as ptr
-    tmp_671 = load item+8 as i64
-    tmp_672 = call @sla__store_write_WorldPos(tmp_670, tmp_671, value)
-    !tmp_670
-    !tmp_671
-    store world+8, tmp_672 as ptr
-    !tmp_672
-    tmp_673 = load world+56 as ptr
-    tmp_674 = load item+8 as i64
-    tmp_675 = mul tmp_674, 4
-    tmp_676 = ptr_add tmp_673, tmp_675
-    !tmp_675
-    !tmp_674
-    tmp_677 = load world+40 as i32
-    store tmp_676+0, tmp_677 as i32
-    !tmp_676
-    !tmp_673
-    !tmp_677
+L_MERGE_149:
+    tmp_684 = load world+8 as ptr
+    tmp_685 = load item+8 as i64
+    tmp_686 = call @sla__store_write_WorldPos(tmp_684, tmp_685, value)
+    !tmp_684
+    !tmp_685
+    store world+8, tmp_686 as ptr
+    !tmp_686
+    tmp_687 = load world+56 as ptr
+    tmp_688 = load item+8 as i64
+    tmp_689 = mul tmp_688, 4
+    tmp_690 = ptr_add tmp_687, tmp_689
+    !tmp_689
+    !tmp_688
+    tmp_691 = load world+40 as i32
+    store tmp_690+0, tmp_691 as i32
+    !tmp_690
+    !tmp_687
+    !tmp_691
     !item
     !value
     return world
 
 @sla__store_get_WorldPos(s: ptr, eid: i32) -> ptr:
 L_ENTRY:
-    tmp_678 = call @sla__store_slot_of_WorldPos(s, eid)
-    slot = tmp_678
-    tmp_679 = 0
-    tmp_680 = slt slot, tmp_679
-    !tmp_679
-    br tmp_680 -> L_THEN_146, L_ELSE_147
+    tmp_692 = call @sla__store_slot_of_WorldPos(s, eid)
+    slot = tmp_692
+    tmp_693 = 0
+    tmp_694 = slt slot, tmp_693
+    !tmp_693
+    br tmp_694 -> L_THEN_150, L_ELSE_151
 
-L_THEN_146:
-    !tmp_680
+L_THEN_150:
+    !tmp_694
     panic(4002)
 
-L_ELSE_147:
-    !tmp_680
-    jmp L_MERGE_148
+L_ELSE_151:
+    !tmp_694
+    jmp L_MERGE_152
 
-L_MERGE_148:
-    tmp_683 = load s+16 as ptr
-    tmp_684 = mul slot, 8
-    tmp_685 = ptr_add tmp_683, tmp_684
-    !tmp_684
-    tmp_686 = load tmp_685+0 as ptr
-    !tmp_685
-    !tmp_683
+L_MERGE_152:
+    tmp_697 = load s+16 as ptr
+    tmp_698 = mul slot, 8
+    tmp_699 = ptr_add tmp_697, tmp_698
+    !tmp_698
+    tmp_700 = load tmp_699+0 as ptr
+    !tmp_699
+    !tmp_697
     !s
     !eid
-    return tmp_686
+    return tmp_700
 
 @sla__world_get_a_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_687 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
-    tmp_688 = 1
-    tmp_689 = ne tmp_687, tmp_688
-    !tmp_687
-    !tmp_688
-    br tmp_689 -> L_THEN_149, L_ELSE_150
+    tmp_701 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(world, entity)
+    tmp_702 = 1
+    tmp_703 = ne tmp_701, tmp_702
+    !tmp_701
+    !tmp_702
+    br tmp_703 -> L_THEN_153, L_ELSE_154
 
-L_THEN_149:
-    !tmp_689
+L_THEN_153:
+    !tmp_703
     panic(7003)
 
-L_ELSE_150:
-    !tmp_689
-    jmp L_MERGE_151
+L_ELSE_154:
+    !tmp_703
+    jmp L_MERGE_155
 
-L_MERGE_151:
-    tmp_692 = load world+8 as ptr
-    tmp_693 = load entity+0 as i32
-    tmp_694 = call @sla__store_get_WorldPos(tmp_692, tmp_693)
-    !tmp_692
-    !tmp_693
+L_MERGE_155:
+    tmp_706 = load world+8 as ptr
+    tmp_707 = load entity+0 as i32
+    tmp_708 = call @sla__store_get_WorldPos(tmp_706, tmp_707)
+    !tmp_706
+    !tmp_707
     !entity
     !world
-    return tmp_694
+    return tmp_708
 
 @sla__world_a_changed_since_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr, tick: i32) -> u8:
 L_ENTRY:
-    tmp_695 = load world+8 as ptr
-    tmp_696 = load entity+0 as i32
-    tmp_697 = call @sla__store_slot_of_WorldPos(tmp_695, tmp_696)
-    !tmp_695
-    !tmp_696
-    slot = tmp_697
-    tmp_698 = 0
-    tmp_699 = slt slot, tmp_698
-    !tmp_698
-    br tmp_699 -> L_THEN_152, L_ELSE_153
+    tmp_709 = load world+8 as ptr
+    tmp_710 = load entity+0 as i32
+    tmp_711 = call @sla__store_slot_of_WorldPos(tmp_709, tmp_710)
+    !tmp_709
+    !tmp_710
+    slot = tmp_711
+    tmp_712 = 0
+    tmp_713 = slt slot, tmp_712
+    !tmp_712
+    br tmp_713 -> L_THEN_156, L_ELSE_157
 
-L_THEN_152:
-    !tmp_699
-    tmp_700 = 0
+L_THEN_156:
+    !tmp_713
+    tmp_714 = 0
     !slot
     !entity
     !tick
     !world
-    return tmp_700
+    return tmp_714
 
-L_ELSE_153:
-    !tmp_699
-    jmp L_MERGE_154
+L_ELSE_157:
+    !tmp_713
+    jmp L_MERGE_158
 
-L_MERGE_154:
-    tmp_702 = load world+56 as ptr
-    tmp_703 = mul slot, 4
-    tmp_704 = ptr_add tmp_702, tmp_703
-    !tmp_703
-    tmp_705 = load tmp_704+0 as i32
-    !tmp_704
-    !tmp_702
-    tmp_706 = sgt tmp_705, tick
-    !tmp_705
+L_MERGE_158:
+    tmp_716 = load world+56 as ptr
+    tmp_717 = mul slot, 4
+    tmp_718 = ptr_add tmp_716, tmp_717
+    !tmp_717
+    tmp_719 = load tmp_718+0 as i32
+    !tmp_718
+    !tmp_716
+    tmp_720 = sgt tmp_719, tick
+    !tmp_719
     !entity
     !world
-    return tmp_706
+    return tmp_720
 
 @sla__world_a_added_since_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, entity: ptr, tick: i32) -> u8:
 L_ENTRY:
-    tmp_707 = load world+8 as ptr
-    tmp_708 = load entity+0 as i32
-    tmp_709 = call @sla__store_slot_of_WorldPos(tmp_707, tmp_708)
-    !tmp_707
-    !tmp_708
-    slot = tmp_709
-    tmp_710 = 0
-    tmp_711 = slt slot, tmp_710
-    !tmp_710
-    br tmp_711 -> L_THEN_155, L_ELSE_156
+    tmp_721 = load world+8 as ptr
+    tmp_722 = load entity+0 as i32
+    tmp_723 = call @sla__store_slot_of_WorldPos(tmp_721, tmp_722)
+    !tmp_721
+    !tmp_722
+    slot = tmp_723
+    tmp_724 = 0
+    tmp_725 = slt slot, tmp_724
+    !tmp_724
+    br tmp_725 -> L_THEN_159, L_ELSE_160
 
-L_THEN_155:
-    !tmp_711
-    tmp_712 = 0
+L_THEN_159:
+    !tmp_725
+    tmp_726 = 0
     !slot
     !entity
     !tick
     !world
-    return tmp_712
+    return tmp_726
 
-L_ELSE_156:
-    !tmp_711
-    jmp L_MERGE_157
+L_ELSE_160:
+    !tmp_725
+    jmp L_MERGE_161
 
-L_MERGE_157:
-    tmp_714 = load world+48 as ptr
-    tmp_715 = mul slot, 4
-    tmp_716 = ptr_add tmp_714, tmp_715
-    !tmp_715
-    tmp_717 = load tmp_716+0 as i32
-    !tmp_716
-    !tmp_714
-    tmp_718 = sgt tmp_717, tick
-    !tmp_717
+L_MERGE_161:
+    tmp_728 = load world+48 as ptr
+    tmp_729 = mul slot, 4
+    tmp_730 = ptr_add tmp_728, tmp_729
+    !tmp_729
+    tmp_731 = load tmp_730+0 as i32
+    !tmp_730
+    !tmp_728
+    tmp_732 = sgt tmp_731, tick
+    !tmp_731
     !entity
     !world
-    return tmp_718
+    return tmp_732
 
 @sla__resource_has_WorldTime(slot: ptr) -> u8:
 L_ENTRY:
-    tmp_719 = load slot+0 as u8
+    tmp_733 = load slot+0 as u8
     !slot
-    return tmp_719
+    return tmp_733
 
 @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr) -> u8:
 L_ENTRY:
-    tmp_720 = load world+24 as ptr
-    tmp_721 = call @sla__resource_has_WorldTime(tmp_720)
-    !tmp_720
+    tmp_734 = load world+24 as ptr
+    tmp_735 = call @sla__resource_has_WorldTime(tmp_734)
+    !tmp_734
     !world
-    return tmp_721
+    return tmp_735
 
 @sla__resource_insert_WorldTime(slot: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_722 = 1
-    store slot+0, tmp_722 as u8
-    !tmp_722
+    tmp_736 = 1
+    store slot+0, tmp_736 as u8
+    !tmp_736
     store slot+8, value as ptr
     !value
     return slot
 
 @sla__world_insert_resource_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_723 = load world+24 as ptr
-    tmp_724 = call @sla__resource_insert_WorldTime(tmp_723, value)
-    !tmp_723
-    store world+24, tmp_724 as ptr
-    !tmp_724
+    tmp_737 = load world+24 as ptr
+    tmp_738 = call @sla__resource_insert_WorldTime(tmp_737, value)
+    !tmp_737
+    store world+24, tmp_738 as ptr
+    !tmp_738
     !value
     return world
 
 @sla__resource_get_WorldTime(slot: ptr) -> ptr:
 L_ENTRY:
-    tmp_725 = load slot+0 as u8
-    tmp_726 = 1
-    tmp_727 = ne tmp_725, tmp_726
-    !tmp_725
-    !tmp_726
-    br tmp_727 -> L_THEN_158, L_ELSE_159
+    tmp_739 = load slot+0 as u8
+    tmp_740 = 1
+    tmp_741 = ne tmp_739, tmp_740
+    !tmp_739
+    !tmp_740
+    br tmp_741 -> L_THEN_162, L_ELSE_163
 
-L_THEN_158:
-    !tmp_727
+L_THEN_162:
+    !tmp_741
     panic(5001)
 
-L_ELSE_159:
-    !tmp_727
-    jmp L_MERGE_160
+L_ELSE_163:
+    !tmp_741
+    jmp L_MERGE_164
 
-L_MERGE_160:
-    tmp_730 = load slot+8 as ptr
+L_MERGE_164:
+    tmp_744 = load slot+8 as ptr
     !slot
-    return tmp_730
+    return tmp_744
 
 @sla__world_get_resource_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr) -> ptr:
 L_ENTRY:
-    tmp_731 = load world+24 as ptr
-    tmp_732 = call @sla__resource_get_WorldTime(tmp_731)
-    !tmp_731
+    tmp_745 = load world+24 as ptr
+    tmp_746 = call @sla__resource_get_WorldTime(tmp_745)
+    !tmp_745
     !world
-    return tmp_732
+    return tmp_746
 
 @sla__messages_write_WorldDamage(messages: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_733 = load messages+0 as i64
-    slot = tmp_733
-    tmp_734 = 16
-    tmp_735 = sge slot, tmp_734
-    !tmp_734
-    br tmp_735 -> L_THEN_161, L_ELSE_162
+    tmp_747 = load messages+0 as i64
+    slot = tmp_747
+    tmp_748 = 16
+    tmp_749 = sge slot, tmp_748
+    !tmp_748
+    br tmp_749 -> L_THEN_165, L_ELSE_166
 
-L_THEN_161:
-    !tmp_735
+L_THEN_165:
+    !tmp_749
     panic(6001)
 
-L_ELSE_162:
-    !tmp_735
-    jmp L_MERGE_163
+L_ELSE_166:
+    !tmp_749
+    jmp L_MERGE_167
 
-L_MERGE_163:
-    tmp_738 = load messages+8 as ptr
-    tmp_739 = mul slot, 8
-    tmp_740 = ptr_add tmp_738, tmp_739
-    !tmp_739
-    store tmp_740+0, value as ptr
-    !tmp_740
-    !tmp_738
+L_MERGE_167:
+    tmp_752 = load messages+8 as ptr
+    tmp_753 = mul slot, 8
+    tmp_754 = ptr_add tmp_752, tmp_753
+    !tmp_753
+    store tmp_754+0, value as ptr
+    !tmp_754
+    !tmp_752
     !value
-    tmp_741 = 1
-    tmp_742 = add slot, tmp_741
-    !tmp_741
-    store messages+0, tmp_742 as i64
-    !tmp_742
+    tmp_755 = 1
+    tmp_756 = add slot, tmp_755
+    !tmp_755
+    store messages+0, tmp_756 as i64
+    !tmp_756
     !slot
     return messages
 
 @sla__world_write_message_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_743 = load world+32 as ptr
-    tmp_744 = call @sla__messages_write_WorldDamage(tmp_743, value)
-    !tmp_743
-    store world+32, tmp_744 as ptr
-    !tmp_744
+    tmp_757 = load world+32 as ptr
+    tmp_758 = call @sla__messages_write_WorldDamage(tmp_757, value)
+    !tmp_757
+    store world+32, tmp_758 as ptr
+    !tmp_758
     !value
     return world
 
 @sla__messages_read_next_WorldDamage(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_745 = load reader+0 as i64
-    tmp_746 = load messages+0 as i64
-    tmp_747 = sge tmp_745, tmp_746
-    !tmp_745
-    !tmp_746
-    br tmp_747 -> L_THEN_164, L_ELSE_165
-
-L_THEN_164:
-    !tmp_747
-    tmp_748 = alloc 24
-    tmp_749 = 0
-    store tmp_748+0, tmp_749 as u8
-    !tmp_749
-    store tmp_748+8, default_value as ptr
-    store tmp_748+16, reader as ptr
-    !messages
-    return tmp_748
-
-L_ELSE_165:
-    !tmp_747
-    jmp L_MERGE_166
-
-L_MERGE_166:
-    tmp_751 = load messages+8 as ptr
-    tmp_752 = load reader+0 as i64
-    tmp_753 = mul tmp_752, 8
-    tmp_754 = ptr_add tmp_751, tmp_753
-    !tmp_753
-    !tmp_752
-    tmp_755 = load tmp_754+0 as ptr
-    !tmp_754
-    !tmp_751
-    value = tmp_755
-    tmp_756 = load reader+0 as i64
-    tmp_757 = 1
-    tmp_758 = add tmp_756, tmp_757
-    !tmp_756
-    !tmp_757
-    store reader+0, tmp_758 as i64
-    !tmp_758
-    tmp_759 = alloc 24
-    tmp_760 = 1
-    store tmp_759+0, tmp_760 as u8
+    tmp_759 = load reader+0 as i64
+    tmp_760 = load messages+0 as i64
+    tmp_761 = sge tmp_759, tmp_760
+    !tmp_759
     !tmp_760
-    store tmp_759+8, value as ptr
-    store tmp_759+16, reader as ptr
+    br tmp_761 -> L_THEN_168, L_ELSE_169
+
+L_THEN_168:
+    !tmp_761
+    tmp_762 = alloc 24
+    tmp_763 = 0
+    store tmp_762+0, tmp_763 as u8
+    !tmp_763
+    store tmp_762+8, default_value as ptr
+    store tmp_762+16, reader as ptr
+    !messages
+    return tmp_762
+
+L_ELSE_169:
+    !tmp_761
+    jmp L_MERGE_170
+
+L_MERGE_170:
+    tmp_765 = load messages+8 as ptr
+    tmp_766 = load reader+0 as i64
+    tmp_767 = mul tmp_766, 8
+    tmp_768 = ptr_add tmp_765, tmp_767
+    !tmp_767
+    !tmp_766
+    tmp_769 = load tmp_768+0 as ptr
+    !tmp_768
+    !tmp_765
+    value = tmp_769
+    tmp_770 = load reader+0 as i64
+    tmp_771 = 1
+    tmp_772 = add tmp_770, tmp_771
+    !tmp_770
+    !tmp_771
+    store reader+0, tmp_772 as i64
+    !tmp_772
+    tmp_773 = alloc 24
+    tmp_774 = 1
+    store tmp_773+0, tmp_774 as u8
+    !tmp_774
+    store tmp_773+8, value as ptr
+    store tmp_773+16, reader as ptr
     !messages
     !default_value
-    return tmp_759
+    return tmp_773
 
 @sla__world_read_message_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr, reader: ptr, default_value: ptr) -> ptr:
 L_ENTRY:
-    tmp_761 = load world+32 as ptr
-    tmp_762 = call @sla__messages_read_next_WorldDamage(tmp_761, reader, default_value)
-    !tmp_761
+    tmp_775 = load world+32 as ptr
+    tmp_776 = call @sla__messages_read_next_WorldDamage(tmp_775, reader, default_value)
+    !tmp_775
     !world
-    return tmp_762
+    return tmp_776
 
 @sla__resource_remove_WorldTime(slot: ptr) -> ptr:
 L_ENTRY:
-    tmp_763 = 0
-    store slot+0, tmp_763 as u8
-    !tmp_763
+    tmp_777 = 0
+    store slot+0, tmp_777 as u8
+    !tmp_777
     return slot
 
 @sla__world_remove_resource_WorldPos_WorldVel_WorldTime_WorldDamage(world: ptr) -> ptr:
 L_ENTRY:
-    tmp_764 = load world+24 as ptr
-    tmp_765 = call @sla__resource_remove_WorldTime(tmp_764)
-    !tmp_764
-    store world+24, tmp_765 as ptr
-    !tmp_765
+    tmp_778 = load world+24 as ptr
+    tmp_779 = call @sla__resource_remove_WorldTime(tmp_778)
+    !tmp_778
+    store world+24, tmp_779 as ptr
+    !tmp_779
     return world
 
 @test "entity placeholder is never allocated"():
-L_TEST_ENTRY_167:
-    tmp_766 = call @sla__entity_placeholder()
-    placeholder = tmp_766
-    tmp_767 = call @sla__allocator_new()
-    a = tmp_767
-    tmp_768 = call @sla__alloc_entity(a)
-    a1 = load tmp_768+0 as ptr
-    e1 = load tmp_768+8 as ptr
-    !tmp_768
-    tmp_769 = load placeholder+0 as i32
-    tmp_770 = load e1+0 as i32
-    tmp_771 = eq tmp_769, tmp_770
-    !tmp_769
-    !tmp_770
-    br tmp_771 -> L_THEN_168, L_ELSE_169
+L_TEST_ENTRY_171:
+    tmp_780 = call @sla__entity_placeholder()
+    placeholder = tmp_780
+    tmp_781 = call @sla__allocator_new()
+    a = tmp_781
+    tmp_782 = call @sla__alloc_entity(a)
+    a1 = load tmp_782+0 as ptr
+    e1 = load tmp_782+8 as ptr
+    !tmp_782
+    tmp_783 = load placeholder+0 as i32
+    tmp_784 = load e1+0 as i32
+    tmp_785 = eq tmp_783, tmp_784
+    !tmp_783
+    !tmp_784
+    br tmp_785 -> L_THEN_172, L_ELSE_173
 
-L_THEN_168:
-    !tmp_771
+L_THEN_172:
+    !tmp_785
     panic(2100)
 
-L_ELSE_169:
-    !tmp_771
-    jmp L_MERGE_170
+L_ELSE_173:
+    !tmp_785
+    jmp L_MERGE_174
 
-L_MERGE_170:
-    tmp_774 = call @sla__is_alive(a1, placeholder)
-    tmp_775 = 0
-    tmp_776 = ne tmp_774, tmp_775
-    !tmp_774
-    !tmp_775
-    br tmp_776 -> L_THEN_171, L_ELSE_172
+L_MERGE_174:
+    tmp_788 = call @sla__is_alive(a1, placeholder)
+    tmp_789 = 0
+    tmp_790 = ne tmp_788, tmp_789
+    !tmp_788
+    !tmp_789
+    br tmp_790 -> L_THEN_175, L_ELSE_176
 
-L_THEN_171:
-    !tmp_776
+L_THEN_175:
+    !tmp_790
     panic(2101)
 
-L_ELSE_172:
-    !tmp_776
-    jmp L_MERGE_173
+L_ELSE_176:
+    !tmp_790
+    jmp L_MERGE_177
 
-L_MERGE_173:
+L_MERGE_177:
     !a
     !placeholder
     !e1
@@ -2900,132 +2963,132 @@ L_MERGE_173:
     return
 
 @test "entity bit roundtrip"():
-L_TEST_ENTRY_174:
-    tmp_779 = 42
-    tmp_780 = 7
-    tmp_781 = call @sla__entity_new(tmp_779, tmp_780)
-    !tmp_779
-    !tmp_780
-    e = tmp_781
-    tmp_782 = call @sla__entity_to_bits(e)
-    bits = tmp_782
-    tmp_783 = call @sla__entity_from_bits(bits)
-    out = tmp_783
-    tmp_784 = call @sla__entity_eq(e, out)
-    tmp_785 = 1
-    tmp_786 = ne tmp_784, tmp_785
-    !tmp_784
-    !tmp_785
-    br tmp_786 -> L_THEN_175, L_ELSE_176
+L_TEST_ENTRY_178:
+    tmp_793 = 42
+    tmp_794 = 7
+    tmp_795 = call @sla__entity_new(tmp_793, tmp_794)
+    !tmp_793
+    !tmp_794
+    e = tmp_795
+    tmp_796 = call @sla__entity_to_bits(e)
+    bits = tmp_796
+    tmp_797 = call @sla__entity_from_bits(bits)
+    out = tmp_797
+    tmp_798 = call @sla__entity_eq(e, out)
+    tmp_799 = 1
+    tmp_800 = ne tmp_798, tmp_799
+    !tmp_798
+    !tmp_799
+    br tmp_800 -> L_THEN_179, L_ELSE_180
 
-L_THEN_175:
-    !tmp_786
+L_THEN_179:
+    !tmp_800
     panic(2110)
 
-L_ELSE_176:
-    !tmp_786
-    jmp L_MERGE_177
+L_ELSE_180:
+    !tmp_800
+    jmp L_MERGE_181
 
-L_MERGE_177:
+L_MERGE_181:
     !out
     !bits
     !e
     return
 
 @test "allocator rejects stale generation"():
-L_TEST_ENTRY_178:
-    tmp_789 = call @sla__allocator_new()
-    a0 = tmp_789
-    tmp_790 = call @sla__alloc_entity(a0)
-    a1 = load tmp_790+0 as ptr
-    e1 = load tmp_790+8 as ptr
-    !tmp_790
-    tmp_791 = call @sla__free_entity(a1, e1)
-    a2 = tmp_791
-    tmp_792 = load e1+0 as i32
-    tmp_793 = load e1+4 as i32
-    tmp_794 = call @sla__entity_new(tmp_792, tmp_793)
-    !tmp_792
-    !tmp_793
-    stale = tmp_794
-    tmp_795 = load e1+0 as i32
-    tmp_796 = load e1+4 as i32
-    tmp_797 = 1
-    tmp_798 = add tmp_796, tmp_797
-    !tmp_796
-    !tmp_797
-    tmp_799 = call @sla__entity_new(tmp_795, tmp_798)
-    !tmp_795
-    !tmp_798
-    fabricated = tmp_799
-    tmp_800 = call @sla__is_alive(a2, stale)
-    tmp_801 = 0
-    tmp_802 = ne tmp_800, tmp_801
-    !tmp_800
-    !tmp_801
-    br tmp_802 -> L_THEN_179, L_ELSE_180
+L_TEST_ENTRY_182:
+    tmp_803 = call @sla__allocator_new()
+    a0 = tmp_803
+    tmp_804 = call @sla__alloc_entity(a0)
+    a1 = load tmp_804+0 as ptr
+    e1 = load tmp_804+8 as ptr
+    !tmp_804
+    tmp_805 = call @sla__free_entity(a1, e1)
+    a2 = tmp_805
+    tmp_806 = load e1+0 as i32
+    tmp_807 = load e1+4 as i32
+    tmp_808 = call @sla__entity_new(tmp_806, tmp_807)
+    !tmp_806
+    !tmp_807
+    stale = tmp_808
+    tmp_809 = load e1+0 as i32
+    tmp_810 = load e1+4 as i32
+    tmp_811 = 1
+    tmp_812 = add tmp_810, tmp_811
+    !tmp_810
+    !tmp_811
+    tmp_813 = call @sla__entity_new(tmp_809, tmp_812)
+    !tmp_809
+    !tmp_812
+    fabricated = tmp_813
+    tmp_814 = call @sla__is_alive(a2, stale)
+    tmp_815 = 0
+    tmp_816 = ne tmp_814, tmp_815
+    !tmp_814
+    !tmp_815
+    br tmp_816 -> L_THEN_183, L_ELSE_184
 
-L_THEN_179:
-    !tmp_802
+L_THEN_183:
+    !tmp_816
     panic(2120)
 
-L_ELSE_180:
-    !tmp_802
-    jmp L_MERGE_181
+L_ELSE_184:
+    !tmp_816
+    jmp L_MERGE_185
 
-L_MERGE_181:
-    tmp_805 = call @sla__is_alive(a2, fabricated)
-    tmp_806 = 0
-    tmp_807 = ne tmp_805, tmp_806
-    !tmp_805
-    !tmp_806
-    br tmp_807 -> L_THEN_182, L_ELSE_183
+L_MERGE_185:
+    tmp_819 = call @sla__is_alive(a2, fabricated)
+    tmp_820 = 0
+    tmp_821 = ne tmp_819, tmp_820
+    !tmp_819
+    !tmp_820
+    br tmp_821 -> L_THEN_186, L_ELSE_187
 
-L_THEN_182:
-    !tmp_807
+L_THEN_186:
+    !tmp_821
     panic(2121)
 
-L_ELSE_183:
-    !tmp_807
-    jmp L_MERGE_184
+L_ELSE_187:
+    !tmp_821
+    jmp L_MERGE_188
 
-L_MERGE_184:
-    tmp_810 = call @sla__alloc_entity(a2)
-    a3 = load tmp_810+0 as ptr
-    e2 = load tmp_810+8 as ptr
-    !tmp_810
-    tmp_811 = call @sla__entity_eq(e2, fabricated)
-    tmp_812 = 1
-    tmp_813 = ne tmp_811, tmp_812
-    !tmp_811
-    !tmp_812
-    br tmp_813 -> L_THEN_185, L_ELSE_186
+L_MERGE_188:
+    tmp_824 = call @sla__alloc_entity(a2)
+    a3 = load tmp_824+0 as ptr
+    e2 = load tmp_824+8 as ptr
+    !tmp_824
+    tmp_825 = call @sla__entity_eq(e2, fabricated)
+    tmp_826 = 1
+    tmp_827 = ne tmp_825, tmp_826
+    !tmp_825
+    !tmp_826
+    br tmp_827 -> L_THEN_189, L_ELSE_190
 
-L_THEN_185:
-    !tmp_813
+L_THEN_189:
+    !tmp_827
     panic(2122)
 
-L_ELSE_186:
-    !tmp_813
-    jmp L_MERGE_187
+L_ELSE_190:
+    !tmp_827
+    jmp L_MERGE_191
 
-L_MERGE_187:
-    tmp_816 = call @sla__is_alive(a3, e2)
-    tmp_817 = 1
-    tmp_818 = ne tmp_816, tmp_817
-    !tmp_816
-    !tmp_817
-    br tmp_818 -> L_THEN_188, L_ELSE_189
+L_MERGE_191:
+    tmp_830 = call @sla__is_alive(a3, e2)
+    tmp_831 = 1
+    tmp_832 = ne tmp_830, tmp_831
+    !tmp_830
+    !tmp_831
+    br tmp_832 -> L_THEN_192, L_ELSE_193
 
-L_THEN_188:
-    !tmp_818
+L_THEN_192:
+    !tmp_832
     panic(2123)
 
-L_ELSE_189:
-    !tmp_818
-    jmp L_MERGE_190
+L_ELSE_193:
+    !tmp_832
+    jmp L_MERGE_194
 
-L_MERGE_190:
+L_MERGE_194:
     !e2
     !a0
     !a2
@@ -3037,244 +3100,244 @@ L_MERGE_190:
     return
 
 @test "entity index generation accessors"():
-L_TEST_ENTRY_191:
-    tmp_821 = 5
-    tmp_822 = 3
-    tmp_823 = call @sla__entity_new(tmp_821, tmp_822)
-    !tmp_821
-    !tmp_822
-    e = tmp_823
-    tmp_824 = call @sla__entity_index(e)
-    tmp_825 = 5
-    tmp_826 = ne tmp_824, tmp_825
-    !tmp_824
-    !tmp_825
-    br tmp_826 -> L_THEN_192, L_ELSE_193
+L_TEST_ENTRY_195:
+    tmp_835 = 5
+    tmp_836 = 3
+    tmp_837 = call @sla__entity_new(tmp_835, tmp_836)
+    !tmp_835
+    !tmp_836
+    e = tmp_837
+    tmp_838 = call @sla__entity_index(e)
+    tmp_839 = 5
+    tmp_840 = ne tmp_838, tmp_839
+    !tmp_838
+    !tmp_839
+    br tmp_840 -> L_THEN_196, L_ELSE_197
 
-L_THEN_192:
-    !tmp_826
+L_THEN_196:
+    !tmp_840
     panic(2130)
 
-L_ELSE_193:
-    !tmp_826
-    jmp L_MERGE_194
+L_ELSE_197:
+    !tmp_840
+    jmp L_MERGE_198
 
-L_MERGE_194:
-    tmp_829 = call @sla__entity_generation(e)
-    tmp_830 = 3
-    tmp_831 = ne tmp_829, tmp_830
-    !tmp_829
-    !tmp_830
-    br tmp_831 -> L_THEN_195, L_ELSE_196
+L_MERGE_198:
+    tmp_843 = call @sla__entity_generation(e)
+    tmp_844 = 3
+    tmp_845 = ne tmp_843, tmp_844
+    !tmp_843
+    !tmp_844
+    br tmp_845 -> L_THEN_199, L_ELSE_200
 
-L_THEN_195:
-    !tmp_831
+L_THEN_199:
+    !tmp_845
     panic(2131)
 
-L_ELSE_196:
-    !tmp_831
-    jmp L_MERGE_197
+L_ELSE_200:
+    !tmp_845
+    jmp L_MERGE_201
 
-L_MERGE_197:
+L_MERGE_201:
     !e
     return
 
 @test "component store generic constructor"():
-L_TEST_ENTRY_198:
-    tmp_834 = call @sla__store_point_default()
-    tmp_835 = call @sla__store_new_StorePoint(tmp_834)
-    !tmp_834
-    s = tmp_835
-    tmp_836 = call @sla__store_count_StorePoint(s)
-    tmp_837 = 0
-    tmp_838 = ne tmp_836, tmp_837
-    !tmp_836
-    !tmp_837
-    br tmp_838 -> L_THEN_199, L_ELSE_200
+L_TEST_ENTRY_202:
+    tmp_848 = call @sla__store_point_default()
+    tmp_849 = call @sla__store_new_StorePoint(tmp_848)
+    !tmp_848
+    s = tmp_849
+    tmp_850 = call @sla__store_count_StorePoint(s)
+    tmp_851 = 0
+    tmp_852 = ne tmp_850, tmp_851
+    !tmp_850
+    !tmp_851
+    br tmp_852 -> L_THEN_203, L_ELSE_204
 
-L_THEN_199:
-    !tmp_838
+L_THEN_203:
+    !tmp_852
     panic(4100)
 
-L_ELSE_200:
-    !tmp_838
-    jmp L_MERGE_201
+L_ELSE_204:
+    !tmp_852
+    jmp L_MERGE_205
 
-L_MERGE_201:
+L_MERGE_205:
     !s
     return
 
 @test "component store insert get has slot"():
-L_TEST_ENTRY_202:
-    tmp_841 = call @sla__store_point_default()
-    tmp_842 = call @sla__store_new_StorePoint(tmp_841)
-    !tmp_841
-    s0 = tmp_842
-    tmp_843 = 1
-    tmp_844 = 10
-    tmp_845 = 20
-    tmp_846 = call @sla__store_point(tmp_844, tmp_845)
-    !tmp_844
-    !tmp_845
-    tmp_847 = call @sla__store_insert_StorePoint(s0, tmp_843, tmp_846)
-    !tmp_843
-    !tmp_846
-    s1 = tmp_847
-    tmp_848 = call @sla__store_count_StorePoint(s1)
-    tmp_849 = 1
-    tmp_850 = ne tmp_848, tmp_849
-    !tmp_848
-    !tmp_849
-    br tmp_850 -> L_THEN_203, L_ELSE_204
+L_TEST_ENTRY_206:
+    tmp_855 = call @sla__store_point_default()
+    tmp_856 = call @sla__store_new_StorePoint(tmp_855)
+    !tmp_855
+    s0 = tmp_856
+    tmp_857 = 1
+    tmp_858 = 10
+    tmp_859 = 20
+    tmp_860 = call @sla__store_point(tmp_858, tmp_859)
+    !tmp_858
+    !tmp_859
+    tmp_861 = call @sla__store_insert_StorePoint(s0, tmp_857, tmp_860)
+    !tmp_857
+    !tmp_860
+    s1 = tmp_861
+    tmp_862 = call @sla__store_count_StorePoint(s1)
+    tmp_863 = 1
+    tmp_864 = ne tmp_862, tmp_863
+    !tmp_862
+    !tmp_863
+    br tmp_864 -> L_THEN_207, L_ELSE_208
 
-L_THEN_203:
-    !tmp_850
+L_THEN_207:
+    !tmp_864
     panic(4110)
 
-L_ELSE_204:
-    !tmp_850
-    jmp L_MERGE_205
+L_ELSE_208:
+    !tmp_864
+    jmp L_MERGE_209
 
-L_MERGE_205:
-    tmp_853 = 1
-    tmp_854 = call @sla__store_has_StorePoint(s1, tmp_853)
-    !tmp_853
-    tmp_855 = 1
-    tmp_856 = ne tmp_854, tmp_855
-    !tmp_854
-    !tmp_855
-    br tmp_856 -> L_THEN_206, L_ELSE_207
+L_MERGE_209:
+    tmp_867 = 1
+    tmp_868 = call @sla__store_has_StorePoint(s1, tmp_867)
+    !tmp_867
+    tmp_869 = 1
+    tmp_870 = ne tmp_868, tmp_869
+    !tmp_868
+    !tmp_869
+    br tmp_870 -> L_THEN_210, L_ELSE_211
 
-L_THEN_206:
-    !tmp_856
+L_THEN_210:
+    !tmp_870
     panic(4111)
 
-L_ELSE_207:
-    !tmp_856
-    jmp L_MERGE_208
+L_ELSE_211:
+    !tmp_870
+    jmp L_MERGE_212
 
-L_MERGE_208:
-    tmp_859 = 1
-    tmp_860 = call @sla__store_slot_of_StorePoint(s1, tmp_859)
-    !tmp_859
-    tmp_861 = 0
-    tmp_862 = ne tmp_860, tmp_861
-    !tmp_860
-    !tmp_861
-    br tmp_862 -> L_THEN_209, L_ELSE_210
+L_MERGE_212:
+    tmp_873 = 1
+    tmp_874 = call @sla__store_slot_of_StorePoint(s1, tmp_873)
+    !tmp_873
+    tmp_875 = 0
+    tmp_876 = ne tmp_874, tmp_875
+    !tmp_874
+    !tmp_875
+    br tmp_876 -> L_THEN_213, L_ELSE_214
 
-L_THEN_209:
-    !tmp_862
+L_THEN_213:
+    !tmp_876
     panic(4112)
 
-L_ELSE_210:
-    !tmp_862
-    jmp L_MERGE_211
+L_ELSE_214:
+    !tmp_876
+    jmp L_MERGE_215
 
-L_MERGE_211:
-    tmp_865 = 1
-    tmp_866 = call @sla__store_get_StorePoint(s1, tmp_865)
-    !tmp_865
-    p = tmp_866
-    tmp_867 = load p+0 as i32
-    tmp_868 = 10
-    tmp_869 = ne tmp_867, tmp_868
-    !tmp_867
-    !tmp_868
-    br tmp_869 -> L_THEN_212, L_ELSE_213
+L_MERGE_215:
+    tmp_879 = 1
+    tmp_880 = call @sla__store_get_StorePoint(s1, tmp_879)
+    !tmp_879
+    p = tmp_880
+    tmp_881 = load p+0 as i32
+    tmp_882 = 10
+    tmp_883 = ne tmp_881, tmp_882
+    !tmp_881
+    !tmp_882
+    br tmp_883 -> L_THEN_216, L_ELSE_217
 
-L_THEN_212:
-    !tmp_869
+L_THEN_216:
+    !tmp_883
     panic(4113)
 
-L_ELSE_213:
-    !tmp_869
-    jmp L_MERGE_214
+L_ELSE_217:
+    !tmp_883
+    jmp L_MERGE_218
 
-L_MERGE_214:
-    tmp_872 = load p+4 as i32
-    tmp_873 = 20
-    tmp_874 = ne tmp_872, tmp_873
-    !tmp_872
-    !tmp_873
-    br tmp_874 -> L_THEN_215, L_ELSE_216
+L_MERGE_218:
+    tmp_886 = load p+4 as i32
+    tmp_887 = 20
+    tmp_888 = ne tmp_886, tmp_887
+    !tmp_886
+    !tmp_887
+    br tmp_888 -> L_THEN_219, L_ELSE_220
 
-L_THEN_215:
-    !tmp_874
+L_THEN_219:
+    !tmp_888
     panic(4114)
 
-L_ELSE_216:
-    !tmp_874
-    jmp L_MERGE_217
+L_ELSE_220:
+    !tmp_888
+    jmp L_MERGE_221
 
-L_MERGE_217:
+L_MERGE_221:
     !s0
     !s1
     !p
     return
 
 @test "component store write updates slot"():
-L_TEST_ENTRY_218:
-    tmp_877 = call @sla__store_point_default()
-    tmp_878 = call @sla__store_new_StorePoint(tmp_877)
-    !tmp_877
-    s0 = tmp_878
-    tmp_879 = 1
-    tmp_880 = 1
-    tmp_881 = 2
-    tmp_882 = call @sla__store_point(tmp_880, tmp_881)
-    !tmp_880
-    !tmp_881
-    tmp_883 = call @sla__store_insert_StorePoint(s0, tmp_879, tmp_882)
-    !tmp_879
-    !tmp_882
-    s1 = tmp_883
-    tmp_884 = 0
-    tmp_885 = 3
-    tmp_886 = 4
-    tmp_887 = call @sla__store_point(tmp_885, tmp_886)
-    !tmp_885
-    !tmp_886
-    tmp_888 = call @sla__store_write_StorePoint(s1, tmp_884, tmp_887)
-    !tmp_884
-    !tmp_887
-    s2 = tmp_888
-    tmp_889 = 1
-    tmp_890 = call @sla__store_get_StorePoint(s2, tmp_889)
-    !tmp_889
-    p = tmp_890
-    tmp_891 = load p+0 as i32
-    tmp_892 = 3
-    tmp_893 = ne tmp_891, tmp_892
+L_TEST_ENTRY_222:
+    tmp_891 = call @sla__store_point_default()
+    tmp_892 = call @sla__store_new_StorePoint(tmp_891)
     !tmp_891
-    !tmp_892
-    br tmp_893 -> L_THEN_219, L_ELSE_220
-
-L_THEN_219:
+    s0 = tmp_892
+    tmp_893 = 1
+    tmp_894 = 1
+    tmp_895 = 2
+    tmp_896 = call @sla__store_point(tmp_894, tmp_895)
+    !tmp_894
+    !tmp_895
+    tmp_897 = call @sla__store_insert_StorePoint(s0, tmp_893, tmp_896)
     !tmp_893
+    !tmp_896
+    s1 = tmp_897
+    tmp_898 = 0
+    tmp_899 = 3
+    tmp_900 = 4
+    tmp_901 = call @sla__store_point(tmp_899, tmp_900)
+    !tmp_899
+    !tmp_900
+    tmp_902 = call @sla__store_write_StorePoint(s1, tmp_898, tmp_901)
+    !tmp_898
+    !tmp_901
+    s2 = tmp_902
+    tmp_903 = 1
+    tmp_904 = call @sla__store_get_StorePoint(s2, tmp_903)
+    !tmp_903
+    p = tmp_904
+    tmp_905 = load p+0 as i32
+    tmp_906 = 3
+    tmp_907 = ne tmp_905, tmp_906
+    !tmp_905
+    !tmp_906
+    br tmp_907 -> L_THEN_223, L_ELSE_224
+
+L_THEN_223:
+    !tmp_907
     panic(4120)
 
-L_ELSE_220:
-    !tmp_893
-    jmp L_MERGE_221
+L_ELSE_224:
+    !tmp_907
+    jmp L_MERGE_225
 
-L_MERGE_221:
-    tmp_896 = load p+4 as i32
-    tmp_897 = 4
-    tmp_898 = ne tmp_896, tmp_897
-    !tmp_896
-    !tmp_897
-    br tmp_898 -> L_THEN_222, L_ELSE_223
+L_MERGE_225:
+    tmp_910 = load p+4 as i32
+    tmp_911 = 4
+    tmp_912 = ne tmp_910, tmp_911
+    !tmp_910
+    !tmp_911
+    br tmp_912 -> L_THEN_226, L_ELSE_227
 
-L_THEN_222:
-    !tmp_898
+L_THEN_226:
+    !tmp_912
     panic(4121)
 
-L_ELSE_223:
-    !tmp_898
-    jmp L_MERGE_224
+L_ELSE_227:
+    !tmp_912
+    jmp L_MERGE_228
 
-L_MERGE_224:
+L_MERGE_228:
     !s0
     !s1
     !p
@@ -3282,117 +3345,117 @@ L_MERGE_224:
     return
 
 @test "component store remove swap removes"():
-L_TEST_ENTRY_225:
-    tmp_901 = call @sla__store_point_default()
-    tmp_902 = call @sla__store_new_StorePoint(tmp_901)
-    !tmp_901
-    s0 = tmp_902
-    tmp_903 = 1
-    tmp_904 = 10
-    tmp_905 = 0
-    tmp_906 = call @sla__store_point(tmp_904, tmp_905)
-    !tmp_904
-    !tmp_905
-    tmp_907 = call @sla__store_insert_StorePoint(s0, tmp_903, tmp_906)
-    !tmp_903
-    !tmp_906
-    s1 = tmp_907
-    tmp_908 = 2
-    tmp_909 = 20
-    tmp_910 = 0
-    tmp_911 = call @sla__store_point(tmp_909, tmp_910)
-    !tmp_909
-    !tmp_910
-    tmp_912 = call @sla__store_insert_StorePoint(s1, tmp_908, tmp_911)
-    !tmp_908
-    !tmp_911
-    s2 = tmp_912
-    tmp_913 = 3
-    tmp_914 = 30
-    tmp_915 = 0
-    tmp_916 = call @sla__store_point(tmp_914, tmp_915)
-    !tmp_914
+L_TEST_ENTRY_229:
+    tmp_915 = call @sla__store_point_default()
+    tmp_916 = call @sla__store_new_StorePoint(tmp_915)
     !tmp_915
-    tmp_917 = call @sla__store_insert_StorePoint(s2, tmp_913, tmp_916)
-    !tmp_913
-    !tmp_916
-    s3 = tmp_917
-    tmp_918 = 2
-    tmp_919 = call @sla__store_remove_StorePoint(s3, tmp_918)
+    s0 = tmp_916
+    tmp_917 = 1
+    tmp_918 = 10
+    tmp_919 = 0
+    tmp_920 = call @sla__store_point(tmp_918, tmp_919)
     !tmp_918
-    s4 = tmp_919
-    tmp_920 = call @sla__store_count_StorePoint(s4)
-    tmp_921 = 2
-    tmp_922 = ne tmp_920, tmp_921
+    !tmp_919
+    tmp_921 = call @sla__store_insert_StorePoint(s0, tmp_917, tmp_920)
+    !tmp_917
     !tmp_920
-    !tmp_921
-    br tmp_922 -> L_THEN_226, L_ELSE_227
-
-L_THEN_226:
+    s1 = tmp_921
+    tmp_922 = 2
+    tmp_923 = 20
+    tmp_924 = 0
+    tmp_925 = call @sla__store_point(tmp_923, tmp_924)
+    !tmp_923
+    !tmp_924
+    tmp_926 = call @sla__store_insert_StorePoint(s1, tmp_922, tmp_925)
     !tmp_922
+    !tmp_925
+    s2 = tmp_926
+    tmp_927 = 3
+    tmp_928 = 30
+    tmp_929 = 0
+    tmp_930 = call @sla__store_point(tmp_928, tmp_929)
+    !tmp_928
+    !tmp_929
+    tmp_931 = call @sla__store_insert_StorePoint(s2, tmp_927, tmp_930)
+    !tmp_927
+    !tmp_930
+    s3 = tmp_931
+    tmp_932 = 2
+    tmp_933 = call @sla__store_remove_StorePoint(s3, tmp_932)
+    !tmp_932
+    s4 = tmp_933
+    tmp_934 = call @sla__store_count_StorePoint(s4)
+    tmp_935 = 2
+    tmp_936 = ne tmp_934, tmp_935
+    !tmp_934
+    !tmp_935
+    br tmp_936 -> L_THEN_230, L_ELSE_231
+
+L_THEN_230:
+    !tmp_936
     panic(4130)
 
-L_ELSE_227:
-    !tmp_922
-    jmp L_MERGE_228
+L_ELSE_231:
+    !tmp_936
+    jmp L_MERGE_232
 
-L_MERGE_228:
-    tmp_925 = 2
-    tmp_926 = call @sla__store_has_StorePoint(s4, tmp_925)
-    !tmp_925
-    tmp_927 = 0
-    tmp_928 = ne tmp_926, tmp_927
-    !tmp_926
-    !tmp_927
-    br tmp_928 -> L_THEN_229, L_ELSE_230
+L_MERGE_232:
+    tmp_939 = 2
+    tmp_940 = call @sla__store_has_StorePoint(s4, tmp_939)
+    !tmp_939
+    tmp_941 = 0
+    tmp_942 = ne tmp_940, tmp_941
+    !tmp_940
+    !tmp_941
+    br tmp_942 -> L_THEN_233, L_ELSE_234
 
-L_THEN_229:
-    !tmp_928
+L_THEN_233:
+    !tmp_942
     panic(4131)
 
-L_ELSE_230:
-    !tmp_928
-    jmp L_MERGE_231
+L_ELSE_234:
+    !tmp_942
+    jmp L_MERGE_235
 
-L_MERGE_231:
-    tmp_931 = 3
-    tmp_932 = call @sla__store_has_StorePoint(s4, tmp_931)
-    !tmp_931
-    tmp_933 = 1
-    tmp_934 = ne tmp_932, tmp_933
-    !tmp_932
-    !tmp_933
-    br tmp_934 -> L_THEN_232, L_ELSE_233
+L_MERGE_235:
+    tmp_945 = 3
+    tmp_946 = call @sla__store_has_StorePoint(s4, tmp_945)
+    !tmp_945
+    tmp_947 = 1
+    tmp_948 = ne tmp_946, tmp_947
+    !tmp_946
+    !tmp_947
+    br tmp_948 -> L_THEN_236, L_ELSE_237
 
-L_THEN_232:
-    !tmp_934
+L_THEN_236:
+    !tmp_948
     panic(4132)
 
-L_ELSE_233:
-    !tmp_934
-    jmp L_MERGE_234
+L_ELSE_237:
+    !tmp_948
+    jmp L_MERGE_238
 
-L_MERGE_234:
-    tmp_937 = 3
-    tmp_938 = call @sla__store_get_StorePoint(s4, tmp_937)
-    !tmp_937
-    moved = tmp_938
-    tmp_939 = load moved+0 as i32
-    tmp_940 = 30
-    tmp_941 = ne tmp_939, tmp_940
-    !tmp_939
-    !tmp_940
-    br tmp_941 -> L_THEN_235, L_ELSE_236
+L_MERGE_238:
+    tmp_951 = 3
+    tmp_952 = call @sla__store_get_StorePoint(s4, tmp_951)
+    !tmp_951
+    moved = tmp_952
+    tmp_953 = load moved+0 as i32
+    tmp_954 = 30
+    tmp_955 = ne tmp_953, tmp_954
+    !tmp_953
+    !tmp_954
+    br tmp_955 -> L_THEN_239, L_ELSE_240
 
-L_THEN_235:
-    !tmp_941
+L_THEN_239:
+    !tmp_955
     panic(4133)
 
-L_ELSE_236:
-    !tmp_941
-    jmp L_MERGE_237
+L_ELSE_240:
+    !tmp_955
+    jmp L_MERGE_241
 
-L_MERGE_237:
+L_MERGE_241:
     !s0
     !s1
     !s2
@@ -3402,112 +3465,112 @@ L_MERGE_237:
     return
 
 @test "resource generic constructor"():
-L_TEST_ENTRY_238:
-    tmp_944 = alloc 4
-    tmp_945 = 0
-    store tmp_944+0, tmp_945 as i32
-    !tmp_945
-    tmp_946 = call @sla__resource_slot_new_TestTime(tmp_944)
-    !tmp_944
-    r = tmp_946
-    tmp_947 = call @sla__resource_has_TestTime(r)
-    tmp_948 = 0
-    tmp_949 = ne tmp_947, tmp_948
-    !tmp_947
-    !tmp_948
-    br tmp_949 -> L_THEN_239, L_ELSE_240
+L_TEST_ENTRY_242:
+    tmp_958 = alloc 4
+    tmp_959 = 0
+    store tmp_958+0, tmp_959 as i32
+    !tmp_959
+    tmp_960 = call @sla__resource_slot_new_TestTime(tmp_958)
+    !tmp_958
+    r = tmp_960
+    tmp_961 = call @sla__resource_has_TestTime(r)
+    tmp_962 = 0
+    tmp_963 = ne tmp_961, tmp_962
+    !tmp_961
+    !tmp_962
+    br tmp_963 -> L_THEN_243, L_ELSE_244
 
-L_THEN_239:
-    !tmp_949
+L_THEN_243:
+    !tmp_963
     panic(2290)
 
-L_ELSE_240:
-    !tmp_949
-    jmp L_MERGE_241
+L_ELSE_244:
+    !tmp_963
+    jmp L_MERGE_245
 
-L_MERGE_241:
+L_MERGE_245:
     !r
     return
 
 @test "resource insert get remove"():
-L_TEST_ENTRY_242:
-    tmp_952 = call @sla__test_time_slot_new()
-    r0 = tmp_952
-    tmp_953 = call @sla__resource_has_TestTime(r0)
-    tmp_954 = 0
-    tmp_955 = ne tmp_953, tmp_954
-    !tmp_953
-    !tmp_954
-    br tmp_955 -> L_THEN_243, L_ELSE_244
-
-L_THEN_243:
-    !tmp_955
-    panic(2300)
-
-L_ELSE_244:
-    !tmp_955
-    jmp L_MERGE_245
-
-L_MERGE_245:
-    tmp_958 = alloc 4
-    tmp_959 = 7
-    store tmp_958+0, tmp_959 as i32
-    !tmp_959
-    tmp_960 = call @sla__resource_insert_TestTime(r0, tmp_958)
-    !tmp_958
-    r1 = tmp_960
-    tmp_961 = call @sla__resource_has_TestTime(r1)
-    tmp_962 = 1
-    tmp_963 = ne tmp_961, tmp_962
-    !tmp_961
-    !tmp_962
-    br tmp_963 -> L_THEN_246, L_ELSE_247
-
-L_THEN_246:
-    !tmp_963
-    panic(2301)
-
-L_ELSE_247:
-    !tmp_963
-    jmp L_MERGE_248
-
-L_MERGE_248:
-    tmp_966 = call @sla__resource_get_TestTime(r1)
-    t = tmp_966
-    tmp_967 = load t+0 as i32
-    tmp_968 = 7
+L_TEST_ENTRY_246:
+    tmp_966 = call @sla__test_time_slot_new()
+    r0 = tmp_966
+    tmp_967 = call @sla__resource_has_TestTime(r0)
+    tmp_968 = 0
     tmp_969 = ne tmp_967, tmp_968
     !tmp_967
     !tmp_968
-    br tmp_969 -> L_THEN_249, L_ELSE_250
+    br tmp_969 -> L_THEN_247, L_ELSE_248
 
-L_THEN_249:
+L_THEN_247:
     !tmp_969
+    panic(2300)
+
+L_ELSE_248:
+    !tmp_969
+    jmp L_MERGE_249
+
+L_MERGE_249:
+    tmp_972 = alloc 4
+    tmp_973 = 7
+    store tmp_972+0, tmp_973 as i32
+    !tmp_973
+    tmp_974 = call @sla__resource_insert_TestTime(r0, tmp_972)
+    !tmp_972
+    r1 = tmp_974
+    tmp_975 = call @sla__resource_has_TestTime(r1)
+    tmp_976 = 1
+    tmp_977 = ne tmp_975, tmp_976
+    !tmp_975
+    !tmp_976
+    br tmp_977 -> L_THEN_250, L_ELSE_251
+
+L_THEN_250:
+    !tmp_977
+    panic(2301)
+
+L_ELSE_251:
+    !tmp_977
+    jmp L_MERGE_252
+
+L_MERGE_252:
+    tmp_980 = call @sla__resource_get_TestTime(r1)
+    t = tmp_980
+    tmp_981 = load t+0 as i32
+    tmp_982 = 7
+    tmp_983 = ne tmp_981, tmp_982
+    !tmp_981
+    !tmp_982
+    br tmp_983 -> L_THEN_253, L_ELSE_254
+
+L_THEN_253:
+    !tmp_983
     panic(2302)
 
-L_ELSE_250:
-    !tmp_969
-    jmp L_MERGE_251
+L_ELSE_254:
+    !tmp_983
+    jmp L_MERGE_255
 
-L_MERGE_251:
-    tmp_972 = call @sla__resource_remove_TestTime(r1)
-    r2 = tmp_972
-    tmp_973 = call @sla__resource_has_TestTime(r2)
-    tmp_974 = 0
-    tmp_975 = ne tmp_973, tmp_974
-    !tmp_973
-    !tmp_974
-    br tmp_975 -> L_THEN_252, L_ELSE_253
+L_MERGE_255:
+    tmp_986 = call @sla__resource_remove_TestTime(r1)
+    r2 = tmp_986
+    tmp_987 = call @sla__resource_has_TestTime(r2)
+    tmp_988 = 0
+    tmp_989 = ne tmp_987, tmp_988
+    !tmp_987
+    !tmp_988
+    br tmp_989 -> L_THEN_256, L_ELSE_257
 
-L_THEN_252:
-    !tmp_975
+L_THEN_256:
+    !tmp_989
     panic(2303)
 
-L_ELSE_253:
-    !tmp_975
-    jmp L_MERGE_254
+L_ELSE_257:
+    !tmp_989
+    jmp L_MERGE_258
 
-L_MERGE_254:
+L_MERGE_258:
     !r1
     !t
     !r2
@@ -3515,41 +3578,41 @@ L_MERGE_254:
     return
 
 @test "resource replace overwrites value"():
-L_TEST_ENTRY_255:
-    tmp_978 = call @sla__test_time_slot_new()
-    r0 = tmp_978
-    tmp_979 = alloc 4
-    tmp_980 = 1
-    store tmp_979+0, tmp_980 as i32
-    !tmp_980
-    tmp_981 = call @sla__resource_insert_TestTime(r0, tmp_979)
-    !tmp_979
-    r1 = tmp_981
-    tmp_982 = alloc 4
-    tmp_983 = 2
-    store tmp_982+0, tmp_983 as i32
-    !tmp_983
-    tmp_984 = call @sla__resource_insert_TestTime(r1, tmp_982)
-    !tmp_982
-    r2 = tmp_984
-    tmp_985 = call @sla__resource_get_TestTime(r2)
-    t = tmp_985
-    tmp_986 = load t+0 as i32
-    tmp_987 = 2
-    tmp_988 = ne tmp_986, tmp_987
-    !tmp_986
-    !tmp_987
-    br tmp_988 -> L_THEN_256, L_ELSE_257
+L_TEST_ENTRY_259:
+    tmp_992 = call @sla__test_time_slot_new()
+    r0 = tmp_992
+    tmp_993 = alloc 4
+    tmp_994 = 1
+    store tmp_993+0, tmp_994 as i32
+    !tmp_994
+    tmp_995 = call @sla__resource_insert_TestTime(r0, tmp_993)
+    !tmp_993
+    r1 = tmp_995
+    tmp_996 = alloc 4
+    tmp_997 = 2
+    store tmp_996+0, tmp_997 as i32
+    !tmp_997
+    tmp_998 = call @sla__resource_insert_TestTime(r1, tmp_996)
+    !tmp_996
+    r2 = tmp_998
+    tmp_999 = call @sla__resource_get_TestTime(r2)
+    t = tmp_999
+    tmp_1000 = load t+0 as i32
+    tmp_1001 = 2
+    tmp_1002 = ne tmp_1000, tmp_1001
+    !tmp_1000
+    !tmp_1001
+    br tmp_1002 -> L_THEN_260, L_ELSE_261
 
-L_THEN_256:
-    !tmp_988
+L_THEN_260:
+    !tmp_1002
     panic(2310)
 
-L_ELSE_257:
-    !tmp_988
-    jmp L_MERGE_258
+L_ELSE_261:
+    !tmp_1002
+    jmp L_MERGE_262
 
-L_MERGE_258:
+L_MERGE_262:
     !r1
     !r2
     !t
@@ -3557,213 +3620,293 @@ L_MERGE_258:
     return
 
 @test "messages generic constructor"():
-L_TEST_ENTRY_259:
-    tmp_991 = call @sla__test_damage_default()
-    tmp_992 = call @sla__messages_new_TestDamageMessage(tmp_991)
-    !tmp_991
-    m = tmp_992
-    tmp_993 = load m+0 as i64
-    tmp_994 = 0
-    tmp_995 = ne tmp_993, tmp_994
-    !tmp_993
-    !tmp_994
-    br tmp_995 -> L_THEN_260, L_ELSE_261
+L_TEST_ENTRY_263:
+    tmp_1005 = call @sla__test_damage_default()
+    tmp_1006 = call @sla__messages_new_TestDamageMessage(tmp_1005)
+    !tmp_1005
+    m = tmp_1006
+    tmp_1007 = load m+0 as i64
+    tmp_1008 = 0
+    tmp_1009 = ne tmp_1007, tmp_1008
+    !tmp_1007
+    !tmp_1008
+    br tmp_1009 -> L_THEN_264, L_ELSE_265
 
-L_THEN_260:
-    !tmp_995
+L_THEN_264:
+    !tmp_1009
     panic(2390)
 
-L_ELSE_261:
-    !tmp_995
-    jmp L_MERGE_262
+L_ELSE_265:
+    !tmp_1009
+    jmp L_MERGE_266
 
-L_MERGE_262:
+L_MERGE_266:
     !m
     return
 
 @test "messages writer appends"():
-L_TEST_ENTRY_263:
-    tmp_998 = call @sla__test_damage_messages_new()
-    m0 = tmp_998
-    tmp_999 = alloc 4
-    tmp_1000 = 5
-    store tmp_999+0, tmp_1000 as i32
-    !tmp_1000
-    tmp_1001 = call @sla__messages_write_TestDamageMessage(m0, tmp_999)
-    !tmp_999
-    m1 = tmp_1001
-    tmp_1002 = alloc 4
-    tmp_1003 = 7
-    store tmp_1002+0, tmp_1003 as i32
-    !tmp_1003
-    tmp_1004 = call @sla__messages_write_TestDamageMessage(m1, tmp_1002)
-    !tmp_1002
-    m2 = tmp_1004
-    tmp_1005 = load m2+0 as i64
-    tmp_1006 = 2
-    tmp_1007 = ne tmp_1005, tmp_1006
-    !tmp_1005
-    !tmp_1006
-    br tmp_1007 -> L_THEN_264, L_ELSE_265
+L_TEST_ENTRY_267:
+    tmp_1012 = call @sla__test_damage_messages_new()
+    m0 = tmp_1012
+    tmp_1013 = alloc 4
+    tmp_1014 = 5
+    store tmp_1013+0, tmp_1014 as i32
+    !tmp_1014
+    tmp_1015 = call @sla__messages_write_TestDamageMessage(m0, tmp_1013)
+    !tmp_1013
+    m1 = tmp_1015
+    tmp_1016 = alloc 4
+    tmp_1017 = 7
+    store tmp_1016+0, tmp_1017 as i32
+    !tmp_1017
+    tmp_1018 = call @sla__messages_write_TestDamageMessage(m1, tmp_1016)
+    !tmp_1016
+    m2 = tmp_1018
+    tmp_1019 = load m2+0 as i64
+    tmp_1020 = 2
+    tmp_1021 = ne tmp_1019, tmp_1020
+    !tmp_1019
+    !tmp_1020
+    br tmp_1021 -> L_THEN_268, L_ELSE_269
 
-L_THEN_264:
-    !tmp_1007
+L_THEN_268:
+    !tmp_1021
     panic(2400)
 
-L_ELSE_265:
-    !tmp_1007
-    jmp L_MERGE_266
+L_ELSE_269:
+    !tmp_1021
+    jmp L_MERGE_270
 
-L_MERGE_266:
+L_MERGE_270:
     !m2
     !m0
     !m1
     return
 
-@test "message reader cursor advances independently"():
-L_TEST_ENTRY_267:
-    tmp_1010 = call @sla__test_damage_messages_new()
-    m0 = tmp_1010
-    tmp_1011 = alloc 4
-    tmp_1012 = 5
-    store tmp_1011+0, tmp_1012 as i32
-    !tmp_1012
-    tmp_1013 = call @sla__messages_write_TestDamageMessage(m0, tmp_1011)
-    !tmp_1011
-    m1 = tmp_1013
-    tmp_1014 = alloc 4
-    tmp_1015 = 7
-    store tmp_1014+0, tmp_1015 as i32
-    !tmp_1015
-    tmp_1016 = call @sla__messages_write_TestDamageMessage(m1, tmp_1014)
-    !tmp_1014
-    m2 = tmp_1016
-    tmp_1017 = call @sla__message_reader_new()
-    r0 = tmp_1017
-    tmp_1018 = call @sla__message_reader_new()
-    r_other = tmp_1018
-    tmp_1019 = call @sla__test_damage_default()
-    tmp_1020 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_1019)
-    !tmp_1019
-    read1 = tmp_1020
-    tmp_1021 = load read1+0 as u8
-    tmp_1022 = 1
-    tmp_1023 = ne tmp_1021, tmp_1022
-    !tmp_1021
-    !tmp_1022
-    br tmp_1023 -> L_THEN_268, L_ELSE_269
-
-L_THEN_268:
-    !tmp_1023
-    panic(2410)
-
-L_ELSE_269:
-    !tmp_1023
-    jmp L_MERGE_270
-
-L_MERGE_270:
-    tmp_1026 = load read1+8 as ptr
-    tmp_1027 = load tmp_1026+0 as i32
-    !tmp_1026
-    tmp_1028 = 5
-    tmp_1029 = ne tmp_1027, tmp_1028
+@test "message writer param batches appends"():
+L_TEST_ENTRY_271:
+    tmp_1024 = call @sla__test_damage_messages_new()
+    m0 = tmp_1024
+    tmp_1025 = call @sla__message_writer_new_TestDamageMessage()
+    w0 = tmp_1025
+    tmp_1026 = alloc 4
+    tmp_1027 = 3
+    store tmp_1026+0, tmp_1027 as i32
     !tmp_1027
-    !tmp_1028
-    br tmp_1029 -> L_THEN_271, L_ELSE_272
-
-L_THEN_271:
+    tmp_1028 = call @sla__message_writer_send_TestDamageMessage(w0, tmp_1026)
+    !tmp_1026
+    w1 = tmp_1028
+    tmp_1029 = alloc 4
+    tmp_1030 = 9
+    store tmp_1029+0, tmp_1030 as i32
+    !tmp_1030
+    tmp_1031 = call @sla__message_writer_send_TestDamageMessage(w1, tmp_1029)
     !tmp_1029
-    panic(2411)
-
-L_ELSE_272:
-    !tmp_1029
-    jmp L_MERGE_273
-
-L_MERGE_273:
-    tmp_1032 = load read1+16 as ptr
-    tmp_1033 = call @sla__test_damage_default()
-    tmp_1034 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_1032, tmp_1033)
-    !tmp_1032
-    !tmp_1033
-    read2 = tmp_1034
-    tmp_1035 = load read2+0 as u8
-    tmp_1036 = 1
-    tmp_1037 = ne tmp_1035, tmp_1036
-    !tmp_1035
+    w2 = tmp_1031
+    tmp_1032 = call @sla__messages_apply_writer_TestDamageMessage(m0, w2)
+    m1 = tmp_1032
+    tmp_1033 = call @sla__message_reader_new()
+    r0 = tmp_1033
+    tmp_1034 = call @sla__test_damage_default()
+    tmp_1035 = call @sla__messages_read_next_TestDamageMessage(m1, r0, tmp_1034)
+    !tmp_1034
+    read1 = tmp_1035
+    tmp_1036 = load read1+16 as ptr
+    tmp_1037 = call @sla__test_damage_default()
+    tmp_1038 = call @sla__messages_read_next_TestDamageMessage(m1, tmp_1036, tmp_1037)
     !tmp_1036
-    br tmp_1037 -> L_THEN_274, L_ELSE_275
-
-L_THEN_274:
     !tmp_1037
-    panic(2412)
-
-L_ELSE_275:
-    !tmp_1037
-    jmp L_MERGE_276
-
-L_MERGE_276:
-    tmp_1040 = load read2+8 as ptr
-    tmp_1041 = load tmp_1040+0 as i32
+    read2 = tmp_1038
+    tmp_1039 = load read1+8 as ptr
+    tmp_1040 = load tmp_1039+0 as i32
+    !tmp_1039
+    tmp_1041 = 3
+    tmp_1042 = ne tmp_1040, tmp_1041
     !tmp_1040
-    tmp_1042 = 7
-    tmp_1043 = ne tmp_1041, tmp_1042
     !tmp_1041
+    br tmp_1042 -> L_THEN_272, L_ELSE_273
+
+L_THEN_272:
     !tmp_1042
-    br tmp_1043 -> L_THEN_277, L_ELSE_278
+    panic(2420)
 
-L_THEN_277:
-    !tmp_1043
-    panic(2413)
+L_ELSE_273:
+    !tmp_1042
+    jmp L_MERGE_274
 
-L_ELSE_278:
-    !tmp_1043
-    jmp L_MERGE_279
-
-L_MERGE_279:
-    tmp_1046 = load read2+16 as ptr
-    tmp_1047 = call @sla__test_damage_default()
-    tmp_1048 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_1046, tmp_1047)
+L_MERGE_274:
+    tmp_1045 = load read2+8 as ptr
+    tmp_1046 = load tmp_1045+0 as i32
+    !tmp_1045
+    tmp_1047 = 9
+    tmp_1048 = ne tmp_1046, tmp_1047
     !tmp_1046
     !tmp_1047
-    read3 = tmp_1048
-    tmp_1049 = load read3+0 as u8
-    tmp_1050 = 0
-    tmp_1051 = ne tmp_1049, tmp_1050
-    !tmp_1049
-    !tmp_1050
-    br tmp_1051 -> L_THEN_280, L_ELSE_281
+    br tmp_1048 -> L_THEN_275, L_ELSE_276
 
-L_THEN_280:
-    !tmp_1051
+L_THEN_275:
+    !tmp_1048
+    panic(2421)
+
+L_ELSE_276:
+    !tmp_1048
+    jmp L_MERGE_277
+
+L_MERGE_277:
+    !read1
+    !m0
+    !w0
+    !m1
+    !w1
+    !w2
+    !read2
+    !r0
+    return
+
+@test "message reader cursor advances independently"():
+L_TEST_ENTRY_278:
+    tmp_1051 = call @sla__test_damage_messages_new()
+    m0 = tmp_1051
+    tmp_1052 = alloc 4
+    tmp_1053 = 5
+    store tmp_1052+0, tmp_1053 as i32
+    !tmp_1053
+    tmp_1054 = call @sla__messages_write_TestDamageMessage(m0, tmp_1052)
+    !tmp_1052
+    m1 = tmp_1054
+    tmp_1055 = alloc 4
+    tmp_1056 = 7
+    store tmp_1055+0, tmp_1056 as i32
+    !tmp_1056
+    tmp_1057 = call @sla__messages_write_TestDamageMessage(m1, tmp_1055)
+    !tmp_1055
+    m2 = tmp_1057
+    tmp_1058 = call @sla__message_reader_new()
+    r0 = tmp_1058
+    tmp_1059 = call @sla__message_reader_new()
+    r_other = tmp_1059
+    tmp_1060 = call @sla__test_damage_default()
+    tmp_1061 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_1060)
+    !tmp_1060
+    read1 = tmp_1061
+    tmp_1062 = load read1+0 as u8
+    tmp_1063 = 1
+    tmp_1064 = ne tmp_1062, tmp_1063
+    !tmp_1062
+    !tmp_1063
+    br tmp_1064 -> L_THEN_279, L_ELSE_280
+
+L_THEN_279:
+    !tmp_1064
+    panic(2410)
+
+L_ELSE_280:
+    !tmp_1064
+    jmp L_MERGE_281
+
+L_MERGE_281:
+    tmp_1067 = load read1+8 as ptr
+    tmp_1068 = load tmp_1067+0 as i32
+    !tmp_1067
+    tmp_1069 = 5
+    tmp_1070 = ne tmp_1068, tmp_1069
+    !tmp_1068
+    !tmp_1069
+    br tmp_1070 -> L_THEN_282, L_ELSE_283
+
+L_THEN_282:
+    !tmp_1070
+    panic(2411)
+
+L_ELSE_283:
+    !tmp_1070
+    jmp L_MERGE_284
+
+L_MERGE_284:
+    tmp_1073 = load read1+16 as ptr
+    tmp_1074 = call @sla__test_damage_default()
+    tmp_1075 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_1073, tmp_1074)
+    !tmp_1073
+    !tmp_1074
+    read2 = tmp_1075
+    tmp_1076 = load read2+0 as u8
+    tmp_1077 = 1
+    tmp_1078 = ne tmp_1076, tmp_1077
+    !tmp_1076
+    !tmp_1077
+    br tmp_1078 -> L_THEN_285, L_ELSE_286
+
+L_THEN_285:
+    !tmp_1078
+    panic(2412)
+
+L_ELSE_286:
+    !tmp_1078
+    jmp L_MERGE_287
+
+L_MERGE_287:
+    tmp_1081 = load read2+8 as ptr
+    tmp_1082 = load tmp_1081+0 as i32
+    !tmp_1081
+    tmp_1083 = 7
+    tmp_1084 = ne tmp_1082, tmp_1083
+    !tmp_1082
+    !tmp_1083
+    br tmp_1084 -> L_THEN_288, L_ELSE_289
+
+L_THEN_288:
+    !tmp_1084
+    panic(2413)
+
+L_ELSE_289:
+    !tmp_1084
+    jmp L_MERGE_290
+
+L_MERGE_290:
+    tmp_1087 = load read2+16 as ptr
+    tmp_1088 = call @sla__test_damage_default()
+    tmp_1089 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_1087, tmp_1088)
+    !tmp_1087
+    !tmp_1088
+    read3 = tmp_1089
+    tmp_1090 = load read3+0 as u8
+    tmp_1091 = 0
+    tmp_1092 = ne tmp_1090, tmp_1091
+    !tmp_1090
+    !tmp_1091
+    br tmp_1092 -> L_THEN_291, L_ELSE_292
+
+L_THEN_291:
+    !tmp_1092
     panic(2414)
 
-L_ELSE_281:
-    !tmp_1051
-    jmp L_MERGE_282
+L_ELSE_292:
+    !tmp_1092
+    jmp L_MERGE_293
 
-L_MERGE_282:
-    tmp_1054 = call @sla__test_damage_default()
-    tmp_1055 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_1054)
-    !tmp_1054
-    other = tmp_1055
-    tmp_1056 = load other+8 as ptr
-    tmp_1057 = load tmp_1056+0 as i32
-    !tmp_1056
-    tmp_1058 = 5
-    tmp_1059 = ne tmp_1057, tmp_1058
-    !tmp_1057
-    !tmp_1058
-    br tmp_1059 -> L_THEN_283, L_ELSE_284
+L_MERGE_293:
+    tmp_1095 = call @sla__test_damage_default()
+    tmp_1096 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_1095)
+    !tmp_1095
+    other = tmp_1096
+    tmp_1097 = load other+8 as ptr
+    tmp_1098 = load tmp_1097+0 as i32
+    !tmp_1097
+    tmp_1099 = 5
+    tmp_1100 = ne tmp_1098, tmp_1099
+    !tmp_1098
+    !tmp_1099
+    br tmp_1100 -> L_THEN_294, L_ELSE_295
 
-L_THEN_283:
-    !tmp_1059
+L_THEN_294:
+    !tmp_1100
     panic(2415)
 
-L_ELSE_284:
-    !tmp_1059
-    jmp L_MERGE_285
+L_ELSE_295:
+    !tmp_1100
+    jmp L_MERGE_296
 
-L_MERGE_285:
+L_MERGE_296:
     !m2
     !m0
     !read1
@@ -3776,103 +3919,103 @@ L_MERGE_285:
     return
 
 @test "world spawn despawn rejects stale entity"():
-L_TEST_ENTRY_286:
-    tmp_1062 = call @sla__test_world_new()
-    w0 = tmp_1062
-    tmp_1063 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
-    w1 = load tmp_1063+0 as ptr
-    e1 = load tmp_1063+8 as ptr
-    !tmp_1063
-    tmp_1064 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1)
-    tmp_1065 = 1
-    tmp_1066 = ne tmp_1064, tmp_1065
-    !tmp_1064
-    !tmp_1065
-    br tmp_1066 -> L_THEN_287, L_ELSE_288
+L_TEST_ENTRY_297:
+    tmp_1103 = call @sla__test_world_new()
+    w0 = tmp_1103
+    tmp_1104 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
+    w1 = load tmp_1104+0 as ptr
+    e1 = load tmp_1104+8 as ptr
+    !tmp_1104
+    tmp_1105 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1)
+    tmp_1106 = 1
+    tmp_1107 = ne tmp_1105, tmp_1106
+    !tmp_1105
+    !tmp_1106
+    br tmp_1107 -> L_THEN_298, L_ELSE_299
 
-L_THEN_287:
-    !tmp_1066
+L_THEN_298:
+    !tmp_1107
     panic(7100)
 
-L_ELSE_288:
-    !tmp_1066
-    jmp L_MERGE_289
+L_ELSE_299:
+    !tmp_1107
+    jmp L_MERGE_300
 
-L_MERGE_289:
-    tmp_1069 = call @sla__world_despawn_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1)
-    w2 = tmp_1069
-    tmp_1070 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1)
-    tmp_1071 = 0
-    tmp_1072 = ne tmp_1070, tmp_1071
-    !tmp_1070
-    !tmp_1071
-    br tmp_1072 -> L_THEN_290, L_ELSE_291
+L_MERGE_300:
+    tmp_1110 = call @sla__world_despawn_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1)
+    w2 = tmp_1110
+    tmp_1111 = call @sla__world_is_alive_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1)
+    tmp_1112 = 0
+    tmp_1113 = ne tmp_1111, tmp_1112
+    !tmp_1111
+    !tmp_1112
+    br tmp_1113 -> L_THEN_301, L_ELSE_302
 
-L_THEN_290:
-    !tmp_1072
+L_THEN_301:
+    !tmp_1113
     panic(7101)
 
-L_ELSE_291:
-    !tmp_1072
-    jmp L_MERGE_292
+L_ELSE_302:
+    !tmp_1113
+    jmp L_MERGE_303
 
-L_MERGE_292:
-    tmp_1075 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w2)
-    w3 = load tmp_1075+0 as ptr
-    e2 = load tmp_1075+8 as ptr
-    !tmp_1075
-    tmp_1076 = load e2+0 as i32
-    tmp_1077 = load e1+0 as i32
-    tmp_1078 = ne tmp_1076, tmp_1077
-    !tmp_1076
-    !tmp_1077
-    br tmp_1078 -> L_THEN_293, L_ELSE_294
+L_MERGE_303:
+    tmp_1116 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w2)
+    w3 = load tmp_1116+0 as ptr
+    e2 = load tmp_1116+8 as ptr
+    !tmp_1116
+    tmp_1117 = load e2+0 as i32
+    tmp_1118 = load e1+0 as i32
+    tmp_1119 = ne tmp_1117, tmp_1118
+    !tmp_1117
+    !tmp_1118
+    br tmp_1119 -> L_THEN_304, L_ELSE_305
 
-L_THEN_293:
-    !tmp_1078
+L_THEN_304:
+    !tmp_1119
     panic(7102)
 
-L_ELSE_294:
-    !tmp_1078
-    jmp L_MERGE_295
+L_ELSE_305:
+    !tmp_1119
+    jmp L_MERGE_306
 
-L_MERGE_295:
-    tmp_1081 = load e2+4 as i32
-    tmp_1082 = load e1+4 as i32
-    tmp_1083 = 1
-    tmp_1084 = add tmp_1082, tmp_1083
-    !tmp_1082
-    !tmp_1083
-    tmp_1085 = ne tmp_1081, tmp_1084
-    !tmp_1081
-    !tmp_1084
-    br tmp_1085 -> L_THEN_296, L_ELSE_297
+L_MERGE_306:
+    tmp_1122 = load e2+4 as i32
+    tmp_1123 = load e1+4 as i32
+    tmp_1124 = 1
+    tmp_1125 = add tmp_1123, tmp_1124
+    !tmp_1123
+    !tmp_1124
+    tmp_1126 = ne tmp_1122, tmp_1125
+    !tmp_1122
+    !tmp_1125
+    br tmp_1126 -> L_THEN_307, L_ELSE_308
 
-L_THEN_296:
-    !tmp_1085
+L_THEN_307:
+    !tmp_1126
     panic(7103)
 
-L_ELSE_297:
-    !tmp_1085
-    jmp L_MERGE_298
+L_ELSE_308:
+    !tmp_1126
+    jmp L_MERGE_309
 
-L_MERGE_298:
-    tmp_1088 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(w3, e1)
-    tmp_1089 = 0
-    tmp_1090 = ne tmp_1088, tmp_1089
-    !tmp_1088
-    !tmp_1089
-    br tmp_1090 -> L_THEN_299, L_ELSE_300
+L_MERGE_309:
+    tmp_1129 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(w3, e1)
+    tmp_1130 = 0
+    tmp_1131 = ne tmp_1129, tmp_1130
+    !tmp_1129
+    !tmp_1130
+    br tmp_1131 -> L_THEN_310, L_ELSE_311
 
-L_THEN_299:
-    !tmp_1090
+L_THEN_310:
+    !tmp_1131
     panic(7104)
 
-L_ELSE_300:
-    !tmp_1090
-    jmp L_MERGE_301
+L_ELSE_311:
+    !tmp_1131
+    jmp L_MERGE_312
 
-L_MERGE_301:
+L_MERGE_312:
     !w0
     !e1
     !w1
@@ -3882,171 +4025,171 @@ L_MERGE_301:
     return
 
 @test "world insert remove components and query pair"():
-L_TEST_ENTRY_302:
-    tmp_1093 = call @sla__test_world_new()
-    w0 = tmp_1093
-    tmp_1094 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
-    w1 = load tmp_1094+0 as ptr
-    e1 = load tmp_1094+8 as ptr
-    !tmp_1094
-    tmp_1095 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
-    w2 = load tmp_1095+0 as ptr
-    e2 = load tmp_1095+8 as ptr
-    !tmp_1095
-    tmp_1096 = alloc 8
-    tmp_1097 = 1
-    store tmp_1096+0, tmp_1097 as i32
-    !tmp_1097
-    tmp_1098 = 2
-    store tmp_1096+4, tmp_1098 as i32
-    !tmp_1098
-    tmp_1099 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1, tmp_1096)
-    !tmp_1096
-    w3 = tmp_1099
-    tmp_1100 = alloc 8
-    tmp_1101 = 10
-    store tmp_1100+0, tmp_1101 as i32
-    !tmp_1101
-    tmp_1102 = 20
-    store tmp_1100+4, tmp_1102 as i32
-    !tmp_1102
-    tmp_1103 = call @sla__world_insert_b_WorldPos_WorldVel_WorldTime_WorldDamage(w3, e1, tmp_1100)
-    !tmp_1100
-    w4 = tmp_1103
-    tmp_1104 = alloc 8
-    tmp_1105 = 5
-    store tmp_1104+0, tmp_1105 as i32
-    !tmp_1105
-    tmp_1106 = 6
-    store tmp_1104+4, tmp_1106 as i32
-    !tmp_1106
-    tmp_1107 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w4, e2, tmp_1104)
-    !tmp_1104
-    w5 = tmp_1107
-    tmp_1108 = call @sla__world_pos_default()
-    tmp_1109 = call @sla__world_vel_default()
-    tmp_1110 = call @sla__world_query_a_b_WorldPos_WorldVel_WorldTime_WorldDamage(w5, tmp_1108, tmp_1109)
-    !tmp_1108
-    !tmp_1109
-    q = tmp_1110
-    tmp_1111 = load q+0 as i64
-    tmp_1112 = 1
-    tmp_1113 = ne tmp_1111, tmp_1112
-    !tmp_1111
-    !tmp_1112
-    br tmp_1113 -> L_THEN_303, L_ELSE_304
+L_TEST_ENTRY_313:
+    tmp_1134 = call @sla__test_world_new()
+    w0 = tmp_1134
+    tmp_1135 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
+    w1 = load tmp_1135+0 as ptr
+    e1 = load tmp_1135+8 as ptr
+    !tmp_1135
+    tmp_1136 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
+    w2 = load tmp_1136+0 as ptr
+    e2 = load tmp_1136+8 as ptr
+    !tmp_1136
+    tmp_1137 = alloc 8
+    tmp_1138 = 1
+    store tmp_1137+0, tmp_1138 as i32
+    !tmp_1138
+    tmp_1139 = 2
+    store tmp_1137+4, tmp_1139 as i32
+    !tmp_1139
+    tmp_1140 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1, tmp_1137)
+    !tmp_1137
+    w3 = tmp_1140
+    tmp_1141 = alloc 8
+    tmp_1142 = 10
+    store tmp_1141+0, tmp_1142 as i32
+    !tmp_1142
+    tmp_1143 = 20
+    store tmp_1141+4, tmp_1143 as i32
+    !tmp_1143
+    tmp_1144 = call @sla__world_insert_b_WorldPos_WorldVel_WorldTime_WorldDamage(w3, e1, tmp_1141)
+    !tmp_1141
+    w4 = tmp_1144
+    tmp_1145 = alloc 8
+    tmp_1146 = 5
+    store tmp_1145+0, tmp_1146 as i32
+    !tmp_1146
+    tmp_1147 = 6
+    store tmp_1145+4, tmp_1147 as i32
+    !tmp_1147
+    tmp_1148 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w4, e2, tmp_1145)
+    !tmp_1145
+    w5 = tmp_1148
+    tmp_1149 = call @sla__world_pos_default()
+    tmp_1150 = call @sla__world_vel_default()
+    tmp_1151 = call @sla__world_query_a_b_WorldPos_WorldVel_WorldTime_WorldDamage(w5, tmp_1149, tmp_1150)
+    !tmp_1149
+    !tmp_1150
+    q = tmp_1151
+    tmp_1152 = load q+0 as i64
+    tmp_1153 = 1
+    tmp_1154 = ne tmp_1152, tmp_1153
+    !tmp_1152
+    !tmp_1153
+    br tmp_1154 -> L_THEN_314, L_ELSE_315
 
-L_THEN_303:
-    !tmp_1113
+L_THEN_314:
+    !tmp_1154
     panic(7110)
 
-L_ELSE_304:
-    !tmp_1113
-    jmp L_MERGE_305
+L_ELSE_315:
+    !tmp_1154
+    jmp L_MERGE_316
 
-L_MERGE_305:
-    tmp_1116 = load q+8 as ptr
-    tmp_1117 = 0
-    tmp_1118 = mul tmp_1117, 8
-    tmp_1119 = ptr_add tmp_1116, tmp_1118
-    !tmp_1118
-    !tmp_1117
-    tmp_1120 = load tmp_1119+0 as ptr
-    !tmp_1119
-    !tmp_1116
-    tmp_1121 = load tmp_1120+0 as ptr
-    !tmp_1120
-    tmp_1122 = load tmp_1121+0 as i32
-    !tmp_1121
-    tmp_1123 = load e1+0 as i32
-    tmp_1124 = ne tmp_1122, tmp_1123
-    !tmp_1122
-    !tmp_1123
-    br tmp_1124 -> L_THEN_306, L_ELSE_307
+L_MERGE_316:
+    tmp_1157 = load q+8 as ptr
+    tmp_1158 = 0
+    tmp_1159 = mul tmp_1158, 8
+    tmp_1160 = ptr_add tmp_1157, tmp_1159
+    !tmp_1159
+    !tmp_1158
+    tmp_1161 = load tmp_1160+0 as ptr
+    !tmp_1160
+    !tmp_1157
+    tmp_1162 = load tmp_1161+0 as ptr
+    !tmp_1161
+    tmp_1163 = load tmp_1162+0 as i32
+    !tmp_1162
+    tmp_1164 = load e1+0 as i32
+    tmp_1165 = ne tmp_1163, tmp_1164
+    !tmp_1163
+    !tmp_1164
+    br tmp_1165 -> L_THEN_317, L_ELSE_318
 
-L_THEN_306:
-    !tmp_1124
+L_THEN_317:
+    !tmp_1165
     panic(7111)
 
-L_ELSE_307:
-    !tmp_1124
-    jmp L_MERGE_308
+L_ELSE_318:
+    !tmp_1165
+    jmp L_MERGE_319
 
-L_MERGE_308:
-    tmp_1127 = load q+8 as ptr
-    tmp_1128 = 0
-    tmp_1129 = mul tmp_1128, 8
-    tmp_1130 = ptr_add tmp_1127, tmp_1129
-    !tmp_1129
-    !tmp_1128
-    tmp_1131 = load tmp_1130+0 as ptr
-    !tmp_1130
-    !tmp_1127
-    tmp_1132 = load tmp_1131+24 as ptr
-    !tmp_1131
-    tmp_1133 = load tmp_1132+0 as i32
-    !tmp_1132
-    tmp_1134 = 1
-    tmp_1135 = ne tmp_1133, tmp_1134
-    !tmp_1133
-    !tmp_1134
-    br tmp_1135 -> L_THEN_309, L_ELSE_310
+L_MERGE_319:
+    tmp_1168 = load q+8 as ptr
+    tmp_1169 = 0
+    tmp_1170 = mul tmp_1169, 8
+    tmp_1171 = ptr_add tmp_1168, tmp_1170
+    !tmp_1170
+    !tmp_1169
+    tmp_1172 = load tmp_1171+0 as ptr
+    !tmp_1171
+    !tmp_1168
+    tmp_1173 = load tmp_1172+24 as ptr
+    !tmp_1172
+    tmp_1174 = load tmp_1173+0 as i32
+    !tmp_1173
+    tmp_1175 = 1
+    tmp_1176 = ne tmp_1174, tmp_1175
+    !tmp_1174
+    !tmp_1175
+    br tmp_1176 -> L_THEN_320, L_ELSE_321
 
-L_THEN_309:
-    !tmp_1135
+L_THEN_320:
+    !tmp_1176
     panic(7112)
 
-L_ELSE_310:
-    !tmp_1135
-    jmp L_MERGE_311
+L_ELSE_321:
+    !tmp_1176
+    jmp L_MERGE_322
 
-L_MERGE_311:
-    tmp_1138 = load q+8 as ptr
-    tmp_1139 = 0
-    tmp_1140 = mul tmp_1139, 8
-    tmp_1141 = ptr_add tmp_1138, tmp_1140
-    !tmp_1140
-    !tmp_1139
-    tmp_1142 = load tmp_1141+0 as ptr
-    !tmp_1141
-    !tmp_1138
-    tmp_1143 = load tmp_1142+32 as ptr
-    !tmp_1142
-    tmp_1144 = load tmp_1143+0 as i32
-    !tmp_1143
-    tmp_1145 = 10
-    tmp_1146 = ne tmp_1144, tmp_1145
-    !tmp_1144
-    !tmp_1145
-    br tmp_1146 -> L_THEN_312, L_ELSE_313
+L_MERGE_322:
+    tmp_1179 = load q+8 as ptr
+    tmp_1180 = 0
+    tmp_1181 = mul tmp_1180, 8
+    tmp_1182 = ptr_add tmp_1179, tmp_1181
+    !tmp_1181
+    !tmp_1180
+    tmp_1183 = load tmp_1182+0 as ptr
+    !tmp_1182
+    !tmp_1179
+    tmp_1184 = load tmp_1183+32 as ptr
+    !tmp_1183
+    tmp_1185 = load tmp_1184+0 as i32
+    !tmp_1184
+    tmp_1186 = 10
+    tmp_1187 = ne tmp_1185, tmp_1186
+    !tmp_1185
+    !tmp_1186
+    br tmp_1187 -> L_THEN_323, L_ELSE_324
 
-L_THEN_312:
-    !tmp_1146
+L_THEN_323:
+    !tmp_1187
     panic(7113)
 
-L_ELSE_313:
-    !tmp_1146
-    jmp L_MERGE_314
+L_ELSE_324:
+    !tmp_1187
+    jmp L_MERGE_325
 
-L_MERGE_314:
-    tmp_1149 = call @sla__world_remove_a_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1)
-    w6 = tmp_1149
-    tmp_1150 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(w6, e1)
-    tmp_1151 = 0
-    tmp_1152 = ne tmp_1150, tmp_1151
-    !tmp_1150
-    !tmp_1151
-    br tmp_1152 -> L_THEN_315, L_ELSE_316
+L_MERGE_325:
+    tmp_1190 = call @sla__world_remove_a_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1)
+    w6 = tmp_1190
+    tmp_1191 = call @sla__world_has_a_WorldPos_WorldVel_WorldTime_WorldDamage(w6, e1)
+    tmp_1192 = 0
+    tmp_1193 = ne tmp_1191, tmp_1192
+    !tmp_1191
+    !tmp_1192
+    br tmp_1193 -> L_THEN_326, L_ELSE_327
 
-L_THEN_315:
-    !tmp_1152
+L_THEN_326:
+    !tmp_1193
     panic(7114)
 
-L_ELSE_316:
-    !tmp_1152
-    jmp L_MERGE_317
+L_ELSE_327:
+    !tmp_1193
+    jmp L_MERGE_328
 
-L_MERGE_317:
+L_MERGE_328:
     !w6
     !w0
     !e2
@@ -4060,184 +4203,184 @@ L_MERGE_317:
     return
 
 @test "world pair writeback marks changed tick"():
-L_TEST_ENTRY_318:
-    tmp_1155 = call @sla__test_world_new()
-    w0 = tmp_1155
-    tmp_1156 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
-    w1 = load tmp_1156+0 as ptr
-    e1 = load tmp_1156+8 as ptr
-    !tmp_1156
-    tmp_1157 = alloc 8
-    tmp_1158 = 1
-    store tmp_1157+0, tmp_1158 as i32
-    !tmp_1158
-    tmp_1159 = 2
-    store tmp_1157+4, tmp_1159 as i32
-    !tmp_1159
-    tmp_1160 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1, tmp_1157)
-    !tmp_1157
-    w2 = tmp_1160
-    tmp_1161 = alloc 8
-    tmp_1162 = 3
-    store tmp_1161+0, tmp_1162 as i32
-    !tmp_1162
-    tmp_1163 = 4
-    store tmp_1161+4, tmp_1163 as i32
-    !tmp_1163
-    tmp_1164 = call @sla__world_insert_b_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1, tmp_1161)
-    !tmp_1161
-    w3 = tmp_1164
-    tmp_1165 = load w3+40 as i32
-    baseline = tmp_1165
-    tmp_1166 = call @sla__world_increment_tick_WorldPos_WorldVel_WorldTime_WorldDamage(w3)
-    w4 = tmp_1166
-    tmp_1167 = call @sla__world_pos_default()
-    tmp_1168 = call @sla__world_vel_default()
-    tmp_1169 = call @sla__world_query_a_b_WorldPos_WorldVel_WorldTime_WorldDamage(w4, tmp_1167, tmp_1168)
-    !tmp_1167
-    !tmp_1168
-    q = tmp_1169
-    moved = alloc 8
-    tmp_1170 = load q+8 as ptr
-    tmp_1171 = 0
-    tmp_1172 = mul tmp_1171, 8
-    tmp_1173 = ptr_add tmp_1170, tmp_1172
-    !tmp_1172
-    !tmp_1171
-    tmp_1174 = load tmp_1173+0 as ptr
-    !tmp_1173
-    !tmp_1170
-    tmp_1175 = load tmp_1174+24 as ptr
-    !tmp_1174
-    tmp_1176 = load tmp_1175+0 as i32
-    !tmp_1175
-    tmp_1177 = load q+8 as ptr
-    tmp_1178 = 0
-    tmp_1179 = mul tmp_1178, 8
-    tmp_1180 = ptr_add tmp_1177, tmp_1179
-    !tmp_1179
-    !tmp_1178
-    tmp_1181 = load tmp_1180+0 as ptr
-    !tmp_1180
-    !tmp_1177
-    tmp_1182 = load tmp_1181+32 as ptr
-    !tmp_1181
-    tmp_1183 = load tmp_1182+0 as i32
-    !tmp_1182
-    tmp_1184 = add tmp_1176, tmp_1183
-    !tmp_1176
-    !tmp_1183
-    store moved+0, tmp_1184 as i32
-    !tmp_1184
-    tmp_1185 = load q+8 as ptr
-    tmp_1186 = 0
-    tmp_1187 = mul tmp_1186, 8
-    tmp_1188 = ptr_add tmp_1185, tmp_1187
-    !tmp_1187
-    !tmp_1186
-    tmp_1189 = load tmp_1188+0 as ptr
-    !tmp_1188
-    !tmp_1185
-    tmp_1190 = load tmp_1189+24 as ptr
-    !tmp_1189
-    tmp_1191 = load tmp_1190+4 as i32
-    !tmp_1190
-    tmp_1192 = load q+8 as ptr
-    tmp_1193 = 0
-    tmp_1194 = mul tmp_1193, 8
-    tmp_1195 = ptr_add tmp_1192, tmp_1194
-    !tmp_1194
-    !tmp_1193
-    tmp_1196 = load tmp_1195+0 as ptr
-    !tmp_1195
-    !tmp_1192
-    tmp_1197 = load tmp_1196+32 as ptr
-    !tmp_1196
-    tmp_1198 = load tmp_1197+4 as i32
+L_TEST_ENTRY_329:
+    tmp_1196 = call @sla__test_world_new()
+    w0 = tmp_1196
+    tmp_1197 = call @sla__world_spawn_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
+    w1 = load tmp_1197+0 as ptr
+    e1 = load tmp_1197+8 as ptr
     !tmp_1197
-    tmp_1199 = add tmp_1191, tmp_1198
-    !tmp_1191
-    !tmp_1198
-    store moved+4, tmp_1199 as i32
+    tmp_1198 = alloc 8
+    tmp_1199 = 1
+    store tmp_1198+0, tmp_1199 as i32
     !tmp_1199
-    tmp_1200 = load q+8 as ptr
-    tmp_1201 = 0
-    tmp_1202 = mul tmp_1201, 8
-    tmp_1203 = ptr_add tmp_1200, tmp_1202
-    !tmp_1202
-    !tmp_1201
-    tmp_1204 = load tmp_1203+0 as ptr
-    !tmp_1203
+    tmp_1200 = 2
+    store tmp_1198+4, tmp_1200 as i32
     !tmp_1200
-    tmp_1205 = call @sla__world_pair_write_a_WorldPos_WorldVel_WorldTime_WorldDamage(w4, tmp_1204, moved)
+    tmp_1201 = call @sla__world_insert_a_WorldPos_WorldVel_WorldTime_WorldDamage(w1, e1, tmp_1198)
+    !tmp_1198
+    w2 = tmp_1201
+    tmp_1202 = alloc 8
+    tmp_1203 = 3
+    store tmp_1202+0, tmp_1203 as i32
+    !tmp_1203
+    tmp_1204 = 4
+    store tmp_1202+4, tmp_1204 as i32
     !tmp_1204
-    w5 = tmp_1205
-    tmp_1206 = call @sla__world_get_a_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1)
-    p = tmp_1206
-    tmp_1207 = load p+0 as i32
-    tmp_1208 = 4
-    tmp_1209 = ne tmp_1207, tmp_1208
-    !tmp_1207
+    tmp_1205 = call @sla__world_insert_b_WorldPos_WorldVel_WorldTime_WorldDamage(w2, e1, tmp_1202)
+    !tmp_1202
+    w3 = tmp_1205
+    tmp_1206 = load w3+40 as i32
+    baseline = tmp_1206
+    tmp_1207 = call @sla__world_increment_tick_WorldPos_WorldVel_WorldTime_WorldDamage(w3)
+    w4 = tmp_1207
+    tmp_1208 = call @sla__world_pos_default()
+    tmp_1209 = call @sla__world_vel_default()
+    tmp_1210 = call @sla__world_query_a_b_WorldPos_WorldVel_WorldTime_WorldDamage(w4, tmp_1208, tmp_1209)
     !tmp_1208
-    br tmp_1209 -> L_THEN_319, L_ELSE_320
-
-L_THEN_319:
     !tmp_1209
+    q = tmp_1210
+    moved = alloc 8
+    tmp_1211 = load q+8 as ptr
+    tmp_1212 = 0
+    tmp_1213 = mul tmp_1212, 8
+    tmp_1214 = ptr_add tmp_1211, tmp_1213
+    !tmp_1213
+    !tmp_1212
+    tmp_1215 = load tmp_1214+0 as ptr
+    !tmp_1214
+    !tmp_1211
+    tmp_1216 = load tmp_1215+24 as ptr
+    !tmp_1215
+    tmp_1217 = load tmp_1216+0 as i32
+    !tmp_1216
+    tmp_1218 = load q+8 as ptr
+    tmp_1219 = 0
+    tmp_1220 = mul tmp_1219, 8
+    tmp_1221 = ptr_add tmp_1218, tmp_1220
+    !tmp_1220
+    !tmp_1219
+    tmp_1222 = load tmp_1221+0 as ptr
+    !tmp_1221
+    !tmp_1218
+    tmp_1223 = load tmp_1222+32 as ptr
+    !tmp_1222
+    tmp_1224 = load tmp_1223+0 as i32
+    !tmp_1223
+    tmp_1225 = add tmp_1217, tmp_1224
+    !tmp_1217
+    !tmp_1224
+    store moved+0, tmp_1225 as i32
+    !tmp_1225
+    tmp_1226 = load q+8 as ptr
+    tmp_1227 = 0
+    tmp_1228 = mul tmp_1227, 8
+    tmp_1229 = ptr_add tmp_1226, tmp_1228
+    !tmp_1228
+    !tmp_1227
+    tmp_1230 = load tmp_1229+0 as ptr
+    !tmp_1229
+    !tmp_1226
+    tmp_1231 = load tmp_1230+24 as ptr
+    !tmp_1230
+    tmp_1232 = load tmp_1231+4 as i32
+    !tmp_1231
+    tmp_1233 = load q+8 as ptr
+    tmp_1234 = 0
+    tmp_1235 = mul tmp_1234, 8
+    tmp_1236 = ptr_add tmp_1233, tmp_1235
+    !tmp_1235
+    !tmp_1234
+    tmp_1237 = load tmp_1236+0 as ptr
+    !tmp_1236
+    !tmp_1233
+    tmp_1238 = load tmp_1237+32 as ptr
+    !tmp_1237
+    tmp_1239 = load tmp_1238+4 as i32
+    !tmp_1238
+    tmp_1240 = add tmp_1232, tmp_1239
+    !tmp_1232
+    !tmp_1239
+    store moved+4, tmp_1240 as i32
+    !tmp_1240
+    tmp_1241 = load q+8 as ptr
+    tmp_1242 = 0
+    tmp_1243 = mul tmp_1242, 8
+    tmp_1244 = ptr_add tmp_1241, tmp_1243
+    !tmp_1243
+    !tmp_1242
+    tmp_1245 = load tmp_1244+0 as ptr
+    !tmp_1244
+    !tmp_1241
+    tmp_1246 = call @sla__world_pair_write_a_WorldPos_WorldVel_WorldTime_WorldDamage(w4, tmp_1245, moved)
+    !tmp_1245
+    w5 = tmp_1246
+    tmp_1247 = call @sla__world_get_a_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1)
+    p = tmp_1247
+    tmp_1248 = load p+0 as i32
+    tmp_1249 = 4
+    tmp_1250 = ne tmp_1248, tmp_1249
+    !tmp_1248
+    !tmp_1249
+    br tmp_1250 -> L_THEN_330, L_ELSE_331
+
+L_THEN_330:
+    !tmp_1250
     panic(7120)
 
-L_ELSE_320:
-    !tmp_1209
-    jmp L_MERGE_321
+L_ELSE_331:
+    !tmp_1250
+    jmp L_MERGE_332
 
-L_MERGE_321:
-    tmp_1212 = load p+4 as i32
-    tmp_1213 = 6
-    tmp_1214 = ne tmp_1212, tmp_1213
-    !tmp_1212
-    !tmp_1213
-    br tmp_1214 -> L_THEN_322, L_ELSE_323
+L_MERGE_332:
+    tmp_1253 = load p+4 as i32
+    tmp_1254 = 6
+    tmp_1255 = ne tmp_1253, tmp_1254
+    !tmp_1253
+    !tmp_1254
+    br tmp_1255 -> L_THEN_333, L_ELSE_334
 
-L_THEN_322:
-    !tmp_1214
+L_THEN_333:
+    !tmp_1255
     panic(7121)
 
-L_ELSE_323:
-    !tmp_1214
-    jmp L_MERGE_324
+L_ELSE_334:
+    !tmp_1255
+    jmp L_MERGE_335
 
-L_MERGE_324:
-    tmp_1217 = call @sla__world_a_changed_since_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1, baseline)
-    tmp_1218 = 1
-    tmp_1219 = ne tmp_1217, tmp_1218
-    !tmp_1217
-    !tmp_1218
-    br tmp_1219 -> L_THEN_325, L_ELSE_326
+L_MERGE_335:
+    tmp_1258 = call @sla__world_a_changed_since_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1, baseline)
+    tmp_1259 = 1
+    tmp_1260 = ne tmp_1258, tmp_1259
+    !tmp_1258
+    !tmp_1259
+    br tmp_1260 -> L_THEN_336, L_ELSE_337
 
-L_THEN_325:
-    !tmp_1219
+L_THEN_336:
+    !tmp_1260
     panic(7122)
 
-L_ELSE_326:
-    !tmp_1219
-    jmp L_MERGE_327
+L_ELSE_337:
+    !tmp_1260
+    jmp L_MERGE_338
 
-L_MERGE_327:
-    tmp_1222 = call @sla__world_a_added_since_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1, baseline)
-    tmp_1223 = 0
-    tmp_1224 = ne tmp_1222, tmp_1223
-    !tmp_1222
-    !tmp_1223
-    br tmp_1224 -> L_THEN_328, L_ELSE_329
+L_MERGE_338:
+    tmp_1263 = call @sla__world_a_added_since_WorldPos_WorldVel_WorldTime_WorldDamage(w5, e1, baseline)
+    tmp_1264 = 0
+    tmp_1265 = ne tmp_1263, tmp_1264
+    !tmp_1263
+    !tmp_1264
+    br tmp_1265 -> L_THEN_339, L_ELSE_340
 
-L_THEN_328:
-    !tmp_1224
+L_THEN_339:
+    !tmp_1265
     panic(7123)
 
-L_ELSE_329:
-    !tmp_1224
-    jmp L_MERGE_330
+L_ELSE_340:
+    !tmp_1265
+    jmp L_MERGE_341
 
-L_MERGE_330:
+L_MERGE_341:
     !q
     !moved
     !w0
@@ -4252,131 +4395,131 @@ L_MERGE_330:
     return
 
 @test "world resource and messages are owned by world"():
-L_TEST_ENTRY_331:
-    tmp_1227 = call @sla__test_world_new()
-    w0 = tmp_1227
-    tmp_1228 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
-    tmp_1229 = 0
-    tmp_1230 = ne tmp_1228, tmp_1229
-    !tmp_1228
-    !tmp_1229
-    br tmp_1230 -> L_THEN_332, L_ELSE_333
+L_TEST_ENTRY_342:
+    tmp_1268 = call @sla__test_world_new()
+    w0 = tmp_1268
+    tmp_1269 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w0)
+    tmp_1270 = 0
+    tmp_1271 = ne tmp_1269, tmp_1270
+    !tmp_1269
+    !tmp_1270
+    br tmp_1271 -> L_THEN_343, L_ELSE_344
 
-L_THEN_332:
-    !tmp_1230
+L_THEN_343:
+    !tmp_1271
     panic(7130)
 
-L_ELSE_333:
-    !tmp_1230
-    jmp L_MERGE_334
+L_ELSE_344:
+    !tmp_1271
+    jmp L_MERGE_345
 
-L_MERGE_334:
-    tmp_1233 = alloc 4
-    tmp_1234 = 9
-    store tmp_1233+0, tmp_1234 as i32
-    !tmp_1234
-    tmp_1235 = call @sla__world_insert_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w0, tmp_1233)
-    !tmp_1233
-    w1 = tmp_1235
-    tmp_1236 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
-    tmp_1237 = 1
-    tmp_1238 = ne tmp_1236, tmp_1237
-    !tmp_1236
-    !tmp_1237
-    br tmp_1238 -> L_THEN_335, L_ELSE_336
+L_MERGE_345:
+    tmp_1274 = alloc 4
+    tmp_1275 = 9
+    store tmp_1274+0, tmp_1275 as i32
+    !tmp_1275
+    tmp_1276 = call @sla__world_insert_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w0, tmp_1274)
+    !tmp_1274
+    w1 = tmp_1276
+    tmp_1277 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
+    tmp_1278 = 1
+    tmp_1279 = ne tmp_1277, tmp_1278
+    !tmp_1277
+    !tmp_1278
+    br tmp_1279 -> L_THEN_346, L_ELSE_347
 
-L_THEN_335:
-    !tmp_1238
+L_THEN_346:
+    !tmp_1279
     panic(7131)
 
-L_ELSE_336:
-    !tmp_1238
-    jmp L_MERGE_337
+L_ELSE_347:
+    !tmp_1279
+    jmp L_MERGE_348
 
-L_MERGE_337:
-    tmp_1241 = call @sla__world_get_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
-    t = tmp_1241
-    tmp_1242 = load t+0 as i32
-    tmp_1243 = 9
-    tmp_1244 = ne tmp_1242, tmp_1243
-    !tmp_1242
-    !tmp_1243
-    br tmp_1244 -> L_THEN_338, L_ELSE_339
+L_MERGE_348:
+    tmp_1282 = call @sla__world_get_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w1)
+    t = tmp_1282
+    tmp_1283 = load t+0 as i32
+    tmp_1284 = 9
+    tmp_1285 = ne tmp_1283, tmp_1284
+    !tmp_1283
+    !tmp_1284
+    br tmp_1285 -> L_THEN_349, L_ELSE_350
 
-L_THEN_338:
-    !tmp_1244
+L_THEN_349:
+    !tmp_1285
     panic(7132)
 
-L_ELSE_339:
-    !tmp_1244
-    jmp L_MERGE_340
+L_ELSE_350:
+    !tmp_1285
+    jmp L_MERGE_351
 
-L_MERGE_340:
-    tmp_1247 = alloc 4
-    tmp_1248 = 5
-    store tmp_1247+0, tmp_1248 as i32
-    !tmp_1248
-    tmp_1249 = call @sla__world_write_message_WorldPos_WorldVel_WorldTime_WorldDamage(w1, tmp_1247)
-    !tmp_1247
-    w2 = tmp_1249
-    tmp_1250 = call @sla__message_reader_new()
-    tmp_1251 = call @sla__world_damage_default()
-    tmp_1252 = call @sla__world_read_message_WorldPos_WorldVel_WorldTime_WorldDamage(w2, tmp_1250, tmp_1251)
-    !tmp_1250
-    !tmp_1251
-    read = tmp_1252
-    tmp_1253 = load read+0 as u8
-    tmp_1254 = 1
-    tmp_1255 = ne tmp_1253, tmp_1254
-    !tmp_1253
-    !tmp_1254
-    br tmp_1255 -> L_THEN_341, L_ELSE_342
+L_MERGE_351:
+    tmp_1288 = alloc 4
+    tmp_1289 = 5
+    store tmp_1288+0, tmp_1289 as i32
+    !tmp_1289
+    tmp_1290 = call @sla__world_write_message_WorldPos_WorldVel_WorldTime_WorldDamage(w1, tmp_1288)
+    !tmp_1288
+    w2 = tmp_1290
+    tmp_1291 = call @sla__message_reader_new()
+    tmp_1292 = call @sla__world_damage_default()
+    tmp_1293 = call @sla__world_read_message_WorldPos_WorldVel_WorldTime_WorldDamage(w2, tmp_1291, tmp_1292)
+    !tmp_1291
+    !tmp_1292
+    read = tmp_1293
+    tmp_1294 = load read+0 as u8
+    tmp_1295 = 1
+    tmp_1296 = ne tmp_1294, tmp_1295
+    !tmp_1294
+    !tmp_1295
+    br tmp_1296 -> L_THEN_352, L_ELSE_353
 
-L_THEN_341:
-    !tmp_1255
+L_THEN_352:
+    !tmp_1296
     panic(7133)
 
-L_ELSE_342:
-    !tmp_1255
-    jmp L_MERGE_343
+L_ELSE_353:
+    !tmp_1296
+    jmp L_MERGE_354
 
-L_MERGE_343:
-    tmp_1258 = load read+8 as ptr
-    tmp_1259 = load tmp_1258+0 as i32
-    !tmp_1258
-    tmp_1260 = 5
-    tmp_1261 = ne tmp_1259, tmp_1260
-    !tmp_1259
-    !tmp_1260
-    br tmp_1261 -> L_THEN_344, L_ELSE_345
+L_MERGE_354:
+    tmp_1299 = load read+8 as ptr
+    tmp_1300 = load tmp_1299+0 as i32
+    !tmp_1299
+    tmp_1301 = 5
+    tmp_1302 = ne tmp_1300, tmp_1301
+    !tmp_1300
+    !tmp_1301
+    br tmp_1302 -> L_THEN_355, L_ELSE_356
 
-L_THEN_344:
-    !tmp_1261
+L_THEN_355:
+    !tmp_1302
     panic(7134)
 
-L_ELSE_345:
-    !tmp_1261
-    jmp L_MERGE_346
+L_ELSE_356:
+    !tmp_1302
+    jmp L_MERGE_357
 
-L_MERGE_346:
-    tmp_1264 = call @sla__world_remove_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w2)
-    w3 = tmp_1264
-    tmp_1265 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w3)
-    tmp_1266 = 0
-    tmp_1267 = ne tmp_1265, tmp_1266
-    !tmp_1265
-    !tmp_1266
-    br tmp_1267 -> L_THEN_347, L_ELSE_348
+L_MERGE_357:
+    tmp_1305 = call @sla__world_remove_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w2)
+    w3 = tmp_1305
+    tmp_1306 = call @sla__world_has_resource_WorldPos_WorldVel_WorldTime_WorldDamage(w3)
+    tmp_1307 = 0
+    tmp_1308 = ne tmp_1306, tmp_1307
+    !tmp_1306
+    !tmp_1307
+    br tmp_1308 -> L_THEN_358, L_ELSE_359
 
-L_THEN_347:
-    !tmp_1267
+L_THEN_358:
+    !tmp_1308
     panic(7135)
 
-L_ELSE_348:
-    !tmp_1267
-    jmp L_MERGE_349
+L_ELSE_359:
+    !tmp_1308
+    jmp L_MERGE_360
 
-L_MERGE_349:
+L_MERGE_360:
     !read
     !w0
     !w1

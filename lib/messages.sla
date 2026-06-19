@@ -1,5 +1,6 @@
 // Fixed-capacity typed message queue. This mirrors Bevy's Messages<T> concept
 // at the semantic level: writers append, readers keep independent cursors.
+@import "sa_std/vec.sa"
 
 struct Messages<T> {
     count: i64,
@@ -8,6 +9,10 @@ struct Messages<T> {
 
 struct MessageReader {
     cursor: i64,
+}
+
+struct MessageWriter<T> {
+    values: Vec<T>,
 }
 
 struct MessageRead<T> {
@@ -27,11 +32,31 @@ fn message_reader_new() -> MessageReader {
     return MessageReader { cursor: 0 };
 }
 
+fn message_writer_new<T>() -> MessageWriter<T> {
+    let values: Vec<T> = Vec::new();
+    return MessageWriter<T> { values: values };
+}
+
+fn message_writer_send<T>(writer: MessageWriter<T>, value: T) -> MessageWriter<T> {
+    writer.values.push(value);
+    return writer;
+}
+
 fn messages_write<T>(messages: Messages<T>, value: T) -> Messages<T> {
     let slot = messages.count;
     if slot >= 16 { panic(6001); };
     messages.values[slot] = value;
     messages.count = slot + 1;
+    return messages;
+}
+
+fn messages_apply_writer<T>(messages: Messages<T>, writer: MessageWriter<T>) -> Messages<T> {
+    let i: i64 = 0;
+    let cnt = len(writer.values) as i64;
+    while i < cnt {
+        messages = messages_write<T>(messages, writer.values[i]);
+        i = i + 1;
+    }
     return messages;
 }
 
@@ -66,6 +91,19 @@ fn test_damage_default() -> TestDamageMessage {
     let m1 = messages_write<TestDamageMessage>(m0, TestDamageMessage { amount: 5 });
     let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 7 });
     if m2.count != 2 { panic(2400); };
+}
+
+@test "message writer param batches appends"() {
+    let m0 = test_damage_messages_new();
+    let w0 = message_writer_new<TestDamageMessage>();
+    let w1 = message_writer_send<TestDamageMessage>(w0, TestDamageMessage { amount: 3 });
+    let w2 = message_writer_send<TestDamageMessage>(w1, TestDamageMessage { amount: 9 });
+    let m1 = messages_apply_writer<TestDamageMessage>(m0, w2);
+    let r0 = message_reader_new();
+    let read1 = messages_read_next<TestDamageMessage>(m1, r0, test_damage_default());
+    let read2 = messages_read_next<TestDamageMessage>(m1, read1.reader, test_damage_default());
+    if read1.value.amount != 3 { panic(2420); };
+    if read2.value.amount != 9 { panic(2421); };
 }
 
 @test "message reader cursor advances independently"() {

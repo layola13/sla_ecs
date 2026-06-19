@@ -21,7 +21,7 @@ The first deliverable is **Bevy Core ECS parity**, not the entire `bevy_ecs` cra
 - `lib/world_registry_typed.sla` binds typed A/B value stores to registered component ids and uses `RegistryWorld` membership/ticks as the source of truth. `lib/world_registry_erased.sla` adds a single registry-owned type-erased value store spanning multiple concrete component types.
 - `lib/world_registry_store.sla` owns arbitrary component value columns for a homogeneous Sla value type `T`, removing the fixed A/B value-column shape for same-type component groups; registry value Commands and Schedule now run over component ids.
 - `lib/commands_registry_erased.sla` and `lib/schedule_registry_erased.sla` move deferred mutation and sequential scheduling onto the type-erased registry world.
-- The next runtime step is expanding system params toward typed command params and query filter params, then tightening toward full Bevy table-row layout and parallel scheduling.
+- The next runtime step is tightening the archetype-backed runtime toward full Bevy table-row layout, automatic component metadata, and parallel scheduling.
 - `sa_plugin_sla` remains part of the implementation surface when Sla syntax/codegen blocks ECS semantics; recent fixes include wildcard `.sla` imports, nested generic `>>` parsing, `Vec<T>` index assignment, `Vec` field method-call cleanup, generic impl protocol monomorphization for `for in`, function pointer value codegen for schedules, top-level scalar const codegen, field comparison after dot access, and nested indexed length expressions such as `len(world.archetypes[archetype_slot].entity_ids)`.
 
 ## Implementation Phases
