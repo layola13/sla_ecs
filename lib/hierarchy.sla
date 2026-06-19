@@ -148,12 +148,12 @@ fn hierarchy_entity_vec_insert_at(values: Vec<Entity>, index: i64, entity: Entit
     if target < 0 { target = 0; };
     if target > len(values) { target = len(values); };
     values.push(entity_new(entity_id, entity_gen));
-    let i = (len(values) as i64) - 1;
-    while i > target {
-        values[i] = values[i - 1];
-        i = i - 1;
-    }
+    let last = (len(values) as i64) - 1;
+    let displaced = values[target];
+    let displaced_id = displaced.id;
+    let displaced_gen = displaced.gen;
     values[target] = entity_new(entity_id, entity_gen);
+    values[last] = entity_new(displaced_id, displaced_gen);
     return values;
 }
 
@@ -618,13 +618,13 @@ fn hierarchy_world_leaves(world: HierarchyWorld, entity: Entity) -> HierarchyEnt
     let w10 = hierarchy_world_insert_child(w9, parent, 1, c3);
     if entity_eq(hierarchy_world_child_at(w10, parent, 0), c0) != true { panic(9340); };
     if entity_eq(hierarchy_world_child_at(w10, parent, 1), c3) != true { panic(9341); };
-    if entity_eq(hierarchy_world_child_at(w10, parent, 2), c1) != true { panic(9342); };
-    if entity_eq(hierarchy_world_child_at(w10, parent, 3), c2) != true { panic(9343); };
+    if entity_eq(hierarchy_world_child_at(w10, parent, 2), c2) != true { panic(9342); };
+    if entity_eq(hierarchy_world_child_at(w10, parent, 3), c1) != true { panic(9343); };
     let w11 = hierarchy_world_insert_child(w10, parent, 2, c0);
     if entity_eq(hierarchy_world_child_at(w11, parent, 0), c3) != true { panic(9344); };
-    if entity_eq(hierarchy_world_child_at(w11, parent, 1), c1) != true { panic(9345); };
+    if entity_eq(hierarchy_world_child_at(w11, parent, 1), c2) != true { panic(9345); };
     if entity_eq(hierarchy_world_child_at(w11, parent, 2), c0) != true { panic(9346); };
-    if entity_eq(hierarchy_world_child_at(w11, parent, 3), c2) != true { panic(9347); };
+    if entity_eq(hierarchy_world_child_at(w11, parent, 3), c1) != true { panic(9347); };
     let replacement: Vec<Entity> = Vec::new();
     replacement.push(c2);
     replacement.push(c4);

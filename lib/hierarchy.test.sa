@@ -1284,33 +1284,27 @@ L_MERGE_86:
     tmp_370 = sub tmp_368, tmp_369
     !tmp_368
     !tmp_369
-    i = tmp_370
-    jmp L_WHILE_HEAD_87
-
-L_WHILE_HEAD_87:
-    tmp_371 = sgt i, target
-    br tmp_371 -> L_WHILE_BODY_88, L_WHILE_COND_FALSE_89
-
-L_WHILE_BODY_88:
-    !tmp_371
-    tmp_372 = 1
-    tmp_373 = sub i, tmp_372
-    !tmp_372
-    EXPAND VEC_GET tmp_374, values, tmp_373
-    !tmp_373
-    tmp_375 = tmp_374 as ptr
+    last = tmp_370
+    EXPAND VEC_GET tmp_371, values, target
+    tmp_372 = tmp_371 as ptr
+    displaced = tmp_372
+    tmp_373 = load displaced+0 as i32
+    displaced_id = tmp_373
+    tmp_374 = load displaced+4 as i32
+    displaced_gen = tmp_374
+    tmp_375 = call @sla__entity_new(entity_id, entity_gen)
     tmp_376 = &values
     tmp_377 = load tmp_376+Vec_len as u64
-    tmp_378 = ult i, tmp_377
-    br tmp_378 -> L_VEC_INDEX_ASSIGN_OK_91, L_VEC_INDEX_ASSIGN_OOB_92
+    tmp_378 = ult target, tmp_377
+    br tmp_378 -> L_VEC_INDEX_ASSIGN_OK_87, L_VEC_INDEX_ASSIGN_OOB_88
 
-L_VEC_INDEX_ASSIGN_OOB_92:
+L_VEC_INDEX_ASSIGN_OOB_88:
     panic(87)
 
-L_VEC_INDEX_ASSIGN_OK_91:
+L_VEC_INDEX_ASSIGN_OK_87:
     !tmp_378
     tmp_379 = load tmp_376+Vec_ptr as ptr
-    tmp_380 = mul i, 8
+    tmp_380 = mul target, 8
     tmp_381 = ptr_add tmp_379, tmp_380
     store tmp_381+0, tmp_375 as u64
     !tmp_381
@@ -1319,146 +1313,137 @@ L_VEC_INDEX_ASSIGN_OK_91:
     !tmp_377
     !tmp_376
     !tmp_375
-    tmp_382 = 1
-    tmp_383 = sub i, tmp_382
-    !tmp_382
-    !i
-    i = tmp_383
-    jmp L_WHILE_HEAD_87
+    tmp_382 = call @sla__entity_new(displaced_id, displaced_gen)
+    tmp_383 = &values
+    tmp_384 = load tmp_383+Vec_len as u64
+    tmp_385 = ult last, tmp_384
+    br tmp_385 -> L_VEC_INDEX_ASSIGN_OK_89, L_VEC_INDEX_ASSIGN_OOB_90
 
-L_WHILE_COND_FALSE_89:
-    !tmp_371
-    jmp L_WHILE_EXIT_90
-
-L_WHILE_EXIT_90:
-    tmp_384 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_385 = &values
-    tmp_386 = load tmp_385+Vec_len as u64
-    tmp_387 = ult target, tmp_386
-    br tmp_387 -> L_VEC_INDEX_ASSIGN_OK_93, L_VEC_INDEX_ASSIGN_OOB_94
-
-L_VEC_INDEX_ASSIGN_OOB_94:
+L_VEC_INDEX_ASSIGN_OOB_90:
     panic(87)
 
-L_VEC_INDEX_ASSIGN_OK_93:
-    !tmp_387
-    tmp_388 = load tmp_385+Vec_ptr as ptr
-    tmp_389 = mul target, 8
-    tmp_390 = ptr_add tmp_388, tmp_389
-    store tmp_390+0, tmp_384 as u64
-    !tmp_390
-    !tmp_389
-    !tmp_388
-    !tmp_386
+L_VEC_INDEX_ASSIGN_OK_89:
     !tmp_385
+    tmp_386 = load tmp_383+Vec_ptr as ptr
+    tmp_387 = mul last, 8
+    tmp_388 = ptr_add tmp_386, tmp_387
+    store tmp_388+0, tmp_382 as u64
+    !tmp_388
+    !tmp_387
+    !tmp_386
     !tmp_384
+    !tmp_383
+    !tmp_382
     !entity_gen
-    !i
+    !displaced
+    !displaced_gen
     !entity_id
     !target
+    !displaced_id
+    !last
     !entity
     !index
     return values
 
 @sla__hierarchy_entity_vec_remove_at(values: ptr, index: i64) -> ptr:
 L_ENTRY:
-    EXPAND VEC_LEN tmp_391, values
-    tmp_392 = tmp_391 as i64
-    count = tmp_392
-    tmp_393 = 0
-    tmp_394 = slt index, tmp_393
-    !tmp_393
-    br tmp_394 -> L_THEN_95, L_ELSE_96
+    EXPAND VEC_LEN tmp_389, values
+    tmp_390 = tmp_389 as i64
+    count = tmp_390
+    tmp_391 = 0
+    tmp_392 = slt index, tmp_391
+    !tmp_391
+    br tmp_392 -> L_THEN_91, L_ELSE_92
 
-L_THEN_95:
+L_THEN_91:
+    !tmp_392
+    !count
+    !index
+    return values
+
+L_ELSE_92:
+    !tmp_392
+    jmp L_MERGE_93
+
+L_MERGE_93:
+    tmp_394 = sge index, count
+    br tmp_394 -> L_THEN_94, L_ELSE_95
+
+L_THEN_94:
     !tmp_394
     !count
     !index
     return values
 
-L_ELSE_96:
+L_ELSE_95:
     !tmp_394
-    jmp L_MERGE_97
+    jmp L_MERGE_96
 
-L_MERGE_97:
-    tmp_396 = sge index, count
-    br tmp_396 -> L_THEN_98, L_ELSE_99
-
-L_THEN_98:
+L_MERGE_96:
+    tmp_396 = 1
+    tmp_397 = sub count, tmp_396
     !tmp_396
-    !count
-    !index
-    return values
-
-L_ELSE_99:
-    !tmp_396
-    jmp L_MERGE_100
-
-L_MERGE_100:
-    tmp_398 = 1
-    tmp_399 = sub count, tmp_398
+    last = tmp_397
+    tmp_398 = 0
+    tmp_399 = add index, tmp_398
     !tmp_398
-    last = tmp_399
-    tmp_400 = 0
-    tmp_401 = add index, tmp_400
+    i = tmp_399
+    jmp L_WHILE_HEAD_97
+
+L_WHILE_HEAD_97:
+    tmp_400 = slt i, last
+    br tmp_400 -> L_WHILE_BODY_98, L_WHILE_COND_FALSE_99
+
+L_WHILE_BODY_98:
     !tmp_400
-    i = tmp_401
-    jmp L_WHILE_HEAD_101
-
-L_WHILE_HEAD_101:
-    tmp_402 = slt i, last
-    br tmp_402 -> L_WHILE_BODY_102, L_WHILE_COND_FALSE_103
-
-L_WHILE_BODY_102:
+    tmp_401 = 1
+    tmp_402 = add i, tmp_401
+    !tmp_401
+    EXPAND VEC_GET tmp_403, values, tmp_402
     !tmp_402
-    tmp_403 = 1
-    tmp_404 = add i, tmp_403
-    !tmp_403
-    EXPAND VEC_GET tmp_405, values, tmp_404
-    !tmp_404
-    tmp_406 = tmp_405 as ptr
-    tmp_407 = &values
-    tmp_408 = load tmp_407+Vec_len as u64
-    tmp_409 = ult i, tmp_408
-    br tmp_409 -> L_VEC_INDEX_ASSIGN_OK_105, L_VEC_INDEX_ASSIGN_OOB_106
+    tmp_404 = tmp_403 as ptr
+    tmp_405 = &values
+    tmp_406 = load tmp_405+Vec_len as u64
+    tmp_407 = ult i, tmp_406
+    br tmp_407 -> L_VEC_INDEX_ASSIGN_OK_101, L_VEC_INDEX_ASSIGN_OOB_102
 
-L_VEC_INDEX_ASSIGN_OOB_106:
+L_VEC_INDEX_ASSIGN_OOB_102:
     panic(87)
 
-L_VEC_INDEX_ASSIGN_OK_105:
-    !tmp_409
-    tmp_410 = load tmp_407+Vec_ptr as ptr
-    tmp_411 = mul i, 8
-    tmp_412 = ptr_add tmp_410, tmp_411
-    store tmp_412+0, tmp_406 as u64
-    !tmp_412
-    !tmp_411
-    !tmp_410
-    !tmp_408
+L_VEC_INDEX_ASSIGN_OK_101:
     !tmp_407
+    tmp_408 = load tmp_405+Vec_ptr as ptr
+    tmp_409 = mul i, 8
+    tmp_410 = ptr_add tmp_408, tmp_409
+    store tmp_410+0, tmp_404 as u64
+    !tmp_410
+    !tmp_409
+    !tmp_408
     !tmp_406
-    tmp_413 = 1
-    tmp_414 = add i, tmp_413
-    !tmp_413
+    !tmp_405
+    !tmp_404
+    tmp_411 = 1
+    tmp_412 = add i, tmp_411
+    !tmp_411
     !i
-    i = tmp_414
-    jmp L_WHILE_HEAD_101
+    i = tmp_412
+    jmp L_WHILE_HEAD_97
 
-L_WHILE_COND_FALSE_103:
-    !tmp_402
-    jmp L_WHILE_EXIT_104
+L_WHILE_COND_FALSE_99:
+    !tmp_400
+    jmp L_WHILE_EXIT_100
 
-L_WHILE_EXIT_104:
-    EXPAND VEC_REMOVE tmp_415, tmp_416, values, last, 8
-    br tmp_415 -> L_VEC_REMOVE_OK_107, L_VEC_REMOVE_OOB_108
+L_WHILE_EXIT_100:
+    EXPAND VEC_REMOVE tmp_413, tmp_414, values, last, 8
+    br tmp_413 -> L_VEC_REMOVE_OK_103, L_VEC_REMOVE_OOB_104
 
-L_VEC_REMOVE_OOB_108:
+L_VEC_REMOVE_OOB_104:
     panic(86)
 
-L_VEC_REMOVE_OK_107:
-    !tmp_415
-    tmp_417 = tmp_416 as ptr
-    removed = tmp_417
+L_VEC_REMOVE_OK_103:
+    !tmp_413
+    tmp_415 = tmp_414 as ptr
+    removed = tmp_415
     !i
     !removed
     !last
@@ -1468,94 +1453,94 @@ L_VEC_REMOVE_OK_107:
 
 @sla__hierarchy_world_remove_children_entry_at(world: ptr, slot: i64) -> ptr:
 L_ENTRY:
-    tmp_418 = load world+16 as ptr
-    EXPAND VEC_LEN tmp_419, tmp_418
-    !tmp_418
-    tmp_420 = tmp_419 as i64
-    count = tmp_420
-    tmp_421 = 0
-    tmp_422 = slt slot, tmp_421
-    !tmp_421
-    br tmp_422 -> L_THEN_109, L_ELSE_110
+    tmp_416 = load world+16 as ptr
+    EXPAND VEC_LEN tmp_417, tmp_416
+    !tmp_416
+    tmp_418 = tmp_417 as i64
+    count = tmp_418
+    tmp_419 = 0
+    tmp_420 = slt slot, tmp_419
+    !tmp_419
+    br tmp_420 -> L_THEN_105, L_ELSE_106
 
-L_THEN_109:
+L_THEN_105:
+    !tmp_420
+    !count
+    !slot
+    return world
+
+L_ELSE_106:
+    !tmp_420
+    jmp L_MERGE_107
+
+L_MERGE_107:
+    tmp_422 = sge slot, count
+    br tmp_422 -> L_THEN_108, L_ELSE_109
+
+L_THEN_108:
     !tmp_422
     !count
     !slot
     return world
 
-L_ELSE_110:
+L_ELSE_109:
     !tmp_422
-    jmp L_MERGE_111
+    jmp L_MERGE_110
 
-L_MERGE_111:
-    tmp_424 = sge slot, count
-    br tmp_424 -> L_THEN_112, L_ELSE_113
-
-L_THEN_112:
+L_MERGE_110:
+    tmp_424 = 1
+    tmp_425 = sub count, tmp_424
     !tmp_424
-    !count
-    !slot
-    return world
+    last = tmp_425
+    tmp_426 = ne slot, last
+    br tmp_426 -> L_THEN_111, L_ELSE_112
 
-L_ELSE_113:
-    !tmp_424
-    jmp L_MERGE_114
-
-L_MERGE_114:
-    tmp_426 = 1
-    tmp_427 = sub count, tmp_426
+L_THEN_111:
     !tmp_426
-    last = tmp_427
-    tmp_428 = ne slot, last
-    br tmp_428 -> L_THEN_115, L_ELSE_116
-
-L_THEN_115:
+    tmp_427 = load world+16 as ptr
+    tmp_428 = load world+16 as ptr
+    EXPAND VEC_GET tmp_429, tmp_428, last
     !tmp_428
-    tmp_429 = load world+16 as ptr
-    tmp_430 = load world+16 as ptr
-    EXPAND VEC_GET tmp_431, tmp_430, last
-    !tmp_430
-    tmp_432 = tmp_431 as ptr
-    tmp_433 = &tmp_429
-    tmp_434 = load tmp_433+Vec_len as u64
-    tmp_435 = ult slot, tmp_434
-    br tmp_435 -> L_VEC_INDEX_ASSIGN_OK_118, L_VEC_INDEX_ASSIGN_OOB_119
+    tmp_430 = tmp_429 as ptr
+    tmp_431 = &tmp_427
+    tmp_432 = load tmp_431+Vec_len as u64
+    tmp_433 = ult slot, tmp_432
+    br tmp_433 -> L_VEC_INDEX_ASSIGN_OK_114, L_VEC_INDEX_ASSIGN_OOB_115
 
-L_VEC_INDEX_ASSIGN_OOB_119:
+L_VEC_INDEX_ASSIGN_OOB_115:
     panic(87)
 
-L_VEC_INDEX_ASSIGN_OK_118:
-    !tmp_435
-    tmp_436 = load tmp_433+Vec_ptr as ptr
-    tmp_437 = mul slot, 8
-    tmp_438 = ptr_add tmp_436, tmp_437
-    store tmp_438+0, tmp_432 as u64
-    !tmp_438
-    !tmp_437
-    !tmp_436
-    !tmp_434
+L_VEC_INDEX_ASSIGN_OK_114:
     !tmp_433
+    tmp_434 = load tmp_431+Vec_ptr as ptr
+    tmp_435 = mul slot, 8
+    tmp_436 = ptr_add tmp_434, tmp_435
+    store tmp_436+0, tmp_430 as u64
+    !tmp_436
+    !tmp_435
+    !tmp_434
     !tmp_432
-    !tmp_429
-    jmp L_MERGE_117
+    !tmp_431
+    !tmp_430
+    !tmp_427
+    jmp L_MERGE_113
 
-L_ELSE_116:
-    !tmp_428
-    jmp L_MERGE_117
+L_ELSE_112:
+    !tmp_426
+    jmp L_MERGE_113
 
-L_MERGE_117:
-    tmp_440 = load world+16 as ptr
-    EXPAND VEC_REMOVE tmp_441, tmp_442, tmp_440, last, 8
-    br tmp_441 -> L_VEC_REMOVE_OK_120, L_VEC_REMOVE_OOB_121
+L_MERGE_113:
+    tmp_438 = load world+16 as ptr
+    EXPAND VEC_REMOVE tmp_439, tmp_440, tmp_438, last, 8
+    br tmp_439 -> L_VEC_REMOVE_OK_116, L_VEC_REMOVE_OOB_117
 
-L_VEC_REMOVE_OOB_121:
+L_VEC_REMOVE_OOB_117:
     panic(86)
 
-L_VEC_REMOVE_OK_120:
-    !tmp_441
-    tmp_443 = tmp_442 as ptr
-    removed = tmp_443
+L_VEC_REMOVE_OK_116:
+    !tmp_439
+    tmp_441 = tmp_440 as ptr
+    removed = tmp_441
     !removed
     !last
     !count
@@ -1564,135 +1549,135 @@ L_VEC_REMOVE_OK_120:
 
 @sla__hierarchy_world_remove_empty_children_entry(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_444 = call @sla__hierarchy_world_children_slot(world, parent)
-    slot = tmp_444
-    tmp_445 = 0
-    tmp_446 = slt slot, tmp_445
-    !tmp_445
-    br tmp_446 -> L_THEN_122, L_ELSE_123
+    tmp_442 = call @sla__hierarchy_world_children_slot(world, parent)
+    slot = tmp_442
+    tmp_443 = 0
+    tmp_444 = slt slot, tmp_443
+    !tmp_443
+    br tmp_444 -> L_THEN_118, L_ELSE_119
 
-L_THEN_122:
-    !tmp_446
+L_THEN_118:
+    !tmp_444
     !slot
     !parent
     return world
 
-L_ELSE_123:
-    !tmp_446
-    jmp L_MERGE_124
+L_ELSE_119:
+    !tmp_444
+    jmp L_MERGE_120
 
-L_MERGE_124:
-    tmp_448 = load world+16 as ptr
-    EXPAND VEC_GET tmp_449, tmp_448, slot
+L_MERGE_120:
+    tmp_446 = load world+16 as ptr
+    EXPAND VEC_GET tmp_447, tmp_446, slot
+    !tmp_446
+    tmp_448 = tmp_447 as ptr
+    tmp_449 = load tmp_448+8 as ptr
     !tmp_448
-    tmp_450 = tmp_449 as ptr
-    tmp_451 = load tmp_450+8 as ptr
+    tmp_450 = load tmp_449+0 as ptr
+    !tmp_449
+    EXPAND VEC_LEN tmp_451, tmp_450
     !tmp_450
-    tmp_452 = load tmp_451+0 as ptr
+    tmp_452 = 0
+    tmp_453 = sgt tmp_451, tmp_452
     !tmp_451
-    EXPAND VEC_LEN tmp_453, tmp_452
     !tmp_452
-    tmp_454 = 0
-    tmp_455 = sgt tmp_453, tmp_454
-    !tmp_453
-    !tmp_454
-    br tmp_455 -> L_THEN_125, L_ELSE_126
+    br tmp_453 -> L_THEN_121, L_ELSE_122
 
-L_THEN_125:
-    !tmp_455
+L_THEN_121:
+    !tmp_453
     !slot
     !parent
     return world
 
-L_ELSE_126:
-    !tmp_455
-    jmp L_MERGE_127
+L_ELSE_122:
+    !tmp_453
+    jmp L_MERGE_123
 
-L_MERGE_127:
-    tmp_457 = call @sla__hierarchy_world_remove_children_entry_at(world, slot)
+L_MERGE_123:
+    tmp_455 = call @sla__hierarchy_world_remove_children_entry_at(world, slot)
     !parent
-    return tmp_457
+    return tmp_455
 
 @sla__hierarchy_world_ensure_children_entry(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_458 = load parent+0 as i32
-    parent_id = tmp_458
-    tmp_459 = load parent+4 as i32
-    parent_gen = tmp_459
-    tmp_460 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_461 = call @sla__hierarchy_world_children_slot(world, tmp_460)
+    tmp_456 = load parent+0 as i32
+    parent_id = tmp_456
+    tmp_457 = load parent+4 as i32
+    parent_gen = tmp_457
+    tmp_458 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_459 = call @sla__hierarchy_world_children_slot(world, tmp_458)
+    !tmp_458
+    slot = tmp_459
+    tmp_460 = 0
+    tmp_461 = sge slot, tmp_460
     !tmp_460
-    slot = tmp_461
-    tmp_462 = 0
-    tmp_463 = sge slot, tmp_462
-    !tmp_462
-    br tmp_463 -> L_THEN_128, L_ELSE_129
+    br tmp_461 -> L_THEN_124, L_ELSE_125
 
-L_THEN_128:
-    !tmp_463
-    tmp_464 = alloc 16
-    store tmp_464+0, world as ptr
-    store tmp_464+8, slot as i64
+L_THEN_124:
+    !tmp_461
+    tmp_462 = alloc 16
+    store tmp_462+0, world as ptr
+    store tmp_462+8, slot as i64
     !parent_gen
     !parent_id
     !parent
-    return tmp_464
+    return tmp_462
 
-L_ELSE_129:
-    !tmp_463
-    jmp L_MERGE_130
+L_ELSE_125:
+    !tmp_461
+    jmp L_MERGE_126
 
-L_MERGE_130:
-    tmp_466 = call @sla__children_new()
-    children = tmp_466
-    tmp_467 = load world+16 as ptr
-    tmp_468 = alloc 16
-    tmp_469 = call @sla__entity_new(parent_id, parent_gen)
-    store tmp_468+0, tmp_469 as ptr
-    !tmp_469
-    store tmp_468+8, children as ptr
-    EXPAND VEC_PUSH tmp_467, tmp_468, 8
-    !tmp_468
+L_MERGE_126:
+    tmp_464 = call @sla__children_new()
+    children = tmp_464
+    tmp_465 = load world+16 as ptr
+    tmp_466 = alloc 16
+    tmp_467 = call @sla__entity_new(parent_id, parent_gen)
+    store tmp_466+0, tmp_467 as ptr
     !tmp_467
-    tmp_470 = alloc 16
-    store tmp_470+0, world as ptr
-    tmp_471 = load world+16 as ptr
-    EXPAND VEC_LEN tmp_472, tmp_471
+    store tmp_466+8, children as ptr
+    EXPAND VEC_PUSH tmp_465, tmp_466, 8
+    !tmp_466
+    !tmp_465
+    tmp_468 = alloc 16
+    store tmp_468+0, world as ptr
+    tmp_469 = load world+16 as ptr
+    EXPAND VEC_LEN tmp_470, tmp_469
+    !tmp_469
+    tmp_471 = tmp_470 as i64
+    tmp_472 = 1
+    tmp_473 = sub tmp_471, tmp_472
     !tmp_471
-    tmp_473 = tmp_472 as i64
-    tmp_474 = 1
-    tmp_475 = sub tmp_473, tmp_474
-    !tmp_473
-    !tmp_474
-    store tmp_470+8, tmp_475 as i64
+    !tmp_472
+    store tmp_468+8, tmp_473 as i64
     !children
     !parent_gen
     !parent_id
     !slot
     !parent
-    return tmp_470
+    return tmp_468
 
 @sla__hierarchy_world_remove_child_from_parent(world: ptr, parent: ptr, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_476 = load parent+0 as i32
-    parent_id = tmp_476
-    tmp_477 = load parent+4 as i32
-    parent_gen = tmp_477
-    tmp_478 = load child+0 as i32
-    child_id = tmp_478
-    tmp_479 = load child+4 as i32
-    child_gen = tmp_479
-    tmp_480 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_481 = call @sla__hierarchy_world_children_slot(world, tmp_480)
+    tmp_474 = load parent+0 as i32
+    parent_id = tmp_474
+    tmp_475 = load parent+4 as i32
+    parent_gen = tmp_475
+    tmp_476 = load child+0 as i32
+    child_id = tmp_476
+    tmp_477 = load child+4 as i32
+    child_gen = tmp_477
+    tmp_478 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_479 = call @sla__hierarchy_world_children_slot(world, tmp_478)
+    !tmp_478
+    parent_slot = tmp_479
+    tmp_480 = 0
+    tmp_481 = slt parent_slot, tmp_480
     !tmp_480
-    parent_slot = tmp_481
-    tmp_482 = 0
-    tmp_483 = slt parent_slot, tmp_482
-    !tmp_482
-    br tmp_483 -> L_THEN_131, L_ELSE_132
+    br tmp_481 -> L_THEN_127, L_ELSE_128
 
-L_THEN_131:
-    !tmp_483
+L_THEN_127:
+    !tmp_481
     !parent_gen
     !child_id
     !child_gen
@@ -1702,22 +1687,22 @@ L_THEN_131:
     !child
     return world
 
-L_ELSE_132:
-    !tmp_483
-    jmp L_MERGE_133
+L_ELSE_128:
+    !tmp_481
+    jmp L_MERGE_129
 
-L_MERGE_133:
-    tmp_485 = call @sla__entity_new(child_id, child_gen)
-    tmp_486 = call @sla__hierarchy_world_child_slot_in_parent(world, parent_slot, tmp_485)
+L_MERGE_129:
+    tmp_483 = call @sla__entity_new(child_id, child_gen)
+    tmp_484 = call @sla__hierarchy_world_child_slot_in_parent(world, parent_slot, tmp_483)
+    !tmp_483
+    child_slot = tmp_484
+    tmp_485 = 0
+    tmp_486 = slt child_slot, tmp_485
     !tmp_485
-    child_slot = tmp_486
-    tmp_487 = 0
-    tmp_488 = slt child_slot, tmp_487
-    !tmp_487
-    br tmp_488 -> L_THEN_134, L_ELSE_135
+    br tmp_486 -> L_THEN_130, L_ELSE_131
 
-L_THEN_134:
-    !tmp_488
+L_THEN_130:
+    !tmp_486
     !parent_gen
     !child_id
     !child_gen
@@ -1728,127 +1713,127 @@ L_THEN_134:
     !child
     return world
 
-L_ELSE_135:
-    !tmp_488
-    jmp L_MERGE_136
+L_ELSE_131:
+    !tmp_486
+    jmp L_MERGE_132
 
-L_MERGE_136:
-    tmp_490 = load world+16 as ptr
-    EXPAND VEC_GET tmp_491, tmp_490, parent_slot
+L_MERGE_132:
+    tmp_488 = load world+16 as ptr
+    EXPAND VEC_GET tmp_489, tmp_488, parent_slot
+    !tmp_488
+    tmp_490 = tmp_489 as ptr
+    tmp_491 = load tmp_490+8 as ptr
     !tmp_490
-    tmp_492 = tmp_491 as ptr
-    tmp_493 = load tmp_492+8 as ptr
+    tmp_492 = load tmp_491+0 as ptr
+    !tmp_491
+    tmp_493 = call @sla__hierarchy_entity_vec_remove_at(tmp_492, child_slot)
     !tmp_492
-    tmp_494 = load tmp_493+0 as ptr
-    !tmp_493
-    tmp_495 = call @sla__hierarchy_entity_vec_remove_at(tmp_494, child_slot)
+    next_entities = tmp_493
+    tmp_494 = load world+16 as ptr
+    EXPAND VEC_GET tmp_495, tmp_494, parent_slot
     !tmp_494
-    next_entities = tmp_495
-    tmp_496 = load world+16 as ptr
-    EXPAND VEC_GET tmp_497, tmp_496, parent_slot
+    tmp_496 = tmp_495 as ptr
+    tmp_497 = load tmp_496+8 as ptr
     !tmp_496
-    tmp_498 = tmp_497 as ptr
-    tmp_499 = load tmp_498+8 as ptr
-    !tmp_498
-    store tmp_499+0, next_entities as ptr
-    !tmp_499
+    store tmp_497+0, next_entities as ptr
+    !tmp_497
     !next_entities
-    tmp_500 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_501 = call @sla__hierarchy_world_remove_empty_children_entry(world, tmp_500)
-    !tmp_500
+    tmp_498 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_499 = call @sla__hierarchy_world_remove_empty_children_entry(world, tmp_498)
+    !tmp_498
     !child_id
     !child_gen
     !child_slot
     !parent_slot
     !parent
     !child
-    return tmp_501
+    return tmp_499
 
 @sla__hierarchy_world_insert_child_into_parent(world: ptr, parent: ptr, child: ptr, index: i64) -> ptr:
 L_ENTRY:
-    tmp_502 = load parent+0 as i32
-    parent_id = tmp_502
-    tmp_503 = load parent+4 as i32
-    parent_gen = tmp_503
-    tmp_504 = load child+0 as i32
-    child_id = tmp_504
-    tmp_505 = load child+4 as i32
-    child_gen = tmp_505
-    tmp_506 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_507 = call @sla__hierarchy_world_ensure_children_entry(world, tmp_506)
-    !tmp_506
-    next_world = load tmp_507+0 as ptr
-    parent_slot = load tmp_507+8 as i64
-    !tmp_507
+    tmp_500 = load parent+0 as i32
+    parent_id = tmp_500
+    tmp_501 = load parent+4 as i32
+    parent_gen = tmp_501
+    tmp_502 = load child+0 as i32
+    child_id = tmp_502
+    tmp_503 = load child+4 as i32
+    child_gen = tmp_503
+    tmp_504 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_505 = call @sla__hierarchy_world_ensure_children_entry(world, tmp_504)
+    !tmp_504
+    next_world = load tmp_505+0 as ptr
+    parent_slot = load tmp_505+8 as i64
+    !tmp_505
     !world
     world = next_world
-    tmp_508 = call @sla__entity_new(child_id, child_gen)
-    tmp_509 = call @sla__hierarchy_world_child_slot_in_parent(world, parent_slot, tmp_508)
+    tmp_506 = call @sla__entity_new(child_id, child_gen)
+    tmp_507 = call @sla__hierarchy_world_child_slot_in_parent(world, parent_slot, tmp_506)
+    !tmp_506
+    existing_slot = tmp_507
+    tmp_508 = 0
+    tmp_509 = sge existing_slot, tmp_508
     !tmp_508
-    existing_slot = tmp_509
-    tmp_510 = 0
-    tmp_511 = sge existing_slot, tmp_510
+    br tmp_509 -> L_THEN_133, L_ELSE_134
+
+L_THEN_133:
+    !tmp_509
+    tmp_510 = load world+16 as ptr
+    EXPAND VEC_GET tmp_511, tmp_510, parent_slot
     !tmp_510
-    br tmp_511 -> L_THEN_137, L_ELSE_138
-
-L_THEN_137:
-    !tmp_511
-    tmp_512 = load world+16 as ptr
-    EXPAND VEC_GET tmp_513, tmp_512, parent_slot
+    tmp_512 = tmp_511 as ptr
+    tmp_513 = load tmp_512+8 as ptr
     !tmp_512
-    tmp_514 = tmp_513 as ptr
-    tmp_515 = load tmp_514+8 as ptr
+    tmp_514 = load tmp_513+0 as ptr
+    !tmp_513
+    tmp_515 = call @sla__hierarchy_entity_vec_remove_at(tmp_514, existing_slot)
     !tmp_514
-    tmp_516 = load tmp_515+0 as ptr
-    !tmp_515
-    tmp_517 = call @sla__hierarchy_entity_vec_remove_at(tmp_516, existing_slot)
+    without_child = tmp_515
+    tmp_516 = load world+16 as ptr
+    EXPAND VEC_GET tmp_517, tmp_516, parent_slot
     !tmp_516
-    without_child = tmp_517
-    tmp_518 = load world+16 as ptr
-    EXPAND VEC_GET tmp_519, tmp_518, parent_slot
+    tmp_518 = tmp_517 as ptr
+    tmp_519 = load tmp_518+8 as ptr
     !tmp_518
-    tmp_520 = tmp_519 as ptr
-    tmp_521 = load tmp_520+8 as ptr
-    !tmp_520
-    store tmp_521+0, without_child as ptr
-    !tmp_521
+    store tmp_519+0, without_child as ptr
+    !tmp_519
     !without_child
-    jmp L_MERGE_139
+    jmp L_MERGE_135
 
-L_ELSE_138:
-    !tmp_511
-    jmp L_MERGE_139
+L_ELSE_134:
+    !tmp_509
+    jmp L_MERGE_135
 
-L_MERGE_139:
+L_MERGE_135:
+    tmp_521 = 0
+    tmp_522 = add index, tmp_521
+    !tmp_521
+    requested = tmp_522
     tmp_523 = 0
-    tmp_524 = add index, tmp_523
+    tmp_524 = add requested, tmp_523
     !tmp_523
-    requested = tmp_524
-    tmp_525 = 0
-    tmp_526 = add requested, tmp_525
+    adjusted = tmp_524
+    tmp_525 = load world+16 as ptr
+    EXPAND VEC_GET tmp_526, tmp_525, parent_slot
     !tmp_525
-    adjusted = tmp_526
-    tmp_527 = load world+16 as ptr
-    EXPAND VEC_GET tmp_528, tmp_527, parent_slot
+    tmp_527 = tmp_526 as ptr
+    tmp_528 = load tmp_527+8 as ptr
     !tmp_527
-    tmp_529 = tmp_528 as ptr
-    tmp_530 = load tmp_529+8 as ptr
+    tmp_529 = load tmp_528+0 as ptr
+    !tmp_528
+    tmp_530 = call @sla__entity_new(child_id, child_gen)
+    tmp_531 = call @sla__hierarchy_entity_vec_insert_at(tmp_529, adjusted, tmp_530)
     !tmp_529
-    tmp_531 = load tmp_530+0 as ptr
     !tmp_530
-    tmp_532 = call @sla__entity_new(child_id, child_gen)
-    tmp_533 = call @sla__hierarchy_entity_vec_insert_at(tmp_531, adjusted, tmp_532)
-    !tmp_531
+    inserted = tmp_531
+    tmp_532 = load world+16 as ptr
+    EXPAND VEC_GET tmp_533, tmp_532, parent_slot
     !tmp_532
-    inserted = tmp_533
-    tmp_534 = load world+16 as ptr
-    EXPAND VEC_GET tmp_535, tmp_534, parent_slot
+    tmp_534 = tmp_533 as ptr
+    tmp_535 = load tmp_534+8 as ptr
     !tmp_534
-    tmp_536 = tmp_535 as ptr
-    tmp_537 = load tmp_536+8 as ptr
-    !tmp_536
-    store tmp_537+0, inserted as ptr
-    !tmp_537
+    store tmp_535+0, inserted as ptr
+    !tmp_535
     !inserted
     !parent_gen
     !child_id
@@ -1865,94 +1850,94 @@ L_MERGE_139:
 
 @sla__hierarchy_world_remove_child_of_entry_at(world: ptr, slot: i64) -> ptr:
 L_ENTRY:
-    tmp_538 = load world+8 as ptr
-    EXPAND VEC_LEN tmp_539, tmp_538
-    !tmp_538
-    tmp_540 = tmp_539 as i64
-    count = tmp_540
-    tmp_541 = 0
-    tmp_542 = slt slot, tmp_541
-    !tmp_541
-    br tmp_542 -> L_THEN_140, L_ELSE_141
+    tmp_536 = load world+8 as ptr
+    EXPAND VEC_LEN tmp_537, tmp_536
+    !tmp_536
+    tmp_538 = tmp_537 as i64
+    count = tmp_538
+    tmp_539 = 0
+    tmp_540 = slt slot, tmp_539
+    !tmp_539
+    br tmp_540 -> L_THEN_136, L_ELSE_137
 
-L_THEN_140:
+L_THEN_136:
+    !tmp_540
+    !count
+    !slot
+    return world
+
+L_ELSE_137:
+    !tmp_540
+    jmp L_MERGE_138
+
+L_MERGE_138:
+    tmp_542 = sge slot, count
+    br tmp_542 -> L_THEN_139, L_ELSE_140
+
+L_THEN_139:
     !tmp_542
     !count
     !slot
     return world
 
-L_ELSE_141:
+L_ELSE_140:
     !tmp_542
-    jmp L_MERGE_142
+    jmp L_MERGE_141
 
-L_MERGE_142:
-    tmp_544 = sge slot, count
-    br tmp_544 -> L_THEN_143, L_ELSE_144
-
-L_THEN_143:
+L_MERGE_141:
+    tmp_544 = 1
+    tmp_545 = sub count, tmp_544
     !tmp_544
-    !count
-    !slot
-    return world
+    last = tmp_545
+    tmp_546 = ne slot, last
+    br tmp_546 -> L_THEN_142, L_ELSE_143
 
-L_ELSE_144:
-    !tmp_544
-    jmp L_MERGE_145
-
-L_MERGE_145:
-    tmp_546 = 1
-    tmp_547 = sub count, tmp_546
+L_THEN_142:
     !tmp_546
-    last = tmp_547
-    tmp_548 = ne slot, last
-    br tmp_548 -> L_THEN_146, L_ELSE_147
-
-L_THEN_146:
+    tmp_547 = load world+8 as ptr
+    tmp_548 = load world+8 as ptr
+    EXPAND VEC_GET tmp_549, tmp_548, last
     !tmp_548
-    tmp_549 = load world+8 as ptr
-    tmp_550 = load world+8 as ptr
-    EXPAND VEC_GET tmp_551, tmp_550, last
-    !tmp_550
-    tmp_552 = tmp_551 as ptr
-    tmp_553 = &tmp_549
-    tmp_554 = load tmp_553+Vec_len as u64
-    tmp_555 = ult slot, tmp_554
-    br tmp_555 -> L_VEC_INDEX_ASSIGN_OK_149, L_VEC_INDEX_ASSIGN_OOB_150
+    tmp_550 = tmp_549 as ptr
+    tmp_551 = &tmp_547
+    tmp_552 = load tmp_551+Vec_len as u64
+    tmp_553 = ult slot, tmp_552
+    br tmp_553 -> L_VEC_INDEX_ASSIGN_OK_145, L_VEC_INDEX_ASSIGN_OOB_146
 
-L_VEC_INDEX_ASSIGN_OOB_150:
+L_VEC_INDEX_ASSIGN_OOB_146:
     panic(87)
 
-L_VEC_INDEX_ASSIGN_OK_149:
-    !tmp_555
-    tmp_556 = load tmp_553+Vec_ptr as ptr
-    tmp_557 = mul slot, 8
-    tmp_558 = ptr_add tmp_556, tmp_557
-    store tmp_558+0, tmp_552 as u64
-    !tmp_558
-    !tmp_557
-    !tmp_556
-    !tmp_554
+L_VEC_INDEX_ASSIGN_OK_145:
     !tmp_553
+    tmp_554 = load tmp_551+Vec_ptr as ptr
+    tmp_555 = mul slot, 8
+    tmp_556 = ptr_add tmp_554, tmp_555
+    store tmp_556+0, tmp_550 as u64
+    !tmp_556
+    !tmp_555
+    !tmp_554
     !tmp_552
-    !tmp_549
-    jmp L_MERGE_148
+    !tmp_551
+    !tmp_550
+    !tmp_547
+    jmp L_MERGE_144
 
-L_ELSE_147:
-    !tmp_548
-    jmp L_MERGE_148
+L_ELSE_143:
+    !tmp_546
+    jmp L_MERGE_144
 
-L_MERGE_148:
-    tmp_560 = load world+8 as ptr
-    EXPAND VEC_REMOVE tmp_561, tmp_562, tmp_560, last, 8
-    br tmp_561 -> L_VEC_REMOVE_OK_151, L_VEC_REMOVE_OOB_152
+L_MERGE_144:
+    tmp_558 = load world+8 as ptr
+    EXPAND VEC_REMOVE tmp_559, tmp_560, tmp_558, last, 8
+    br tmp_559 -> L_VEC_REMOVE_OK_147, L_VEC_REMOVE_OOB_148
 
-L_VEC_REMOVE_OOB_152:
+L_VEC_REMOVE_OOB_148:
     panic(86)
 
-L_VEC_REMOVE_OK_151:
-    !tmp_561
-    tmp_563 = tmp_562 as ptr
-    removed = tmp_563
+L_VEC_REMOVE_OK_147:
+    !tmp_559
+    tmp_561 = tmp_560 as ptr
+    removed = tmp_561
     !removed
     !last
     !count
@@ -1961,173 +1946,173 @@ L_VEC_REMOVE_OK_151:
 
 @sla__hierarchy_world_has_parent(world: ptr, child: ptr) -> u8:
 L_ENTRY:
-    tmp_564 = call @sla__hierarchy_world_is_alive(world, child)
-    tmp_565 = 1
-    tmp_566 = ne tmp_564, tmp_565
-    !tmp_564
-    !tmp_565
-    br tmp_566 -> L_THEN_153, L_ELSE_154
+    tmp_562 = call @sla__hierarchy_world_is_alive(world, child)
+    tmp_563 = 1
+    tmp_564 = ne tmp_562, tmp_563
+    !tmp_562
+    !tmp_563
+    br tmp_564 -> L_THEN_149, L_ELSE_150
 
-L_THEN_153:
-    !tmp_566
-    tmp_567 = 0
+L_THEN_149:
+    !tmp_564
+    tmp_565 = 0
     !child
     !world
-    return tmp_567
+    return tmp_565
 
-L_ELSE_154:
-    !tmp_566
-    jmp L_MERGE_155
+L_ELSE_150:
+    !tmp_564
+    jmp L_MERGE_151
 
-L_MERGE_155:
-    tmp_569 = call @sla__hierarchy_world_child_of_slot(world, child)
-    tmp_570 = 0
-    tmp_571 = sge tmp_569, tmp_570
-    !tmp_569
-    !tmp_570
-    return tmp_571
+L_MERGE_151:
+    tmp_567 = call @sla__hierarchy_world_child_of_slot(world, child)
+    tmp_568 = 0
+    tmp_569 = sge tmp_567, tmp_568
+    !tmp_567
+    !tmp_568
+    return tmp_569
 
 @sla__hierarchy_world_parent(world: ptr, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_572 = call @sla__hierarchy_world_child_of_slot(world, child)
-    slot = tmp_572
-    tmp_573 = 0
-    tmp_574 = slt slot, tmp_573
-    !tmp_573
-    br tmp_574 -> L_THEN_156, L_ELSE_157
+    tmp_570 = call @sla__hierarchy_world_child_of_slot(world, child)
+    slot = tmp_570
+    tmp_571 = 0
+    tmp_572 = slt slot, tmp_571
+    !tmp_571
+    br tmp_572 -> L_THEN_152, L_ELSE_153
 
-L_THEN_156:
-    !tmp_574
-    tmp_575 = call @sla__entity_placeholder()
+L_THEN_152:
+    !tmp_572
+    tmp_573 = call @sla__entity_placeholder()
     !slot
     !child
     !world
-    return tmp_575
+    return tmp_573
 
-L_ELSE_157:
-    !tmp_574
-    jmp L_MERGE_158
+L_ELSE_153:
+    !tmp_572
+    jmp L_MERGE_154
 
-L_MERGE_158:
-    tmp_577 = load world+8 as ptr
-    EXPAND VEC_GET tmp_578, tmp_577, slot
+L_MERGE_154:
+    tmp_575 = load world+8 as ptr
+    EXPAND VEC_GET tmp_576, tmp_575, slot
+    !tmp_575
+    tmp_577 = tmp_576 as ptr
+    tmp_578 = load tmp_577+8 as ptr
     !tmp_577
-    tmp_579 = tmp_578 as ptr
-    tmp_580 = load tmp_579+8 as ptr
-    !tmp_579
     !slot
     !child
     !world
-    return tmp_580
+    return tmp_578
 
 @sla__hierarchy_world_set_parent_at(world: ptr, child: ptr, parent: ptr, index: i64) -> ptr:
 L_ENTRY:
-    tmp_581 = load child+0 as i32
-    child_id = tmp_581
-    tmp_582 = load child+4 as i32
-    child_gen = tmp_582
-    tmp_583 = load parent+0 as i32
-    parent_id = tmp_583
-    tmp_584 = load parent+4 as i32
-    parent_gen = tmp_584
-    tmp_585 = call @sla__entity_new(child_id, child_gen)
-    tmp_586 = call @sla__hierarchy_world_is_alive(world, tmp_585)
+    tmp_579 = load child+0 as i32
+    child_id = tmp_579
+    tmp_580 = load child+4 as i32
+    child_gen = tmp_580
+    tmp_581 = load parent+0 as i32
+    parent_id = tmp_581
+    tmp_582 = load parent+4 as i32
+    parent_gen = tmp_582
+    tmp_583 = call @sla__entity_new(child_id, child_gen)
+    tmp_584 = call @sla__hierarchy_world_is_alive(world, tmp_583)
+    !tmp_583
+    tmp_585 = 1
+    tmp_586 = ne tmp_584, tmp_585
+    !tmp_584
     !tmp_585
-    tmp_587 = 1
-    tmp_588 = ne tmp_586, tmp_587
-    !tmp_586
-    !tmp_587
-    br tmp_588 -> L_THEN_159, L_ELSE_160
+    br tmp_586 -> L_THEN_155, L_ELSE_156
 
-L_THEN_159:
-    !tmp_588
+L_THEN_155:
+    !tmp_586
     panic(9301)
 
-L_ELSE_160:
-    !tmp_588
-    jmp L_MERGE_161
+L_ELSE_156:
+    !tmp_586
+    jmp L_MERGE_157
 
-L_MERGE_161:
-    tmp_591 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_592 = call @sla__hierarchy_world_is_alive(world, tmp_591)
+L_MERGE_157:
+    tmp_589 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_590 = call @sla__hierarchy_world_is_alive(world, tmp_589)
+    !tmp_589
+    tmp_591 = 1
+    tmp_592 = ne tmp_590, tmp_591
+    !tmp_590
     !tmp_591
-    tmp_593 = 1
-    tmp_594 = ne tmp_592, tmp_593
+    br tmp_592 -> L_THEN_158, L_ELSE_159
+
+L_THEN_158:
     !tmp_592
+    tmp_593 = call @sla__entity_new(child_id, child_gen)
+    tmp_594 = call @sla__hierarchy_world_remove_child_of(world, tmp_593)
     !tmp_593
-    br tmp_594 -> L_THEN_162, L_ELSE_163
-
-L_THEN_162:
-    !tmp_594
-    tmp_595 = call @sla__entity_new(child_id, child_gen)
-    tmp_596 = call @sla__hierarchy_world_remove_child_of(world, tmp_595)
-    !tmp_595
     !parent_gen
     !parent_id
     !parent
     !child
     !index
-    return tmp_596
+    return tmp_594
 
-L_ELSE_163:
-    !tmp_594
-    jmp L_MERGE_164
+L_ELSE_159:
+    !tmp_592
+    jmp L_MERGE_160
 
-L_MERGE_164:
-    tmp_598 = call @sla__hierarchy_entity_parts_eq(child_id, child_gen, parent_id, parent_gen)
-    br tmp_598 -> L_THEN_165, L_ELSE_166
+L_MERGE_160:
+    tmp_596 = call @sla__hierarchy_entity_parts_eq(child_id, child_gen, parent_id, parent_gen)
+    br tmp_596 -> L_THEN_161, L_ELSE_162
 
-L_THEN_165:
-    !tmp_598
-    tmp_599 = call @sla__entity_new(child_id, child_gen)
-    tmp_600 = call @sla__hierarchy_world_remove_child_of(world, tmp_599)
-    !tmp_599
+L_THEN_161:
+    !tmp_596
+    tmp_597 = call @sla__entity_new(child_id, child_gen)
+    tmp_598 = call @sla__hierarchy_world_remove_child_of(world, tmp_597)
+    !tmp_597
     !parent_gen
     !parent_id
     !parent
     !child
     !index
-    return tmp_600
+    return tmp_598
 
-L_ELSE_166:
-    !tmp_598
-    jmp L_MERGE_167
+L_ELSE_162:
+    !tmp_596
+    jmp L_MERGE_163
 
-L_MERGE_167:
-    tmp_602 = call @sla__entity_new(child_id, child_gen)
-    tmp_603 = call @sla__hierarchy_world_child_of_slot(world, tmp_602)
+L_MERGE_163:
+    tmp_600 = call @sla__entity_new(child_id, child_gen)
+    tmp_601 = call @sla__hierarchy_world_child_of_slot(world, tmp_600)
+    !tmp_600
+    source_slot = tmp_601
+    tmp_602 = 0
+    tmp_603 = sge source_slot, tmp_602
     !tmp_602
-    source_slot = tmp_603
-    tmp_604 = 0
-    tmp_605 = sge source_slot, tmp_604
+    br tmp_603 -> L_THEN_164, L_ELSE_165
+
+L_THEN_164:
+    !tmp_603
+    tmp_604 = load world+8 as ptr
+    EXPAND VEC_GET tmp_605, tmp_604, source_slot
     !tmp_604
-    br tmp_605 -> L_THEN_168, L_ELSE_169
-
-L_THEN_168:
-    !tmp_605
-    tmp_606 = load world+8 as ptr
-    EXPAND VEC_GET tmp_607, tmp_606, source_slot
+    tmp_606 = tmp_605 as ptr
+    tmp_607 = load tmp_606+8 as ptr
     !tmp_606
-    tmp_608 = tmp_607 as ptr
-    tmp_609 = load tmp_608+8 as ptr
-    !tmp_608
-    old_parent = tmp_609
-    tmp_610 = load old_parent+0 as i32
-    old_parent_id = tmp_610
-    tmp_611 = load old_parent+4 as i32
-    old_parent_gen = tmp_611
-    tmp_612 = call @sla__hierarchy_entity_parts_eq(old_parent_id, old_parent_gen, parent_id, parent_gen)
-    br tmp_612 -> L_THEN_171, L_ELSE_172
+    old_parent = tmp_607
+    tmp_608 = load old_parent+0 as i32
+    old_parent_id = tmp_608
+    tmp_609 = load old_parent+4 as i32
+    old_parent_gen = tmp_609
+    tmp_610 = call @sla__hierarchy_entity_parts_eq(old_parent_id, old_parent_gen, parent_id, parent_gen)
+    br tmp_610 -> L_THEN_167, L_ELSE_168
 
-L_THEN_171:
+L_THEN_167:
+    !tmp_610
+    tmp_611 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_612 = call @sla__entity_new(child_id, child_gen)
+    tmp_613 = call @sla__hierarchy_world_insert_child_into_parent(world, tmp_611, tmp_612, index)
+    !tmp_611
     !tmp_612
-    tmp_613 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_614 = call @sla__entity_new(child_id, child_gen)
-    tmp_615 = call @sla__hierarchy_world_insert_child_into_parent(world, tmp_613, tmp_614, index)
-    !tmp_613
-    !tmp_614
     !world
-    world = tmp_615
+    world = tmp_613
     !old_parent_gen
     !old_parent
     !old_parent_id
@@ -2141,59 +2126,59 @@ L_THEN_171:
     !index
     return world
 
-L_ELSE_172:
-    !tmp_612
-    jmp L_MERGE_173
+L_ELSE_168:
+    !tmp_610
+    jmp L_MERGE_169
 
-L_MERGE_173:
-    tmp_617 = call @sla__entity_new(old_parent_id, old_parent_gen)
-    tmp_618 = call @sla__entity_new(child_id, child_gen)
-    tmp_619 = call @sla__hierarchy_world_remove_child_from_parent(world, tmp_617, tmp_618)
-    !tmp_617
-    !tmp_618
+L_MERGE_169:
+    tmp_615 = call @sla__entity_new(old_parent_id, old_parent_gen)
+    tmp_616 = call @sla__entity_new(child_id, child_gen)
+    tmp_617 = call @sla__hierarchy_world_remove_child_from_parent(world, tmp_615, tmp_616)
+    !tmp_615
+    !tmp_616
     !world
-    world = tmp_619
-    tmp_620 = call @sla__entity_new(child_id, child_gen)
-    tmp_621 = call @sla__hierarchy_world_child_of_slot(world, tmp_620)
+    world = tmp_617
+    tmp_618 = call @sla__entity_new(child_id, child_gen)
+    tmp_619 = call @sla__hierarchy_world_child_of_slot(world, tmp_618)
+    !tmp_618
+    updated_slot = tmp_619
+    tmp_620 = load world+8 as ptr
+    EXPAND VEC_GET tmp_621, tmp_620, updated_slot
     !tmp_620
-    updated_slot = tmp_621
-    tmp_622 = load world+8 as ptr
-    EXPAND VEC_GET tmp_623, tmp_622, updated_slot
+    tmp_622 = tmp_621 as ptr
+    tmp_623 = call @sla__entity_new(parent_id, parent_gen)
+    store tmp_622+8, tmp_623 as ptr
     !tmp_622
-    tmp_624 = tmp_623 as ptr
-    tmp_625 = call @sla__entity_new(parent_id, parent_gen)
-    store tmp_624+8, tmp_625 as ptr
-    !tmp_624
-    !tmp_625
+    !tmp_623
     !old_parent_gen
     !old_parent
     !old_parent_id
     !updated_slot
-    jmp L_MERGE_170
+    jmp L_MERGE_166
 
-L_ELSE_169:
-    !tmp_605
-    tmp_626 = load world+8 as ptr
-    tmp_627 = alloc 16
-    tmp_628 = call @sla__entity_new(child_id, child_gen)
-    store tmp_627+0, tmp_628 as ptr
-    !tmp_628
-    tmp_629 = call @sla__entity_new(parent_id, parent_gen)
-    store tmp_627+8, tmp_629 as ptr
-    !tmp_629
-    EXPAND VEC_PUSH tmp_626, tmp_627, 8
-    !tmp_627
+L_ELSE_165:
+    !tmp_603
+    tmp_624 = load world+8 as ptr
+    tmp_625 = alloc 16
+    tmp_626 = call @sla__entity_new(child_id, child_gen)
+    store tmp_625+0, tmp_626 as ptr
     !tmp_626
-    jmp L_MERGE_170
+    tmp_627 = call @sla__entity_new(parent_id, parent_gen)
+    store tmp_625+8, tmp_627 as ptr
+    !tmp_627
+    EXPAND VEC_PUSH tmp_624, tmp_625, 8
+    !tmp_625
+    !tmp_624
+    jmp L_MERGE_166
 
-L_MERGE_170:
-    tmp_631 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_632 = call @sla__entity_new(child_id, child_gen)
-    tmp_633 = call @sla__hierarchy_world_insert_child_into_parent(world, tmp_631, tmp_632, index)
-    !tmp_631
-    !tmp_632
+L_MERGE_166:
+    tmp_629 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_630 = call @sla__entity_new(child_id, child_gen)
+    tmp_631 = call @sla__hierarchy_world_insert_child_into_parent(world, tmp_629, tmp_630, index)
+    !tmp_629
+    !tmp_630
     !world
-    world = tmp_633
+    world = tmp_631
     !parent_gen
     !child_id
     !child_gen
@@ -2206,100 +2191,100 @@ L_MERGE_170:
 
 @sla__hierarchy_world_add_child(world: ptr, parent: ptr, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_634 = 2147483647
-    tmp_635 = tmp_634 as i64
-    index = tmp_635
-    tmp_636 = call @sla__hierarchy_world_set_parent_at(world, child, parent, index)
-    return tmp_636
+    tmp_632 = 2147483647
+    tmp_633 = tmp_632 as i64
+    index = tmp_633
+    tmp_634 = call @sla__hierarchy_world_set_parent_at(world, child, parent, index)
+    return tmp_634
 
 @sla__hierarchy_world_insert_child(world: ptr, parent: ptr, index: i64, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_637 = call @sla__hierarchy_world_set_parent_at(world, child, parent, index)
-    return tmp_637
+    tmp_635 = call @sla__hierarchy_world_set_parent_at(world, child, parent, index)
+    return tmp_635
 
 @sla__hierarchy_world_spawn_child(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_638 = load parent+0 as i32
-    parent_id = tmp_638
-    tmp_639 = load parent+4 as i32
-    parent_gen = tmp_639
-    tmp_640 = call @sla__hierarchy_world_spawn(world)
-    next_world = load tmp_640+0 as ptr
-    child = load tmp_640+8 as ptr
+    tmp_636 = load parent+0 as i32
+    parent_id = tmp_636
+    tmp_637 = load parent+4 as i32
+    parent_gen = tmp_637
+    tmp_638 = call @sla__hierarchy_world_spawn(world)
+    next_world = load tmp_638+0 as ptr
+    child = load tmp_638+8 as ptr
+    !tmp_638
+    tmp_639 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_640 = load child+0 as i32
+    tmp_641 = load child+4 as i32
+    tmp_642 = call @sla__entity_new(tmp_640, tmp_641)
     !tmp_640
-    tmp_641 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_642 = load child+0 as i32
-    tmp_643 = load child+4 as i32
-    tmp_644 = call @sla__entity_new(tmp_642, tmp_643)
-    !tmp_642
-    !tmp_643
-    tmp_645 = call @sla__hierarchy_world_add_child(next_world, tmp_641, tmp_644)
     !tmp_641
-    !tmp_644
+    tmp_643 = call @sla__hierarchy_world_add_child(next_world, tmp_639, tmp_642)
+    !tmp_639
+    !tmp_642
     !world
-    world = tmp_645
-    tmp_646 = alloc 16
-    store tmp_646+0, world as ptr
-    store tmp_646+8, child as ptr
+    world = tmp_643
+    tmp_644 = alloc 16
+    store tmp_644+0, world as ptr
+    store tmp_644+8, child as ptr
     !parent_gen
     !parent_id
     !next_world
     !parent
-    return tmp_646
+    return tmp_644
 
 @sla__hierarchy_world_remove_child_of(world: ptr, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_647 = load child+0 as i32
-    child_id = tmp_647
-    tmp_648 = load child+4 as i32
-    child_gen = tmp_648
-    tmp_649 = call @sla__entity_new(child_id, child_gen)
-    tmp_650 = call @sla__hierarchy_world_child_of_slot(world, tmp_649)
+    tmp_645 = load child+0 as i32
+    child_id = tmp_645
+    tmp_646 = load child+4 as i32
+    child_gen = tmp_646
+    tmp_647 = call @sla__entity_new(child_id, child_gen)
+    tmp_648 = call @sla__hierarchy_world_child_of_slot(world, tmp_647)
+    !tmp_647
+    source_slot = tmp_648
+    tmp_649 = 0
+    tmp_650 = slt source_slot, tmp_649
     !tmp_649
-    source_slot = tmp_650
-    tmp_651 = 0
-    tmp_652 = slt source_slot, tmp_651
-    !tmp_651
-    br tmp_652 -> L_THEN_174, L_ELSE_175
+    br tmp_650 -> L_THEN_170, L_ELSE_171
 
-L_THEN_174:
-    !tmp_652
+L_THEN_170:
+    !tmp_650
     !child_id
     !child_gen
     !source_slot
     !child
     return world
 
-L_ELSE_175:
-    !tmp_652
-    jmp L_MERGE_176
+L_ELSE_171:
+    !tmp_650
+    jmp L_MERGE_172
 
-L_MERGE_176:
-    tmp_654 = load world+8 as ptr
-    EXPAND VEC_GET tmp_655, tmp_654, source_slot
+L_MERGE_172:
+    tmp_652 = load world+8 as ptr
+    EXPAND VEC_GET tmp_653, tmp_652, source_slot
+    !tmp_652
+    tmp_654 = tmp_653 as ptr
+    tmp_655 = load tmp_654+8 as ptr
     !tmp_654
-    tmp_656 = tmp_655 as ptr
-    tmp_657 = load tmp_656+8 as ptr
-    !tmp_656
-    parent = tmp_657
-    tmp_658 = load parent+0 as i32
-    parent_id = tmp_658
-    tmp_659 = load parent+4 as i32
-    parent_gen = tmp_659
-    tmp_660 = call @sla__entity_new(parent_id, parent_gen)
+    parent = tmp_655
+    tmp_656 = load parent+0 as i32
+    parent_id = tmp_656
+    tmp_657 = load parent+4 as i32
+    parent_gen = tmp_657
+    tmp_658 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_659 = call @sla__entity_new(child_id, child_gen)
+    tmp_660 = call @sla__hierarchy_world_remove_child_from_parent(world, tmp_658, tmp_659)
+    !tmp_658
+    !tmp_659
+    !world
+    world = tmp_660
     tmp_661 = call @sla__entity_new(child_id, child_gen)
-    tmp_662 = call @sla__hierarchy_world_remove_child_from_parent(world, tmp_660, tmp_661)
-    !tmp_660
+    tmp_662 = call @sla__hierarchy_world_child_of_slot(world, tmp_661)
     !tmp_661
+    updated_slot = tmp_662
+    tmp_663 = call @sla__hierarchy_world_remove_child_of_entry_at(world, updated_slot)
     !world
-    world = tmp_662
-    tmp_663 = call @sla__entity_new(child_id, child_gen)
-    tmp_664 = call @sla__hierarchy_world_child_of_slot(world, tmp_663)
-    !tmp_663
-    updated_slot = tmp_664
-    tmp_665 = call @sla__hierarchy_world_remove_child_of_entry_at(world, updated_slot)
-    !world
-    world = tmp_665
+    world = tmp_663
     !parent_gen
     !child_id
     !child_gen
@@ -2312,25 +2297,25 @@ L_MERGE_176:
 
 @sla__hierarchy_world_detach_child(world: ptr, parent: ptr, child: ptr) -> ptr:
 L_ENTRY:
-    tmp_666 = load parent+0 as i32
-    parent_id = tmp_666
-    tmp_667 = load parent+4 as i32
-    parent_gen = tmp_667
-    tmp_668 = load child+0 as i32
-    child_id = tmp_668
-    tmp_669 = load child+4 as i32
-    child_gen = tmp_669
-    tmp_670 = call @sla__entity_new(child_id, child_gen)
-    tmp_671 = call @sla__hierarchy_world_child_of_slot(world, tmp_670)
+    tmp_664 = load parent+0 as i32
+    parent_id = tmp_664
+    tmp_665 = load parent+4 as i32
+    parent_gen = tmp_665
+    tmp_666 = load child+0 as i32
+    child_id = tmp_666
+    tmp_667 = load child+4 as i32
+    child_gen = tmp_667
+    tmp_668 = call @sla__entity_new(child_id, child_gen)
+    tmp_669 = call @sla__hierarchy_world_child_of_slot(world, tmp_668)
+    !tmp_668
+    source_slot = tmp_669
+    tmp_670 = 0
+    tmp_671 = slt source_slot, tmp_670
     !tmp_670
-    source_slot = tmp_671
-    tmp_672 = 0
-    tmp_673 = slt source_slot, tmp_672
-    !tmp_672
-    br tmp_673 -> L_THEN_177, L_ELSE_178
+    br tmp_671 -> L_THEN_173, L_ELSE_174
 
-L_THEN_177:
-    !tmp_673
+L_THEN_173:
+    !tmp_671
     !parent_gen
     !child_id
     !child_gen
@@ -2340,38 +2325,38 @@ L_THEN_177:
     !child
     return world
 
-L_ELSE_178:
-    !tmp_673
-    jmp L_MERGE_179
+L_ELSE_174:
+    !tmp_671
+    jmp L_MERGE_175
 
-L_MERGE_179:
-    tmp_675 = load world+8 as ptr
-    EXPAND VEC_GET tmp_676, tmp_675, source_slot
+L_MERGE_175:
+    tmp_673 = load world+8 as ptr
+    EXPAND VEC_GET tmp_674, tmp_673, source_slot
+    !tmp_673
+    tmp_675 = tmp_674 as ptr
+    tmp_676 = load tmp_675+8 as ptr
     !tmp_675
-    tmp_677 = tmp_676 as ptr
-    tmp_678 = load tmp_677+8 as ptr
-    !tmp_677
-    tmp_679 = load tmp_678+0 as i32
+    tmp_677 = load tmp_676+0 as i32
+    !tmp_676
+    tmp_678 = load world+8 as ptr
+    EXPAND VEC_GET tmp_679, tmp_678, source_slot
     !tmp_678
-    tmp_680 = load world+8 as ptr
-    EXPAND VEC_GET tmp_681, tmp_680, source_slot
+    tmp_680 = tmp_679 as ptr
+    tmp_681 = load tmp_680+8 as ptr
     !tmp_680
-    tmp_682 = tmp_681 as ptr
-    tmp_683 = load tmp_682+8 as ptr
+    tmp_682 = load tmp_681+4 as i32
+    !tmp_681
+    tmp_683 = call @sla__hierarchy_entity_parts_eq(tmp_677, tmp_682, parent_id, parent_gen)
+    !tmp_677
     !tmp_682
-    tmp_684 = load tmp_683+4 as i32
+    tmp_684 = 1
+    tmp_685 = ne tmp_683, tmp_684
     !tmp_683
-    tmp_685 = call @sla__hierarchy_entity_parts_eq(tmp_679, tmp_684, parent_id, parent_gen)
-    !tmp_679
     !tmp_684
-    tmp_686 = 1
-    tmp_687 = ne tmp_685, tmp_686
-    !tmp_685
-    !tmp_686
-    br tmp_687 -> L_THEN_180, L_ELSE_181
+    br tmp_685 -> L_THEN_176, L_ELSE_177
 
-L_THEN_180:
-    !tmp_687
+L_THEN_176:
+    !tmp_685
     !parent_gen
     !child_id
     !child_gen
@@ -2381,117 +2366,117 @@ L_THEN_180:
     !child
     return world
 
-L_ELSE_181:
-    !tmp_687
-    jmp L_MERGE_182
+L_ELSE_177:
+    !tmp_685
+    jmp L_MERGE_178
 
-L_MERGE_182:
-    tmp_689 = call @sla__entity_new(child_id, child_gen)
-    tmp_690 = call @sla__hierarchy_world_remove_child_of(world, tmp_689)
-    !tmp_689
+L_MERGE_178:
+    tmp_687 = call @sla__entity_new(child_id, child_gen)
+    tmp_688 = call @sla__hierarchy_world_remove_child_of(world, tmp_687)
+    !tmp_687
     !parent_gen
     !parent_id
     !source_slot
     !parent
     !child
-    return tmp_690
+    return tmp_688
 
 @sla__hierarchy_world_children(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_691 = call @sla__hierarchy_world_children_slot(world, parent)
-    slot = tmp_691
-    tmp_692 = 0
-    tmp_693 = slt slot, tmp_692
-    !tmp_692
-    br tmp_693 -> L_THEN_183, L_ELSE_184
+    tmp_689 = call @sla__hierarchy_world_children_slot(world, parent)
+    slot = tmp_689
+    tmp_690 = 0
+    tmp_691 = slt slot, tmp_690
+    !tmp_690
+    br tmp_691 -> L_THEN_179, L_ELSE_180
 
-L_THEN_183:
-    !tmp_693
-    tmp_694 = call @sla__children_new()
+L_THEN_179:
+    !tmp_691
+    tmp_692 = call @sla__children_new()
     !slot
     !parent
     !world
-    return tmp_694
+    return tmp_692
 
-L_ELSE_184:
-    !tmp_693
-    jmp L_MERGE_185
+L_ELSE_180:
+    !tmp_691
+    jmp L_MERGE_181
 
-L_MERGE_185:
-    tmp_696 = call @sla__children_new()
-    result = tmp_696
-    tmp_697 = 0
-    i = tmp_697
-    tmp_698 = load world+16 as ptr
-    EXPAND VEC_GET tmp_699, tmp_698, slot
+L_MERGE_181:
+    tmp_694 = call @sla__children_new()
+    result = tmp_694
+    tmp_695 = 0
+    i = tmp_695
+    tmp_696 = load world+16 as ptr
+    EXPAND VEC_GET tmp_697, tmp_696, slot
+    !tmp_696
+    tmp_698 = tmp_697 as ptr
+    tmp_699 = load tmp_698+8 as ptr
     !tmp_698
-    tmp_700 = tmp_699 as ptr
-    tmp_701 = load tmp_700+8 as ptr
+    tmp_700 = load tmp_699+0 as ptr
+    !tmp_699
+    EXPAND VEC_LEN tmp_701, tmp_700
     !tmp_700
-    tmp_702 = load tmp_701+0 as ptr
-    !tmp_701
-    EXPAND VEC_LEN tmp_703, tmp_702
-    !tmp_702
-    tmp_704 = tmp_703 as i64
-    cnt = tmp_704
-    jmp L_WHILE_HEAD_186
+    tmp_702 = tmp_701 as i64
+    cnt = tmp_702
+    jmp L_WHILE_HEAD_182
 
-L_WHILE_HEAD_186:
-    tmp_705 = slt i, cnt
-    br tmp_705 -> L_WHILE_BODY_187, L_WHILE_COND_FALSE_188
+L_WHILE_HEAD_182:
+    tmp_703 = slt i, cnt
+    br tmp_703 -> L_WHILE_BODY_183, L_WHILE_COND_FALSE_184
 
-L_WHILE_BODY_187:
-    !tmp_705
-    tmp_706 = load world+16 as ptr
-    EXPAND VEC_GET tmp_707, tmp_706, slot
+L_WHILE_BODY_183:
+    !tmp_703
+    tmp_704 = load world+16 as ptr
+    EXPAND VEC_GET tmp_705, tmp_704, slot
+    !tmp_704
+    tmp_706 = tmp_705 as ptr
+    tmp_707 = load tmp_706+8 as ptr
     !tmp_706
-    tmp_708 = tmp_707 as ptr
-    tmp_709 = load tmp_708+8 as ptr
+    tmp_708 = load tmp_707+0 as ptr
+    !tmp_707
+    EXPAND VEC_GET tmp_709, tmp_708, i
     !tmp_708
-    tmp_710 = load tmp_709+0 as ptr
-    !tmp_709
-    EXPAND VEC_GET tmp_711, tmp_710, i
-    !tmp_710
-    tmp_712 = tmp_711 as ptr
-    child = tmp_712
-    tmp_713 = load child+0 as i32
-    child_id = tmp_713
-    tmp_714 = load child+4 as i32
-    child_gen = tmp_714
-    tmp_715 = call @sla__entity_new(child_id, child_gen)
-    tmp_716 = call @sla__hierarchy_world_is_alive(world, tmp_715)
+    tmp_710 = tmp_709 as ptr
+    child = tmp_710
+    tmp_711 = load child+0 as i32
+    child_id = tmp_711
+    tmp_712 = load child+4 as i32
+    child_gen = tmp_712
+    tmp_713 = call @sla__entity_new(child_id, child_gen)
+    tmp_714 = call @sla__hierarchy_world_is_alive(world, tmp_713)
+    !tmp_713
+    br tmp_714 -> L_THEN_186, L_ELSE_187
+
+L_THEN_186:
+    !tmp_714
+    tmp_715 = load result+0 as ptr
+    tmp_716 = call @sla__entity_new(child_id, child_gen)
+    EXPAND VEC_PUSH tmp_715, tmp_716, 8
+    !tmp_716
     !tmp_715
-    br tmp_716 -> L_THEN_190, L_ELSE_191
+    jmp L_MERGE_188
 
-L_THEN_190:
-    !tmp_716
-    tmp_717 = load result+0 as ptr
-    tmp_718 = call @sla__entity_new(child_id, child_gen)
-    EXPAND VEC_PUSH tmp_717, tmp_718, 8
+L_ELSE_187:
+    !tmp_714
+    jmp L_MERGE_188
+
+L_MERGE_188:
+    tmp_718 = 1
+    tmp_719 = add i, tmp_718
     !tmp_718
-    !tmp_717
-    jmp L_MERGE_192
-
-L_ELSE_191:
-    !tmp_716
-    jmp L_MERGE_192
-
-L_MERGE_192:
-    tmp_720 = 1
-    tmp_721 = add i, tmp_720
-    !tmp_720
     !i
-    i = tmp_721
+    i = tmp_719
     !child_id
     !child_gen
     !child
-    jmp L_WHILE_HEAD_186
+    jmp L_WHILE_HEAD_182
 
-L_WHILE_COND_FALSE_188:
-    !tmp_705
-    jmp L_WHILE_EXIT_189
+L_WHILE_COND_FALSE_184:
+    !tmp_703
+    jmp L_WHILE_EXIT_185
 
-L_WHILE_EXIT_189:
+L_WHILE_EXIT_185:
     !cnt
     !i
     !slot
@@ -2501,45 +2486,45 @@ L_WHILE_EXIT_189:
 
 @sla__hierarchy_world_relationship_sources(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_722 = call @sla__hierarchy_query_new()
-    query = tmp_722
-    tmp_723 = call @sla__hierarchy_world_children(world, parent)
-    children = tmp_723
-    tmp_724 = 0
-    i = tmp_724
-    tmp_725 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_726, tmp_725
-    !tmp_725
-    tmp_727 = tmp_726 as i64
-    cnt = tmp_727
-    jmp L_WHILE_HEAD_193
+    tmp_720 = call @sla__hierarchy_query_new()
+    query = tmp_720
+    tmp_721 = call @sla__hierarchy_world_children(world, parent)
+    children = tmp_721
+    tmp_722 = 0
+    i = tmp_722
+    tmp_723 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_724, tmp_723
+    !tmp_723
+    tmp_725 = tmp_724 as i64
+    cnt = tmp_725
+    jmp L_WHILE_HEAD_189
 
-L_WHILE_HEAD_193:
-    tmp_728 = slt i, cnt
-    br tmp_728 -> L_WHILE_BODY_194, L_WHILE_COND_FALSE_195
+L_WHILE_HEAD_189:
+    tmp_726 = slt i, cnt
+    br tmp_726 -> L_WHILE_BODY_190, L_WHILE_COND_FALSE_191
 
-L_WHILE_BODY_194:
+L_WHILE_BODY_190:
+    !tmp_726
+    tmp_727 = load query+0 as ptr
+    tmp_728 = load children+0 as ptr
+    EXPAND VEC_GET tmp_729, tmp_728, i
     !tmp_728
-    tmp_729 = load query+0 as ptr
-    tmp_730 = load children+0 as ptr
-    EXPAND VEC_GET tmp_731, tmp_730, i
+    tmp_730 = tmp_729 as ptr
+    EXPAND VEC_PUSH tmp_727, tmp_730, 8
     !tmp_730
-    tmp_732 = tmp_731 as ptr
-    EXPAND VEC_PUSH tmp_729, tmp_732, 8
-    !tmp_732
-    !tmp_729
-    tmp_733 = 1
-    tmp_734 = add i, tmp_733
-    !tmp_733
+    !tmp_727
+    tmp_731 = 1
+    tmp_732 = add i, tmp_731
+    !tmp_731
     !i
-    i = tmp_734
-    jmp L_WHILE_HEAD_193
+    i = tmp_732
+    jmp L_WHILE_HEAD_189
 
-L_WHILE_COND_FALSE_195:
-    !tmp_728
-    jmp L_WHILE_EXIT_196
+L_WHILE_COND_FALSE_191:
+    !tmp_726
+    jmp L_WHILE_EXIT_192
 
-L_WHILE_EXIT_196:
+L_WHILE_EXIT_192:
     !cnt
     !i
     !children
@@ -2549,109 +2534,109 @@ L_WHILE_EXIT_196:
 
 @sla__hierarchy_world_child_count(world: ptr, parent: ptr) -> i64:
 L_ENTRY:
-    tmp_735 = call @sla__hierarchy_world_children(world, parent)
-    tmp_736 = load tmp_735+0 as ptr
-    !tmp_735
-    EXPAND VEC_LEN tmp_737, tmp_736
-    !tmp_736
-    tmp_738 = tmp_737 as i64
+    tmp_733 = call @sla__hierarchy_world_children(world, parent)
+    tmp_734 = load tmp_733+0 as ptr
+    !tmp_733
+    EXPAND VEC_LEN tmp_735, tmp_734
+    !tmp_734
+    tmp_736 = tmp_735 as i64
     !parent
     !world
-    return tmp_738
+    return tmp_736
 
 @sla__hierarchy_world_child_at(world: ptr, parent: ptr, index: i64) -> ptr:
 L_ENTRY:
-    tmp_739 = call @sla__hierarchy_world_children(world, parent)
-    children = tmp_739
-    tmp_740 = 0
-    tmp_741 = slt index, tmp_740
-    !tmp_740
-    br tmp_741 -> L_THEN_197, L_ELSE_198
+    tmp_737 = call @sla__hierarchy_world_children(world, parent)
+    children = tmp_737
+    tmp_738 = 0
+    tmp_739 = slt index, tmp_738
+    !tmp_738
+    br tmp_739 -> L_THEN_193, L_ELSE_194
 
-L_THEN_197:
-    !tmp_741
-    tmp_742 = call @sla__entity_placeholder()
+L_THEN_193:
+    !tmp_739
+    tmp_740 = call @sla__entity_placeholder()
     !children
     !parent
     !index
     !world
-    return tmp_742
+    return tmp_740
 
-L_ELSE_198:
-    !tmp_741
-    jmp L_MERGE_199
+L_ELSE_194:
+    !tmp_739
+    jmp L_MERGE_195
 
-L_MERGE_199:
-    tmp_744 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_745, tmp_744
+L_MERGE_195:
+    tmp_742 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_743, tmp_742
+    !tmp_742
+    tmp_744 = tmp_743 as i64
+    tmp_745 = sge index, tmp_744
     !tmp_744
-    tmp_746 = tmp_745 as i64
-    tmp_747 = sge index, tmp_746
-    !tmp_746
-    br tmp_747 -> L_THEN_200, L_ELSE_201
+    br tmp_745 -> L_THEN_196, L_ELSE_197
 
-L_THEN_200:
-    !tmp_747
-    tmp_748 = call @sla__entity_placeholder()
+L_THEN_196:
+    !tmp_745
+    tmp_746 = call @sla__entity_placeholder()
     !children
     !parent
     !index
     !world
-    return tmp_748
+    return tmp_746
 
-L_ELSE_201:
-    !tmp_747
-    jmp L_MERGE_202
+L_ELSE_197:
+    !tmp_745
+    jmp L_MERGE_198
 
-L_MERGE_202:
-    tmp_750 = load children+0 as ptr
-    EXPAND VEC_GET tmp_751, tmp_750, index
-    !tmp_750
-    tmp_752 = tmp_751 as ptr
+L_MERGE_198:
+    tmp_748 = load children+0 as ptr
+    EXPAND VEC_GET tmp_749, tmp_748, index
+    !tmp_748
+    tmp_750 = tmp_749 as ptr
     !children
     !parent
     !world
-    return tmp_752
+    return tmp_750
 
 @sla__hierarchy_world_detach_all_children(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_753 = call @sla__hierarchy_world_children(world, parent)
-    children = tmp_753
-    tmp_754 = 0
-    i = tmp_754
-    tmp_755 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_756, tmp_755
-    !tmp_755
-    tmp_757 = tmp_756 as i64
-    cnt = tmp_757
-    jmp L_WHILE_HEAD_203
+    tmp_751 = call @sla__hierarchy_world_children(world, parent)
+    children = tmp_751
+    tmp_752 = 0
+    i = tmp_752
+    tmp_753 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_754, tmp_753
+    !tmp_753
+    tmp_755 = tmp_754 as i64
+    cnt = tmp_755
+    jmp L_WHILE_HEAD_199
 
-L_WHILE_HEAD_203:
-    tmp_758 = slt i, cnt
-    br tmp_758 -> L_WHILE_BODY_204, L_WHILE_COND_FALSE_205
+L_WHILE_HEAD_199:
+    tmp_756 = slt i, cnt
+    br tmp_756 -> L_WHILE_BODY_200, L_WHILE_COND_FALSE_201
 
-L_WHILE_BODY_204:
-    !tmp_758
-    tmp_759 = load children+0 as ptr
-    EXPAND VEC_GET tmp_760, tmp_759, i
+L_WHILE_BODY_200:
+    !tmp_756
+    tmp_757 = load children+0 as ptr
+    EXPAND VEC_GET tmp_758, tmp_757, i
+    !tmp_757
+    tmp_759 = tmp_758 as ptr
+    tmp_760 = call @sla__hierarchy_world_remove_child_of(world, tmp_759)
     !tmp_759
-    tmp_761 = tmp_760 as ptr
-    tmp_762 = call @sla__hierarchy_world_remove_child_of(world, tmp_761)
-    !tmp_761
     !world
-    world = tmp_762
-    tmp_763 = 1
-    tmp_764 = add i, tmp_763
-    !tmp_763
+    world = tmp_760
+    tmp_761 = 1
+    tmp_762 = add i, tmp_761
+    !tmp_761
     !i
-    i = tmp_764
-    jmp L_WHILE_HEAD_203
+    i = tmp_762
+    jmp L_WHILE_HEAD_199
 
-L_WHILE_COND_FALSE_205:
-    !tmp_758
-    jmp L_WHILE_EXIT_206
+L_WHILE_COND_FALSE_201:
+    !tmp_756
+    jmp L_WHILE_EXIT_202
 
-L_WHILE_EXIT_206:
+L_WHILE_EXIT_202:
     !cnt
     !i
     !children
@@ -2660,235 +2645,235 @@ L_WHILE_EXIT_206:
 
 @sla__hierarchy_world_replace_children(world: ptr, parent: ptr, children: ptr) -> ptr:
 L_ENTRY:
-    tmp_765 = load parent+0 as i32
-    parent_id = tmp_765
-    tmp_766 = load parent+4 as i32
-    parent_gen = tmp_766
-    tmp_767 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_768 = call @sla__hierarchy_world_is_alive(world, tmp_767)
+    tmp_763 = load parent+0 as i32
+    parent_id = tmp_763
+    tmp_764 = load parent+4 as i32
+    parent_gen = tmp_764
+    tmp_765 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_766 = call @sla__hierarchy_world_is_alive(world, tmp_765)
+    !tmp_765
+    tmp_767 = 1
+    tmp_768 = ne tmp_766, tmp_767
+    !tmp_766
     !tmp_767
-    tmp_769 = 1
-    tmp_770 = ne tmp_768, tmp_769
-    !tmp_768
-    !tmp_769
-    br tmp_770 -> L_THEN_207, L_ELSE_208
+    br tmp_768 -> L_THEN_203, L_ELSE_204
 
-L_THEN_207:
-    !tmp_770
+L_THEN_203:
+    !tmp_768
     panic(9302)
 
-L_ELSE_208:
-    !tmp_770
-    jmp L_MERGE_209
+L_ELSE_204:
+    !tmp_768
+    jmp L_MERGE_205
 
-L_MERGE_209:
-    tmp_773 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_774 = call @sla__hierarchy_world_children(world, tmp_773)
-    !tmp_773
-    existing = tmp_774
-    tmp_775 = 0
-    i = tmp_775
-    tmp_776 = load existing+0 as ptr
-    EXPAND VEC_LEN tmp_777, tmp_776
-    !tmp_776
-    tmp_778 = tmp_777 as i64
-    existing_count = tmp_778
+L_MERGE_205:
+    tmp_771 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_772 = call @sla__hierarchy_world_children(world, tmp_771)
+    !tmp_771
+    existing = tmp_772
+    tmp_773 = 0
+    i = tmp_773
+    tmp_774 = load existing+0 as ptr
+    EXPAND VEC_LEN tmp_775, tmp_774
+    !tmp_774
+    tmp_776 = tmp_775 as i64
+    existing_count = tmp_776
+    jmp L_WHILE_HEAD_206
+
+L_WHILE_HEAD_206:
+    tmp_777 = slt i, existing_count
+    br tmp_777 -> L_WHILE_BODY_207, L_WHILE_COND_FALSE_208
+
+L_WHILE_BODY_207:
+    !tmp_777
+    tmp_778 = load existing+0 as ptr
+    EXPAND VEC_GET tmp_779, tmp_778, i
+    !tmp_778
+    tmp_780 = tmp_779 as ptr
+    child = tmp_780
+    tmp_781 = load child+0 as i32
+    child_id = tmp_781
+    tmp_782 = load child+4 as i32
+    child_gen = tmp_782
+    tmp_783 = 0
+    keep = tmp_783
+    tmp_784 = 0
+    j = tmp_784
+    EXPAND VEC_LEN tmp_785, children
+    tmp_786 = tmp_785 as i64
+    new_count = tmp_786
     jmp L_WHILE_HEAD_210
 
 L_WHILE_HEAD_210:
-    tmp_779 = slt i, existing_count
-    br tmp_779 -> L_WHILE_BODY_211, L_WHILE_COND_FALSE_212
+    tmp_787 = slt j, new_count
+    br tmp_787 -> L_WHILE_BODY_211, L_WHILE_COND_FALSE_212
 
 L_WHILE_BODY_211:
-    !tmp_779
-    tmp_780 = load existing+0 as ptr
-    EXPAND VEC_GET tmp_781, tmp_780, i
-    !tmp_780
-    tmp_782 = tmp_781 as ptr
-    child = tmp_782
-    tmp_783 = load child+0 as i32
-    child_id = tmp_783
-    tmp_784 = load child+4 as i32
-    child_gen = tmp_784
-    tmp_785 = 0
-    keep = tmp_785
-    tmp_786 = 0
-    j = tmp_786
-    EXPAND VEC_LEN tmp_787, children
-    tmp_788 = tmp_787 as i64
-    new_count = tmp_788
-    jmp L_WHILE_HEAD_214
-
-L_WHILE_HEAD_214:
-    tmp_789 = slt j, new_count
-    br tmp_789 -> L_WHILE_BODY_215, L_WHILE_COND_FALSE_216
-
-L_WHILE_BODY_215:
+    !tmp_787
+    EXPAND VEC_GET tmp_788, children, j
+    tmp_789 = tmp_788 as ptr
+    tmp_790 = load tmp_789+0 as i32
     !tmp_789
-    EXPAND VEC_GET tmp_790, children, j
-    tmp_791 = tmp_790 as ptr
-    tmp_792 = load tmp_791+0 as i32
-    !tmp_791
-    EXPAND VEC_GET tmp_793, children, j
-    tmp_794 = tmp_793 as ptr
-    tmp_795 = load tmp_794+4 as i32
-    !tmp_794
-    tmp_796 = call @sla__hierarchy_entity_parts_eq(tmp_792, tmp_795, child_id, child_gen)
+    EXPAND VEC_GET tmp_791, children, j
+    tmp_792 = tmp_791 as ptr
+    tmp_793 = load tmp_792+4 as i32
     !tmp_792
-    !tmp_795
-    br tmp_796 -> L_THEN_218, L_ELSE_219
+    tmp_794 = call @sla__hierarchy_entity_parts_eq(tmp_790, tmp_793, child_id, child_gen)
+    !tmp_790
+    !tmp_793
+    br tmp_794 -> L_THEN_214, L_ELSE_215
 
-L_THEN_218:
-    !tmp_796
-    tmp_797 = 1
+L_THEN_214:
+    !tmp_794
+    tmp_795 = 1
     !keep
-    keep = tmp_797
-    jmp L_MERGE_220
+    keep = tmp_795
+    jmp L_MERGE_216
 
-L_ELSE_219:
-    !tmp_796
-    jmp L_MERGE_220
+L_ELSE_215:
+    !tmp_794
+    jmp L_MERGE_216
 
-L_MERGE_220:
-    tmp_799 = 1
-    tmp_800 = add j, tmp_799
-    !tmp_799
+L_MERGE_216:
+    tmp_797 = 1
+    tmp_798 = add j, tmp_797
+    !tmp_797
     !j
-    j = tmp_800
-    jmp L_WHILE_HEAD_214
+    j = tmp_798
+    jmp L_WHILE_HEAD_210
 
-L_WHILE_COND_FALSE_216:
-    !tmp_789
-    jmp L_WHILE_EXIT_217
+L_WHILE_COND_FALSE_212:
+    !tmp_787
+    jmp L_WHILE_EXIT_213
 
-L_WHILE_EXIT_217:
-    tmp_801 = 1
-    tmp_802 = ne keep, tmp_801
+L_WHILE_EXIT_213:
+    tmp_799 = 1
+    tmp_800 = ne keep, tmp_799
+    !tmp_799
+    br tmp_800 -> L_THEN_217, L_ELSE_218
+
+L_THEN_217:
+    !tmp_800
+    tmp_801 = call @sla__entity_new(child_id, child_gen)
+    tmp_802 = call @sla__hierarchy_world_remove_child_of(world, tmp_801)
     !tmp_801
-    br tmp_802 -> L_THEN_221, L_ELSE_222
-
-L_THEN_221:
-    !tmp_802
-    tmp_803 = call @sla__entity_new(child_id, child_gen)
-    tmp_804 = call @sla__hierarchy_world_remove_child_of(world, tmp_803)
-    !tmp_803
     !world
-    world = tmp_804
-    jmp L_MERGE_223
+    world = tmp_802
+    jmp L_MERGE_219
 
-L_ELSE_222:
-    !tmp_802
-    jmp L_MERGE_223
+L_ELSE_218:
+    !tmp_800
+    jmp L_MERGE_219
 
-L_MERGE_223:
-    tmp_806 = 1
-    tmp_807 = add i, tmp_806
-    !tmp_806
+L_MERGE_219:
+    tmp_804 = 1
+    tmp_805 = add i, tmp_804
+    !tmp_804
     !i
-    i = tmp_807
+    i = tmp_805
     !new_count
     !child_id
     !child_gen
     !child
     !keep
     !j
-    jmp L_WHILE_HEAD_210
+    jmp L_WHILE_HEAD_206
 
-L_WHILE_COND_FALSE_212:
-    !tmp_779
-    jmp L_WHILE_EXIT_213
+L_WHILE_COND_FALSE_208:
+    !tmp_777
+    jmp L_WHILE_EXIT_209
 
-L_WHILE_EXIT_213:
-    tmp_808 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_809 = call @sla__hierarchy_world_children_slot(world, tmp_808)
+L_WHILE_EXIT_209:
+    tmp_806 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_807 = call @sla__hierarchy_world_children_slot(world, tmp_806)
+    !tmp_806
+    slot = tmp_807
+    tmp_808 = 0
+    tmp_809 = sge slot, tmp_808
     !tmp_808
-    slot = tmp_809
-    tmp_810 = 0
-    tmp_811 = sge slot, tmp_810
-    !tmp_810
-    br tmp_811 -> L_THEN_224, L_ELSE_225
+    br tmp_809 -> L_THEN_220, L_ELSE_221
 
-L_THEN_224:
+L_THEN_220:
+    !tmp_809
+    EXPAND VEC_NEW tmp_810
+    empty = tmp_810
+    tmp_811 = load world+16 as ptr
+    EXPAND VEC_GET tmp_812, tmp_811, slot
     !tmp_811
-    EXPAND VEC_NEW tmp_812
-    empty = tmp_812
-    tmp_813 = load world+16 as ptr
-    EXPAND VEC_GET tmp_814, tmp_813, slot
+    tmp_813 = tmp_812 as ptr
+    tmp_814 = load tmp_813+8 as ptr
     !tmp_813
-    tmp_815 = tmp_814 as ptr
-    tmp_816 = load tmp_815+8 as ptr
-    !tmp_815
-    store tmp_816+0, empty as ptr
-    !tmp_816
+    store tmp_814+0, empty as ptr
+    !tmp_814
     !empty
-    jmp L_MERGE_226
+    jmp L_MERGE_222
 
-L_ELSE_225:
-    !tmp_811
-    jmp L_MERGE_226
+L_ELSE_221:
+    !tmp_809
+    jmp L_MERGE_222
 
-L_MERGE_226:
-    tmp_818 = 0
-    k = tmp_818
-    EXPAND VEC_LEN tmp_819, children
-    tmp_820 = tmp_819 as i64
-    count = tmp_820
-    jmp L_WHILE_HEAD_227
+L_MERGE_222:
+    tmp_816 = 0
+    k = tmp_816
+    EXPAND VEC_LEN tmp_817, children
+    tmp_818 = tmp_817 as i64
+    count = tmp_818
+    jmp L_WHILE_HEAD_223
 
-L_WHILE_HEAD_227:
-    tmp_821 = slt k, count
-    br tmp_821 -> L_WHILE_BODY_228, L_WHILE_COND_FALSE_229
+L_WHILE_HEAD_223:
+    tmp_819 = slt k, count
+    br tmp_819 -> L_WHILE_BODY_224, L_WHILE_COND_FALSE_225
 
-L_WHILE_BODY_228:
+L_WHILE_BODY_224:
+    !tmp_819
+    EXPAND VEC_GET tmp_820, children, k
+    tmp_821 = tmp_820 as ptr
+    tmp_822 = load tmp_821+0 as i32
     !tmp_821
-    EXPAND VEC_GET tmp_822, children, k
-    tmp_823 = tmp_822 as ptr
-    tmp_824 = load tmp_823+0 as i32
-    !tmp_823
-    EXPAND VEC_GET tmp_825, children, k
-    tmp_826 = tmp_825 as ptr
-    tmp_827 = load tmp_826+4 as i32
-    !tmp_826
-    tmp_828 = call @sla__entity_new(tmp_824, tmp_827)
+    EXPAND VEC_GET tmp_823, children, k
+    tmp_824 = tmp_823 as ptr
+    tmp_825 = load tmp_824+4 as i32
     !tmp_824
+    tmp_826 = call @sla__entity_new(tmp_822, tmp_825)
+    !tmp_822
+    !tmp_825
+    tmp_827 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_828 = call @sla__hierarchy_world_set_parent_at(world, tmp_826, tmp_827, k)
+    !tmp_826
     !tmp_827
-    tmp_829 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_830 = call @sla__hierarchy_world_set_parent_at(world, tmp_828, tmp_829, k)
-    !tmp_828
+    !world
+    world = tmp_828
+    tmp_829 = 1
+    tmp_830 = add k, tmp_829
     !tmp_829
-    !world
-    world = tmp_830
-    tmp_831 = 1
-    tmp_832 = add k, tmp_831
-    !tmp_831
     !k
-    k = tmp_832
-    jmp L_WHILE_HEAD_227
+    k = tmp_830
+    jmp L_WHILE_HEAD_223
 
-L_WHILE_COND_FALSE_229:
-    !tmp_821
-    jmp L_WHILE_EXIT_230
+L_WHILE_COND_FALSE_225:
+    !tmp_819
+    jmp L_WHILE_EXIT_226
 
-L_WHILE_EXIT_230:
-    tmp_833 = 0
-    tmp_834 = eq count, tmp_833
+L_WHILE_EXIT_226:
+    tmp_831 = 0
+    tmp_832 = eq count, tmp_831
+    !tmp_831
+    br tmp_832 -> L_THEN_227, L_ELSE_228
+
+L_THEN_227:
+    !tmp_832
+    tmp_833 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_834 = call @sla__hierarchy_world_remove_empty_children_entry(world, tmp_833)
     !tmp_833
-    br tmp_834 -> L_THEN_231, L_ELSE_232
-
-L_THEN_231:
-    !tmp_834
-    tmp_835 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_836 = call @sla__hierarchy_world_remove_empty_children_entry(world, tmp_835)
-    !tmp_835
     !world
-    world = tmp_836
-    jmp L_MERGE_233
+    world = tmp_834
+    jmp L_MERGE_229
 
-L_ELSE_232:
-    !tmp_834
-    jmp L_MERGE_233
+L_ELSE_228:
+    !tmp_832
+    jmp L_MERGE_229
 
-L_MERGE_233:
+L_MERGE_229:
     !parent_gen
     !existing
     !count
@@ -2903,54 +2888,54 @@ L_MERGE_233:
 
 @sla__hierarchy_world_despawn_children(world: ptr, parent: ptr) -> ptr:
 L_ENTRY:
-    tmp_838 = call @sla__hierarchy_world_children(world, parent)
-    children = tmp_838
-    tmp_839 = 0
-    i = tmp_839
-    tmp_840 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_841, tmp_840
-    !tmp_840
-    tmp_842 = tmp_841 as i64
-    cnt = tmp_842
-    jmp L_WHILE_HEAD_234
+    tmp_836 = call @sla__hierarchy_world_children(world, parent)
+    children = tmp_836
+    tmp_837 = 0
+    i = tmp_837
+    tmp_838 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_839, tmp_838
+    !tmp_838
+    tmp_840 = tmp_839 as i64
+    cnt = tmp_840
+    jmp L_WHILE_HEAD_230
 
-L_WHILE_HEAD_234:
-    tmp_843 = slt i, cnt
-    br tmp_843 -> L_WHILE_BODY_235, L_WHILE_COND_FALSE_236
+L_WHILE_HEAD_230:
+    tmp_841 = slt i, cnt
+    br tmp_841 -> L_WHILE_BODY_231, L_WHILE_COND_FALSE_232
 
-L_WHILE_BODY_235:
-    !tmp_843
-    tmp_844 = load children+0 as ptr
-    EXPAND VEC_GET tmp_845, tmp_844, i
+L_WHILE_BODY_231:
+    !tmp_841
+    tmp_842 = load children+0 as ptr
+    EXPAND VEC_GET tmp_843, tmp_842, i
+    !tmp_842
+    tmp_844 = tmp_843 as ptr
+    tmp_845 = load tmp_844+0 as i32
     !tmp_844
-    tmp_846 = tmp_845 as ptr
-    tmp_847 = load tmp_846+0 as i32
+    tmp_846 = load children+0 as ptr
+    EXPAND VEC_GET tmp_847, tmp_846, i
     !tmp_846
-    tmp_848 = load children+0 as ptr
-    EXPAND VEC_GET tmp_849, tmp_848, i
+    tmp_848 = tmp_847 as ptr
+    tmp_849 = load tmp_848+4 as i32
     !tmp_848
-    tmp_850 = tmp_849 as ptr
-    tmp_851 = load tmp_850+4 as i32
+    tmp_850 = call @sla__entity_new(tmp_845, tmp_849)
+    !tmp_845
+    !tmp_849
+    tmp_851 = call @sla__hierarchy_world_despawn(world, tmp_850)
     !tmp_850
-    tmp_852 = call @sla__entity_new(tmp_847, tmp_851)
-    !tmp_847
-    !tmp_851
-    tmp_853 = call @sla__hierarchy_world_despawn(world, tmp_852)
-    !tmp_852
     !world
-    world = tmp_853
-    tmp_854 = 1
-    tmp_855 = add i, tmp_854
-    !tmp_854
+    world = tmp_851
+    tmp_852 = 1
+    tmp_853 = add i, tmp_852
+    !tmp_852
     !i
-    i = tmp_855
-    jmp L_WHILE_HEAD_234
+    i = tmp_853
+    jmp L_WHILE_HEAD_230
 
-L_WHILE_COND_FALSE_236:
-    !tmp_843
-    jmp L_WHILE_EXIT_237
+L_WHILE_COND_FALSE_232:
+    !tmp_841
+    jmp L_WHILE_EXIT_233
 
-L_WHILE_EXIT_237:
+L_WHILE_EXIT_233:
     !cnt
     !i
     !children
@@ -2959,69 +2944,69 @@ L_WHILE_EXIT_237:
 
 @sla__hierarchy_world_despawn(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_856 = load entity+0 as i32
-    entity_id = tmp_856
-    tmp_857 = load entity+4 as i32
-    entity_gen = tmp_857
-    tmp_858 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_859 = call @sla__hierarchy_world_is_alive(world, tmp_858)
+    tmp_854 = load entity+0 as i32
+    entity_id = tmp_854
+    tmp_855 = load entity+4 as i32
+    entity_gen = tmp_855
+    tmp_856 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_857 = call @sla__hierarchy_world_is_alive(world, tmp_856)
+    !tmp_856
+    tmp_858 = 1
+    tmp_859 = ne tmp_857, tmp_858
+    !tmp_857
     !tmp_858
-    tmp_860 = 1
-    tmp_861 = ne tmp_859, tmp_860
-    !tmp_859
-    !tmp_860
-    br tmp_861 -> L_THEN_238, L_ELSE_239
+    br tmp_859 -> L_THEN_234, L_ELSE_235
 
-L_THEN_238:
-    !tmp_861
+L_THEN_234:
+    !tmp_859
     !entity_gen
     !entity_id
     !entity
     return world
 
-L_ELSE_239:
-    !tmp_861
-    jmp L_MERGE_240
+L_ELSE_235:
+    !tmp_859
+    jmp L_MERGE_236
 
-L_MERGE_240:
+L_MERGE_236:
+    tmp_861 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_862 = call @sla__hierarchy_world_despawn_children(world, tmp_861)
+    !tmp_861
+    !world
+    world = tmp_862
     tmp_863 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_864 = call @sla__hierarchy_world_despawn_children(world, tmp_863)
+    tmp_864 = call @sla__hierarchy_world_remove_child_of(world, tmp_863)
     !tmp_863
     !world
     world = tmp_864
     tmp_865 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_866 = call @sla__hierarchy_world_remove_child_of(world, tmp_865)
+    tmp_866 = call @sla__hierarchy_world_children_slot(world, tmp_865)
     !tmp_865
-    !world
-    world = tmp_866
-    tmp_867 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_868 = call @sla__hierarchy_world_children_slot(world, tmp_867)
+    child_slot = tmp_866
+    tmp_867 = 0
+    tmp_868 = sge child_slot, tmp_867
     !tmp_867
-    child_slot = tmp_868
-    tmp_869 = 0
-    tmp_870 = sge child_slot, tmp_869
-    !tmp_869
-    br tmp_870 -> L_THEN_241, L_ELSE_242
+    br tmp_868 -> L_THEN_237, L_ELSE_238
 
-L_THEN_241:
-    !tmp_870
-    tmp_871 = call @sla__hierarchy_world_remove_children_entry_at(world, child_slot)
+L_THEN_237:
+    !tmp_868
+    tmp_869 = call @sla__hierarchy_world_remove_children_entry_at(world, child_slot)
     !world
-    world = tmp_871
-    jmp L_MERGE_243
+    world = tmp_869
+    jmp L_MERGE_239
 
-L_ELSE_242:
-    !tmp_870
-    jmp L_MERGE_243
+L_ELSE_238:
+    !tmp_868
+    jmp L_MERGE_239
 
-L_MERGE_243:
-    tmp_873 = load world+0 as ptr
-    tmp_874 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_875 = call @sla__dyn_free_entity(tmp_873, tmp_874)
+L_MERGE_239:
+    tmp_871 = load world+0 as ptr
+    tmp_872 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_873 = call @sla__dyn_free_entity(tmp_871, tmp_872)
+    !tmp_871
+    !tmp_872
+    store world+0, tmp_873 as ptr
     !tmp_873
-    !tmp_874
-    store world+0, tmp_875 as ptr
-    !tmp_875
     !entity_gen
     !child_slot
     !entity_id
@@ -3030,40 +3015,40 @@ L_MERGE_243:
 
 @sla__hierarchy_world_ancestors(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_876 = call @sla__hierarchy_query_new()
-    query = tmp_876
-    tmp_877 = load entity+0 as i32
-    tmp_878 = load entity+4 as i32
-    tmp_879 = call @sla__entity_new(tmp_877, tmp_878)
-    !tmp_877
-    !tmp_878
-    current = tmp_879
-    tmp_880 = 0
-    guard = tmp_880
-    tmp_881 = load world+0 as ptr
-    tmp_882 = load tmp_881+8 as ptr
-    !tmp_881
-    EXPAND VEC_LEN tmp_883, tmp_882
-    !tmp_882
-    tmp_884 = tmp_883 as i64
-    limit = tmp_884
-    jmp L_WHILE_HEAD_244
+    tmp_874 = call @sla__hierarchy_query_new()
+    query = tmp_874
+    tmp_875 = load entity+0 as i32
+    tmp_876 = load entity+4 as i32
+    tmp_877 = call @sla__entity_new(tmp_875, tmp_876)
+    !tmp_875
+    !tmp_876
+    current = tmp_877
+    tmp_878 = 0
+    guard = tmp_878
+    tmp_879 = load world+0 as ptr
+    tmp_880 = load tmp_879+8 as ptr
+    !tmp_879
+    EXPAND VEC_LEN tmp_881, tmp_880
+    !tmp_880
+    tmp_882 = tmp_881 as i64
+    limit = tmp_882
+    jmp L_WHILE_HEAD_240
 
-L_WHILE_HEAD_244:
-    tmp_885 = slt guard, limit
-    br tmp_885 -> L_WHILE_BODY_245, L_WHILE_COND_FALSE_246
+L_WHILE_HEAD_240:
+    tmp_883 = slt guard, limit
+    br tmp_883 -> L_WHILE_BODY_241, L_WHILE_COND_FALSE_242
 
-L_WHILE_BODY_245:
+L_WHILE_BODY_241:
+    !tmp_883
+    tmp_884 = call @sla__hierarchy_world_child_of_slot(world, current)
+    slot = tmp_884
+    tmp_885 = 0
+    tmp_886 = slt slot, tmp_885
     !tmp_885
-    tmp_886 = call @sla__hierarchy_world_child_of_slot(world, current)
-    slot = tmp_886
-    tmp_887 = 0
-    tmp_888 = slt slot, tmp_887
-    !tmp_887
-    br tmp_888 -> L_THEN_248, L_ELSE_249
+    br tmp_886 -> L_THEN_244, L_ELSE_245
 
-L_THEN_248:
-    !tmp_888
+L_THEN_244:
+    !tmp_886
     !slot
     !limit
     !guard
@@ -3072,33 +3057,33 @@ L_THEN_248:
     !world
     return query
 
-L_ELSE_249:
-    !tmp_888
-    jmp L_MERGE_250
+L_ELSE_245:
+    !tmp_886
+    jmp L_MERGE_246
 
-L_MERGE_250:
-    tmp_890 = load world+8 as ptr
-    EXPAND VEC_GET tmp_891, tmp_890, slot
+L_MERGE_246:
+    tmp_888 = load world+8 as ptr
+    EXPAND VEC_GET tmp_889, tmp_888, slot
+    !tmp_888
+    tmp_890 = tmp_889 as ptr
+    tmp_891 = load tmp_890+8 as ptr
     !tmp_890
-    tmp_892 = tmp_891 as ptr
-    tmp_893 = load tmp_892+8 as ptr
-    !tmp_892
-    parent = tmp_893
-    tmp_894 = load parent+0 as i32
-    parent_id = tmp_894
-    tmp_895 = load parent+4 as i32
-    parent_gen = tmp_895
-    tmp_896 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_897 = call @sla__hierarchy_world_is_alive(world, tmp_896)
+    parent = tmp_891
+    tmp_892 = load parent+0 as i32
+    parent_id = tmp_892
+    tmp_893 = load parent+4 as i32
+    parent_gen = tmp_893
+    tmp_894 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_895 = call @sla__hierarchy_world_is_alive(world, tmp_894)
+    !tmp_894
+    tmp_896 = 1
+    tmp_897 = ne tmp_895, tmp_896
+    !tmp_895
     !tmp_896
-    tmp_898 = 1
-    tmp_899 = ne tmp_897, tmp_898
-    !tmp_897
-    !tmp_898
-    br tmp_899 -> L_THEN_251, L_ELSE_252
+    br tmp_897 -> L_THEN_247, L_ELSE_248
 
-L_THEN_251:
-    !tmp_899
+L_THEN_247:
+    !tmp_897
     !parent_gen
     !parent
     !parent_id
@@ -3110,35 +3095,35 @@ L_THEN_251:
     !world
     return query
 
-L_ELSE_252:
-    !tmp_899
-    jmp L_MERGE_253
+L_ELSE_248:
+    !tmp_897
+    jmp L_MERGE_249
 
-L_MERGE_253:
-    tmp_901 = load query+0 as ptr
-    tmp_902 = call @sla__entity_new(parent_id, parent_gen)
-    EXPAND VEC_PUSH tmp_901, tmp_902, 8
-    !tmp_902
-    !tmp_901
-    tmp_903 = call @sla__entity_new(parent_id, parent_gen)
+L_MERGE_249:
+    tmp_899 = load query+0 as ptr
+    tmp_900 = call @sla__entity_new(parent_id, parent_gen)
+    EXPAND VEC_PUSH tmp_899, tmp_900, 8
+    !tmp_900
+    !tmp_899
+    tmp_901 = call @sla__entity_new(parent_id, parent_gen)
     !current
-    current = tmp_903
-    tmp_904 = 1
-    tmp_905 = add guard, tmp_904
-    !tmp_904
+    current = tmp_901
+    tmp_902 = 1
+    tmp_903 = add guard, tmp_902
+    !tmp_902
     !guard
-    guard = tmp_905
+    guard = tmp_903
     !parent_gen
     !parent
     !parent_id
     !slot
-    jmp L_WHILE_HEAD_244
+    jmp L_WHILE_HEAD_240
 
-L_WHILE_COND_FALSE_246:
-    !tmp_885
-    jmp L_WHILE_EXIT_247
+L_WHILE_COND_FALSE_242:
+    !tmp_883
+    jmp L_WHILE_EXIT_243
 
-L_WHILE_EXIT_247:
+L_WHILE_EXIT_243:
     !limit
     !guard
     !current
@@ -3148,49 +3133,49 @@ L_WHILE_EXIT_247:
 
 @sla__hierarchy_world_root_ancestor(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_906 = load entity+0 as i32
-    entity_id = tmp_906
-    tmp_907 = load entity+4 as i32
-    entity_gen = tmp_907
-    tmp_908 = call @sla__entity_new(entity_id, entity_gen)
-    root = tmp_908
-    tmp_909 = call @sla__entity_new(entity_id, entity_gen)
-    tmp_910 = call @sla__hierarchy_world_ancestors(world, tmp_909)
-    !tmp_909
-    ancestors = tmp_910
-    tmp_911 = 0
-    i = tmp_911
-    tmp_912 = load ancestors+0 as ptr
-    EXPAND VEC_LEN tmp_913, tmp_912
-    !tmp_912
-    tmp_914 = tmp_913 as i64
-    cnt = tmp_914
-    jmp L_WHILE_HEAD_254
+    tmp_904 = load entity+0 as i32
+    entity_id = tmp_904
+    tmp_905 = load entity+4 as i32
+    entity_gen = tmp_905
+    tmp_906 = call @sla__entity_new(entity_id, entity_gen)
+    root = tmp_906
+    tmp_907 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_908 = call @sla__hierarchy_world_ancestors(world, tmp_907)
+    !tmp_907
+    ancestors = tmp_908
+    tmp_909 = 0
+    i = tmp_909
+    tmp_910 = load ancestors+0 as ptr
+    EXPAND VEC_LEN tmp_911, tmp_910
+    !tmp_910
+    tmp_912 = tmp_911 as i64
+    cnt = tmp_912
+    jmp L_WHILE_HEAD_250
 
-L_WHILE_HEAD_254:
-    tmp_915 = slt i, cnt
-    br tmp_915 -> L_WHILE_BODY_255, L_WHILE_COND_FALSE_256
+L_WHILE_HEAD_250:
+    tmp_913 = slt i, cnt
+    br tmp_913 -> L_WHILE_BODY_251, L_WHILE_COND_FALSE_252
 
-L_WHILE_BODY_255:
-    !tmp_915
-    tmp_916 = load ancestors+0 as ptr
-    EXPAND VEC_GET tmp_917, tmp_916, i
-    !tmp_916
-    tmp_918 = tmp_917 as ptr
+L_WHILE_BODY_251:
+    !tmp_913
+    tmp_914 = load ancestors+0 as ptr
+    EXPAND VEC_GET tmp_915, tmp_914, i
+    !tmp_914
+    tmp_916 = tmp_915 as ptr
     !root
-    root = tmp_918
-    tmp_919 = 1
-    tmp_920 = add i, tmp_919
-    !tmp_919
+    root = tmp_916
+    tmp_917 = 1
+    tmp_918 = add i, tmp_917
+    !tmp_917
     !i
-    i = tmp_920
-    jmp L_WHILE_HEAD_254
+    i = tmp_918
+    jmp L_WHILE_HEAD_250
 
-L_WHILE_COND_FALSE_256:
-    !tmp_915
-    jmp L_WHILE_EXIT_257
+L_WHILE_COND_FALSE_252:
+    !tmp_913
+    jmp L_WHILE_EXIT_253
 
-L_WHILE_EXIT_257:
+L_WHILE_EXIT_253:
     !cnt
     !entity_gen
     !i
@@ -3202,125 +3187,125 @@ L_WHILE_EXIT_257:
 
 @sla__hierarchy_world_descendants(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_921 = call @sla__hierarchy_query_new()
-    result = tmp_921
-    EXPAND VEC_NEW tmp_922
-    queue = tmp_922
-    tmp_923 = call @sla__hierarchy_world_children(world, entity)
-    direct = tmp_923
-    tmp_924 = 0
-    i = tmp_924
-    tmp_925 = load direct+0 as ptr
-    EXPAND VEC_LEN tmp_926, tmp_925
-    !tmp_925
-    tmp_927 = tmp_926 as i64
-    direct_count = tmp_927
+    tmp_919 = call @sla__hierarchy_query_new()
+    result = tmp_919
+    EXPAND VEC_NEW tmp_920
+    queue = tmp_920
+    tmp_921 = call @sla__hierarchy_world_children(world, entity)
+    direct = tmp_921
+    tmp_922 = 0
+    i = tmp_922
+    tmp_923 = load direct+0 as ptr
+    EXPAND VEC_LEN tmp_924, tmp_923
+    !tmp_923
+    tmp_925 = tmp_924 as i64
+    direct_count = tmp_925
+    jmp L_WHILE_HEAD_254
+
+L_WHILE_HEAD_254:
+    tmp_926 = slt i, direct_count
+    br tmp_926 -> L_WHILE_BODY_255, L_WHILE_COND_FALSE_256
+
+L_WHILE_BODY_255:
+    !tmp_926
+    tmp_927 = load direct+0 as ptr
+    EXPAND VEC_GET tmp_928, tmp_927, i
+    !tmp_927
+    tmp_929 = tmp_928 as ptr
+    EXPAND VEC_PUSH queue, tmp_929, 8
+    !tmp_929
+    tmp_930 = 1
+    tmp_931 = add i, tmp_930
+    !tmp_930
+    !i
+    i = tmp_931
+    jmp L_WHILE_HEAD_254
+
+L_WHILE_COND_FALSE_256:
+    !tmp_926
+    jmp L_WHILE_EXIT_257
+
+L_WHILE_EXIT_257:
+    tmp_932 = 0
+    head = tmp_932
     jmp L_WHILE_HEAD_258
 
 L_WHILE_HEAD_258:
-    tmp_928 = slt i, direct_count
-    br tmp_928 -> L_WHILE_BODY_259, L_WHILE_COND_FALSE_260
+    EXPAND VEC_LEN tmp_933, queue
+    tmp_934 = tmp_933 as i64
+    tmp_935 = slt head, tmp_934
+    !tmp_934
+    br tmp_935 -> L_WHILE_BODY_259, L_WHILE_COND_FALSE_260
 
 L_WHILE_BODY_259:
-    !tmp_928
-    tmp_929 = load direct+0 as ptr
-    EXPAND VEC_GET tmp_930, tmp_929, i
-    !tmp_929
-    tmp_931 = tmp_930 as ptr
-    EXPAND VEC_PUSH queue, tmp_931, 8
-    !tmp_931
-    tmp_932 = 1
-    tmp_933 = add i, tmp_932
-    !tmp_932
-    !i
-    i = tmp_933
-    jmp L_WHILE_HEAD_258
-
-L_WHILE_COND_FALSE_260:
-    !tmp_928
-    jmp L_WHILE_EXIT_261
-
-L_WHILE_EXIT_261:
-    tmp_934 = 0
-    head = tmp_934
+    !tmp_935
+    EXPAND VEC_GET tmp_936, queue, head
+    tmp_937 = tmp_936 as ptr
+    current = tmp_937
+    tmp_938 = load current+0 as i32
+    current_id = tmp_938
+    tmp_939 = load current+4 as i32
+    current_gen = tmp_939
+    tmp_940 = load result+0 as ptr
+    tmp_941 = call @sla__entity_new(current_id, current_gen)
+    EXPAND VEC_PUSH tmp_940, tmp_941, 8
+    !tmp_941
+    !tmp_940
+    tmp_942 = call @sla__entity_new(current_id, current_gen)
+    tmp_943 = call @sla__hierarchy_world_children(world, tmp_942)
+    !tmp_942
+    children = tmp_943
+    tmp_944 = 0
+    j = tmp_944
+    tmp_945 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_946, tmp_945
+    !tmp_945
+    tmp_947 = tmp_946 as i64
+    child_count = tmp_947
     jmp L_WHILE_HEAD_262
 
 L_WHILE_HEAD_262:
-    EXPAND VEC_LEN tmp_935, queue
-    tmp_936 = tmp_935 as i64
-    tmp_937 = slt head, tmp_936
-    !tmp_936
-    br tmp_937 -> L_WHILE_BODY_263, L_WHILE_COND_FALSE_264
+    tmp_948 = slt j, child_count
+    br tmp_948 -> L_WHILE_BODY_263, L_WHILE_COND_FALSE_264
 
 L_WHILE_BODY_263:
-    !tmp_937
-    EXPAND VEC_GET tmp_938, queue, head
-    tmp_939 = tmp_938 as ptr
-    current = tmp_939
-    tmp_940 = load current+0 as i32
-    current_id = tmp_940
-    tmp_941 = load current+4 as i32
-    current_gen = tmp_941
-    tmp_942 = load result+0 as ptr
-    tmp_943 = call @sla__entity_new(current_id, current_gen)
-    EXPAND VEC_PUSH tmp_942, tmp_943, 8
-    !tmp_943
-    !tmp_942
-    tmp_944 = call @sla__entity_new(current_id, current_gen)
-    tmp_945 = call @sla__hierarchy_world_children(world, tmp_944)
-    !tmp_944
-    children = tmp_945
-    tmp_946 = 0
-    j = tmp_946
-    tmp_947 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_948, tmp_947
-    !tmp_947
-    tmp_949 = tmp_948 as i64
-    child_count = tmp_949
-    jmp L_WHILE_HEAD_266
-
-L_WHILE_HEAD_266:
-    tmp_950 = slt j, child_count
-    br tmp_950 -> L_WHILE_BODY_267, L_WHILE_COND_FALSE_268
-
-L_WHILE_BODY_267:
-    !tmp_950
-    tmp_951 = load children+0 as ptr
-    EXPAND VEC_GET tmp_952, tmp_951, j
+    !tmp_948
+    tmp_949 = load children+0 as ptr
+    EXPAND VEC_GET tmp_950, tmp_949, j
+    !tmp_949
+    tmp_951 = tmp_950 as ptr
+    EXPAND VEC_PUSH queue, tmp_951, 8
     !tmp_951
-    tmp_953 = tmp_952 as ptr
-    EXPAND VEC_PUSH queue, tmp_953, 8
-    !tmp_953
-    tmp_954 = 1
-    tmp_955 = add j, tmp_954
-    !tmp_954
+    tmp_952 = 1
+    tmp_953 = add j, tmp_952
+    !tmp_952
     !j
-    j = tmp_955
-    jmp L_WHILE_HEAD_266
+    j = tmp_953
+    jmp L_WHILE_HEAD_262
 
-L_WHILE_COND_FALSE_268:
-    !tmp_950
-    jmp L_WHILE_EXIT_269
+L_WHILE_COND_FALSE_264:
+    !tmp_948
+    jmp L_WHILE_EXIT_265
 
-L_WHILE_EXIT_269:
-    tmp_956 = 1
-    tmp_957 = add head, tmp_956
-    !tmp_956
+L_WHILE_EXIT_265:
+    tmp_954 = 1
+    tmp_955 = add head, tmp_954
+    !tmp_954
     !head
-    head = tmp_957
+    head = tmp_955
     !current_gen
     !j
     !current_id
     !current
     !child_count
     !children
-    jmp L_WHILE_HEAD_262
+    jmp L_WHILE_HEAD_258
 
-L_WHILE_COND_FALSE_264:
-    !tmp_937
-    jmp L_WHILE_EXIT_265
+L_WHILE_COND_FALSE_260:
+    !tmp_935
+    jmp L_WHILE_EXIT_261
 
-L_WHILE_EXIT_265:
+L_WHILE_EXIT_261:
     !queue
     !direct
     !i
@@ -3332,57 +3317,57 @@ L_WHILE_EXIT_265:
 
 @sla__hierarchy_world_descendants_depth_first_append(world: ptr, entity: ptr, result: ptr) -> ptr:
 L_ENTRY:
-    tmp_958 = call @sla__hierarchy_world_children(world, entity)
-    children = tmp_958
-    tmp_959 = 0
-    i = tmp_959
-    tmp_960 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_961, tmp_960
-    !tmp_960
-    tmp_962 = tmp_961 as i64
-    cnt = tmp_962
-    jmp L_WHILE_HEAD_270
+    tmp_956 = call @sla__hierarchy_world_children(world, entity)
+    children = tmp_956
+    tmp_957 = 0
+    i = tmp_957
+    tmp_958 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_959, tmp_958
+    !tmp_958
+    tmp_960 = tmp_959 as i64
+    cnt = tmp_960
+    jmp L_WHILE_HEAD_266
 
-L_WHILE_HEAD_270:
-    tmp_963 = slt i, cnt
-    br tmp_963 -> L_WHILE_BODY_271, L_WHILE_COND_FALSE_272
+L_WHILE_HEAD_266:
+    tmp_961 = slt i, cnt
+    br tmp_961 -> L_WHILE_BODY_267, L_WHILE_COND_FALSE_268
 
-L_WHILE_BODY_271:
-    !tmp_963
-    tmp_964 = load children+0 as ptr
-    EXPAND VEC_GET tmp_965, tmp_964, i
-    !tmp_964
-    tmp_966 = tmp_965 as ptr
-    child = tmp_966
-    tmp_967 = load child+0 as i32
-    child_id = tmp_967
-    tmp_968 = load child+4 as i32
-    child_gen = tmp_968
-    tmp_969 = load result+0 as ptr
-    tmp_970 = call @sla__entity_new(child_id, child_gen)
-    EXPAND VEC_PUSH tmp_969, tmp_970, 8
-    !tmp_970
+L_WHILE_BODY_267:
+    !tmp_961
+    tmp_962 = load children+0 as ptr
+    EXPAND VEC_GET tmp_963, tmp_962, i
+    !tmp_962
+    tmp_964 = tmp_963 as ptr
+    child = tmp_964
+    tmp_965 = load child+0 as i32
+    child_id = tmp_965
+    tmp_966 = load child+4 as i32
+    child_gen = tmp_966
+    tmp_967 = load result+0 as ptr
+    tmp_968 = call @sla__entity_new(child_id, child_gen)
+    EXPAND VEC_PUSH tmp_967, tmp_968, 8
+    !tmp_968
+    !tmp_967
+    tmp_969 = call @sla__entity_new(child_id, child_gen)
+    tmp_970 = call @sla__hierarchy_world_descendants_depth_first_append(world, tmp_969, result)
     !tmp_969
-    tmp_971 = call @sla__entity_new(child_id, child_gen)
-    tmp_972 = call @sla__hierarchy_world_descendants_depth_first_append(world, tmp_971, result)
-    !tmp_971
     !result
-    result = tmp_972
-    tmp_973 = 1
-    tmp_974 = add i, tmp_973
-    !tmp_973
+    result = tmp_970
+    tmp_971 = 1
+    tmp_972 = add i, tmp_971
+    !tmp_971
     !i
-    i = tmp_974
+    i = tmp_972
     !child_id
     !child_gen
     !child
-    jmp L_WHILE_HEAD_270
+    jmp L_WHILE_HEAD_266
 
-L_WHILE_COND_FALSE_272:
-    !tmp_963
-    jmp L_WHILE_EXIT_273
+L_WHILE_COND_FALSE_268:
+    !tmp_961
+    jmp L_WHILE_EXIT_269
 
-L_WHILE_EXIT_273:
+L_WHILE_EXIT_269:
     !cnt
     !i
     !children
@@ -3392,36 +3377,36 @@ L_WHILE_EXIT_273:
 
 @sla__hierarchy_world_descendants_depth_first(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_975 = call @sla__hierarchy_query_new()
-    result = tmp_975
-    tmp_976 = call @sla__hierarchy_world_descendants_depth_first_append(world, entity, result)
-    return tmp_976
+    tmp_973 = call @sla__hierarchy_query_new()
+    result = tmp_973
+    tmp_974 = call @sla__hierarchy_world_descendants_depth_first_append(world, entity, result)
+    return tmp_974
 
 @sla__hierarchy_world_siblings(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_977 = call @sla__hierarchy_query_new()
-    query = tmp_977
-    tmp_978 = load entity+0 as i32
-    entity_id = tmp_978
-    tmp_979 = load entity+4 as i32
-    entity_gen = tmp_979
-    tmp_980 = call @sla__hierarchy_world_parent(world, entity)
-    parent = tmp_980
-    tmp_981 = load parent+0 as i32
-    parent_id = tmp_981
-    tmp_982 = load parent+4 as i32
-    parent_gen = tmp_982
-    tmp_983 = call @sla__entity_placeholder()
-    placeholder = tmp_983
-    tmp_984 = load placeholder+0 as i32
-    tmp_985 = load placeholder+4 as i32
-    tmp_986 = call @sla__hierarchy_entity_parts_eq(parent_id, parent_gen, tmp_984, tmp_985)
-    !tmp_984
-    !tmp_985
-    br tmp_986 -> L_THEN_274, L_ELSE_275
+    tmp_975 = call @sla__hierarchy_query_new()
+    query = tmp_975
+    tmp_976 = load entity+0 as i32
+    entity_id = tmp_976
+    tmp_977 = load entity+4 as i32
+    entity_gen = tmp_977
+    tmp_978 = call @sla__hierarchy_world_parent(world, entity)
+    parent = tmp_978
+    tmp_979 = load parent+0 as i32
+    parent_id = tmp_979
+    tmp_980 = load parent+4 as i32
+    parent_gen = tmp_980
+    tmp_981 = call @sla__entity_placeholder()
+    placeholder = tmp_981
+    tmp_982 = load placeholder+0 as i32
+    tmp_983 = load placeholder+4 as i32
+    tmp_984 = call @sla__hierarchy_entity_parts_eq(parent_id, parent_gen, tmp_982, tmp_983)
+    !tmp_982
+    !tmp_983
+    br tmp_984 -> L_THEN_270, L_ELSE_271
 
-L_THEN_274:
-    !tmp_986
+L_THEN_270:
+    !tmp_984
     !entity_gen
     !parent_gen
     !parent
@@ -3432,80 +3417,80 @@ L_THEN_274:
     !world
     return query
 
-L_ELSE_275:
+L_ELSE_271:
+    !tmp_984
+    jmp L_MERGE_272
+
+L_MERGE_272:
+    tmp_986 = call @sla__entity_new(parent_id, parent_gen)
+    tmp_987 = call @sla__hierarchy_world_children(world, tmp_986)
     !tmp_986
-    jmp L_MERGE_276
+    children = tmp_987
+    tmp_988 = 0
+    i = tmp_988
+    tmp_989 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_990, tmp_989
+    !tmp_989
+    tmp_991 = tmp_990 as i64
+    cnt = tmp_991
+    jmp L_WHILE_HEAD_273
 
-L_MERGE_276:
-    tmp_988 = call @sla__entity_new(parent_id, parent_gen)
-    tmp_989 = call @sla__hierarchy_world_children(world, tmp_988)
-    !tmp_988
-    children = tmp_989
-    tmp_990 = 0
-    i = tmp_990
-    tmp_991 = load children+0 as ptr
-    EXPAND VEC_LEN tmp_992, tmp_991
-    !tmp_991
-    tmp_993 = tmp_992 as i64
-    cnt = tmp_993
-    jmp L_WHILE_HEAD_277
+L_WHILE_HEAD_273:
+    tmp_992 = slt i, cnt
+    br tmp_992 -> L_WHILE_BODY_274, L_WHILE_COND_FALSE_275
 
-L_WHILE_HEAD_277:
-    tmp_994 = slt i, cnt
-    br tmp_994 -> L_WHILE_BODY_278, L_WHILE_COND_FALSE_279
-
-L_WHILE_BODY_278:
-    !tmp_994
-    tmp_995 = load children+0 as ptr
-    EXPAND VEC_GET tmp_996, tmp_995, i
+L_WHILE_BODY_274:
+    !tmp_992
+    tmp_993 = load children+0 as ptr
+    EXPAND VEC_GET tmp_994, tmp_993, i
+    !tmp_993
+    tmp_995 = tmp_994 as ptr
+    tmp_996 = load tmp_995+0 as i32
     !tmp_995
-    tmp_997 = tmp_996 as ptr
-    tmp_998 = load tmp_997+0 as i32
+    tmp_997 = load children+0 as ptr
+    EXPAND VEC_GET tmp_998, tmp_997, i
     !tmp_997
-    tmp_999 = load children+0 as ptr
-    EXPAND VEC_GET tmp_1000, tmp_999, i
+    tmp_999 = tmp_998 as ptr
+    tmp_1000 = load tmp_999+4 as i32
     !tmp_999
-    tmp_1001 = tmp_1000 as ptr
-    tmp_1002 = load tmp_1001+4 as i32
+    tmp_1001 = call @sla__hierarchy_entity_parts_eq(tmp_996, tmp_1000, entity_id, entity_gen)
+    !tmp_996
+    !tmp_1000
+    tmp_1002 = 1
+    tmp_1003 = ne tmp_1001, tmp_1002
     !tmp_1001
-    tmp_1003 = call @sla__hierarchy_entity_parts_eq(tmp_998, tmp_1002, entity_id, entity_gen)
-    !tmp_998
     !tmp_1002
-    tmp_1004 = 1
-    tmp_1005 = ne tmp_1003, tmp_1004
+    br tmp_1003 -> L_THEN_277, L_ELSE_278
+
+L_THEN_277:
     !tmp_1003
-    !tmp_1004
-    br tmp_1005 -> L_THEN_281, L_ELSE_282
-
-L_THEN_281:
+    tmp_1004 = load query+0 as ptr
+    tmp_1005 = load children+0 as ptr
+    EXPAND VEC_GET tmp_1006, tmp_1005, i
     !tmp_1005
-    tmp_1006 = load query+0 as ptr
-    tmp_1007 = load children+0 as ptr
-    EXPAND VEC_GET tmp_1008, tmp_1007, i
+    tmp_1007 = tmp_1006 as ptr
+    EXPAND VEC_PUSH tmp_1004, tmp_1007, 8
     !tmp_1007
-    tmp_1009 = tmp_1008 as ptr
-    EXPAND VEC_PUSH tmp_1006, tmp_1009, 8
+    !tmp_1004
+    jmp L_MERGE_279
+
+L_ELSE_278:
+    !tmp_1003
+    jmp L_MERGE_279
+
+L_MERGE_279:
+    tmp_1009 = 1
+    tmp_1010 = add i, tmp_1009
     !tmp_1009
-    !tmp_1006
-    jmp L_MERGE_283
-
-L_ELSE_282:
-    !tmp_1005
-    jmp L_MERGE_283
-
-L_MERGE_283:
-    tmp_1011 = 1
-    tmp_1012 = add i, tmp_1011
-    !tmp_1011
     !i
-    i = tmp_1012
-    jmp L_WHILE_HEAD_277
+    i = tmp_1010
+    jmp L_WHILE_HEAD_273
 
-L_WHILE_COND_FALSE_279:
-    !tmp_994
-    jmp L_WHILE_EXIT_280
+L_WHILE_COND_FALSE_275:
+    !tmp_992
+    jmp L_WHILE_EXIT_276
 
-L_WHILE_EXIT_280:
+L_WHILE_EXIT_276:
     !cnt
     !entity_gen
     !parent_gen
@@ -3521,72 +3506,72 @@ L_WHILE_EXIT_280:
 
 @sla__hierarchy_world_leaves(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_1013 = call @sla__hierarchy_query_new()
-    query = tmp_1013
-    tmp_1014 = call @sla__hierarchy_world_descendants_depth_first(world, entity)
-    descendants = tmp_1014
-    tmp_1015 = 0
-    i = tmp_1015
-    tmp_1016 = load descendants+0 as ptr
-    EXPAND VEC_LEN tmp_1017, tmp_1016
-    !tmp_1016
-    tmp_1018 = tmp_1017 as i64
-    cnt = tmp_1018
-    jmp L_WHILE_HEAD_284
+    tmp_1011 = call @sla__hierarchy_query_new()
+    query = tmp_1011
+    tmp_1012 = call @sla__hierarchy_world_descendants_depth_first(world, entity)
+    descendants = tmp_1012
+    tmp_1013 = 0
+    i = tmp_1013
+    tmp_1014 = load descendants+0 as ptr
+    EXPAND VEC_LEN tmp_1015, tmp_1014
+    !tmp_1014
+    tmp_1016 = tmp_1015 as i64
+    cnt = tmp_1016
+    jmp L_WHILE_HEAD_280
 
-L_WHILE_HEAD_284:
-    tmp_1019 = slt i, cnt
-    br tmp_1019 -> L_WHILE_BODY_285, L_WHILE_COND_FALSE_286
+L_WHILE_HEAD_280:
+    tmp_1017 = slt i, cnt
+    br tmp_1017 -> L_WHILE_BODY_281, L_WHILE_COND_FALSE_282
 
-L_WHILE_BODY_285:
-    !tmp_1019
-    tmp_1020 = load descendants+0 as ptr
-    EXPAND VEC_GET tmp_1021, tmp_1020, i
-    !tmp_1020
-    tmp_1022 = tmp_1021 as ptr
-    leaf = tmp_1022
-    tmp_1023 = load leaf+0 as i32
-    leaf_id = tmp_1023
-    tmp_1024 = load leaf+4 as i32
-    leaf_gen = tmp_1024
-    tmp_1025 = call @sla__entity_new(leaf_id, leaf_gen)
-    tmp_1026 = call @sla__hierarchy_world_child_count(world, tmp_1025)
+L_WHILE_BODY_281:
+    !tmp_1017
+    tmp_1018 = load descendants+0 as ptr
+    EXPAND VEC_GET tmp_1019, tmp_1018, i
+    !tmp_1018
+    tmp_1020 = tmp_1019 as ptr
+    leaf = tmp_1020
+    tmp_1021 = load leaf+0 as i32
+    leaf_id = tmp_1021
+    tmp_1022 = load leaf+4 as i32
+    leaf_gen = tmp_1022
+    tmp_1023 = call @sla__entity_new(leaf_id, leaf_gen)
+    tmp_1024 = call @sla__hierarchy_world_child_count(world, tmp_1023)
+    !tmp_1023
+    tmp_1025 = 0
+    tmp_1026 = eq tmp_1024, tmp_1025
+    !tmp_1024
     !tmp_1025
-    tmp_1027 = 0
-    tmp_1028 = eq tmp_1026, tmp_1027
+    br tmp_1026 -> L_THEN_284, L_ELSE_285
+
+L_THEN_284:
     !tmp_1026
+    tmp_1027 = load query+0 as ptr
+    tmp_1028 = call @sla__entity_new(leaf_id, leaf_gen)
+    EXPAND VEC_PUSH tmp_1027, tmp_1028, 8
+    !tmp_1028
     !tmp_1027
-    br tmp_1028 -> L_THEN_288, L_ELSE_289
+    jmp L_MERGE_286
 
-L_THEN_288:
-    !tmp_1028
-    tmp_1029 = load query+0 as ptr
-    tmp_1030 = call @sla__entity_new(leaf_id, leaf_gen)
-    EXPAND VEC_PUSH tmp_1029, tmp_1030, 8
+L_ELSE_285:
+    !tmp_1026
+    jmp L_MERGE_286
+
+L_MERGE_286:
+    tmp_1030 = 1
+    tmp_1031 = add i, tmp_1030
     !tmp_1030
-    !tmp_1029
-    jmp L_MERGE_290
-
-L_ELSE_289:
-    !tmp_1028
-    jmp L_MERGE_290
-
-L_MERGE_290:
-    tmp_1032 = 1
-    tmp_1033 = add i, tmp_1032
-    !tmp_1032
     !i
-    i = tmp_1033
+    i = tmp_1031
     !leaf_gen
     !leaf_id
     !leaf
-    jmp L_WHILE_HEAD_284
+    jmp L_WHILE_HEAD_280
 
-L_WHILE_COND_FALSE_286:
-    !tmp_1019
-    jmp L_WHILE_EXIT_287
+L_WHILE_COND_FALSE_282:
+    !tmp_1017
+    jmp L_WHILE_EXIT_283
 
-L_WHILE_EXIT_287:
+L_WHILE_EXIT_283:
     !cnt
     !descendants
     !i
@@ -3595,47 +3580,47 @@ L_WHILE_EXIT_287:
     return query
 
 @test "entity placeholder is never allocated"():
-L_TEST_ENTRY_291:
-    tmp_1034 = call @sla__entity_placeholder()
-    placeholder = tmp_1034
-    tmp_1035 = call @sla__allocator_new()
-    a = tmp_1035
-    tmp_1036 = call @sla__alloc_entity(a)
-    a1 = load tmp_1036+0 as ptr
-    e1 = load tmp_1036+8 as ptr
+L_TEST_ENTRY_287:
+    tmp_1032 = call @sla__entity_placeholder()
+    placeholder = tmp_1032
+    tmp_1033 = call @sla__allocator_new()
+    a = tmp_1033
+    tmp_1034 = call @sla__alloc_entity(a)
+    a1 = load tmp_1034+0 as ptr
+    e1 = load tmp_1034+8 as ptr
+    !tmp_1034
+    tmp_1035 = load placeholder+0 as i32
+    tmp_1036 = load e1+0 as i32
+    tmp_1037 = eq tmp_1035, tmp_1036
+    !tmp_1035
     !tmp_1036
-    tmp_1037 = load placeholder+0 as i32
-    tmp_1038 = load e1+0 as i32
-    tmp_1039 = eq tmp_1037, tmp_1038
-    !tmp_1037
-    !tmp_1038
-    br tmp_1039 -> L_THEN_292, L_ELSE_293
+    br tmp_1037 -> L_THEN_288, L_ELSE_289
 
-L_THEN_292:
-    !tmp_1039
+L_THEN_288:
+    !tmp_1037
     panic(2100)
 
-L_ELSE_293:
-    !tmp_1039
-    jmp L_MERGE_294
+L_ELSE_289:
+    !tmp_1037
+    jmp L_MERGE_290
 
-L_MERGE_294:
-    tmp_1042 = call @sla__is_alive(a1, placeholder)
-    tmp_1043 = 0
-    tmp_1044 = ne tmp_1042, tmp_1043
+L_MERGE_290:
+    tmp_1040 = call @sla__is_alive(a1, placeholder)
+    tmp_1041 = 0
+    tmp_1042 = ne tmp_1040, tmp_1041
+    !tmp_1040
+    !tmp_1041
+    br tmp_1042 -> L_THEN_291, L_ELSE_292
+
+L_THEN_291:
     !tmp_1042
-    !tmp_1043
-    br tmp_1044 -> L_THEN_295, L_ELSE_296
-
-L_THEN_295:
-    !tmp_1044
     panic(2101)
 
-L_ELSE_296:
-    !tmp_1044
-    jmp L_MERGE_297
+L_ELSE_292:
+    !tmp_1042
+    jmp L_MERGE_293
 
-L_MERGE_297:
+L_MERGE_293:
     !a
     !placeholder
     !e1
@@ -3643,132 +3628,132 @@ L_MERGE_297:
     return
 
 @test "entity bit roundtrip"():
-L_TEST_ENTRY_298:
-    tmp_1047 = 42
-    tmp_1048 = 7
-    tmp_1049 = call @sla__entity_new(tmp_1047, tmp_1048)
-    !tmp_1047
-    !tmp_1048
-    e = tmp_1049
-    tmp_1050 = call @sla__entity_to_bits(e)
-    bits = tmp_1050
-    tmp_1051 = call @sla__entity_from_bits(bits)
-    out = tmp_1051
-    tmp_1052 = call @sla__entity_eq(e, out)
-    tmp_1053 = 1
-    tmp_1054 = ne tmp_1052, tmp_1053
-    !tmp_1052
-    !tmp_1053
-    br tmp_1054 -> L_THEN_299, L_ELSE_300
+L_TEST_ENTRY_294:
+    tmp_1045 = 42
+    tmp_1046 = 7
+    tmp_1047 = call @sla__entity_new(tmp_1045, tmp_1046)
+    !tmp_1045
+    !tmp_1046
+    e = tmp_1047
+    tmp_1048 = call @sla__entity_to_bits(e)
+    bits = tmp_1048
+    tmp_1049 = call @sla__entity_from_bits(bits)
+    out = tmp_1049
+    tmp_1050 = call @sla__entity_eq(e, out)
+    tmp_1051 = 1
+    tmp_1052 = ne tmp_1050, tmp_1051
+    !tmp_1050
+    !tmp_1051
+    br tmp_1052 -> L_THEN_295, L_ELSE_296
 
-L_THEN_299:
-    !tmp_1054
+L_THEN_295:
+    !tmp_1052
     panic(2110)
 
-L_ELSE_300:
-    !tmp_1054
-    jmp L_MERGE_301
+L_ELSE_296:
+    !tmp_1052
+    jmp L_MERGE_297
 
-L_MERGE_301:
+L_MERGE_297:
     !out
     !bits
     !e
     return
 
 @test "allocator rejects stale generation"():
-L_TEST_ENTRY_302:
-    tmp_1057 = call @sla__allocator_new()
-    a0 = tmp_1057
-    tmp_1058 = call @sla__alloc_entity(a0)
-    a1 = load tmp_1058+0 as ptr
-    e1 = load tmp_1058+8 as ptr
+L_TEST_ENTRY_298:
+    tmp_1055 = call @sla__allocator_new()
+    a0 = tmp_1055
+    tmp_1056 = call @sla__alloc_entity(a0)
+    a1 = load tmp_1056+0 as ptr
+    e1 = load tmp_1056+8 as ptr
+    !tmp_1056
+    tmp_1057 = call @sla__free_entity(a1, e1)
+    a2 = tmp_1057
+    tmp_1058 = load e1+0 as i32
+    tmp_1059 = load e1+4 as i32
+    tmp_1060 = call @sla__entity_new(tmp_1058, tmp_1059)
     !tmp_1058
-    tmp_1059 = call @sla__free_entity(a1, e1)
-    a2 = tmp_1059
-    tmp_1060 = load e1+0 as i32
-    tmp_1061 = load e1+4 as i32
-    tmp_1062 = call @sla__entity_new(tmp_1060, tmp_1061)
-    !tmp_1060
-    !tmp_1061
-    stale = tmp_1062
-    tmp_1063 = load e1+0 as i32
-    tmp_1064 = load e1+4 as i32
-    tmp_1065 = 1
-    tmp_1066 = add tmp_1064, tmp_1065
-    !tmp_1064
-    !tmp_1065
-    tmp_1067 = call @sla__entity_new(tmp_1063, tmp_1066)
+    !tmp_1059
+    stale = tmp_1060
+    tmp_1061 = load e1+0 as i32
+    tmp_1062 = load e1+4 as i32
+    tmp_1063 = 1
+    tmp_1064 = add tmp_1062, tmp_1063
+    !tmp_1062
     !tmp_1063
+    tmp_1065 = call @sla__entity_new(tmp_1061, tmp_1064)
+    !tmp_1061
+    !tmp_1064
+    fabricated = tmp_1065
+    tmp_1066 = call @sla__is_alive(a2, stale)
+    tmp_1067 = 0
+    tmp_1068 = ne tmp_1066, tmp_1067
     !tmp_1066
-    fabricated = tmp_1067
-    tmp_1068 = call @sla__is_alive(a2, stale)
-    tmp_1069 = 0
-    tmp_1070 = ne tmp_1068, tmp_1069
-    !tmp_1068
-    !tmp_1069
-    br tmp_1070 -> L_THEN_303, L_ELSE_304
+    !tmp_1067
+    br tmp_1068 -> L_THEN_299, L_ELSE_300
 
-L_THEN_303:
-    !tmp_1070
+L_THEN_299:
+    !tmp_1068
     panic(2120)
 
-L_ELSE_304:
-    !tmp_1070
-    jmp L_MERGE_305
+L_ELSE_300:
+    !tmp_1068
+    jmp L_MERGE_301
 
-L_MERGE_305:
-    tmp_1073 = call @sla__is_alive(a2, fabricated)
-    tmp_1074 = 0
-    tmp_1075 = ne tmp_1073, tmp_1074
+L_MERGE_301:
+    tmp_1071 = call @sla__is_alive(a2, fabricated)
+    tmp_1072 = 0
+    tmp_1073 = ne tmp_1071, tmp_1072
+    !tmp_1071
+    !tmp_1072
+    br tmp_1073 -> L_THEN_302, L_ELSE_303
+
+L_THEN_302:
     !tmp_1073
-    !tmp_1074
-    br tmp_1075 -> L_THEN_306, L_ELSE_307
-
-L_THEN_306:
-    !tmp_1075
     panic(2121)
 
-L_ELSE_307:
-    !tmp_1075
-    jmp L_MERGE_308
+L_ELSE_303:
+    !tmp_1073
+    jmp L_MERGE_304
 
-L_MERGE_308:
-    tmp_1078 = call @sla__alloc_entity(a2)
-    a3 = load tmp_1078+0 as ptr
-    e2 = load tmp_1078+8 as ptr
+L_MERGE_304:
+    tmp_1076 = call @sla__alloc_entity(a2)
+    a3 = load tmp_1076+0 as ptr
+    e2 = load tmp_1076+8 as ptr
+    !tmp_1076
+    tmp_1077 = call @sla__entity_eq(e2, fabricated)
+    tmp_1078 = 1
+    tmp_1079 = ne tmp_1077, tmp_1078
+    !tmp_1077
     !tmp_1078
-    tmp_1079 = call @sla__entity_eq(e2, fabricated)
-    tmp_1080 = 1
-    tmp_1081 = ne tmp_1079, tmp_1080
-    !tmp_1079
-    !tmp_1080
-    br tmp_1081 -> L_THEN_309, L_ELSE_310
+    br tmp_1079 -> L_THEN_305, L_ELSE_306
 
-L_THEN_309:
-    !tmp_1081
+L_THEN_305:
+    !tmp_1079
     panic(2122)
 
-L_ELSE_310:
-    !tmp_1081
-    jmp L_MERGE_311
+L_ELSE_306:
+    !tmp_1079
+    jmp L_MERGE_307
 
-L_MERGE_311:
-    tmp_1084 = call @sla__is_alive(a3, e2)
-    tmp_1085 = 1
-    tmp_1086 = ne tmp_1084, tmp_1085
+L_MERGE_307:
+    tmp_1082 = call @sla__is_alive(a3, e2)
+    tmp_1083 = 1
+    tmp_1084 = ne tmp_1082, tmp_1083
+    !tmp_1082
+    !tmp_1083
+    br tmp_1084 -> L_THEN_308, L_ELSE_309
+
+L_THEN_308:
     !tmp_1084
-    !tmp_1085
-    br tmp_1086 -> L_THEN_312, L_ELSE_313
-
-L_THEN_312:
-    !tmp_1086
     panic(2123)
 
-L_ELSE_313:
-    !tmp_1086
-    jmp L_MERGE_314
+L_ELSE_309:
+    !tmp_1084
+    jmp L_MERGE_310
 
-L_MERGE_314:
+L_MERGE_310:
     !e2
     !a0
     !a2
@@ -3780,227 +3765,227 @@ L_MERGE_314:
     return
 
 @test "entity index generation accessors"():
-L_TEST_ENTRY_315:
-    tmp_1089 = 5
-    tmp_1090 = 3
-    tmp_1091 = call @sla__entity_new(tmp_1089, tmp_1090)
-    !tmp_1089
+L_TEST_ENTRY_311:
+    tmp_1087 = 5
+    tmp_1088 = 3
+    tmp_1089 = call @sla__entity_new(tmp_1087, tmp_1088)
+    !tmp_1087
+    !tmp_1088
+    e = tmp_1089
+    tmp_1090 = call @sla__entity_index(e)
+    tmp_1091 = 5
+    tmp_1092 = ne tmp_1090, tmp_1091
     !tmp_1090
-    e = tmp_1091
-    tmp_1092 = call @sla__entity_index(e)
-    tmp_1093 = 5
-    tmp_1094 = ne tmp_1092, tmp_1093
-    !tmp_1092
-    !tmp_1093
-    br tmp_1094 -> L_THEN_316, L_ELSE_317
+    !tmp_1091
+    br tmp_1092 -> L_THEN_312, L_ELSE_313
 
-L_THEN_316:
-    !tmp_1094
+L_THEN_312:
+    !tmp_1092
     panic(2130)
 
-L_ELSE_317:
-    !tmp_1094
-    jmp L_MERGE_318
+L_ELSE_313:
+    !tmp_1092
+    jmp L_MERGE_314
 
-L_MERGE_318:
-    tmp_1097 = call @sla__entity_generation(e)
-    tmp_1098 = 3
-    tmp_1099 = ne tmp_1097, tmp_1098
+L_MERGE_314:
+    tmp_1095 = call @sla__entity_generation(e)
+    tmp_1096 = 3
+    tmp_1097 = ne tmp_1095, tmp_1096
+    !tmp_1095
+    !tmp_1096
+    br tmp_1097 -> L_THEN_315, L_ELSE_316
+
+L_THEN_315:
     !tmp_1097
-    !tmp_1098
-    br tmp_1099 -> L_THEN_319, L_ELSE_320
-
-L_THEN_319:
-    !tmp_1099
     panic(2131)
 
-L_ELSE_320:
-    !tmp_1099
-    jmp L_MERGE_321
+L_ELSE_316:
+    !tmp_1097
+    jmp L_MERGE_317
 
-L_MERGE_321:
+L_MERGE_317:
     !e
     return
 
 @test "dynamic allocator grows beyond fixed capacity"():
-L_TEST_ENTRY_322:
-    tmp_1102 = call @sla__dyn_allocator_new()
-    a = tmp_1102
-    tmp_1103 = 0
-    i = tmp_1103
-    jmp L_WHILE_HEAD_323
+L_TEST_ENTRY_318:
+    tmp_1100 = call @sla__dyn_allocator_new()
+    a = tmp_1100
+    tmp_1101 = 0
+    i = tmp_1101
+    jmp L_WHILE_HEAD_319
 
-L_WHILE_HEAD_323:
-    tmp_1104 = 20
-    tmp_1105 = slt i, tmp_1104
+L_WHILE_HEAD_319:
+    tmp_1102 = 20
+    tmp_1103 = slt i, tmp_1102
+    !tmp_1102
+    br tmp_1103 -> L_WHILE_BODY_320, L_WHILE_COND_FALSE_321
+
+L_WHILE_BODY_320:
+    !tmp_1103
+    tmp_1104 = call @sla__dyn_alloc_entity(a)
+    next_a = load tmp_1104+0 as ptr
+    entity = load tmp_1104+8 as ptr
     !tmp_1104
-    br tmp_1105 -> L_WHILE_BODY_324, L_WHILE_COND_FALSE_325
-
-L_WHILE_BODY_324:
-    !tmp_1105
-    tmp_1106 = call @sla__dyn_alloc_entity(a)
-    next_a = load tmp_1106+0 as ptr
-    entity = load tmp_1106+8 as ptr
-    !tmp_1106
     !a
     a = next_a
-    tmp_1107 = load entity+0 as i32
-    tmp_1108 = 1
-    tmp_1109 = add i, tmp_1108
-    !tmp_1108
-    tmp_1110 = ne tmp_1107, tmp_1109
+    tmp_1105 = load entity+0 as i32
+    tmp_1106 = 1
+    tmp_1107 = add i, tmp_1106
+    !tmp_1106
+    tmp_1108 = ne tmp_1105, tmp_1107
+    !tmp_1105
     !tmp_1107
-    !tmp_1109
-    br tmp_1110 -> L_THEN_327, L_ELSE_328
+    br tmp_1108 -> L_THEN_323, L_ELSE_324
 
-L_THEN_327:
-    !tmp_1110
+L_THEN_323:
+    !tmp_1108
     panic(2150)
 
-L_ELSE_328:
-    !tmp_1110
-    jmp L_MERGE_329
+L_ELSE_324:
+    !tmp_1108
+    jmp L_MERGE_325
 
-L_MERGE_329:
-    tmp_1113 = call @sla__dyn_is_alive(a, entity)
-    tmp_1114 = 1
-    tmp_1115 = ne tmp_1113, tmp_1114
+L_MERGE_325:
+    tmp_1111 = call @sla__dyn_is_alive(a, entity)
+    tmp_1112 = 1
+    tmp_1113 = ne tmp_1111, tmp_1112
+    !tmp_1111
+    !tmp_1112
+    br tmp_1113 -> L_THEN_326, L_ELSE_327
+
+L_THEN_326:
     !tmp_1113
-    !tmp_1114
-    br tmp_1115 -> L_THEN_330, L_ELSE_331
-
-L_THEN_330:
-    !tmp_1115
     panic(2151)
 
-L_ELSE_331:
-    !tmp_1115
-    jmp L_MERGE_332
+L_ELSE_327:
+    !tmp_1113
+    jmp L_MERGE_328
 
-L_MERGE_332:
-    tmp_1118 = 1
-    tmp_1119 = add i, tmp_1118
-    !tmp_1118
+L_MERGE_328:
+    tmp_1116 = 1
+    tmp_1117 = add i, tmp_1116
+    !tmp_1116
     !i
-    i = tmp_1119
+    i = tmp_1117
     !entity
-    jmp L_WHILE_HEAD_323
+    jmp L_WHILE_HEAD_319
 
-L_WHILE_COND_FALSE_325:
-    !tmp_1105
-    jmp L_WHILE_EXIT_326
+L_WHILE_COND_FALSE_321:
+    !tmp_1103
+    jmp L_WHILE_EXIT_322
 
-L_WHILE_EXIT_326:
-    tmp_1120 = load a+8 as ptr
-    EXPAND VEC_LEN tmp_1121, tmp_1120
+L_WHILE_EXIT_322:
+    tmp_1118 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_1119, tmp_1118
+    !tmp_1118
+    tmp_1120 = 21
+    tmp_1121 = ne tmp_1119, tmp_1120
+    !tmp_1119
     !tmp_1120
-    tmp_1122 = 21
-    tmp_1123 = ne tmp_1121, tmp_1122
-    !tmp_1121
-    !tmp_1122
-    br tmp_1123 -> L_THEN_333, L_ELSE_334
+    br tmp_1121 -> L_THEN_329, L_ELSE_330
 
-L_THEN_333:
-    !tmp_1123
+L_THEN_329:
+    !tmp_1121
     panic(2152)
 
-L_ELSE_334:
-    !tmp_1123
-    jmp L_MERGE_335
+L_ELSE_330:
+    !tmp_1121
+    jmp L_MERGE_331
 
-L_MERGE_335:
+L_MERGE_331:
     !a
     !i
     return
 
 @test "dynamic allocator rejects fabricated next generation before reuse"():
-L_TEST_ENTRY_336:
-    tmp_1126 = call @sla__dyn_allocator_new()
-    a0 = tmp_1126
-    tmp_1127 = call @sla__dyn_alloc_entity(a0)
-    a1 = load tmp_1127+0 as ptr
-    e1 = load tmp_1127+8 as ptr
-    !tmp_1127
-    tmp_1128 = call @sla__dyn_free_entity(a1, e1)
-    a2 = tmp_1128
-    tmp_1129 = load e1+0 as i32
-    tmp_1130 = load e1+4 as i32
-    tmp_1131 = 1
-    tmp_1132 = add tmp_1130, tmp_1131
-    !tmp_1130
-    !tmp_1131
-    tmp_1133 = call @sla__entity_new(tmp_1129, tmp_1132)
+L_TEST_ENTRY_332:
+    tmp_1124 = call @sla__dyn_allocator_new()
+    a0 = tmp_1124
+    tmp_1125 = call @sla__dyn_alloc_entity(a0)
+    a1 = load tmp_1125+0 as ptr
+    e1 = load tmp_1125+8 as ptr
+    !tmp_1125
+    tmp_1126 = call @sla__dyn_free_entity(a1, e1)
+    a2 = tmp_1126
+    tmp_1127 = load e1+0 as i32
+    tmp_1128 = load e1+4 as i32
+    tmp_1129 = 1
+    tmp_1130 = add tmp_1128, tmp_1129
+    !tmp_1128
     !tmp_1129
+    tmp_1131 = call @sla__entity_new(tmp_1127, tmp_1130)
+    !tmp_1127
+    !tmp_1130
+    fake = tmp_1131
+    tmp_1132 = call @sla__dyn_is_alive(a2, e1)
+    tmp_1133 = 0
+    tmp_1134 = ne tmp_1132, tmp_1133
     !tmp_1132
-    fake = tmp_1133
-    tmp_1134 = call @sla__dyn_is_alive(a2, e1)
-    tmp_1135 = 0
-    tmp_1136 = ne tmp_1134, tmp_1135
-    !tmp_1134
-    !tmp_1135
-    br tmp_1136 -> L_THEN_337, L_ELSE_338
+    !tmp_1133
+    br tmp_1134 -> L_THEN_333, L_ELSE_334
 
-L_THEN_337:
-    !tmp_1136
+L_THEN_333:
+    !tmp_1134
     panic(2160)
 
-L_ELSE_338:
-    !tmp_1136
-    jmp L_MERGE_339
+L_ELSE_334:
+    !tmp_1134
+    jmp L_MERGE_335
 
-L_MERGE_339:
-    tmp_1139 = call @sla__dyn_is_alive(a2, fake)
-    tmp_1140 = 0
-    tmp_1141 = ne tmp_1139, tmp_1140
+L_MERGE_335:
+    tmp_1137 = call @sla__dyn_is_alive(a2, fake)
+    tmp_1138 = 0
+    tmp_1139 = ne tmp_1137, tmp_1138
+    !tmp_1137
+    !tmp_1138
+    br tmp_1139 -> L_THEN_336, L_ELSE_337
+
+L_THEN_336:
     !tmp_1139
-    !tmp_1140
-    br tmp_1141 -> L_THEN_340, L_ELSE_341
-
-L_THEN_340:
-    !tmp_1141
     panic(2161)
 
-L_ELSE_341:
-    !tmp_1141
-    jmp L_MERGE_342
+L_ELSE_337:
+    !tmp_1139
+    jmp L_MERGE_338
 
-L_MERGE_342:
-    tmp_1144 = call @sla__dyn_alloc_entity(a2)
-    a3 = load tmp_1144+0 as ptr
-    e2 = load tmp_1144+8 as ptr
+L_MERGE_338:
+    tmp_1142 = call @sla__dyn_alloc_entity(a2)
+    a3 = load tmp_1142+0 as ptr
+    e2 = load tmp_1142+8 as ptr
+    !tmp_1142
+    tmp_1143 = call @sla__entity_eq(e2, fake)
+    tmp_1144 = 1
+    tmp_1145 = ne tmp_1143, tmp_1144
+    !tmp_1143
     !tmp_1144
-    tmp_1145 = call @sla__entity_eq(e2, fake)
-    tmp_1146 = 1
-    tmp_1147 = ne tmp_1145, tmp_1146
-    !tmp_1145
-    !tmp_1146
-    br tmp_1147 -> L_THEN_343, L_ELSE_344
+    br tmp_1145 -> L_THEN_339, L_ELSE_340
 
-L_THEN_343:
-    !tmp_1147
+L_THEN_339:
+    !tmp_1145
     panic(2162)
 
-L_ELSE_344:
-    !tmp_1147
-    jmp L_MERGE_345
+L_ELSE_340:
+    !tmp_1145
+    jmp L_MERGE_341
 
-L_MERGE_345:
-    tmp_1150 = call @sla__dyn_is_alive(a3, e2)
-    tmp_1151 = 1
-    tmp_1152 = ne tmp_1150, tmp_1151
+L_MERGE_341:
+    tmp_1148 = call @sla__dyn_is_alive(a3, e2)
+    tmp_1149 = 1
+    tmp_1150 = ne tmp_1148, tmp_1149
+    !tmp_1148
+    !tmp_1149
+    br tmp_1150 -> L_THEN_342, L_ELSE_343
+
+L_THEN_342:
     !tmp_1150
-    !tmp_1151
-    br tmp_1152 -> L_THEN_346, L_ELSE_347
-
-L_THEN_346:
-    !tmp_1152
     panic(2163)
 
-L_ELSE_347:
-    !tmp_1152
-    jmp L_MERGE_348
+L_ELSE_343:
+    !tmp_1150
+    jmp L_MERGE_344
 
-L_MERGE_348:
+L_MERGE_344:
     !e2
     !a0
     !fake
@@ -4011,247 +3996,247 @@ L_MERGE_348:
     return
 
 @test "hierarchy insert remove and recursive despawn"():
-L_TEST_ENTRY_349:
-    tmp_1155 = call @sla__hierarchy_world_new()
-    w0 = tmp_1155
-    tmp_1156 = call @sla__hierarchy_world_spawn(w0)
-    w1 = load tmp_1156+0 as ptr
-    root = load tmp_1156+8 as ptr
+L_TEST_ENTRY_345:
+    tmp_1153 = call @sla__hierarchy_world_new()
+    w0 = tmp_1153
+    tmp_1154 = call @sla__hierarchy_world_spawn(w0)
+    w1 = load tmp_1154+0 as ptr
+    root = load tmp_1154+8 as ptr
+    !tmp_1154
+    tmp_1155 = call @sla__hierarchy_world_spawn(w1)
+    w2 = load tmp_1155+0 as ptr
+    child1 = load tmp_1155+8 as ptr
+    !tmp_1155
+    tmp_1156 = call @sla__hierarchy_world_spawn(w2)
+    w3 = load tmp_1156+0 as ptr
+    grandchild = load tmp_1156+8 as ptr
     !tmp_1156
-    tmp_1157 = call @sla__hierarchy_world_spawn(w1)
-    w2 = load tmp_1157+0 as ptr
-    child1 = load tmp_1157+8 as ptr
+    tmp_1157 = call @sla__hierarchy_world_spawn(w3)
+    w4 = load tmp_1157+0 as ptr
+    child2 = load tmp_1157+8 as ptr
     !tmp_1157
-    tmp_1158 = call @sla__hierarchy_world_spawn(w2)
-    w3 = load tmp_1158+0 as ptr
-    grandchild = load tmp_1158+8 as ptr
-    !tmp_1158
-    tmp_1159 = call @sla__hierarchy_world_spawn(w3)
-    w4 = load tmp_1159+0 as ptr
-    child2 = load tmp_1159+8 as ptr
-    !tmp_1159
-    tmp_1160 = call @sla__hierarchy_world_add_child(w4, root, child1)
-    w5 = tmp_1160
-    tmp_1161 = call @sla__hierarchy_world_add_child(w5, child1, grandchild)
-    w6 = tmp_1161
-    tmp_1162 = call @sla__hierarchy_world_add_child(w6, root, child2)
-    w7 = tmp_1162
-    tmp_1163 = call @sla__hierarchy_world_child_count(w7, root)
-    tmp_1164 = 2
-    tmp_1165 = ne tmp_1163, tmp_1164
-    !tmp_1163
-    !tmp_1164
-    br tmp_1165 -> L_THEN_350, L_ELSE_351
+    tmp_1158 = call @sla__hierarchy_world_add_child(w4, root, child1)
+    w5 = tmp_1158
+    tmp_1159 = call @sla__hierarchy_world_add_child(w5, child1, grandchild)
+    w6 = tmp_1159
+    tmp_1160 = call @sla__hierarchy_world_add_child(w6, root, child2)
+    w7 = tmp_1160
+    tmp_1161 = call @sla__hierarchy_world_child_count(w7, root)
+    tmp_1162 = 2
+    tmp_1163 = ne tmp_1161, tmp_1162
+    !tmp_1161
+    !tmp_1162
+    br tmp_1163 -> L_THEN_346, L_ELSE_347
 
-L_THEN_350:
-    !tmp_1165
+L_THEN_346:
+    !tmp_1163
     panic(9310)
 
-L_ELSE_351:
-    !tmp_1165
-    jmp L_MERGE_352
+L_ELSE_347:
+    !tmp_1163
+    jmp L_MERGE_348
 
-L_MERGE_352:
-    tmp_1168 = 0
-    tmp_1169 = call @sla__hierarchy_world_child_at(w7, root, tmp_1168)
+L_MERGE_348:
+    tmp_1166 = 0
+    tmp_1167 = call @sla__hierarchy_world_child_at(w7, root, tmp_1166)
+    !tmp_1166
+    tmp_1168 = call @sla__entity_eq(tmp_1167, child1)
+    !tmp_1167
+    tmp_1169 = 1
+    tmp_1170 = ne tmp_1168, tmp_1169
     !tmp_1168
-    tmp_1170 = call @sla__entity_eq(tmp_1169, child1)
     !tmp_1169
-    tmp_1171 = 1
-    tmp_1172 = ne tmp_1170, tmp_1171
-    !tmp_1170
-    !tmp_1171
-    br tmp_1172 -> L_THEN_353, L_ELSE_354
+    br tmp_1170 -> L_THEN_349, L_ELSE_350
 
-L_THEN_353:
-    !tmp_1172
+L_THEN_349:
+    !tmp_1170
     panic(9311)
 
-L_ELSE_354:
-    !tmp_1172
-    jmp L_MERGE_355
+L_ELSE_350:
+    !tmp_1170
+    jmp L_MERGE_351
 
-L_MERGE_355:
-    tmp_1175 = 1
-    tmp_1176 = call @sla__hierarchy_world_child_at(w7, root, tmp_1175)
+L_MERGE_351:
+    tmp_1173 = 1
+    tmp_1174 = call @sla__hierarchy_world_child_at(w7, root, tmp_1173)
+    !tmp_1173
+    tmp_1175 = call @sla__entity_eq(tmp_1174, child2)
+    !tmp_1174
+    tmp_1176 = 1
+    tmp_1177 = ne tmp_1175, tmp_1176
     !tmp_1175
-    tmp_1177 = call @sla__entity_eq(tmp_1176, child2)
     !tmp_1176
-    tmp_1178 = 1
-    tmp_1179 = ne tmp_1177, tmp_1178
-    !tmp_1177
-    !tmp_1178
-    br tmp_1179 -> L_THEN_356, L_ELSE_357
+    br tmp_1177 -> L_THEN_352, L_ELSE_353
 
-L_THEN_356:
-    !tmp_1179
+L_THEN_352:
+    !tmp_1177
     panic(9312)
 
-L_ELSE_357:
-    !tmp_1179
-    jmp L_MERGE_358
+L_ELSE_353:
+    !tmp_1177
+    jmp L_MERGE_354
 
-L_MERGE_358:
-    tmp_1182 = call @sla__hierarchy_world_parent(w7, grandchild)
-    tmp_1183 = call @sla__entity_eq(tmp_1182, child1)
+L_MERGE_354:
+    tmp_1180 = call @sla__hierarchy_world_parent(w7, grandchild)
+    tmp_1181 = call @sla__entity_eq(tmp_1180, child1)
+    !tmp_1180
+    tmp_1182 = 1
+    tmp_1183 = ne tmp_1181, tmp_1182
+    !tmp_1181
     !tmp_1182
-    tmp_1184 = 1
-    tmp_1185 = ne tmp_1183, tmp_1184
-    !tmp_1183
-    !tmp_1184
-    br tmp_1185 -> L_THEN_359, L_ELSE_360
+    br tmp_1183 -> L_THEN_355, L_ELSE_356
 
-L_THEN_359:
-    !tmp_1185
+L_THEN_355:
+    !tmp_1183
     panic(9313)
 
-L_ELSE_360:
-    !tmp_1185
-    jmp L_MERGE_361
+L_ELSE_356:
+    !tmp_1183
+    jmp L_MERGE_357
 
-L_MERGE_361:
-    tmp_1188 = call @sla__hierarchy_world_detach_child(w7, root, child1)
-    w8 = tmp_1188
-    tmp_1189 = call @sla__hierarchy_world_child_count(w8, root)
-    tmp_1190 = 1
-    tmp_1191 = ne tmp_1189, tmp_1190
+L_MERGE_357:
+    tmp_1186 = call @sla__hierarchy_world_detach_child(w7, root, child1)
+    w8 = tmp_1186
+    tmp_1187 = call @sla__hierarchy_world_child_count(w8, root)
+    tmp_1188 = 1
+    tmp_1189 = ne tmp_1187, tmp_1188
+    !tmp_1187
+    !tmp_1188
+    br tmp_1189 -> L_THEN_358, L_ELSE_359
+
+L_THEN_358:
     !tmp_1189
-    !tmp_1190
-    br tmp_1191 -> L_THEN_362, L_ELSE_363
-
-L_THEN_362:
-    !tmp_1191
     panic(9314)
 
-L_ELSE_363:
-    !tmp_1191
-    jmp L_MERGE_364
+L_ELSE_359:
+    !tmp_1189
+    jmp L_MERGE_360
 
-L_MERGE_364:
-    tmp_1194 = call @sla__hierarchy_world_has_parent(w8, child1)
-    tmp_1195 = 0
-    tmp_1196 = ne tmp_1194, tmp_1195
+L_MERGE_360:
+    tmp_1192 = call @sla__hierarchy_world_has_parent(w8, child1)
+    tmp_1193 = 0
+    tmp_1194 = ne tmp_1192, tmp_1193
+    !tmp_1192
+    !tmp_1193
+    br tmp_1194 -> L_THEN_361, L_ELSE_362
+
+L_THEN_361:
     !tmp_1194
-    !tmp_1195
-    br tmp_1196 -> L_THEN_365, L_ELSE_366
-
-L_THEN_365:
-    !tmp_1196
     panic(9315)
 
-L_ELSE_366:
-    !tmp_1196
-    jmp L_MERGE_367
+L_ELSE_362:
+    !tmp_1194
+    jmp L_MERGE_363
 
-L_MERGE_367:
-    tmp_1199 = call @sla__hierarchy_world_add_child(w8, root, child1)
-    w9 = tmp_1199
-    tmp_1200 = 0
-    tmp_1201 = call @sla__hierarchy_world_child_at(w9, root, tmp_1200)
+L_MERGE_363:
+    tmp_1197 = call @sla__hierarchy_world_add_child(w8, root, child1)
+    w9 = tmp_1197
+    tmp_1198 = 0
+    tmp_1199 = call @sla__hierarchy_world_child_at(w9, root, tmp_1198)
+    !tmp_1198
+    tmp_1200 = call @sla__entity_eq(tmp_1199, child2)
+    !tmp_1199
+    tmp_1201 = 1
+    tmp_1202 = ne tmp_1200, tmp_1201
     !tmp_1200
-    tmp_1202 = call @sla__entity_eq(tmp_1201, child2)
     !tmp_1201
-    tmp_1203 = 1
-    tmp_1204 = ne tmp_1202, tmp_1203
-    !tmp_1202
-    !tmp_1203
-    br tmp_1204 -> L_THEN_368, L_ELSE_369
+    br tmp_1202 -> L_THEN_364, L_ELSE_365
 
-L_THEN_368:
-    !tmp_1204
+L_THEN_364:
+    !tmp_1202
     panic(9316)
 
-L_ELSE_369:
-    !tmp_1204
-    jmp L_MERGE_370
+L_ELSE_365:
+    !tmp_1202
+    jmp L_MERGE_366
 
-L_MERGE_370:
-    tmp_1207 = 1
-    tmp_1208 = call @sla__hierarchy_world_child_at(w9, root, tmp_1207)
+L_MERGE_366:
+    tmp_1205 = 1
+    tmp_1206 = call @sla__hierarchy_world_child_at(w9, root, tmp_1205)
+    !tmp_1205
+    tmp_1207 = call @sla__entity_eq(tmp_1206, child1)
+    !tmp_1206
+    tmp_1208 = 1
+    tmp_1209 = ne tmp_1207, tmp_1208
     !tmp_1207
-    tmp_1209 = call @sla__entity_eq(tmp_1208, child1)
     !tmp_1208
-    tmp_1210 = 1
-    tmp_1211 = ne tmp_1209, tmp_1210
-    !tmp_1209
-    !tmp_1210
-    br tmp_1211 -> L_THEN_371, L_ELSE_372
+    br tmp_1209 -> L_THEN_367, L_ELSE_368
 
-L_THEN_371:
-    !tmp_1211
+L_THEN_367:
+    !tmp_1209
     panic(9317)
 
-L_ELSE_372:
-    !tmp_1211
-    jmp L_MERGE_373
+L_ELSE_368:
+    !tmp_1209
+    jmp L_MERGE_369
 
-L_MERGE_373:
-    tmp_1214 = call @sla__hierarchy_world_despawn(w9, root)
-    w10 = tmp_1214
-    tmp_1215 = call @sla__hierarchy_world_is_alive(w10, root)
-    tmp_1216 = 0
-    tmp_1217 = ne tmp_1215, tmp_1216
+L_MERGE_369:
+    tmp_1212 = call @sla__hierarchy_world_despawn(w9, root)
+    w10 = tmp_1212
+    tmp_1213 = call @sla__hierarchy_world_is_alive(w10, root)
+    tmp_1214 = 0
+    tmp_1215 = ne tmp_1213, tmp_1214
+    !tmp_1213
+    !tmp_1214
+    br tmp_1215 -> L_THEN_370, L_ELSE_371
+
+L_THEN_370:
     !tmp_1215
-    !tmp_1216
-    br tmp_1217 -> L_THEN_374, L_ELSE_375
-
-L_THEN_374:
-    !tmp_1217
     panic(9318)
 
-L_ELSE_375:
-    !tmp_1217
-    jmp L_MERGE_376
+L_ELSE_371:
+    !tmp_1215
+    jmp L_MERGE_372
 
-L_MERGE_376:
-    tmp_1220 = call @sla__hierarchy_world_is_alive(w10, child1)
-    tmp_1221 = 0
-    tmp_1222 = ne tmp_1220, tmp_1221
+L_MERGE_372:
+    tmp_1218 = call @sla__hierarchy_world_is_alive(w10, child1)
+    tmp_1219 = 0
+    tmp_1220 = ne tmp_1218, tmp_1219
+    !tmp_1218
+    !tmp_1219
+    br tmp_1220 -> L_THEN_373, L_ELSE_374
+
+L_THEN_373:
     !tmp_1220
-    !tmp_1221
-    br tmp_1222 -> L_THEN_377, L_ELSE_378
-
-L_THEN_377:
-    !tmp_1222
     panic(9319)
 
-L_ELSE_378:
-    !tmp_1222
-    jmp L_MERGE_379
+L_ELSE_374:
+    !tmp_1220
+    jmp L_MERGE_375
 
-L_MERGE_379:
-    tmp_1225 = call @sla__hierarchy_world_is_alive(w10, child2)
-    tmp_1226 = 0
-    tmp_1227 = ne tmp_1225, tmp_1226
+L_MERGE_375:
+    tmp_1223 = call @sla__hierarchy_world_is_alive(w10, child2)
+    tmp_1224 = 0
+    tmp_1225 = ne tmp_1223, tmp_1224
+    !tmp_1223
+    !tmp_1224
+    br tmp_1225 -> L_THEN_376, L_ELSE_377
+
+L_THEN_376:
     !tmp_1225
-    !tmp_1226
-    br tmp_1227 -> L_THEN_380, L_ELSE_381
-
-L_THEN_380:
-    !tmp_1227
     panic(9320)
 
-L_ELSE_381:
-    !tmp_1227
-    jmp L_MERGE_382
+L_ELSE_377:
+    !tmp_1225
+    jmp L_MERGE_378
 
-L_MERGE_382:
-    tmp_1230 = call @sla__hierarchy_world_is_alive(w10, grandchild)
-    tmp_1231 = 0
-    tmp_1232 = ne tmp_1230, tmp_1231
+L_MERGE_378:
+    tmp_1228 = call @sla__hierarchy_world_is_alive(w10, grandchild)
+    tmp_1229 = 0
+    tmp_1230 = ne tmp_1228, tmp_1229
+    !tmp_1228
+    !tmp_1229
+    br tmp_1230 -> L_THEN_379, L_ELSE_380
+
+L_THEN_379:
     !tmp_1230
-    !tmp_1231
-    br tmp_1232 -> L_THEN_383, L_ELSE_384
-
-L_THEN_383:
-    !tmp_1232
     panic(9321)
 
-L_ELSE_384:
-    !tmp_1232
-    jmp L_MERGE_385
+L_ELSE_380:
+    !tmp_1230
+    jmp L_MERGE_381
 
-L_MERGE_385:
+L_MERGE_381:
     !grandchild
     !w10
     !w3
@@ -4270,91 +4255,91 @@ L_MERGE_385:
     return
 
 @test "hierarchy moving parent updates source and target"():
-L_TEST_ENTRY_386:
-    tmp_1235 = call @sla__hierarchy_world_new()
-    w0 = tmp_1235
-    tmp_1236 = call @sla__hierarchy_world_spawn(w0)
-    w1 = load tmp_1236+0 as ptr
-    parent_a = load tmp_1236+8 as ptr
+L_TEST_ENTRY_382:
+    tmp_1233 = call @sla__hierarchy_world_new()
+    w0 = tmp_1233
+    tmp_1234 = call @sla__hierarchy_world_spawn(w0)
+    w1 = load tmp_1234+0 as ptr
+    parent_a = load tmp_1234+8 as ptr
+    !tmp_1234
+    tmp_1235 = call @sla__hierarchy_world_spawn(w1)
+    w2 = load tmp_1235+0 as ptr
+    parent_b = load tmp_1235+8 as ptr
+    !tmp_1235
+    tmp_1236 = call @sla__hierarchy_world_spawn(w2)
+    w3 = load tmp_1236+0 as ptr
+    child = load tmp_1236+8 as ptr
     !tmp_1236
-    tmp_1237 = call @sla__hierarchy_world_spawn(w1)
-    w2 = load tmp_1237+0 as ptr
-    parent_b = load tmp_1237+8 as ptr
-    !tmp_1237
-    tmp_1238 = call @sla__hierarchy_world_spawn(w2)
-    w3 = load tmp_1238+0 as ptr
-    child = load tmp_1238+8 as ptr
+    tmp_1237 = call @sla__hierarchy_world_add_child(w3, parent_a, child)
+    w4 = tmp_1237
+    tmp_1238 = call @sla__hierarchy_world_child_count(w4, parent_a)
+    tmp_1239 = 1
+    tmp_1240 = ne tmp_1238, tmp_1239
     !tmp_1238
-    tmp_1239 = call @sla__hierarchy_world_add_child(w3, parent_a, child)
-    w4 = tmp_1239
-    tmp_1240 = call @sla__hierarchy_world_child_count(w4, parent_a)
-    tmp_1241 = 1
-    tmp_1242 = ne tmp_1240, tmp_1241
-    !tmp_1240
-    !tmp_1241
-    br tmp_1242 -> L_THEN_387, L_ELSE_388
+    !tmp_1239
+    br tmp_1240 -> L_THEN_383, L_ELSE_384
 
-L_THEN_387:
-    !tmp_1242
+L_THEN_383:
+    !tmp_1240
     panic(9330)
 
-L_ELSE_388:
-    !tmp_1242
-    jmp L_MERGE_389
+L_ELSE_384:
+    !tmp_1240
+    jmp L_MERGE_385
 
-L_MERGE_389:
-    tmp_1245 = call @sla__hierarchy_world_add_child(w4, parent_b, child)
-    w5 = tmp_1245
-    tmp_1246 = call @sla__hierarchy_world_child_count(w5, parent_a)
-    tmp_1247 = 0
-    tmp_1248 = ne tmp_1246, tmp_1247
+L_MERGE_385:
+    tmp_1243 = call @sla__hierarchy_world_add_child(w4, parent_b, child)
+    w5 = tmp_1243
+    tmp_1244 = call @sla__hierarchy_world_child_count(w5, parent_a)
+    tmp_1245 = 0
+    tmp_1246 = ne tmp_1244, tmp_1245
+    !tmp_1244
+    !tmp_1245
+    br tmp_1246 -> L_THEN_386, L_ELSE_387
+
+L_THEN_386:
     !tmp_1246
-    !tmp_1247
-    br tmp_1248 -> L_THEN_390, L_ELSE_391
-
-L_THEN_390:
-    !tmp_1248
     panic(9331)
 
-L_ELSE_391:
-    !tmp_1248
-    jmp L_MERGE_392
+L_ELSE_387:
+    !tmp_1246
+    jmp L_MERGE_388
 
-L_MERGE_392:
-    tmp_1251 = call @sla__hierarchy_world_child_count(w5, parent_b)
-    tmp_1252 = 1
-    tmp_1253 = ne tmp_1251, tmp_1252
+L_MERGE_388:
+    tmp_1249 = call @sla__hierarchy_world_child_count(w5, parent_b)
+    tmp_1250 = 1
+    tmp_1251 = ne tmp_1249, tmp_1250
+    !tmp_1249
+    !tmp_1250
+    br tmp_1251 -> L_THEN_389, L_ELSE_390
+
+L_THEN_389:
     !tmp_1251
-    !tmp_1252
-    br tmp_1253 -> L_THEN_393, L_ELSE_394
-
-L_THEN_393:
-    !tmp_1253
     panic(9332)
 
-L_ELSE_394:
-    !tmp_1253
-    jmp L_MERGE_395
+L_ELSE_390:
+    !tmp_1251
+    jmp L_MERGE_391
 
-L_MERGE_395:
-    tmp_1256 = call @sla__hierarchy_world_parent(w5, child)
-    tmp_1257 = call @sla__entity_eq(tmp_1256, parent_b)
+L_MERGE_391:
+    tmp_1254 = call @sla__hierarchy_world_parent(w5, child)
+    tmp_1255 = call @sla__entity_eq(tmp_1254, parent_b)
+    !tmp_1254
+    tmp_1256 = 1
+    tmp_1257 = ne tmp_1255, tmp_1256
+    !tmp_1255
     !tmp_1256
-    tmp_1258 = 1
-    tmp_1259 = ne tmp_1257, tmp_1258
-    !tmp_1257
-    !tmp_1258
-    br tmp_1259 -> L_THEN_396, L_ELSE_397
+    br tmp_1257 -> L_THEN_392, L_ELSE_393
 
-L_THEN_396:
-    !tmp_1259
+L_THEN_392:
+    !tmp_1257
     panic(9333)
 
-L_ELSE_397:
-    !tmp_1259
-    jmp L_MERGE_398
+L_ELSE_393:
+    !tmp_1257
+    jmp L_MERGE_394
 
-L_MERGE_398:
+L_MERGE_394:
     !w0
     !w4
     !parent_a
@@ -4367,335 +4352,335 @@ L_MERGE_398:
     return
 
 @test "hierarchy insert and replace children preserve order"():
-L_TEST_ENTRY_399:
-    tmp_1262 = call @sla__hierarchy_world_new()
-    w0 = tmp_1262
-    tmp_1263 = call @sla__hierarchy_world_spawn(w0)
-    w1 = load tmp_1263+0 as ptr
-    parent = load tmp_1263+8 as ptr
+L_TEST_ENTRY_395:
+    tmp_1260 = call @sla__hierarchy_world_new()
+    w0 = tmp_1260
+    tmp_1261 = call @sla__hierarchy_world_spawn(w0)
+    w1 = load tmp_1261+0 as ptr
+    parent = load tmp_1261+8 as ptr
+    !tmp_1261
+    tmp_1262 = call @sla__hierarchy_world_spawn(w1)
+    w2 = load tmp_1262+0 as ptr
+    c0 = load tmp_1262+8 as ptr
+    !tmp_1262
+    tmp_1263 = call @sla__hierarchy_world_spawn(w2)
+    w3 = load tmp_1263+0 as ptr
+    c1 = load tmp_1263+8 as ptr
     !tmp_1263
-    tmp_1264 = call @sla__hierarchy_world_spawn(w1)
-    w2 = load tmp_1264+0 as ptr
-    c0 = load tmp_1264+8 as ptr
+    tmp_1264 = call @sla__hierarchy_world_spawn(w3)
+    w4 = load tmp_1264+0 as ptr
+    c2 = load tmp_1264+8 as ptr
     !tmp_1264
-    tmp_1265 = call @sla__hierarchy_world_spawn(w2)
-    w3 = load tmp_1265+0 as ptr
-    c1 = load tmp_1265+8 as ptr
+    tmp_1265 = call @sla__hierarchy_world_spawn(w4)
+    w5 = load tmp_1265+0 as ptr
+    c3 = load tmp_1265+8 as ptr
     !tmp_1265
-    tmp_1266 = call @sla__hierarchy_world_spawn(w3)
-    w4 = load tmp_1266+0 as ptr
-    c2 = load tmp_1266+8 as ptr
+    tmp_1266 = call @sla__hierarchy_world_spawn(w5)
+    w6 = load tmp_1266+0 as ptr
+    c4 = load tmp_1266+8 as ptr
     !tmp_1266
-    tmp_1267 = call @sla__hierarchy_world_spawn(w4)
-    w5 = load tmp_1267+0 as ptr
-    c3 = load tmp_1267+8 as ptr
-    !tmp_1267
-    tmp_1268 = call @sla__hierarchy_world_spawn(w5)
-    w6 = load tmp_1268+0 as ptr
-    c4 = load tmp_1268+8 as ptr
-    !tmp_1268
-    tmp_1269 = call @sla__hierarchy_world_add_child(w6, parent, c0)
-    w7 = tmp_1269
-    tmp_1270 = call @sla__hierarchy_world_add_child(w7, parent, c1)
-    w8 = tmp_1270
-    tmp_1271 = call @sla__hierarchy_world_add_child(w8, parent, c2)
-    w9 = tmp_1271
-    tmp_1272 = 1
-    tmp_1273 = call @sla__hierarchy_world_insert_child(w9, parent, tmp_1272, c3)
+    tmp_1267 = call @sla__hierarchy_world_add_child(w6, parent, c0)
+    w7 = tmp_1267
+    tmp_1268 = call @sla__hierarchy_world_add_child(w7, parent, c1)
+    w8 = tmp_1268
+    tmp_1269 = call @sla__hierarchy_world_add_child(w8, parent, c2)
+    w9 = tmp_1269
+    tmp_1270 = 1
+    tmp_1271 = call @sla__hierarchy_world_insert_child(w9, parent, tmp_1270, c3)
+    !tmp_1270
+    w10 = tmp_1271
+    tmp_1272 = 0
+    tmp_1273 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1272)
     !tmp_1272
-    w10 = tmp_1273
-    tmp_1274 = 0
-    tmp_1275 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1274)
+    tmp_1274 = call @sla__entity_eq(tmp_1273, c0)
+    !tmp_1273
+    tmp_1275 = 1
+    tmp_1276 = ne tmp_1274, tmp_1275
     !tmp_1274
-    tmp_1276 = call @sla__entity_eq(tmp_1275, c0)
     !tmp_1275
-    tmp_1277 = 1
-    tmp_1278 = ne tmp_1276, tmp_1277
-    !tmp_1276
-    !tmp_1277
-    br tmp_1278 -> L_THEN_400, L_ELSE_401
+    br tmp_1276 -> L_THEN_396, L_ELSE_397
 
-L_THEN_400:
-    !tmp_1278
+L_THEN_396:
+    !tmp_1276
     panic(9340)
 
-L_ELSE_401:
-    !tmp_1278
-    jmp L_MERGE_402
+L_ELSE_397:
+    !tmp_1276
+    jmp L_MERGE_398
 
-L_MERGE_402:
-    tmp_1281 = 1
-    tmp_1282 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1281)
+L_MERGE_398:
+    tmp_1279 = 1
+    tmp_1280 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1279)
+    !tmp_1279
+    tmp_1281 = call @sla__entity_eq(tmp_1280, c3)
+    !tmp_1280
+    tmp_1282 = 1
+    tmp_1283 = ne tmp_1281, tmp_1282
     !tmp_1281
-    tmp_1283 = call @sla__entity_eq(tmp_1282, c3)
     !tmp_1282
-    tmp_1284 = 1
-    tmp_1285 = ne tmp_1283, tmp_1284
-    !tmp_1283
-    !tmp_1284
-    br tmp_1285 -> L_THEN_403, L_ELSE_404
+    br tmp_1283 -> L_THEN_399, L_ELSE_400
 
-L_THEN_403:
-    !tmp_1285
+L_THEN_399:
+    !tmp_1283
     panic(9341)
 
-L_ELSE_404:
-    !tmp_1285
-    jmp L_MERGE_405
+L_ELSE_400:
+    !tmp_1283
+    jmp L_MERGE_401
 
-L_MERGE_405:
-    tmp_1288 = 2
-    tmp_1289 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1288)
+L_MERGE_401:
+    tmp_1286 = 2
+    tmp_1287 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1286)
+    !tmp_1286
+    tmp_1288 = call @sla__entity_eq(tmp_1287, c2)
+    !tmp_1287
+    tmp_1289 = 1
+    tmp_1290 = ne tmp_1288, tmp_1289
     !tmp_1288
-    tmp_1290 = call @sla__entity_eq(tmp_1289, c1)
     !tmp_1289
-    tmp_1291 = 1
-    tmp_1292 = ne tmp_1290, tmp_1291
-    !tmp_1290
-    !tmp_1291
-    br tmp_1292 -> L_THEN_406, L_ELSE_407
+    br tmp_1290 -> L_THEN_402, L_ELSE_403
 
-L_THEN_406:
-    !tmp_1292
+L_THEN_402:
+    !tmp_1290
     panic(9342)
 
-L_ELSE_407:
-    !tmp_1292
-    jmp L_MERGE_408
+L_ELSE_403:
+    !tmp_1290
+    jmp L_MERGE_404
 
-L_MERGE_408:
-    tmp_1295 = 3
-    tmp_1296 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1295)
+L_MERGE_404:
+    tmp_1293 = 3
+    tmp_1294 = call @sla__hierarchy_world_child_at(w10, parent, tmp_1293)
+    !tmp_1293
+    tmp_1295 = call @sla__entity_eq(tmp_1294, c1)
+    !tmp_1294
+    tmp_1296 = 1
+    tmp_1297 = ne tmp_1295, tmp_1296
     !tmp_1295
-    tmp_1297 = call @sla__entity_eq(tmp_1296, c2)
     !tmp_1296
-    tmp_1298 = 1
-    tmp_1299 = ne tmp_1297, tmp_1298
-    !tmp_1297
-    !tmp_1298
-    br tmp_1299 -> L_THEN_409, L_ELSE_410
+    br tmp_1297 -> L_THEN_405, L_ELSE_406
 
-L_THEN_409:
-    !tmp_1299
+L_THEN_405:
+    !tmp_1297
     panic(9343)
 
-L_ELSE_410:
-    !tmp_1299
-    jmp L_MERGE_411
+L_ELSE_406:
+    !tmp_1297
+    jmp L_MERGE_407
 
-L_MERGE_411:
-    tmp_1302 = 2
-    tmp_1303 = call @sla__hierarchy_world_insert_child(w10, parent, tmp_1302, c0)
+L_MERGE_407:
+    tmp_1300 = 2
+    tmp_1301 = call @sla__hierarchy_world_insert_child(w10, parent, tmp_1300, c0)
+    !tmp_1300
+    w11 = tmp_1301
+    tmp_1302 = 0
+    tmp_1303 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1302)
     !tmp_1302
-    w11 = tmp_1303
-    tmp_1304 = 0
-    tmp_1305 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1304)
+    tmp_1304 = call @sla__entity_eq(tmp_1303, c3)
+    !tmp_1303
+    tmp_1305 = 1
+    tmp_1306 = ne tmp_1304, tmp_1305
     !tmp_1304
-    tmp_1306 = call @sla__entity_eq(tmp_1305, c3)
     !tmp_1305
-    tmp_1307 = 1
-    tmp_1308 = ne tmp_1306, tmp_1307
-    !tmp_1306
-    !tmp_1307
-    br tmp_1308 -> L_THEN_412, L_ELSE_413
+    br tmp_1306 -> L_THEN_408, L_ELSE_409
 
-L_THEN_412:
-    !tmp_1308
+L_THEN_408:
+    !tmp_1306
     panic(9344)
 
-L_ELSE_413:
-    !tmp_1308
-    jmp L_MERGE_414
+L_ELSE_409:
+    !tmp_1306
+    jmp L_MERGE_410
 
-L_MERGE_414:
-    tmp_1311 = 1
-    tmp_1312 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1311)
+L_MERGE_410:
+    tmp_1309 = 1
+    tmp_1310 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1309)
+    !tmp_1309
+    tmp_1311 = call @sla__entity_eq(tmp_1310, c2)
+    !tmp_1310
+    tmp_1312 = 1
+    tmp_1313 = ne tmp_1311, tmp_1312
     !tmp_1311
-    tmp_1313 = call @sla__entity_eq(tmp_1312, c1)
     !tmp_1312
-    tmp_1314 = 1
-    tmp_1315 = ne tmp_1313, tmp_1314
-    !tmp_1313
-    !tmp_1314
-    br tmp_1315 -> L_THEN_415, L_ELSE_416
+    br tmp_1313 -> L_THEN_411, L_ELSE_412
 
-L_THEN_415:
-    !tmp_1315
+L_THEN_411:
+    !tmp_1313
     panic(9345)
 
-L_ELSE_416:
-    !tmp_1315
-    jmp L_MERGE_417
+L_ELSE_412:
+    !tmp_1313
+    jmp L_MERGE_413
 
-L_MERGE_417:
-    tmp_1318 = 2
-    tmp_1319 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1318)
+L_MERGE_413:
+    tmp_1316 = 2
+    tmp_1317 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1316)
+    !tmp_1316
+    tmp_1318 = call @sla__entity_eq(tmp_1317, c0)
+    !tmp_1317
+    tmp_1319 = 1
+    tmp_1320 = ne tmp_1318, tmp_1319
     !tmp_1318
-    tmp_1320 = call @sla__entity_eq(tmp_1319, c0)
     !tmp_1319
-    tmp_1321 = 1
-    tmp_1322 = ne tmp_1320, tmp_1321
-    !tmp_1320
-    !tmp_1321
-    br tmp_1322 -> L_THEN_418, L_ELSE_419
+    br tmp_1320 -> L_THEN_414, L_ELSE_415
 
-L_THEN_418:
-    !tmp_1322
+L_THEN_414:
+    !tmp_1320
     panic(9346)
 
-L_ELSE_419:
-    !tmp_1322
-    jmp L_MERGE_420
+L_ELSE_415:
+    !tmp_1320
+    jmp L_MERGE_416
 
-L_MERGE_420:
-    tmp_1325 = 3
-    tmp_1326 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1325)
+L_MERGE_416:
+    tmp_1323 = 3
+    tmp_1324 = call @sla__hierarchy_world_child_at(w11, parent, tmp_1323)
+    !tmp_1323
+    tmp_1325 = call @sla__entity_eq(tmp_1324, c1)
+    !tmp_1324
+    tmp_1326 = 1
+    tmp_1327 = ne tmp_1325, tmp_1326
     !tmp_1325
-    tmp_1327 = call @sla__entity_eq(tmp_1326, c2)
     !tmp_1326
-    tmp_1328 = 1
-    tmp_1329 = ne tmp_1327, tmp_1328
-    !tmp_1327
-    !tmp_1328
-    br tmp_1329 -> L_THEN_421, L_ELSE_422
+    br tmp_1327 -> L_THEN_417, L_ELSE_418
 
-L_THEN_421:
-    !tmp_1329
+L_THEN_417:
+    !tmp_1327
     panic(9347)
 
-L_ELSE_422:
-    !tmp_1329
-    jmp L_MERGE_423
+L_ELSE_418:
+    !tmp_1327
+    jmp L_MERGE_419
 
-L_MERGE_423:
-    EXPAND VEC_NEW tmp_1332
-    replacement = tmp_1332
+L_MERGE_419:
+    EXPAND VEC_NEW tmp_1330
+    replacement = tmp_1330
     EXPAND VEC_PUSH replacement, c2, 8
     EXPAND VEC_PUSH replacement, c4, 8
-    tmp_1333 = call @sla__hierarchy_world_replace_children(w11, parent, replacement)
-    w12 = tmp_1333
-    tmp_1334 = call @sla__hierarchy_world_child_count(w12, parent)
-    tmp_1335 = 2
-    tmp_1336 = ne tmp_1334, tmp_1335
-    !tmp_1334
-    !tmp_1335
-    br tmp_1336 -> L_THEN_424, L_ELSE_425
+    tmp_1331 = call @sla__hierarchy_world_replace_children(w11, parent, replacement)
+    w12 = tmp_1331
+    tmp_1332 = call @sla__hierarchy_world_child_count(w12, parent)
+    tmp_1333 = 2
+    tmp_1334 = ne tmp_1332, tmp_1333
+    !tmp_1332
+    !tmp_1333
+    br tmp_1334 -> L_THEN_420, L_ELSE_421
 
-L_THEN_424:
-    !tmp_1336
+L_THEN_420:
+    !tmp_1334
     panic(9348)
 
-L_ELSE_425:
-    !tmp_1336
-    jmp L_MERGE_426
+L_ELSE_421:
+    !tmp_1334
+    jmp L_MERGE_422
 
-L_MERGE_426:
-    tmp_1339 = 0
-    tmp_1340 = call @sla__hierarchy_world_child_at(w12, parent, tmp_1339)
+L_MERGE_422:
+    tmp_1337 = 0
+    tmp_1338 = call @sla__hierarchy_world_child_at(w12, parent, tmp_1337)
+    !tmp_1337
+    tmp_1339 = call @sla__entity_eq(tmp_1338, c2)
+    !tmp_1338
+    tmp_1340 = 1
+    tmp_1341 = ne tmp_1339, tmp_1340
     !tmp_1339
-    tmp_1341 = call @sla__entity_eq(tmp_1340, c2)
     !tmp_1340
-    tmp_1342 = 1
-    tmp_1343 = ne tmp_1341, tmp_1342
-    !tmp_1341
-    !tmp_1342
-    br tmp_1343 -> L_THEN_427, L_ELSE_428
+    br tmp_1341 -> L_THEN_423, L_ELSE_424
 
-L_THEN_427:
-    !tmp_1343
+L_THEN_423:
+    !tmp_1341
     panic(9349)
 
-L_ELSE_428:
-    !tmp_1343
-    jmp L_MERGE_429
+L_ELSE_424:
+    !tmp_1341
+    jmp L_MERGE_425
 
-L_MERGE_429:
-    tmp_1346 = 1
-    tmp_1347 = call @sla__hierarchy_world_child_at(w12, parent, tmp_1346)
+L_MERGE_425:
+    tmp_1344 = 1
+    tmp_1345 = call @sla__hierarchy_world_child_at(w12, parent, tmp_1344)
+    !tmp_1344
+    tmp_1346 = call @sla__entity_eq(tmp_1345, c4)
+    !tmp_1345
+    tmp_1347 = 1
+    tmp_1348 = ne tmp_1346, tmp_1347
     !tmp_1346
-    tmp_1348 = call @sla__entity_eq(tmp_1347, c4)
     !tmp_1347
-    tmp_1349 = 1
-    tmp_1350 = ne tmp_1348, tmp_1349
-    !tmp_1348
-    !tmp_1349
-    br tmp_1350 -> L_THEN_430, L_ELSE_431
+    br tmp_1348 -> L_THEN_426, L_ELSE_427
 
-L_THEN_430:
-    !tmp_1350
+L_THEN_426:
+    !tmp_1348
     panic(9350)
 
-L_ELSE_431:
-    !tmp_1350
-    jmp L_MERGE_432
+L_ELSE_427:
+    !tmp_1348
+    jmp L_MERGE_428
 
-L_MERGE_432:
-    tmp_1353 = call @sla__hierarchy_world_has_parent(w12, c0)
-    tmp_1354 = 0
-    tmp_1355 = ne tmp_1353, tmp_1354
+L_MERGE_428:
+    tmp_1351 = call @sla__hierarchy_world_has_parent(w12, c0)
+    tmp_1352 = 0
+    tmp_1353 = ne tmp_1351, tmp_1352
+    !tmp_1351
+    !tmp_1352
+    br tmp_1353 -> L_THEN_429, L_ELSE_430
+
+L_THEN_429:
     !tmp_1353
-    !tmp_1354
-    br tmp_1355 -> L_THEN_433, L_ELSE_434
-
-L_THEN_433:
-    !tmp_1355
     panic(9351)
 
-L_ELSE_434:
-    !tmp_1355
-    jmp L_MERGE_435
+L_ELSE_430:
+    !tmp_1353
+    jmp L_MERGE_431
 
-L_MERGE_435:
-    tmp_1358 = call @sla__hierarchy_world_has_parent(w12, c1)
-    tmp_1359 = 0
-    tmp_1360 = ne tmp_1358, tmp_1359
+L_MERGE_431:
+    tmp_1356 = call @sla__hierarchy_world_has_parent(w12, c1)
+    tmp_1357 = 0
+    tmp_1358 = ne tmp_1356, tmp_1357
+    !tmp_1356
+    !tmp_1357
+    br tmp_1358 -> L_THEN_432, L_ELSE_433
+
+L_THEN_432:
     !tmp_1358
-    !tmp_1359
-    br tmp_1360 -> L_THEN_436, L_ELSE_437
-
-L_THEN_436:
-    !tmp_1360
     panic(9352)
 
-L_ELSE_437:
-    !tmp_1360
-    jmp L_MERGE_438
+L_ELSE_433:
+    !tmp_1358
+    jmp L_MERGE_434
 
-L_MERGE_438:
-    tmp_1363 = call @sla__hierarchy_world_has_parent(w12, c3)
-    tmp_1364 = 0
-    tmp_1365 = ne tmp_1363, tmp_1364
+L_MERGE_434:
+    tmp_1361 = call @sla__hierarchy_world_has_parent(w12, c3)
+    tmp_1362 = 0
+    tmp_1363 = ne tmp_1361, tmp_1362
+    !tmp_1361
+    !tmp_1362
+    br tmp_1363 -> L_THEN_435, L_ELSE_436
+
+L_THEN_435:
     !tmp_1363
-    !tmp_1364
-    br tmp_1365 -> L_THEN_439, L_ELSE_440
-
-L_THEN_439:
-    !tmp_1365
     panic(9353)
 
-L_ELSE_440:
-    !tmp_1365
-    jmp L_MERGE_441
+L_ELSE_436:
+    !tmp_1363
+    jmp L_MERGE_437
 
-L_MERGE_441:
-    tmp_1368 = call @sla__hierarchy_world_parent(w12, c4)
-    tmp_1369 = call @sla__entity_eq(tmp_1368, parent)
+L_MERGE_437:
+    tmp_1366 = call @sla__hierarchy_world_parent(w12, c4)
+    tmp_1367 = call @sla__entity_eq(tmp_1366, parent)
+    !tmp_1366
+    tmp_1368 = 1
+    tmp_1369 = ne tmp_1367, tmp_1368
+    !tmp_1367
     !tmp_1368
-    tmp_1370 = 1
-    tmp_1371 = ne tmp_1369, tmp_1370
-    !tmp_1369
-    !tmp_1370
-    br tmp_1371 -> L_THEN_442, L_ELSE_443
+    br tmp_1369 -> L_THEN_438, L_ELSE_439
 
-L_THEN_442:
-    !tmp_1371
+L_THEN_438:
+    !tmp_1369
     panic(9354)
 
-L_ELSE_443:
-    !tmp_1371
-    jmp L_MERGE_444
+L_ELSE_439:
+    !tmp_1369
+    jmp L_MERGE_440
 
-L_MERGE_444:
+L_MERGE_440:
     !c2
     !replacement
     !c3
@@ -4719,529 +4704,529 @@ L_MERGE_444:
     return
 
 @test "hierarchy traversal queries match Bevy order"():
-L_TEST_ENTRY_445:
-    tmp_1374 = call @sla__hierarchy_world_new()
-    w0 = tmp_1374
-    tmp_1375 = call @sla__hierarchy_world_spawn(w0)
-    w1 = load tmp_1375+0 as ptr
-    root = load tmp_1375+8 as ptr
+L_TEST_ENTRY_441:
+    tmp_1372 = call @sla__hierarchy_world_new()
+    w0 = tmp_1372
+    tmp_1373 = call @sla__hierarchy_world_spawn(w0)
+    w1 = load tmp_1373+0 as ptr
+    root = load tmp_1373+8 as ptr
+    !tmp_1373
+    tmp_1374 = call @sla__hierarchy_world_spawn(w1)
+    w2 = load tmp_1374+0 as ptr
+    c1 = load tmp_1374+8 as ptr
+    !tmp_1374
+    tmp_1375 = call @sla__hierarchy_world_spawn(w2)
+    w3 = load tmp_1375+0 as ptr
+    c2 = load tmp_1375+8 as ptr
     !tmp_1375
-    tmp_1376 = call @sla__hierarchy_world_spawn(w1)
-    w2 = load tmp_1376+0 as ptr
-    c1 = load tmp_1376+8 as ptr
+    tmp_1376 = call @sla__hierarchy_world_spawn(w3)
+    w4 = load tmp_1376+0 as ptr
+    g1 = load tmp_1376+8 as ptr
     !tmp_1376
-    tmp_1377 = call @sla__hierarchy_world_spawn(w2)
-    w3 = load tmp_1377+0 as ptr
-    c2 = load tmp_1377+8 as ptr
+    tmp_1377 = call @sla__hierarchy_world_spawn(w4)
+    w5 = load tmp_1377+0 as ptr
+    g2 = load tmp_1377+8 as ptr
     !tmp_1377
-    tmp_1378 = call @sla__hierarchy_world_spawn(w3)
-    w4 = load tmp_1378+0 as ptr
-    g1 = load tmp_1378+8 as ptr
+    tmp_1378 = call @sla__hierarchy_world_spawn(w5)
+    w6 = load tmp_1378+0 as ptr
+    g3 = load tmp_1378+8 as ptr
     !tmp_1378
-    tmp_1379 = call @sla__hierarchy_world_spawn(w4)
-    w5 = load tmp_1379+0 as ptr
-    g2 = load tmp_1379+8 as ptr
-    !tmp_1379
-    tmp_1380 = call @sla__hierarchy_world_spawn(w5)
-    w6 = load tmp_1380+0 as ptr
-    g3 = load tmp_1380+8 as ptr
-    !tmp_1380
-    tmp_1381 = call @sla__hierarchy_world_add_child(w6, root, c1)
-    w7 = tmp_1381
-    tmp_1382 = call @sla__hierarchy_world_add_child(w7, root, c2)
-    w8 = tmp_1382
-    tmp_1383 = call @sla__hierarchy_world_add_child(w8, c1, g1)
-    w9 = tmp_1383
-    tmp_1384 = call @sla__hierarchy_world_add_child(w9, c1, g2)
-    w10 = tmp_1384
-    tmp_1385 = call @sla__hierarchy_world_add_child(w10, c2, g3)
-    w11 = tmp_1385
-    tmp_1386 = call @sla__hierarchy_world_ancestors(w11, g2)
-    ancestors = tmp_1386
-    tmp_1387 = load ancestors+0 as ptr
-    EXPAND VEC_LEN tmp_1388, tmp_1387
+    tmp_1379 = call @sla__hierarchy_world_add_child(w6, root, c1)
+    w7 = tmp_1379
+    tmp_1380 = call @sla__hierarchy_world_add_child(w7, root, c2)
+    w8 = tmp_1380
+    tmp_1381 = call @sla__hierarchy_world_add_child(w8, c1, g1)
+    w9 = tmp_1381
+    tmp_1382 = call @sla__hierarchy_world_add_child(w9, c1, g2)
+    w10 = tmp_1382
+    tmp_1383 = call @sla__hierarchy_world_add_child(w10, c2, g3)
+    w11 = tmp_1383
+    tmp_1384 = call @sla__hierarchy_world_ancestors(w11, g2)
+    ancestors = tmp_1384
+    tmp_1385 = load ancestors+0 as ptr
+    EXPAND VEC_LEN tmp_1386, tmp_1385
+    !tmp_1385
+    tmp_1387 = 2
+    tmp_1388 = ne tmp_1386, tmp_1387
+    !tmp_1386
     !tmp_1387
-    tmp_1389 = 2
-    tmp_1390 = ne tmp_1388, tmp_1389
-    !tmp_1388
-    !tmp_1389
-    br tmp_1390 -> L_THEN_446, L_ELSE_447
+    br tmp_1388 -> L_THEN_442, L_ELSE_443
 
-L_THEN_446:
-    !tmp_1390
+L_THEN_442:
+    !tmp_1388
     panic(9360)
 
-L_ELSE_447:
-    !tmp_1390
-    jmp L_MERGE_448
+L_ELSE_443:
+    !tmp_1388
+    jmp L_MERGE_444
 
-L_MERGE_448:
-    tmp_1393 = load ancestors+0 as ptr
-    tmp_1394 = 0
-    EXPAND VEC_GET tmp_1395, tmp_1393, tmp_1394
+L_MERGE_444:
+    tmp_1391 = load ancestors+0 as ptr
+    tmp_1392 = 0
+    EXPAND VEC_GET tmp_1393, tmp_1391, tmp_1392
+    !tmp_1392
+    !tmp_1391
+    tmp_1394 = tmp_1393 as ptr
+    tmp_1395 = call @sla__entity_eq(tmp_1394, c1)
     !tmp_1394
-    !tmp_1393
-    tmp_1396 = tmp_1395 as ptr
-    tmp_1397 = call @sla__entity_eq(tmp_1396, c1)
+    tmp_1396 = 1
+    tmp_1397 = ne tmp_1395, tmp_1396
+    !tmp_1395
     !tmp_1396
-    tmp_1398 = 1
-    tmp_1399 = ne tmp_1397, tmp_1398
-    !tmp_1397
-    !tmp_1398
-    br tmp_1399 -> L_THEN_449, L_ELSE_450
+    br tmp_1397 -> L_THEN_445, L_ELSE_446
 
-L_THEN_449:
-    !tmp_1399
+L_THEN_445:
+    !tmp_1397
     panic(9361)
 
-L_ELSE_450:
-    !tmp_1399
-    jmp L_MERGE_451
+L_ELSE_446:
+    !tmp_1397
+    jmp L_MERGE_447
 
-L_MERGE_451:
-    tmp_1402 = load ancestors+0 as ptr
-    tmp_1403 = 1
-    EXPAND VEC_GET tmp_1404, tmp_1402, tmp_1403
+L_MERGE_447:
+    tmp_1400 = load ancestors+0 as ptr
+    tmp_1401 = 1
+    EXPAND VEC_GET tmp_1402, tmp_1400, tmp_1401
+    !tmp_1401
+    !tmp_1400
+    tmp_1403 = tmp_1402 as ptr
+    tmp_1404 = call @sla__entity_eq(tmp_1403, root)
     !tmp_1403
-    !tmp_1402
-    tmp_1405 = tmp_1404 as ptr
-    tmp_1406 = call @sla__entity_eq(tmp_1405, root)
+    tmp_1405 = 1
+    tmp_1406 = ne tmp_1404, tmp_1405
+    !tmp_1404
     !tmp_1405
-    tmp_1407 = 1
-    tmp_1408 = ne tmp_1406, tmp_1407
-    !tmp_1406
-    !tmp_1407
-    br tmp_1408 -> L_THEN_452, L_ELSE_453
+    br tmp_1406 -> L_THEN_448, L_ELSE_449
 
-L_THEN_452:
-    !tmp_1408
+L_THEN_448:
+    !tmp_1406
     panic(9362)
 
-L_ELSE_453:
-    !tmp_1408
-    jmp L_MERGE_454
+L_ELSE_449:
+    !tmp_1406
+    jmp L_MERGE_450
 
-L_MERGE_454:
-    tmp_1411 = call @sla__hierarchy_world_root_ancestor(w11, g2)
-    tmp_1412 = call @sla__entity_eq(tmp_1411, root)
+L_MERGE_450:
+    tmp_1409 = call @sla__hierarchy_world_root_ancestor(w11, g2)
+    tmp_1410 = call @sla__entity_eq(tmp_1409, root)
+    !tmp_1409
+    tmp_1411 = 1
+    tmp_1412 = ne tmp_1410, tmp_1411
+    !tmp_1410
     !tmp_1411
-    tmp_1413 = 1
-    tmp_1414 = ne tmp_1412, tmp_1413
-    !tmp_1412
-    !tmp_1413
-    br tmp_1414 -> L_THEN_455, L_ELSE_456
+    br tmp_1412 -> L_THEN_451, L_ELSE_452
 
-L_THEN_455:
-    !tmp_1414
+L_THEN_451:
+    !tmp_1412
     panic(9363)
 
-L_ELSE_456:
-    !tmp_1414
-    jmp L_MERGE_457
+L_ELSE_452:
+    !tmp_1412
+    jmp L_MERGE_453
 
-L_MERGE_457:
-    tmp_1417 = call @sla__hierarchy_world_descendants(w11, root)
-    bfs = tmp_1417
-    tmp_1418 = load bfs+0 as ptr
-    EXPAND VEC_LEN tmp_1419, tmp_1418
+L_MERGE_453:
+    tmp_1415 = call @sla__hierarchy_world_descendants(w11, root)
+    bfs = tmp_1415
+    tmp_1416 = load bfs+0 as ptr
+    EXPAND VEC_LEN tmp_1417, tmp_1416
+    !tmp_1416
+    tmp_1418 = 5
+    tmp_1419 = ne tmp_1417, tmp_1418
+    !tmp_1417
     !tmp_1418
-    tmp_1420 = 5
-    tmp_1421 = ne tmp_1419, tmp_1420
-    !tmp_1419
-    !tmp_1420
-    br tmp_1421 -> L_THEN_458, L_ELSE_459
+    br tmp_1419 -> L_THEN_454, L_ELSE_455
 
-L_THEN_458:
-    !tmp_1421
+L_THEN_454:
+    !tmp_1419
     panic(9364)
 
-L_ELSE_459:
-    !tmp_1421
-    jmp L_MERGE_460
+L_ELSE_455:
+    !tmp_1419
+    jmp L_MERGE_456
 
-L_MERGE_460:
-    tmp_1424 = load bfs+0 as ptr
-    tmp_1425 = 0
-    EXPAND VEC_GET tmp_1426, tmp_1424, tmp_1425
+L_MERGE_456:
+    tmp_1422 = load bfs+0 as ptr
+    tmp_1423 = 0
+    EXPAND VEC_GET tmp_1424, tmp_1422, tmp_1423
+    !tmp_1423
+    !tmp_1422
+    tmp_1425 = tmp_1424 as ptr
+    tmp_1426 = call @sla__entity_eq(tmp_1425, c1)
     !tmp_1425
-    !tmp_1424
-    tmp_1427 = tmp_1426 as ptr
-    tmp_1428 = call @sla__entity_eq(tmp_1427, c1)
+    tmp_1427 = 1
+    tmp_1428 = ne tmp_1426, tmp_1427
+    !tmp_1426
     !tmp_1427
-    tmp_1429 = 1
-    tmp_1430 = ne tmp_1428, tmp_1429
-    !tmp_1428
-    !tmp_1429
-    br tmp_1430 -> L_THEN_461, L_ELSE_462
+    br tmp_1428 -> L_THEN_457, L_ELSE_458
 
-L_THEN_461:
-    !tmp_1430
+L_THEN_457:
+    !tmp_1428
     panic(9365)
 
-L_ELSE_462:
-    !tmp_1430
-    jmp L_MERGE_463
+L_ELSE_458:
+    !tmp_1428
+    jmp L_MERGE_459
 
-L_MERGE_463:
-    tmp_1433 = load bfs+0 as ptr
-    tmp_1434 = 1
-    EXPAND VEC_GET tmp_1435, tmp_1433, tmp_1434
+L_MERGE_459:
+    tmp_1431 = load bfs+0 as ptr
+    tmp_1432 = 1
+    EXPAND VEC_GET tmp_1433, tmp_1431, tmp_1432
+    !tmp_1432
+    !tmp_1431
+    tmp_1434 = tmp_1433 as ptr
+    tmp_1435 = call @sla__entity_eq(tmp_1434, c2)
     !tmp_1434
-    !tmp_1433
-    tmp_1436 = tmp_1435 as ptr
-    tmp_1437 = call @sla__entity_eq(tmp_1436, c2)
+    tmp_1436 = 1
+    tmp_1437 = ne tmp_1435, tmp_1436
+    !tmp_1435
     !tmp_1436
-    tmp_1438 = 1
-    tmp_1439 = ne tmp_1437, tmp_1438
-    !tmp_1437
-    !tmp_1438
-    br tmp_1439 -> L_THEN_464, L_ELSE_465
+    br tmp_1437 -> L_THEN_460, L_ELSE_461
 
-L_THEN_464:
-    !tmp_1439
+L_THEN_460:
+    !tmp_1437
     panic(9366)
 
-L_ELSE_465:
-    !tmp_1439
-    jmp L_MERGE_466
+L_ELSE_461:
+    !tmp_1437
+    jmp L_MERGE_462
 
-L_MERGE_466:
-    tmp_1442 = load bfs+0 as ptr
-    tmp_1443 = 2
-    EXPAND VEC_GET tmp_1444, tmp_1442, tmp_1443
+L_MERGE_462:
+    tmp_1440 = load bfs+0 as ptr
+    tmp_1441 = 2
+    EXPAND VEC_GET tmp_1442, tmp_1440, tmp_1441
+    !tmp_1441
+    !tmp_1440
+    tmp_1443 = tmp_1442 as ptr
+    tmp_1444 = call @sla__entity_eq(tmp_1443, g1)
     !tmp_1443
-    !tmp_1442
-    tmp_1445 = tmp_1444 as ptr
-    tmp_1446 = call @sla__entity_eq(tmp_1445, g1)
+    tmp_1445 = 1
+    tmp_1446 = ne tmp_1444, tmp_1445
+    !tmp_1444
     !tmp_1445
-    tmp_1447 = 1
-    tmp_1448 = ne tmp_1446, tmp_1447
-    !tmp_1446
-    !tmp_1447
-    br tmp_1448 -> L_THEN_467, L_ELSE_468
+    br tmp_1446 -> L_THEN_463, L_ELSE_464
 
-L_THEN_467:
-    !tmp_1448
+L_THEN_463:
+    !tmp_1446
     panic(9367)
 
-L_ELSE_468:
-    !tmp_1448
-    jmp L_MERGE_469
+L_ELSE_464:
+    !tmp_1446
+    jmp L_MERGE_465
 
-L_MERGE_469:
-    tmp_1451 = load bfs+0 as ptr
-    tmp_1452 = 3
-    EXPAND VEC_GET tmp_1453, tmp_1451, tmp_1452
+L_MERGE_465:
+    tmp_1449 = load bfs+0 as ptr
+    tmp_1450 = 3
+    EXPAND VEC_GET tmp_1451, tmp_1449, tmp_1450
+    !tmp_1450
+    !tmp_1449
+    tmp_1452 = tmp_1451 as ptr
+    tmp_1453 = call @sla__entity_eq(tmp_1452, g2)
     !tmp_1452
-    !tmp_1451
-    tmp_1454 = tmp_1453 as ptr
-    tmp_1455 = call @sla__entity_eq(tmp_1454, g2)
+    tmp_1454 = 1
+    tmp_1455 = ne tmp_1453, tmp_1454
+    !tmp_1453
     !tmp_1454
-    tmp_1456 = 1
-    tmp_1457 = ne tmp_1455, tmp_1456
-    !tmp_1455
-    !tmp_1456
-    br tmp_1457 -> L_THEN_470, L_ELSE_471
+    br tmp_1455 -> L_THEN_466, L_ELSE_467
 
-L_THEN_470:
-    !tmp_1457
+L_THEN_466:
+    !tmp_1455
     panic(9368)
 
-L_ELSE_471:
-    !tmp_1457
-    jmp L_MERGE_472
+L_ELSE_467:
+    !tmp_1455
+    jmp L_MERGE_468
 
-L_MERGE_472:
-    tmp_1460 = load bfs+0 as ptr
-    tmp_1461 = 4
-    EXPAND VEC_GET tmp_1462, tmp_1460, tmp_1461
+L_MERGE_468:
+    tmp_1458 = load bfs+0 as ptr
+    tmp_1459 = 4
+    EXPAND VEC_GET tmp_1460, tmp_1458, tmp_1459
+    !tmp_1459
+    !tmp_1458
+    tmp_1461 = tmp_1460 as ptr
+    tmp_1462 = call @sla__entity_eq(tmp_1461, g3)
     !tmp_1461
-    !tmp_1460
-    tmp_1463 = tmp_1462 as ptr
-    tmp_1464 = call @sla__entity_eq(tmp_1463, g3)
+    tmp_1463 = 1
+    tmp_1464 = ne tmp_1462, tmp_1463
+    !tmp_1462
     !tmp_1463
-    tmp_1465 = 1
-    tmp_1466 = ne tmp_1464, tmp_1465
-    !tmp_1464
-    !tmp_1465
-    br tmp_1466 -> L_THEN_473, L_ELSE_474
+    br tmp_1464 -> L_THEN_469, L_ELSE_470
 
-L_THEN_473:
-    !tmp_1466
+L_THEN_469:
+    !tmp_1464
     panic(9369)
 
-L_ELSE_474:
-    !tmp_1466
-    jmp L_MERGE_475
+L_ELSE_470:
+    !tmp_1464
+    jmp L_MERGE_471
 
-L_MERGE_475:
-    tmp_1469 = call @sla__hierarchy_world_descendants_depth_first(w11, root)
-    dfs = tmp_1469
-    tmp_1470 = load dfs+0 as ptr
-    EXPAND VEC_LEN tmp_1471, tmp_1470
+L_MERGE_471:
+    tmp_1467 = call @sla__hierarchy_world_descendants_depth_first(w11, root)
+    dfs = tmp_1467
+    tmp_1468 = load dfs+0 as ptr
+    EXPAND VEC_LEN tmp_1469, tmp_1468
+    !tmp_1468
+    tmp_1470 = 5
+    tmp_1471 = ne tmp_1469, tmp_1470
+    !tmp_1469
     !tmp_1470
-    tmp_1472 = 5
-    tmp_1473 = ne tmp_1471, tmp_1472
-    !tmp_1471
-    !tmp_1472
-    br tmp_1473 -> L_THEN_476, L_ELSE_477
+    br tmp_1471 -> L_THEN_472, L_ELSE_473
 
-L_THEN_476:
-    !tmp_1473
+L_THEN_472:
+    !tmp_1471
     panic(9370)
 
-L_ELSE_477:
-    !tmp_1473
-    jmp L_MERGE_478
+L_ELSE_473:
+    !tmp_1471
+    jmp L_MERGE_474
 
-L_MERGE_478:
-    tmp_1476 = load dfs+0 as ptr
-    tmp_1477 = 0
-    EXPAND VEC_GET tmp_1478, tmp_1476, tmp_1477
+L_MERGE_474:
+    tmp_1474 = load dfs+0 as ptr
+    tmp_1475 = 0
+    EXPAND VEC_GET tmp_1476, tmp_1474, tmp_1475
+    !tmp_1475
+    !tmp_1474
+    tmp_1477 = tmp_1476 as ptr
+    tmp_1478 = call @sla__entity_eq(tmp_1477, c1)
     !tmp_1477
-    !tmp_1476
-    tmp_1479 = tmp_1478 as ptr
-    tmp_1480 = call @sla__entity_eq(tmp_1479, c1)
+    tmp_1479 = 1
+    tmp_1480 = ne tmp_1478, tmp_1479
+    !tmp_1478
     !tmp_1479
-    tmp_1481 = 1
-    tmp_1482 = ne tmp_1480, tmp_1481
-    !tmp_1480
-    !tmp_1481
-    br tmp_1482 -> L_THEN_479, L_ELSE_480
+    br tmp_1480 -> L_THEN_475, L_ELSE_476
 
-L_THEN_479:
-    !tmp_1482
+L_THEN_475:
+    !tmp_1480
     panic(9371)
 
-L_ELSE_480:
-    !tmp_1482
-    jmp L_MERGE_481
+L_ELSE_476:
+    !tmp_1480
+    jmp L_MERGE_477
 
-L_MERGE_481:
-    tmp_1485 = load dfs+0 as ptr
-    tmp_1486 = 1
-    EXPAND VEC_GET tmp_1487, tmp_1485, tmp_1486
+L_MERGE_477:
+    tmp_1483 = load dfs+0 as ptr
+    tmp_1484 = 1
+    EXPAND VEC_GET tmp_1485, tmp_1483, tmp_1484
+    !tmp_1484
+    !tmp_1483
+    tmp_1486 = tmp_1485 as ptr
+    tmp_1487 = call @sla__entity_eq(tmp_1486, g1)
     !tmp_1486
-    !tmp_1485
-    tmp_1488 = tmp_1487 as ptr
-    tmp_1489 = call @sla__entity_eq(tmp_1488, g1)
+    tmp_1488 = 1
+    tmp_1489 = ne tmp_1487, tmp_1488
+    !tmp_1487
     !tmp_1488
-    tmp_1490 = 1
-    tmp_1491 = ne tmp_1489, tmp_1490
-    !tmp_1489
-    !tmp_1490
-    br tmp_1491 -> L_THEN_482, L_ELSE_483
+    br tmp_1489 -> L_THEN_478, L_ELSE_479
 
-L_THEN_482:
-    !tmp_1491
+L_THEN_478:
+    !tmp_1489
     panic(9372)
 
-L_ELSE_483:
-    !tmp_1491
-    jmp L_MERGE_484
+L_ELSE_479:
+    !tmp_1489
+    jmp L_MERGE_480
 
-L_MERGE_484:
-    tmp_1494 = load dfs+0 as ptr
-    tmp_1495 = 2
-    EXPAND VEC_GET tmp_1496, tmp_1494, tmp_1495
+L_MERGE_480:
+    tmp_1492 = load dfs+0 as ptr
+    tmp_1493 = 2
+    EXPAND VEC_GET tmp_1494, tmp_1492, tmp_1493
+    !tmp_1493
+    !tmp_1492
+    tmp_1495 = tmp_1494 as ptr
+    tmp_1496 = call @sla__entity_eq(tmp_1495, g2)
     !tmp_1495
-    !tmp_1494
-    tmp_1497 = tmp_1496 as ptr
-    tmp_1498 = call @sla__entity_eq(tmp_1497, g2)
+    tmp_1497 = 1
+    tmp_1498 = ne tmp_1496, tmp_1497
+    !tmp_1496
     !tmp_1497
-    tmp_1499 = 1
-    tmp_1500 = ne tmp_1498, tmp_1499
-    !tmp_1498
-    !tmp_1499
-    br tmp_1500 -> L_THEN_485, L_ELSE_486
+    br tmp_1498 -> L_THEN_481, L_ELSE_482
 
-L_THEN_485:
-    !tmp_1500
+L_THEN_481:
+    !tmp_1498
     panic(9373)
 
-L_ELSE_486:
-    !tmp_1500
-    jmp L_MERGE_487
+L_ELSE_482:
+    !tmp_1498
+    jmp L_MERGE_483
 
-L_MERGE_487:
-    tmp_1503 = load dfs+0 as ptr
-    tmp_1504 = 3
-    EXPAND VEC_GET tmp_1505, tmp_1503, tmp_1504
+L_MERGE_483:
+    tmp_1501 = load dfs+0 as ptr
+    tmp_1502 = 3
+    EXPAND VEC_GET tmp_1503, tmp_1501, tmp_1502
+    !tmp_1502
+    !tmp_1501
+    tmp_1504 = tmp_1503 as ptr
+    tmp_1505 = call @sla__entity_eq(tmp_1504, c2)
     !tmp_1504
-    !tmp_1503
-    tmp_1506 = tmp_1505 as ptr
-    tmp_1507 = call @sla__entity_eq(tmp_1506, c2)
+    tmp_1506 = 1
+    tmp_1507 = ne tmp_1505, tmp_1506
+    !tmp_1505
     !tmp_1506
-    tmp_1508 = 1
-    tmp_1509 = ne tmp_1507, tmp_1508
-    !tmp_1507
-    !tmp_1508
-    br tmp_1509 -> L_THEN_488, L_ELSE_489
+    br tmp_1507 -> L_THEN_484, L_ELSE_485
 
-L_THEN_488:
-    !tmp_1509
+L_THEN_484:
+    !tmp_1507
     panic(9374)
 
-L_ELSE_489:
-    !tmp_1509
-    jmp L_MERGE_490
+L_ELSE_485:
+    !tmp_1507
+    jmp L_MERGE_486
 
-L_MERGE_490:
-    tmp_1512 = load dfs+0 as ptr
-    tmp_1513 = 4
-    EXPAND VEC_GET tmp_1514, tmp_1512, tmp_1513
+L_MERGE_486:
+    tmp_1510 = load dfs+0 as ptr
+    tmp_1511 = 4
+    EXPAND VEC_GET tmp_1512, tmp_1510, tmp_1511
+    !tmp_1511
+    !tmp_1510
+    tmp_1513 = tmp_1512 as ptr
+    tmp_1514 = call @sla__entity_eq(tmp_1513, g3)
     !tmp_1513
-    !tmp_1512
-    tmp_1515 = tmp_1514 as ptr
-    tmp_1516 = call @sla__entity_eq(tmp_1515, g3)
+    tmp_1515 = 1
+    tmp_1516 = ne tmp_1514, tmp_1515
+    !tmp_1514
     !tmp_1515
-    tmp_1517 = 1
-    tmp_1518 = ne tmp_1516, tmp_1517
-    !tmp_1516
-    !tmp_1517
-    br tmp_1518 -> L_THEN_491, L_ELSE_492
+    br tmp_1516 -> L_THEN_487, L_ELSE_488
 
-L_THEN_491:
-    !tmp_1518
+L_THEN_487:
+    !tmp_1516
     panic(9375)
 
-L_ELSE_492:
-    !tmp_1518
-    jmp L_MERGE_493
+L_ELSE_488:
+    !tmp_1516
+    jmp L_MERGE_489
 
-L_MERGE_493:
-    tmp_1521 = call @sla__hierarchy_world_siblings(w11, c1)
-    siblings = tmp_1521
-    tmp_1522 = load siblings+0 as ptr
-    EXPAND VEC_LEN tmp_1523, tmp_1522
+L_MERGE_489:
+    tmp_1519 = call @sla__hierarchy_world_siblings(w11, c1)
+    siblings = tmp_1519
+    tmp_1520 = load siblings+0 as ptr
+    EXPAND VEC_LEN tmp_1521, tmp_1520
+    !tmp_1520
+    tmp_1522 = 1
+    tmp_1523 = ne tmp_1521, tmp_1522
+    !tmp_1521
     !tmp_1522
-    tmp_1524 = 1
-    tmp_1525 = ne tmp_1523, tmp_1524
-    !tmp_1523
-    !tmp_1524
-    br tmp_1525 -> L_THEN_494, L_ELSE_495
+    br tmp_1523 -> L_THEN_490, L_ELSE_491
 
-L_THEN_494:
-    !tmp_1525
+L_THEN_490:
+    !tmp_1523
     panic(9376)
 
-L_ELSE_495:
-    !tmp_1525
-    jmp L_MERGE_496
+L_ELSE_491:
+    !tmp_1523
+    jmp L_MERGE_492
 
-L_MERGE_496:
-    tmp_1528 = load siblings+0 as ptr
-    tmp_1529 = 0
-    EXPAND VEC_GET tmp_1530, tmp_1528, tmp_1529
+L_MERGE_492:
+    tmp_1526 = load siblings+0 as ptr
+    tmp_1527 = 0
+    EXPAND VEC_GET tmp_1528, tmp_1526, tmp_1527
+    !tmp_1527
+    !tmp_1526
+    tmp_1529 = tmp_1528 as ptr
+    tmp_1530 = call @sla__entity_eq(tmp_1529, c2)
     !tmp_1529
-    !tmp_1528
-    tmp_1531 = tmp_1530 as ptr
-    tmp_1532 = call @sla__entity_eq(tmp_1531, c2)
+    tmp_1531 = 1
+    tmp_1532 = ne tmp_1530, tmp_1531
+    !tmp_1530
     !tmp_1531
-    tmp_1533 = 1
-    tmp_1534 = ne tmp_1532, tmp_1533
-    !tmp_1532
-    !tmp_1533
-    br tmp_1534 -> L_THEN_497, L_ELSE_498
+    br tmp_1532 -> L_THEN_493, L_ELSE_494
 
-L_THEN_497:
-    !tmp_1534
+L_THEN_493:
+    !tmp_1532
     panic(9377)
 
-L_ELSE_498:
-    !tmp_1534
-    jmp L_MERGE_499
+L_ELSE_494:
+    !tmp_1532
+    jmp L_MERGE_495
 
-L_MERGE_499:
-    tmp_1537 = call @sla__hierarchy_world_leaves(w11, root)
-    leaves = tmp_1537
-    tmp_1538 = load leaves+0 as ptr
-    EXPAND VEC_LEN tmp_1539, tmp_1538
+L_MERGE_495:
+    tmp_1535 = call @sla__hierarchy_world_leaves(w11, root)
+    leaves = tmp_1535
+    tmp_1536 = load leaves+0 as ptr
+    EXPAND VEC_LEN tmp_1537, tmp_1536
+    !tmp_1536
+    tmp_1538 = 3
+    tmp_1539 = ne tmp_1537, tmp_1538
+    !tmp_1537
     !tmp_1538
-    tmp_1540 = 3
-    tmp_1541 = ne tmp_1539, tmp_1540
-    !tmp_1539
-    !tmp_1540
-    br tmp_1541 -> L_THEN_500, L_ELSE_501
+    br tmp_1539 -> L_THEN_496, L_ELSE_497
 
-L_THEN_500:
-    !tmp_1541
+L_THEN_496:
+    !tmp_1539
     panic(9378)
 
-L_ELSE_501:
-    !tmp_1541
-    jmp L_MERGE_502
+L_ELSE_497:
+    !tmp_1539
+    jmp L_MERGE_498
 
-L_MERGE_502:
-    tmp_1544 = load leaves+0 as ptr
-    tmp_1545 = 0
-    EXPAND VEC_GET tmp_1546, tmp_1544, tmp_1545
+L_MERGE_498:
+    tmp_1542 = load leaves+0 as ptr
+    tmp_1543 = 0
+    EXPAND VEC_GET tmp_1544, tmp_1542, tmp_1543
+    !tmp_1543
+    !tmp_1542
+    tmp_1545 = tmp_1544 as ptr
+    tmp_1546 = call @sla__entity_eq(tmp_1545, g1)
     !tmp_1545
-    !tmp_1544
-    tmp_1547 = tmp_1546 as ptr
-    tmp_1548 = call @sla__entity_eq(tmp_1547, g1)
+    tmp_1547 = 1
+    tmp_1548 = ne tmp_1546, tmp_1547
+    !tmp_1546
     !tmp_1547
-    tmp_1549 = 1
-    tmp_1550 = ne tmp_1548, tmp_1549
-    !tmp_1548
-    !tmp_1549
-    br tmp_1550 -> L_THEN_503, L_ELSE_504
+    br tmp_1548 -> L_THEN_499, L_ELSE_500
 
-L_THEN_503:
-    !tmp_1550
+L_THEN_499:
+    !tmp_1548
     panic(9379)
 
-L_ELSE_504:
-    !tmp_1550
-    jmp L_MERGE_505
+L_ELSE_500:
+    !tmp_1548
+    jmp L_MERGE_501
 
-L_MERGE_505:
-    tmp_1553 = load leaves+0 as ptr
-    tmp_1554 = 1
-    EXPAND VEC_GET tmp_1555, tmp_1553, tmp_1554
+L_MERGE_501:
+    tmp_1551 = load leaves+0 as ptr
+    tmp_1552 = 1
+    EXPAND VEC_GET tmp_1553, tmp_1551, tmp_1552
+    !tmp_1552
+    !tmp_1551
+    tmp_1554 = tmp_1553 as ptr
+    tmp_1555 = call @sla__entity_eq(tmp_1554, g2)
     !tmp_1554
-    !tmp_1553
-    tmp_1556 = tmp_1555 as ptr
-    tmp_1557 = call @sla__entity_eq(tmp_1556, g2)
+    tmp_1556 = 1
+    tmp_1557 = ne tmp_1555, tmp_1556
+    !tmp_1555
     !tmp_1556
-    tmp_1558 = 1
-    tmp_1559 = ne tmp_1557, tmp_1558
-    !tmp_1557
-    !tmp_1558
-    br tmp_1559 -> L_THEN_506, L_ELSE_507
+    br tmp_1557 -> L_THEN_502, L_ELSE_503
 
-L_THEN_506:
-    !tmp_1559
+L_THEN_502:
+    !tmp_1557
     panic(9380)
 
-L_ELSE_507:
-    !tmp_1559
-    jmp L_MERGE_508
+L_ELSE_503:
+    !tmp_1557
+    jmp L_MERGE_504
 
-L_MERGE_508:
-    tmp_1562 = load leaves+0 as ptr
-    tmp_1563 = 2
-    EXPAND VEC_GET tmp_1564, tmp_1562, tmp_1563
+L_MERGE_504:
+    tmp_1560 = load leaves+0 as ptr
+    tmp_1561 = 2
+    EXPAND VEC_GET tmp_1562, tmp_1560, tmp_1561
+    !tmp_1561
+    !tmp_1560
+    tmp_1563 = tmp_1562 as ptr
+    tmp_1564 = call @sla__entity_eq(tmp_1563, g3)
     !tmp_1563
-    !tmp_1562
-    tmp_1565 = tmp_1564 as ptr
-    tmp_1566 = call @sla__entity_eq(tmp_1565, g3)
+    tmp_1565 = 1
+    tmp_1566 = ne tmp_1564, tmp_1565
+    !tmp_1564
     !tmp_1565
-    tmp_1567 = 1
-    tmp_1568 = ne tmp_1566, tmp_1567
-    !tmp_1566
-    !tmp_1567
-    br tmp_1568 -> L_THEN_509, L_ELSE_510
+    br tmp_1566 -> L_THEN_505, L_ELSE_506
 
-L_THEN_509:
-    !tmp_1568
+L_THEN_505:
+    !tmp_1566
     panic(9381)
 
-L_ELSE_510:
-    !tmp_1568
-    jmp L_MERGE_511
+L_ELSE_506:
+    !tmp_1566
+    jmp L_MERGE_507
 
-L_MERGE_511:
+L_MERGE_507:
     !siblings
     !c2
     !g1
@@ -5268,95 +5253,95 @@ L_MERGE_511:
     return
 
 @test "hierarchy invalid target and self relation are discarded"():
-L_TEST_ENTRY_512:
-    tmp_1571 = call @sla__hierarchy_world_new()
-    w0 = tmp_1571
-    tmp_1572 = call @sla__hierarchy_world_spawn(w0)
-    w1 = load tmp_1572+0 as ptr
-    parent = load tmp_1572+8 as ptr
-    !tmp_1572
-    tmp_1573 = call @sla__hierarchy_world_spawn(w1)
-    w2 = load tmp_1573+0 as ptr
-    child = load tmp_1573+8 as ptr
-    !tmp_1573
-    tmp_1574 = call @sla__hierarchy_world_add_child(w2, parent, child)
-    w3 = tmp_1574
-    tmp_1575 = call @sla__hierarchy_world_add_child(w3, child, child)
-    w4 = tmp_1575
-    tmp_1576 = call @sla__hierarchy_world_has_parent(w4, child)
-    tmp_1577 = 0
-    tmp_1578 = ne tmp_1576, tmp_1577
-    !tmp_1576
-    !tmp_1577
-    br tmp_1578 -> L_THEN_513, L_ELSE_514
+L_TEST_ENTRY_508:
+    tmp_1569 = call @sla__hierarchy_world_new()
+    w0 = tmp_1569
+    tmp_1570 = call @sla__hierarchy_world_spawn(w0)
+    w1 = load tmp_1570+0 as ptr
+    parent = load tmp_1570+8 as ptr
+    !tmp_1570
+    tmp_1571 = call @sla__hierarchy_world_spawn(w1)
+    w2 = load tmp_1571+0 as ptr
+    child = load tmp_1571+8 as ptr
+    !tmp_1571
+    tmp_1572 = call @sla__hierarchy_world_add_child(w2, parent, child)
+    w3 = tmp_1572
+    tmp_1573 = call @sla__hierarchy_world_add_child(w3, child, child)
+    w4 = tmp_1573
+    tmp_1574 = call @sla__hierarchy_world_has_parent(w4, child)
+    tmp_1575 = 0
+    tmp_1576 = ne tmp_1574, tmp_1575
+    !tmp_1574
+    !tmp_1575
+    br tmp_1576 -> L_THEN_509, L_ELSE_510
 
-L_THEN_513:
-    !tmp_1578
+L_THEN_509:
+    !tmp_1576
     panic(9390)
 
-L_ELSE_514:
-    !tmp_1578
-    jmp L_MERGE_515
+L_ELSE_510:
+    !tmp_1576
+    jmp L_MERGE_511
 
-L_MERGE_515:
-    tmp_1581 = call @sla__hierarchy_world_child_count(w4, parent)
-    tmp_1582 = 0
-    tmp_1583 = ne tmp_1581, tmp_1582
+L_MERGE_511:
+    tmp_1579 = call @sla__hierarchy_world_child_count(w4, parent)
+    tmp_1580 = 0
+    tmp_1581 = ne tmp_1579, tmp_1580
+    !tmp_1579
+    !tmp_1580
+    br tmp_1581 -> L_THEN_512, L_ELSE_513
+
+L_THEN_512:
     !tmp_1581
-    !tmp_1582
-    br tmp_1583 -> L_THEN_516, L_ELSE_517
-
-L_THEN_516:
-    !tmp_1583
     panic(9391)
 
-L_ELSE_517:
-    !tmp_1583
-    jmp L_MERGE_518
+L_ELSE_513:
+    !tmp_1581
+    jmp L_MERGE_514
 
-L_MERGE_518:
-    tmp_1586 = 404
-    tmp_1587 = 0
-    tmp_1588 = call @sla__entity_new(tmp_1586, tmp_1587)
-    !tmp_1586
-    !tmp_1587
-    missing = tmp_1588
-    tmp_1589 = call @sla__hierarchy_world_add_child(w4, parent, child)
-    w5 = tmp_1589
-    tmp_1590 = call @sla__hierarchy_world_add_child(w5, missing, child)
-    w6 = tmp_1590
-    tmp_1591 = call @sla__hierarchy_world_has_parent(w6, child)
-    tmp_1592 = 0
-    tmp_1593 = ne tmp_1591, tmp_1592
+L_MERGE_514:
+    tmp_1584 = 404
+    tmp_1585 = 0
+    tmp_1586 = call @sla__entity_new(tmp_1584, tmp_1585)
+    !tmp_1584
+    !tmp_1585
+    missing = tmp_1586
+    tmp_1587 = call @sla__hierarchy_world_add_child(w4, parent, child)
+    w5 = tmp_1587
+    tmp_1588 = call @sla__hierarchy_world_add_child(w5, missing, child)
+    w6 = tmp_1588
+    tmp_1589 = call @sla__hierarchy_world_has_parent(w6, child)
+    tmp_1590 = 0
+    tmp_1591 = ne tmp_1589, tmp_1590
+    !tmp_1589
+    !tmp_1590
+    br tmp_1591 -> L_THEN_515, L_ELSE_516
+
+L_THEN_515:
     !tmp_1591
-    !tmp_1592
-    br tmp_1593 -> L_THEN_519, L_ELSE_520
-
-L_THEN_519:
-    !tmp_1593
     panic(9392)
 
-L_ELSE_520:
-    !tmp_1593
-    jmp L_MERGE_521
+L_ELSE_516:
+    !tmp_1591
+    jmp L_MERGE_517
 
-L_MERGE_521:
-    tmp_1596 = call @sla__hierarchy_world_child_count(w6, parent)
-    tmp_1597 = 0
-    tmp_1598 = ne tmp_1596, tmp_1597
+L_MERGE_517:
+    tmp_1594 = call @sla__hierarchy_world_child_count(w6, parent)
+    tmp_1595 = 0
+    tmp_1596 = ne tmp_1594, tmp_1595
+    !tmp_1594
+    !tmp_1595
+    br tmp_1596 -> L_THEN_518, L_ELSE_519
+
+L_THEN_518:
     !tmp_1596
-    !tmp_1597
-    br tmp_1598 -> L_THEN_522, L_ELSE_523
-
-L_THEN_522:
-    !tmp_1598
     panic(9393)
 
-L_ELSE_523:
-    !tmp_1598
-    jmp L_MERGE_524
+L_ELSE_519:
+    !tmp_1596
+    jmp L_MERGE_520
 
-L_MERGE_524:
+L_MERGE_520:
     !w6
     !w0
     !parent
