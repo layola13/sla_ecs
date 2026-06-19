@@ -46,6 +46,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-row Commands, Schedule, and system-param adapters over `TableValueWorld<T, R, M>`.
 - [x] Add verified table-row type-erased Commands and Schedule over `TableErasedWorld<R, M>`.
 - [x] Add verified table-row type-erased system-param adapters over `TableErasedWorld<R, M>`.
+- [x] Add verified no-conflict parallel batch planning over `TableErasedSchedule<R, M>`.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
