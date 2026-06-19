@@ -25,6 +25,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add constrained Sla compiler support for Bevy-style `@component(storage = "SparseSet")` after `@derive(Component)`, so `Type::component_storage_kind()` returns sparse-set metadata; regression: `test_unit_derive_component.sla`.
 - [x] Add constrained Sla compiler support for `@derive(Resource)` on structs, exposing `Type::resource_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
 - [x] Add constrained Sla compiler support for `@derive(Message)` on structs, exposing `Type::message_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
+- [x] Add constrained Sla compiler support for `@derive(Event)` on structs, exposing `Type::event_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
 - [x] Fix expanded relative `.sai` / `.sal` contract import resolution after `.sla` import expansion; regression fixture: `tests/import_fixtures/nested/uses_contract.sla`.
 - [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Rebuild and reinstall the Sla plugin after top-level scalar constant codegen fix: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
@@ -88,6 +89,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement fixed-capacity `Messages<T>` and reader cursor behavior.
 - [x] Add verified `MessageWriter<T>` batching and apply semantics for message system parameters.
 - [x] Implement verified type-erased multi-message channels keyed by `@derive(Message)` type ids: independent channels, batched writer apply, per-reader cursor advancement, and channel clear.
+- [x] Implement verified type-erased observer/event triggers keyed by `@derive(Event)` type ids: immediate observer invocation, non-message reactive semantics, and targeted entity event context.
 - [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
 - [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
@@ -106,6 +108,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-erased `@derive(Component)` metadata example: `examples/table_erased_derive_component_demo.sla`, including sparse-set storage metadata driving sparse component registration.
 - [x] Add verified `@derive(Resource)` multi-resource example: `examples/resource_derive_multi_demo.sla`.
 - [x] Add verified `@derive(Message)` multi-channel example: `examples/message_derive_multi_demo.sla`.
+- [x] Add verified `@derive(Event)` observer trigger example: `examples/event_observer_demo.sla`.
 - [x] Add verified table-row system-param example: `examples/table_system_param_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.

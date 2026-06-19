@@ -78,6 +78,7 @@ lib/
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T>, MessageWriter<T>, and reader cursor
 ├── messages_erased.sla — Type-erased multi-message channels keyed by `@derive(Message)` type ids
+├── event_observer_erased.sla — Type-erased Event observer registry with immediate trigger support
 ├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
 ├── world_dynamic.sla — Vec-backed DynamicWorld<A, B, R, M> owner + pair query/writeback
 ├── world_dynamic3.sla — Vec-backed DynamicWorld3<A, B, C, R, M> with triple bundle/query/filter support
@@ -100,6 +101,7 @@ examples/
 ├── table_erased_derive_component_demo.sla — `@derive(Component)` metadata demo over the table-erased path
 ├── resource_derive_multi_demo.sla — `@derive(Resource)` multi-resource identity demo
 ├── message_derive_multi_demo.sla — `@derive(Message)` multi-channel message demo
+├── event_observer_demo.sla       — `@derive(Event)` immediate observer trigger demo
 ├── table_system_param_demo.sla      — Table-row schedule/system-param/Commands demo
 ├── world_movement_demo.sla        — Fixed World movement/resource/message demo
 ├── dynamic_world_movement_demo.sla — DynamicWorld demo with 20 entities
@@ -149,6 +151,7 @@ SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/resource.sla
 SA_PLUGIN_DEV=1 sa sla test lib/messages.sla
 SA_PLUGIN_DEV=1 sa sla test lib/messages_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/event_observer_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic3.sla
@@ -169,6 +172,7 @@ SA_PLUGIN_DEV=1 sa sla test examples/table_erased_bundle_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_derive_component_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/resource_derive_multi_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/message_derive_multi_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/event_observer_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_system_param_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/bevy_readme_parity_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/world_movement_demo.sla
@@ -206,6 +210,7 @@ This project required several Sla compiler fixes in `sa_plugin_sla`:
 - Bevy-style component storage metadata is supported as `@component(storage = "SparseSet")` after `@derive(Component)`, making `Type::component_storage_kind()` return the sparse-set ABI value while table remains the default.
 - `@derive(Resource)` is supported as the matching constrained compiler built-in for resource metadata. It exposes `Type::resource_type_id()`; the ECS runtime owns uniqueness and storage semantics.
 - `@derive(Message)` is supported as the constrained compiler built-in for message metadata. It exposes `Type::message_type_id()`; typed channel ownership remains in the ECS runtime.
+- `@derive(Event)` is supported as the constrained compiler built-in for event metadata. It exposes `Type::event_type_id()`; observer registration and immediate trigger semantics remain in the ECS runtime.
 - Expanded relative `.sai` / `.sal` imports are resolved correctly after `.sla` import expansion, while generated `sa_std/...` imports remain global relative paths.
 
 After changing Sla compiler features, reinstall the dev plugin:
@@ -220,5 +225,5 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
 - Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous, type-erased, and archetype-backed value paths now also have component-id queries, commands, schedules, resources/messages, and demos. `archetype_registry.sla` verifies Bevy-style entity location migration between component-signature archetypes, `world_archetype_value.sla` connects those locations to real homogeneous component value columns and tracks resource added/changed ticks, `world_table_value.sla` stores homogeneous component values directly inside archetype table rows with row migration, and `world_table_erased.sla` extends that table-row path to heterogeneous boxed component values plus type-id lookup helpers. `commands_table_value.sla` / `schedule_table_value.sla` / `system_param_table_value.sla` run deferred commands, schedules, and injected params over the homogeneous table-row path; `commands_table_erased.sla` / `schedule_table_erased.sla` / `system_param_table_erased.sla` now cover deferred commands, schedules, injected params, type-id helper APIs, and no-conflict parallel batch planning for heterogeneous table rows. True multi-threaded World execution is not complete.
-- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The first automatic Rust-style metadata path is now implemented through Sla `@derive(Component)` for non-generic structs, producing stable component type ids plus table/sparse-set storage metadata. `bundle_table_erased.sla` adds Bevy-style bundle spawn/insert helpers over the table-erased path. `@derive(Resource)` feeds `lib/resource_erased.sla`, where multiple resource types are keyed by generated type id and stored uniquely per type. `@derive(Message)` feeds `lib/messages_erased.sla`, where multiple message types have independent writer/reader channels. Bundle/Event derives and generated drop glue are still pending.
+- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The first automatic Rust-style metadata path is now implemented through Sla `@derive(Component)` for non-generic structs, producing stable component type ids plus table/sparse-set storage metadata. `bundle_table_erased.sla` adds Bevy-style bundle spawn/insert helpers over the table-erased path. `@derive(Resource)` feeds `lib/resource_erased.sla`, where multiple resource types are keyed by generated type id and stored uniquely per type. `@derive(Message)` feeds `lib/messages_erased.sla`, where multiple message types have independent writer/reader channels. `@derive(Event)` feeds `lib/event_observer_erased.sla`, where observers run immediately on trigger, including targeted entity event context. Bundle derive automation and generated drop glue are still pending.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
