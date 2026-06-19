@@ -125,6 +125,7 @@
 ## Architecture correction
 
 - [decision] `sa_plugin_sla` is a general Sla language compiler, not a Bevy/game-engine-specific compiler. The compiler may add general language features, but it must not hard-code engine concepts or keywords such as `Component`, `Resource`, `Message`, `Event`, `Bundle`, or `@component(storage = ...)` into Zig compiler semantics.
+- [decision] User-confirmed boundary: Sla compiler work must be limited to reusable language features. Bevy/ECS/game-engine vocabulary and behavior must live outside the compiler, in `sla_ecs` libraries, contracts, macros, or future generic derive/proc-macro style extension points.
 - [done] The compiler-bound ECS derive metadata path has been migrated out of `sa_plugin_sla` and replaced with engine-agnostic derive annotations plus `sla_ecs`-owned ordinary `impl` metadata methods.
 - [todo] Future Bevy ECS parity work must keep ECS semantics in `sla_ecs`. Sla compiler changes are allowed only when they are reusable language features, for example generic attribute parsing, hygienic macro expansion, const evaluation, static/associated impl methods, or general metadata generation hooks.
 
