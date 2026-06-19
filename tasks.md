@@ -54,6 +54,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified runtime type-id metadata lookup helpers for `TableErasedWorld<R, M>`: component-id lookup by type id, auto insert/get/query/filters/Changed/remove, type-id Commands insert, type-id schedule access declarations, and type-id system-param adapters.
 - [x] Add verified table-erased component bundle helpers: type-id bundle constructors, spawn bundle, insert bundle, duplicate component rejection, and metadata-driven component registration.
 - [x] Add ECS component metadata contract files (`.sal` / `.sai`) and verify impl-provided component type ids integrate with `TableErasedWorld<R, M>` registration and lookup.
+- [x] Add verified Bevy hierarchy relationship runtime in `lib/hierarchy.sla`: `ChildOf` source relation, synchronized `Children` target collection, reparenting, ordered insert/replace, detach, traversal queries, invalid/self relation discard, and recursive child despawn. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/hierarchy.sla`.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -106,6 +107,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified multi-resource metadata example: `examples/resource_derive_multi_demo.sla`.
 - [x] Add verified multi-channel message metadata example: `examples/message_derive_multi_demo.sla`.
 - [x] Add verified observer trigger metadata example: `examples/event_observer_demo.sla`.
+- [x] Add verified hierarchy relationship example: `examples/hierarchy_relationship_demo.sla`, covering spawn child, relationship sources, reparenting, replace children, ancestor/root/DFS/leaves queries, and recursive child despawn. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/hierarchy_relationship_demo.sla`.
 - [x] Add verified table-row system-param example: `examples/table_system_param_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
