@@ -9,8 +9,8 @@ The first deliverable is **Bevy Core ECS parity**, not the entire `bevy_ecs` cra
 ## Current Baseline
 
 - The current tree contains the reusable `lib/` runtime and verified `examples/`; the old `src/` prototype directory is not present on disk.
-- `lib/` now contains reusable Entity, dynamic Entity allocator, fixed ComponentStore, Vec-backed DynamicComponentStore, Vec-backed SparseComponentStore, component metadata registry, registry-driven component id membership, registry-bound typed A/B value ownership, resources, messages, fixed-capacity World, and dynamic Vec-backed DynamicWorld.
-- `examples/world_movement_demo.sla`, `examples/dynamic_world_movement_demo.sla`, `examples/dynamic_world3_bundle_demo.sla`, `examples/dynamic_schedule_demo.sla`, `examples/dynamic_resource_change_demo.sla`, `examples/dynamic_commands_demo.sla`, `examples/registry_world_demo.sla`, and `examples/registry_typed_world_demo.sla` pass with the installed Sla dev plugin.
+- `lib/` now contains reusable Entity, dynamic Entity allocator, fixed ComponentStore, Vec-backed DynamicComponentStore, Vec-backed SparseComponentStore, component metadata registry, registry-driven component id membership, registry-bound typed A/B value ownership, registry-owned homogeneous typed multi-column storage, resources, messages, fixed-capacity World, and dynamic Vec-backed DynamicWorld.
+- `examples/world_movement_demo.sla`, `examples/dynamic_world_movement_demo.sla`, `examples/dynamic_world3_bundle_demo.sla`, `examples/dynamic_schedule_demo.sla`, `examples/dynamic_resource_change_demo.sla`, `examples/dynamic_commands_demo.sla`, `examples/registry_world_demo.sla`, `examples/registry_typed_world_demo.sla`, and `examples/registry_value_world_demo.sla` pass with the installed Sla dev plugin.
 - `lib/world_dynamic.sla` removes the old fixed-capacity limit for the current two-component owner shape and verifies dynamic entities, components, change ticks, resources, messages, pair query, and writeback.
 - `lib/world_dynamic.sla` also tracks resource added/changed ticks and exposes `Res<T>` / `ResMut<T>` wrappers for Bevy-style resource systems.
 - `lib/world_dynamic3.sla` extends the typed dynamic owner to three component columns and verifies bundle spawn, triple query, third-component filters, and C-component change detection.
@@ -19,7 +19,8 @@ The first deliverable is **Bevy Core ECS parity**, not the entire `bevy_ecs` cra
 - `lib/commands_dynamic.sla` adds verified Bevy-style deferred commands for the current dynamic A/B world: reserve entity, insert A/B, despawn, insert resource, write message, ordered apply, and clear-after-apply.
 - `lib/world_registry.sla` adds verified registry-driven arbitrary component id membership, With/Without entity queries, Added/Changed ticks, despawn cleanup, and `for in` entity iteration.
 - `lib/world_registry_typed.sla` binds typed A/B value stores to registered component ids and uses `RegistryWorld` membership/ticks as the source of truth. A single registry-owned type-erased value store remains pending.
-- The next runtime step is replacing fixed A/B value ownership with registry-owned arbitrary component value columns, followed by broader system params and parallel scheduling.
+- `lib/world_registry_store.sla` owns arbitrary component value columns for a homogeneous Sla value type `T`, removing the fixed A/B value-column shape for same-type component groups.
+- The next runtime step is replacing homogeneous typed value groups with registry-owned type-erased arbitrary component value columns, followed by broader system params and parallel scheduling.
 - `sa_plugin_sla` remains part of the implementation surface when Sla syntax/codegen blocks ECS semantics; recent fixes include wildcard `.sla` imports, nested generic `>>` parsing, `Vec<T>` index assignment, `Vec` field method-call cleanup, generic impl protocol monomorphization for `for in`, function pointer value codegen for schedules, and top-level scalar const codegen.
 
 ## Implementation Phases
