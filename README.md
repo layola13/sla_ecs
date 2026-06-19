@@ -53,6 +53,7 @@ lib/
 ├── sparse_store.sla  — Generic Vec-backed SparseComponentStore<T>
 ├── component.sla     — Component registry metadata: table default, sparse-set opt-in
 ├── world_registry.sla — Registry-driven arbitrary component id membership, filters, and ticks
+├── archetype_registry.sla — RegistryWorld archetype signatures and entity locations
 ├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
@@ -77,6 +78,7 @@ examples/
 ├── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
 ├── dynamic_commands_demo.sla        — DynamicWorld deferred Commands demo
 ├── bevy_readme_parity_demo.sla      — Combined Bevy README ECS flow over registry APIs
+├── registry_archetype_demo.sla       — Archetype signature migration demo
 ├── registry_world_demo.sla          — Arbitrary component id registry/membership demo
 ├── registry_typed_world_demo.sla    — Registry-bound typed value world demo
 ├── registry_value_world_demo.sla    — Registry-owned multi-column typed value join demo
@@ -94,6 +96,7 @@ SA_PLUGIN_DEV=1 sa sla test lib/dyn_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/sparse_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/component.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry.sla
+SA_PLUGIN_DEV=1 sa sla test lib/archetype_registry.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_typed.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_erased.sla
@@ -116,6 +119,7 @@ SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world3_bundle_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_schedule_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_resource_change_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_commands_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/registry_archetype_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_typed_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_value_world_demo.sla
@@ -151,6 +155,6 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 - `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback. `world_registry_erased.sla` stores heterogeneous component values behind erased boxed pointers with per-component drop functions. `commands_registry_value.sla` / `schedule_registry_value.sla` and `commands_registry_erased.sla` / `schedule_registry_erased.sla` add deferred mutation and ordered system execution over both registry-owned value paths.
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
-- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous and type-erased value paths now also have component-id queries, commands, schedules, resources/messages, and demos. Archetype/table grouping, broader system parameter extraction, automatic component metadata, and parallel execution are not complete.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous and type-erased value paths now also have component-id queries, commands, schedules, resources/messages, and demos. `archetype_registry.sla` now verifies Bevy-style entity location migration between component-signature archetypes. Full table-row storage integration, broader system parameter extraction, automatic component metadata, and parallel execution are not complete.
 - Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
