@@ -25,6 +25,13 @@ fn archetype_param_demo_resource(param: ArchetypeValueResourceMessageParam<Arche
     return archetype_value_resource_message_param<ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(ArchetypeParamDemoTime { tick: param.resource.tick + 1 }, ArchetypeParamDemoEvent { amount: param.resource.tick + 7 }, true);
 }
 
+fn archetype_param_demo_reader(param: ArchetypeValueResMutMessageReadParam<ArchetypeParamDemoTime, ArchetypeParamDemoEvent>) -> ArchetypeValueResMutMessageReadParam<ArchetypeParamDemoTime, ArchetypeParamDemoEvent> {
+    if param.read.has_value {
+        param.resource.value = ArchetypeParamDemoTime { tick: param.resource.value.tick + param.read.value.amount };
+    };
+    return param;
+}
+
 fn archetype_param_demo_movement_adapter(world: ArchetypeValueWorld<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>) -> ArchetypeValueWorld<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent> {
     return archetype_value_run_pair_mut_system<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(world, 1, 2, archetype_param_demo_movement);
 }
@@ -47,18 +54,20 @@ fn archetype_system_param_demo() -> i32 {
     let s1 = archetype_value_schedule_add_systems<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(s0, archetype_value_system_new<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(archetype_param_demo_movement_adapter, move_access));
     let s2 = archetype_value_schedule_add_systems<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(s1, archetype_value_system_new<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(archetype_param_demo_resource_adapter, resource_access));
     let w7 = archetype_value_schedule_run<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(s2, w6);
-    let out = archetype_value_world_get<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w7, entity, position.id);
-    let time = archetype_value_world_get_resource<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w7);
-    let event = archetype_value_world_read_message<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w7, message_reader_new(), archetype_param_demo_event_default());
+    let (w8, reader1) = archetype_value_run_message_reader_res_mut_system<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w7, message_reader_new(), archetype_param_demo_event_default(), archetype_param_demo_reader);
+    let out = archetype_value_world_get<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w8, entity, position.id);
+    let time = archetype_value_world_get_resource<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w8);
+    let event = archetype_value_world_read_message<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(w8, message_reader_new(), archetype_param_demo_event_default());
     if archetype_value_schedule_conflict_count<ArchetypeParamDemoData, ArchetypeParamDemoTime, ArchetypeParamDemoEvent>(s2) != 0 { panic(10030); };
     if out.amount != 9 { panic(10031); };
-    if time.tick != 4 { panic(10032); };
+    if time.tick != 14 { panic(10032); };
     if event.value.amount != 10 { panic(10033); };
+    if reader1.cursor != 1 { panic(10035); };
     return out.amount + time.tick + event.value.amount;
 }
 
 fn main() -> i32 { return archetype_system_param_demo(); }
 
 @test "archetype system param demo injects query resource and messages"() {
-    if archetype_system_param_demo() != 23 { panic(10034); };
+    if archetype_system_param_demo() != 33 { panic(10034); };
 }

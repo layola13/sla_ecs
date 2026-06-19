@@ -40,6 +40,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified registry-owned type-erased column store spanning arbitrary concrete component types with boxed raw pointers, per-component drop functions, typed get/query, `Without`, Added/Changed, pair joins, writeback, resources/messages, and despawn cleanup.
 - [x] Add verified registry archetype grouping sidecar: component-id signatures, entity locations, add/remove migration, despawn cleanup, and archetype-backed component query.
 - [x] Add verified archetype-backed homogeneous value world: component values tied to archetype locations, add/remove migration, replacement/writeback without archetype move, filters, Added/Changed, resources/messages, and despawn cleanup.
+- [x] Add verified archetype-backed resource tick tracking: `Res<T>`, `ResMut<T>`, added/changed helpers, `ResMut` writeback, and resource removal semantics.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -61,6 +62,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified `ArchetypeValueCommands<T, R, M>` for reserve, insert/replace with archetype migration, despawn, resource, message, ordered apply, and clear-after-apply over `ArchetypeValueWorld`.
 - [x] Implement verified `ArchetypeValueSchedule<T, R, M>` with stored system function pointers and component-id/resource/message access conflict tracking over `ArchetypeValueWorld`.
 - [x] Implement verified archetype-backed system parameter adapters for injected pair-mut query params, resource params, message writer params, adapter writeback, and schedule execution.
+- [x] Extend verified archetype-backed system parameter adapters with `ResMut` injection plus `MessageReader` cursor advancement and writeback.
 
 ## Phase 4: Resources, Messages, Examples
 

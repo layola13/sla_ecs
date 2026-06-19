@@ -10,8 +10,17 @@ struct ArchetypeValueResourceMessageParam<R, M> {
     should_write_message: bool,
 }
 
+struct ArchetypeValueResMutMessageReadParam<R, M> {
+    resource: ResMut<R>,
+    read: MessageRead<M>,
+}
+
 fn archetype_value_resource_message_param<R, M>(resource: R, message: M, should_write_message: bool) -> ArchetypeValueResourceMessageParam<R, M> {
     return ArchetypeValueResourceMessageParam<R, M> { resource: resource, message: message, should_write_message: should_write_message };
+}
+
+fn archetype_value_resmut_message_read_param<R, M>(resource: ResMut<R>, read: MessageRead<M>) -> ArchetypeValueResMutMessageReadParam<R, M> {
+    return ArchetypeValueResMutMessageReadParam<R, M> { resource: resource, read: read };
 }
 
 fn archetype_value_run_pair_mut_system<T, R, M>(world: ArchetypeValueWorld<T, R, M>, first_component_id: i32, second_component_id: i32, run: fn(Query<ArchetypeValuePairMut<T>>) -> Query<ArchetypeValuePairMut<T>>) -> ArchetypeValueWorld<T, R, M> {
@@ -37,6 +46,20 @@ fn archetype_value_run_resource_message_system<T, R, M>(world: ArchetypeValueWor
     return world;
 }
 
+fn archetype_value_run_res_mut_system<T, R, M>(world: ArchetypeValueWorld<T, R, M>, run: fn(ResMut<R>) -> ResMut<R>) -> ArchetypeValueWorld<T, R, M> {
+    let param0 = archetype_value_world_res_mut<T, R, M>(world);
+    let param1 = run(param0);
+    return archetype_value_world_res_mut_write<T, R, M>(world, param1, param1.value);
+}
+
+fn archetype_value_run_message_reader_res_mut_system<T, R, M>(world: ArchetypeValueWorld<T, R, M>, reader: MessageReader, default_message: M, run: fn(ArchetypeValueResMutMessageReadParam<R, M>) -> ArchetypeValueResMutMessageReadParam<R, M>) -> (ArchetypeValueWorld<T, R, M>, MessageReader) {
+    let read = archetype_value_world_read_message<T, R, M>(world, reader, default_message);
+    let param0 = archetype_value_resmut_message_read_param<R, M>(archetype_value_world_res_mut<T, R, M>(world), read);
+    let param1 = run(param0);
+    world = archetype_value_world_res_mut_write<T, R, M>(world, param1.resource, param1.resource.value);
+    return (world, param1.read.reader);
+}
+
 struct ArchetypeParamData { amount: i32 }
 struct ArchetypeParamTime { tick: i32 }
 struct ArchetypeParamEvent { amount: i32 }
@@ -60,6 +83,17 @@ fn archetype_param_movement_system(query: Query<ArchetypeValuePairMut<ArchetypeP
 
 fn archetype_param_time_message_system(param: ArchetypeValueResourceMessageParam<ArchetypeParamTime, ArchetypeParamEvent>) -> ArchetypeValueResourceMessageParam<ArchetypeParamTime, ArchetypeParamEvent> {
     return archetype_value_resource_message_param<ArchetypeParamTime, ArchetypeParamEvent>(ArchetypeParamTime { tick: param.resource.tick + 1 }, ArchetypeParamEvent { amount: param.resource.tick + 4 }, true);
+}
+
+fn archetype_param_res_mut_system(res: ResMut<ArchetypeParamTime>) -> ResMut<ArchetypeParamTime> {
+    return ResMut<ArchetypeParamTime> { value: ArchetypeParamTime { tick: res.value.tick + 2 }, added_tick: res.added_tick, changed_tick: res.changed_tick };
+}
+
+fn archetype_param_reader_resmut_system(param: ArchetypeValueResMutMessageReadParam<ArchetypeParamTime, ArchetypeParamEvent>) -> ArchetypeValueResMutMessageReadParam<ArchetypeParamTime, ArchetypeParamEvent> {
+    if param.read.has_value {
+        param.resource.value = ArchetypeParamTime { tick: param.resource.value.tick + param.read.value.amount };
+    };
+    return param;
 }
 
 fn archetype_param_pair_adapter_system(world: ArchetypeValueWorld<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>) -> ArchetypeValueWorld<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent> {
@@ -97,6 +131,32 @@ fn archetype_param_resource_adapter_system(world: ArchetypeValueWorld<ArchetypeP
     if time.tick != 6 { panic(10010); };
     if event.has_value != true { panic(10011); };
     if event.value.amount != 9 { panic(10012); };
+}
+
+@test "archetype value resmut system param tracks changes"() {
+    let w0 = archetype_param_world_new();
+    let w1 = archetype_value_world_insert_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w0, ArchetypeParamTime { tick: 4 });
+    let before = w1.archetypes.registry.change_tick;
+    let w2 = archetype_value_world_increment_tick<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w1);
+    let w3 = archetype_value_run_res_mut_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w2, archetype_param_res_mut_system);
+    let out = archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w3);
+    if out.tick != 6 { panic(10013); };
+    if archetype_value_world_resource_added_since<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w3, before) != false { panic(10014); };
+    if archetype_value_world_resource_changed_since<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w3, before) != true { panic(10015); };
+}
+
+@test "archetype value message reader and resmut params advance cursor"() {
+    let w0 = archetype_param_world_new();
+    let w1 = archetype_value_world_insert_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w0, ArchetypeParamTime { tick: 1 });
+    let w2 = archetype_value_world_write_message<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w1, ArchetypeParamEvent { amount: 5 });
+    let reader0 = message_reader_new();
+    let (w3, reader1) = archetype_value_run_message_reader_res_mut_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w2, reader0, archetype_param_event_default(), archetype_param_reader_resmut_system);
+    let out1 = archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w3);
+    if out1.tick != 6 { panic(10016); };
+    let (w4, reader2) = archetype_value_run_message_reader_res_mut_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w3, reader1, archetype_param_event_default(), archetype_param_reader_resmut_system);
+    let out2 = archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w4);
+    if out2.tick != 6 { panic(10017); };
+    if reader2.cursor != 1 { panic(10018); };
 }
 
 @test "archetype value system param adapters run inside schedule"() {
