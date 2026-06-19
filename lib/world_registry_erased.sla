@@ -148,6 +148,30 @@ fn registry_erased_world_insert<T, R, M>(world: RegistryErasedWorld<R, M>, entit
     return world;
 }
 
+fn registry_erased_world_insert_erased_new<R, M>(world: RegistryErasedWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> RegistryErasedWorld<R, M> {
+    let column_slot = registry_erased_world_column_slot<R, M>(world, component_id);
+    if column_slot < 0 { panic(9406); };
+    if world.columns[column_slot].type_id != value.type_id { panic(9407); };
+    if registry_erased_world_entity_slot<R, M>(world, column_slot, entity) >= 0 { panic(9408); };
+    world.registry = registry_world_insert_component(world.registry, entity, component_id);
+    world.columns[column_slot].entity_ids.push(entity.id);
+    world.columns[column_slot].values.push(value);
+    return world;
+}
+
+fn registry_erased_world_replace_erased<R, M>(world: RegistryErasedWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> RegistryErasedWorld<R, M> {
+    let column_slot = registry_erased_world_column_slot<R, M>(world, component_id);
+    if column_slot < 0 { panic(9409); };
+    if world.columns[column_slot].type_id != value.type_id { panic(9410); };
+    let value_slot = registry_erased_world_entity_slot<R, M>(world, column_slot, entity);
+    if value_slot < 0 { panic(9411); };
+    let drop_fn = world.columns[column_slot].drop_fn;
+    drop_fn(world.columns[column_slot].values[value_slot].raw);
+    world.columns[column_slot].values[value_slot] = value;
+    world.registry = registry_world_insert_component(world.registry, entity, component_id);
+    return world;
+}
+
 fn registry_erased_world_get<T, R, M>(world: RegistryErasedWorld<R, M>, entity: Entity, component_id: i32, type_id: i32) -> T {
     if registry_erased_world_has<R, M>(world, entity, component_id) != true { panic(9403); };
     let column_slot = registry_erased_world_column_slot<R, M>(world, component_id);

@@ -56,6 +56,8 @@ lib/
 ├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
+├── commands_registry_erased.sla — RegistryErasedWorld deferred Commands carrying erased payloads
+├── schedule_registry_erased.sla — RegistryErasedWorld sequential Schedule with component-id access tracking
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T> + reader cursor
 ├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
@@ -78,7 +80,8 @@ examples/
 ├── registry_world_demo.sla          — Arbitrary component id registry/membership demo
 ├── registry_typed_world_demo.sla    — Registry-bound typed value world demo
 ├── registry_value_world_demo.sla    — Registry-owned multi-column typed value join demo
-└── registry_erased_world_demo.sla   — Type-erased heterogeneous component value demo
+├── registry_erased_world_demo.sla   — Type-erased heterogeneous component value demo
+└── registry_erased_schedule_commands_demo.sla — Erased Commands + Schedule pipeline demo
 ```
 
 ## Running
@@ -94,6 +97,8 @@ SA_PLUGIN_DEV=1 sa sla test lib/world_registry.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_typed.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_registry_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/schedule_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/resource.sla
 SA_PLUGIN_DEV=1 sa sla test lib/messages.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world.sla
@@ -115,6 +120,7 @@ SA_PLUGIN_DEV=1 sa sla test examples/registry_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_typed_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_value_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_erased_world_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/registry_erased_schedule_commands_demo.sla
 ```
 
 ## Compiler Fix
@@ -142,9 +148,9 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Current Gaps
 
-- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback. `world_registry_erased.sla` stores heterogeneous component values behind erased boxed pointers with per-component drop functions. `commands_registry_value.sla` and `schedule_registry_value.sla` add deferred mutation and ordered system execution over the registry-owned homogeneous path.
+- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback. `world_registry_erased.sla` stores heterogeneous component values behind erased boxed pointers with per-component drop functions. `commands_registry_value.sla` / `schedule_registry_value.sla` and `commands_registry_erased.sla` / `schedule_registry_erased.sla` add deferred mutation and ordered system execution over both registry-owned value paths.
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
-- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous value path now also has component-id queries, commands, schedules, and a combined README-parity demo. The type-erased path supports heterogeneous component storage, typed get/query, pair joins, `Without`, Added/Changed, writeback, resource/message, and despawn cleanup. Archetype grouping, type-erased Commands/Schedule, and parallel execution are not complete.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous and type-erased value paths now also have component-id queries, commands, schedules, resources/messages, and demos. Archetype/table grouping, broader system parameter extraction, automatic component metadata, and parallel execution are not complete.
 - Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
