@@ -22,6 +22,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Fix Sla function pointer values so systems can be stored and passed as `fn(World) -> World`; regression: `test_unit_fn_ptr_value.sla`.
 - [x] Fix Sla top-level scalar constant codegen so command tags like `const KIND: i32 = 1` work without illegal numeric SA `@const` output; regression: `test_unit_top_level_numeric_const.sla`.
 - [x] Add constrained Sla compiler support for `@derive(Component)` on structs, exposing `Type::component_type_id()` and `Type::component_storage_kind()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
+- [x] Add constrained Sla compiler support for Bevy-style `@component(storage = "SparseSet")` after `@derive(Component)`, so `Type::component_storage_kind()` returns sparse-set metadata; regression: `test_unit_derive_component.sla`.
 - [x] Add constrained Sla compiler support for `@derive(Resource)` on structs, exposing `Type::resource_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
 - [x] Fix expanded relative `.sai` / `.sal` contract import resolution after `.sla` import expansion; regression fixture: `tests/import_fixtures/nested/uses_contract.sla`.
 - [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
@@ -98,7 +99,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row type-erased Commands/Schedule example: `examples/table_erased_schedule_commands_demo.sla`.
 - [x] Add verified archetype table-row type-erased system-param example: `examples/table_erased_system_param_demo.sla`.
 - [x] Add verified table-erased runtime type-id metadata example: `examples/table_erased_auto_metadata_demo.sla`.
-- [x] Add verified table-erased `@derive(Component)` metadata example: `examples/table_erased_derive_component_demo.sla`.
+- [x] Add verified table-erased `@derive(Component)` metadata example: `examples/table_erased_derive_component_demo.sla`, including sparse-set storage metadata driving sparse component registration.
 - [x] Add verified `@derive(Resource)` multi-resource example: `examples/resource_derive_multi_demo.sla`.
 - [x] Add verified table-row system-param example: `examples/table_system_param_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
