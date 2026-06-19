@@ -25,11 +25,16 @@ fn registry_value_world_demo() -> i32 {
     let unselected = registry_value_world_query_without<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w9, health.id, selected.id);
     if len(unselected.items) != 1 { panic(8990); };
     if unselected.items[0].entity.id != first.id { panic(8991); };
+    let health_mana = registry_value_world_query_pair_without<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w9, health.id, mana.id, selected.id);
+    if len(health_mana.items) != 1 { panic(8997); };
+    if health_mana.items[0].first.amount + health_mana.items[0].second.amount != 13 { panic(8998); };
     let before = w9.registry.change_tick;
     let w10 = registry_value_world_increment_tick<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w9);
-    let mut_q = registry_value_world_query_mut<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w10, health.id);
+    let added = registry_value_world_query_added<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w10, health.id, before - 1);
+    if len(added.items) != 2 { panic(8999); };
+    let mut_q = registry_value_world_query_pair_mut_first<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w10, health.id, mana.id);
     let item = mut_q.items[0];
-    let w11 = registry_value_world_write<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w10, item, ValueDemoStat { amount: item.value.amount + 2 });
+    let w11 = registry_value_world_pair_write_first<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w10, item, ValueDemoStat { amount: item.first.value.amount + item.second.amount });
     let changed = registry_value_world_query_changed<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w11, health.id, before);
     if len(changed.items) != 1 { panic(8992); };
     let w12 = registry_value_world_insert_resource<ValueDemoStat, ValueDemoTime, ValueDemoEvent>(w11, ValueDemoTime { tick: w11.registry.change_tick });
@@ -48,5 +53,5 @@ fn registry_value_world_demo() -> i32 {
 fn main() -> i32 { return registry_value_world_demo(); }
 
 @test "registry value world demo runs multiple registry-owned columns"() {
-    if registry_value_world_demo() != 15 { panic(8996); };
+    if registry_value_world_demo() != 16 { panic(8996); };
 }

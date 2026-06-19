@@ -39,7 +39,7 @@
 - [done] Implemented `lib/component.sla`: component registry metadata with table storage default and sparse-set opt-in.
 - [done] Implemented `lib/world_registry.sla`: registry-driven arbitrary component id membership index with table/sparse metadata, spawn/despawn cleanup, With/Without entity queries, Added/Changed ticks, and `for in` query iteration.
 - [done] Implemented `lib/world_registry_typed.sla`: registry-bound typed A/B value owner where component membership and change ticks come from `RegistryWorld`, while actual typed values are stored in dynamic stores keyed by registered component ids.
-- [done] Implemented `lib/world_registry_store.sla`: registry-owned arbitrary component columns for a homogeneous Sla value type `T`, with insert/remove/get, With/Without value queries, Changed queries, `RegistryValueMut<T>` writeback, resources, messages, and despawn cleanup.
+- [done] Implemented `lib/world_registry_store.sla`: registry-owned arbitrary component columns for a homogeneous Sla value type `T`, with insert/remove/get, With/Without value queries, Added/Changed queries, pair joins, pair `Without` filters, `RegistryValueMut<T>` and pair-mut writeback, resources, messages, and despawn cleanup.
 - [done] Implemented `lib/sparse_store.sla`: `sa_std Vec`-backed `SparseComponentStore<T>` with dense iteration vectors, sparse locations, writeback, and swap-remove mapping updates.
 - [done] Implemented `lib/resource.sla`: typed resource slot insert/get/replace/remove and generic constructor.
 - [done] Implemented `lib/messages.sla`: typed fixed-capacity message queue, generic constructor, and independent reader cursor behavior.
@@ -58,12 +58,12 @@
 - [done] Added `examples/dynamic_commands_demo.sla`: deferred component/resource/message/despawn demo over `DynamicWorld` Commands.
 - [done] Added `examples/registry_world_demo.sla`: arbitrary component id registry/membership demo with With/Without, Changed, and despawn cleanup.
 - [done] Added `examples/registry_typed_world_demo.sla`: registry-bound typed value movement/filter/resource/message/despawn demo.
-- [done] Added `examples/registry_value_world_demo.sla`: registry-owned multi-column typed value demo with query filters, writeback, changed query, resource/message, and despawn cleanup.
-- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after registry-value-world additions. The old `src/` prototype directory is not present in the current tree.
+- [done] Added `examples/registry_value_world_demo.sla`: registry-owned multi-column typed value demo with pair joins, query filters, Added/Changed, writeback, resource/message, and despawn cleanup.
+- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after registry value pair-query additions. The old `src/` prototype directory is not present in the current tree.
 
 ## Current gaps
 
 - Dynamic `DynamicWorld` is implemented for the current two-component owner shape, but the older fixed `World` remains as a compatibility/regression layer.
 - Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred Commands are verified for the current A/B world shape; parallel execution is still pending.
-- Current dynamic worlds support verified two-column and three-column typed value shapes. Arbitrary component id membership, registry-bound typed A/B value ownership, and registry-owned homogeneous typed multi-column storage are now verified, but a single registry-owned type-erased value store spanning arbitrary component types is still pending.
+- Current dynamic worlds support verified two-column and three-column typed value shapes. Arbitrary component id membership, registry-bound typed A/B value ownership, and registry-owned homogeneous typed multi-column storage with pair joins are now verified, but a single registry-owned type-erased value store spanning arbitrary component types is still pending.
 - Component registration metadata is explicit Sla runtime metadata; automatic derive/type metadata is still pending.

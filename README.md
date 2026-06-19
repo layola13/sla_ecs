@@ -54,7 +54,7 @@ lib/
 ├── component.sla     — Component registry metadata: table default, sparse-set opt-in
 ├── world_registry.sla — Registry-driven arbitrary component id membership, filters, and ticks
 ├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
-├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns
+├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T> + reader cursor
 ├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
@@ -73,7 +73,7 @@ examples/
 ├── dynamic_commands_demo.sla        — DynamicWorld deferred Commands demo
 ├── registry_world_demo.sla          — Arbitrary component id registry/membership demo
 ├── registry_typed_world_demo.sla    — Registry-bound typed value world demo
-└── registry_value_world_demo.sla    — Registry-owned multi-column typed value demo
+└── registry_value_world_demo.sla    — Registry-owned multi-column typed value join demo
 ```
 
 ## Running
@@ -132,7 +132,7 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Current Gaps
 
-- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`.
+- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback.
 - A single type-erased registry-owned value store spanning arbitrary Sla component types is still pending.
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
