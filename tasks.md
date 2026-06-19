@@ -21,15 +21,12 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Fix Sla monomorphization for generic impl protocol methods so `impl Query<T> { iter_len/iter_at }` supports `for item in query`; regression: `test_unit_generic_for_in_protocol.sla`.
 - [x] Fix Sla function pointer values so systems can be stored and passed as `fn(World) -> World`; regression: `test_unit_fn_ptr_value.sla`.
 - [x] Fix Sla top-level scalar constant codegen so command tags like `const KIND: i32 = 1` work without illegal numeric SA `@const` output; regression: `test_unit_top_level_numeric_const.sla`.
-- [x] Add constrained Sla compiler support for `@derive(Component)` on structs, exposing `Type::component_type_id()` and `Type::component_storage_kind()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
-- [x] Add constrained Sla compiler support for Bevy-style `@component(storage = "SparseSet")` after `@derive(Component)`, so `Type::component_storage_kind()` returns sparse-set metadata; regression: `test_unit_derive_component.sla`.
-- [x] Add constrained Sla compiler support for `@derive(Resource)` on structs, exposing `Type::resource_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
-- [x] Add constrained Sla compiler support for `@derive(Message)` on structs, exposing `Type::message_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
-- [x] Add constrained Sla compiler support for `@derive(Event)` on structs, exposing `Type::event_type_id()` without adding ECS semantics to SA core; regression: `test_unit_derive_component.sla`.
+- [x] Keep Sla compiler `@derive(...)` support language-neutral: arbitrary derive names parse as annotations, with no Bevy/ECS keyword semantics in Zig; regression: `test_unit_derive_component.sla`.
+- [x] Remove compiler-bound ECS derive metadata and `@component(storage = ...)`; move `component_type_id`, `component_storage_kind`, `resource_type_id`, `message_type_id`, and `event_type_id` to ordinary `sla_ecs` `impl` methods.
 - [x] Fix expanded relative `.sai` / `.sal` contract import resolution after `.sla` import expansion; regression fixture: `tests/import_fixtures/nested/uses_contract.sla`.
 - [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Rebuild and reinstall the Sla plugin after top-level scalar constant codegen fix: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
-- [x] Rebuild and reinstall the Sla plugin after `@derive(Component)` and contract import resolver fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
+- [x] Rebuild and reinstall the Sla plugin after language-neutral derive annotation and contract import resolver fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Audit current source tree after resumed work: current tree contains `lib/*.sla` and `examples/*.sla`; old `src/*.sla` prototypes are not present on disk.
 
 ## Phase 2: Bevy-Style Core Runtime
@@ -56,7 +53,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified no-conflict parallel batch planning over `TableErasedSchedule<R, M>`.
 - [x] Add verified runtime type-id metadata lookup helpers for `TableErasedWorld<R, M>`: component-id lookup by type id, auto insert/get/query/filters/Changed/remove, type-id Commands insert, type-id schedule access declarations, and type-id system-param adapters.
 - [x] Add verified table-erased component bundle helpers: type-id bundle constructors, spawn bundle, insert bundle, duplicate component rejection, and metadata-driven component registration.
-- [x] Add ECS component metadata contract files (`.sal` / `.sai`) and verify `@derive(Component)` generated type ids integrate with `TableErasedWorld<R, M>` registration and lookup.
+- [x] Add ECS component metadata contract files (`.sal` / `.sai`) and verify impl-provided component type ids integrate with `TableErasedWorld<R, M>` registration and lookup.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -85,11 +82,11 @@ Update this file whenever a task is completed. Do not mark a task done until the
 
 - [x] Implement fixed-capacity typed unique resources: insert, get, replace, remove.
 - [x] Implement verified DynamicWorld `Res<T>` / `ResMut<T>` wrappers and resource added/changed detection.
-- [x] Implement verified type-erased multi-resource storage keyed by `@derive(Resource)` type ids: unique-per-type insert/get, `Res<T>` / `ResMut<T>`, writeback, remove, and added/changed ticks.
+- [x] Implement verified type-erased multi-resource storage keyed by `resource_type_id()` impl metadata: unique-per-type insert/get, `Res<T>` / `ResMut<T>`, writeback, remove, and added/changed ticks.
 - [x] Implement fixed-capacity `Messages<T>` and reader cursor behavior.
 - [x] Add verified `MessageWriter<T>` batching and apply semantics for message system parameters.
-- [x] Implement verified type-erased multi-message channels keyed by `@derive(Message)` type ids: independent channels, batched writer apply, per-reader cursor advancement, and channel clear.
-- [x] Implement verified type-erased observer/event triggers keyed by `@derive(Event)` type ids: immediate observer invocation, non-message reactive semantics, and targeted entity event context.
+- [x] Implement verified type-erased multi-message channels keyed by `message_type_id()` impl metadata: independent channels, batched writer apply, per-reader cursor advancement, and channel clear.
+- [x] Implement verified type-erased observer/event triggers keyed by `event_type_id()` impl metadata: immediate observer invocation, non-message reactive semantics, and targeted entity event context.
 - [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
 - [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
@@ -105,10 +102,10 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row type-erased system-param example: `examples/table_erased_system_param_demo.sla`.
 - [x] Add verified table-erased runtime type-id metadata example: `examples/table_erased_auto_metadata_demo.sla`.
 - [x] Add verified table-erased component bundle example: `examples/table_erased_bundle_demo.sla`.
-- [x] Add verified table-erased `@derive(Component)` metadata example: `examples/table_erased_derive_component_demo.sla`, including sparse-set storage metadata driving sparse component registration.
-- [x] Add verified `@derive(Resource)` multi-resource example: `examples/resource_derive_multi_demo.sla`.
-- [x] Add verified `@derive(Message)` multi-channel example: `examples/message_derive_multi_demo.sla`.
-- [x] Add verified `@derive(Event)` observer trigger example: `examples/event_observer_demo.sla`.
+- [x] Add verified table-erased component metadata example: `examples/table_erased_derive_component_demo.sla`, using project-level derive markers plus ordinary `impl` metadata, including sparse-set storage metadata driving sparse component registration.
+- [x] Add verified multi-resource metadata example: `examples/resource_derive_multi_demo.sla`.
+- [x] Add verified multi-channel message metadata example: `examples/message_derive_multi_demo.sla`.
+- [x] Add verified observer trigger metadata example: `examples/event_observer_demo.sla`.
 - [x] Add verified table-row system-param example: `examples/table_system_param_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
