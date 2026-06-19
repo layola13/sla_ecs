@@ -106,6 +106,26 @@ fn table_erased_world_def_for<R, M>(world: TableErasedWorld<R, M>, component_id:
     return world.component_defs[slot];
 }
 
+fn table_erased_world_def_slot_by_type<R, M>(world: TableErasedWorld<R, M>, type_id: i32) -> i64 {
+    let i: i64 = 0;
+    let cnt = len(world.component_defs) as i64;
+    while i < cnt {
+        if world.component_defs[i].type_id == type_id { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn table_erased_world_def_for_type<R, M>(world: TableErasedWorld<R, M>, type_id: i32) -> TableErasedColumnDef {
+    let slot = table_erased_world_def_slot_by_type<R, M>(world, type_id);
+    if slot < 0 { panic(11606); };
+    return world.component_defs[slot];
+}
+
+fn table_erased_world_component_id_for_type<R, M>(world: TableErasedWorld<R, M>, type_id: i32) -> i32 {
+    return table_erased_world_def_for_type<R, M>(world, type_id).component_id;
+}
+
 fn table_erased_archetype_new<R, M>(world: TableErasedWorld<R, M>, id: i32, component_ids: Vec<i32>) -> TableErasedArchetype {
     let entity_ids: Vec<i32> = Vec::new();
     let columns: Vec<TableErasedColumn> = Vec::new();
@@ -137,6 +157,7 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
 }
 
 fn table_erased_world_register_table<R, M>(world: TableErasedWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedWorld<R, M>, ComponentInfo) {
+    if table_erased_world_def_slot_by_type<R, M>(world, type_id) >= 0 { panic(11607); };
     let (registry, info) = registry_world_register_table(world.registry);
     world.registry = registry;
     world.component_defs.push(table_erased_column_def_new(info.id, type_id, drop_fn));
@@ -144,6 +165,7 @@ fn table_erased_world_register_table<R, M>(world: TableErasedWorld<R, M>, type_i
 }
 
 fn table_erased_world_register_sparse_set<R, M>(world: TableErasedWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedWorld<R, M>, ComponentInfo) {
+    if table_erased_world_def_slot_by_type<R, M>(world, type_id) >= 0 { panic(11607); };
     let (registry, info) = registry_world_register_sparse_set(world.registry);
     world.registry = registry;
     world.component_defs.push(table_erased_column_def_new(info.id, type_id, drop_fn));
@@ -223,6 +245,10 @@ fn table_erased_world_signature_for_entity<R, M>(world: TableErasedWorld<R, M>, 
 fn table_erased_world_is_alive<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> bool { return registry_world_is_alive(world.registry, entity); }
 fn table_erased_world_has<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32) -> bool { return registry_world_has_component(world.registry, entity, component_id); }
 
+fn table_erased_world_has_type<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32) -> bool {
+    return table_erased_world_has<R, M>(world, entity, table_erased_world_component_id_for_type<R, M>(world, type_id));
+}
+
 fn table_erased_world_entity_archetype_id<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> i32 {
     if entity.id >= (len(world.locations) as i32) { return -1; };
     return world.locations[entity.id].archetype_id;
@@ -249,6 +275,11 @@ fn table_erased_world_value_unchecked<R, M>(world: TableErasedWorld<R, M>, entit
 fn table_erased_world_get<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, type_id: i32) -> T {
     if table_erased_world_has<R, M>(world, entity, component_id) != true { panic(11602); };
     return registry_erased_value_read<T>(table_erased_world_value_unchecked<R, M>(world, entity, component_id), type_id);
+}
+
+fn table_erased_world_get_auto<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32) -> T {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_get<T, R, M>(world, entity, component_id, type_id);
 }
 
 fn table_erased_world_collect_values<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_ids: Vec<i32>, extra_component_id: i32, extra_value: ErasedComponentValue) -> Vec<ErasedComponentValue> {
@@ -430,6 +461,11 @@ fn table_erased_world_insert<T, R, M>(world: TableErasedWorld<R, M>, entity: Ent
     return table_erased_world_insert_new<T, R, M>(world, entity, component_id, type_id, value);
 }
 
+fn table_erased_world_insert_auto<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, value: T) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_insert<T, R, M>(world, entity, component_id, type_id, value);
+}
+
 fn table_erased_world_remove<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32) -> TableErasedWorld<R, M> {
     if table_erased_world_has<R, M>(world, entity, component_id) != true { return world; };
     world = table_erased_world_drop_value<R, M>(world, entity, component_id);
@@ -438,6 +474,11 @@ fn table_erased_world_remove<R, M>(world: TableErasedWorld<R, M>, entity: Entity
     let values = table_erased_world_collect_existing_values<R, M>(world, entity, signature);
     world = table_erased_world_detach_no_drop<R, M>(world, entity);
     return table_erased_world_attach_with_values<R, M>(world, entity, signature, values);
+}
+
+fn table_erased_world_remove_auto<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_remove<R, M>(world, entity, component_id);
 }
 
 fn table_erased_world_despawn<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> TableErasedWorld<R, M> {
@@ -451,6 +492,15 @@ fn table_erased_world_despawn<R, M>(world: TableErasedWorld<R, M>, entity: Entit
 fn table_erased_world_increment_tick<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.registry = registry_world_increment_tick(world.registry); return world; }
 fn table_erased_world_added_since<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, tick: i32) -> bool { return registry_world_component_added_since(world.registry, entity, component_id, tick); }
 fn table_erased_world_changed_since<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, tick: i32) -> bool { return registry_world_component_changed_since(world.registry, entity, component_id, tick); }
+fn table_erased_world_added_since_auto<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, tick: i32) -> bool {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_added_since<R, M>(world, entity, component_id, tick);
+}
+
+fn table_erased_world_changed_since_auto<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, tick: i32) -> bool {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_changed_since<R, M>(world, entity, component_id, tick);
+}
 
 fn table_erased_world_query<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32) -> Query<EntityItem<T>> {
     let query = query_new<EntityItem<T>>();
@@ -473,6 +523,11 @@ fn table_erased_world_query<T, R, M>(world: TableErasedWorld<R, M>, component_id
     return query;
 }
 
+fn table_erased_world_query_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_query<T, R, M>(world, component_id, type_id);
+}
+
 fn table_erased_world_query_without<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, without_component_id: i32) -> Query<EntityItem<T>> {
     let query = query_new<EntityItem<T>>();
     let base = table_erased_world_query<T, R, M>(world, component_id, type_id);
@@ -484,6 +539,12 @@ fn table_erased_world_query_without<T, R, M>(world: TableErasedWorld<R, M>, comp
         i = i + 1;
     }
     return query;
+}
+
+fn table_erased_world_query_without_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, without_type_id: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let without_component_id = table_erased_world_component_id_for_type<R, M>(world, without_type_id);
+    return table_erased_world_query_without<T, R, M>(world, component_id, type_id, without_component_id);
 }
 
 fn table_erased_world_query_changed<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, tick: i32) -> Query<EntityItem<T>> {
@@ -499,6 +560,11 @@ fn table_erased_world_query_changed<T, R, M>(world: TableErasedWorld<R, M>, comp
     return query;
 }
 
+fn table_erased_world_query_changed_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, tick: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_query_changed<T, R, M>(world, component_id, type_id, tick);
+}
+
 fn table_erased_world_query_pair<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
     let query = query_new<TableErasedPair<A, B>>();
     let base = table_erased_world_query<A, R, M>(world, first_component_id, first_type_id);
@@ -512,6 +578,12 @@ fn table_erased_world_query_pair<A, B, R, M>(world: TableErasedWorld<R, M>, firs
         i = i + 1;
     }
     return query;
+}
+
+fn table_erased_world_query_pair_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
 }
 
 fn table_erased_world_query_pair_mut_first<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
@@ -540,6 +612,12 @@ fn table_erased_world_query_pair_mut_first<A, B, R, M>(world: TableErasedWorld<R
         a = a + 1;
     }
     return query;
+}
+
+fn table_erased_world_query_pair_mut_first_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_mut_first<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
 }
 
 fn table_erased_world_write<T, R, M>(world: TableErasedWorld<R, M>, item: TableErasedMut<T>, value: T) -> TableErasedWorld<R, M> {

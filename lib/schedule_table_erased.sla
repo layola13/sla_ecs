@@ -32,6 +32,8 @@ fn table_erased_system_access_none() -> TableErasedSystemAccess {
 
 fn table_erased_access_read_component(access: TableErasedSystemAccess, component_id: i32) -> TableErasedSystemAccess { access.read_components.push(component_id); return access; }
 fn table_erased_access_write_component(access: TableErasedSystemAccess, component_id: i32) -> TableErasedSystemAccess { access.write_components.push(component_id); return access; }
+fn table_erased_access_read_type<R, M>(world: TableErasedWorld<R, M>, access: TableErasedSystemAccess, type_id: i32) -> TableErasedSystemAccess { return table_erased_access_read_component(access, table_erased_world_component_id_for_type<R, M>(world, type_id)); }
+fn table_erased_access_write_type<R, M>(world: TableErasedWorld<R, M>, access: TableErasedSystemAccess, type_id: i32) -> TableErasedSystemAccess { return table_erased_access_write_component(access, table_erased_world_component_id_for_type<R, M>(world, type_id)); }
 fn table_erased_access_read_resource(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.reads_resource = true; return access; }
 fn table_erased_access_write_resource(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.writes_resource = true; return access; }
 fn table_erased_access_read_messages(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.reads_messages = true; return access; }
@@ -200,7 +202,7 @@ fn table_erased_schedule_pos_drop(raw: *u8) -> void { let typed = raw as *TableE
 fn table_erased_schedule_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedScheduleVel; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_schedule_move_system(world: TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent>) -> TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent> {
-    let q = table_erased_world_query_pair_mut_first<TableErasedSchedulePos, TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(world, 1, TABLE_ERASED_SCHEDULE_POS_TYPE, 2, TABLE_ERASED_SCHEDULE_VEL_TYPE);
+    let q = table_erased_world_query_pair_mut_first_auto<TableErasedSchedulePos, TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(world, TABLE_ERASED_SCHEDULE_POS_TYPE, TABLE_ERASED_SCHEDULE_VEL_TYPE);
     let i: i64 = 0;
     let cnt = len(q.items) as i64;
     while i < cnt {
@@ -279,4 +281,19 @@ fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedSched
     if table_erased_schedule_system_batch<TableErasedScheduleTime, TableErasedScheduleEvent>(s3, 2) != 0 { panic(11914); };
     if table_erased_schedule_batch_width<TableErasedScheduleTime, TableErasedScheduleEvent>(s3, 0) != 2 { panic(11915); };
     if table_erased_schedule_max_parallel_width<TableErasedScheduleTime, TableErasedScheduleEvent>(s3) != 2 { panic(11916); };
+}
+
+@test "table erased schedule access can be declared by component type metadata"() {
+    let w0 = table_erased_schedule_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, table_erased_schedule_pos_drop);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, table_erased_schedule_vel_drop);
+    let move_access = table_erased_access_read_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_access_write_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_system_access_none(), TABLE_ERASED_SCHEDULE_POS_TYPE), TABLE_ERASED_SCHEDULE_VEL_TYPE);
+    let read_position = table_erased_access_read_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_system_access_none(), TABLE_ERASED_SCHEDULE_POS_TYPE);
+    let s0 = table_erased_schedule_default<TableErasedScheduleTime, TableErasedScheduleEvent>();
+    let s1 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s0, table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_move_system, move_access));
+    let s2 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s1, table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_move_system, read_position));
+    if table_erased_schedule_conflict_count<TableErasedScheduleTime, TableErasedScheduleEvent>(s2) != 1 { panic(11920); };
+    if table_erased_schedule_system_batch<TableErasedScheduleTime, TableErasedScheduleEvent>(s2, 1) != 1 { panic(11921); };
+    if table_erased_world_component_id_for_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, TABLE_ERASED_SCHEDULE_POS_TYPE) != position.id { panic(11922); };
+    if table_erased_world_component_id_for_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, TABLE_ERASED_SCHEDULE_VEL_TYPE) != velocity.id { panic(11923); };
 }

@@ -45,6 +45,11 @@ fn table_erased_commands_param_insert<T, R, M>(param: TableErasedCommandsParam<R
     return TableErasedCommandsParam<R, M> { world: param.world, commands: table_erased_commands_insert<T, R, M>(param.commands, entity, component_id, type_id, value) };
 }
 
+fn table_erased_commands_param_insert_auto<T, R, M>(param: TableErasedCommandsParam<R, M>, entity: Entity, type_id: i32, value: T) -> TableErasedCommandsParam<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(param.world, type_id);
+    return TableErasedCommandsParam<R, M> { world: param.world, commands: table_erased_commands_insert<T, R, M>(param.commands, entity, component_id, type_id, value) };
+}
+
 fn table_erased_commands_param_insert_resource<R, M>(param: TableErasedCommandsParam<R, M>, value: R) -> TableErasedCommandsParam<R, M> {
     return TableErasedCommandsParam<R, M> { world: param.world, commands: table_erased_commands_insert_resource<R, M>(param.commands, value) };
 }
@@ -68,6 +73,12 @@ fn table_erased_run_pair_mut_system<A, B, R, M>(world: TableErasedWorld<R, M>, f
         i = i + 1;
     }
     return world;
+}
+
+fn table_erased_run_pair_mut_system_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_run_pair_mut_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
 }
 
 fn table_erased_run_resource_message_system<R, M>(world: TableErasedWorld<R, M>, default_message: M, run: fn(TableErasedResourceMessageParam<R, M>) -> TableErasedResourceMessageParam<R, M>) -> TableErasedWorld<R, M> {
@@ -113,6 +124,12 @@ fn table_erased_run_without_query_resource_system<T, R, M>(world: TableErasedWor
     return table_erased_world_insert_resource<R, M>(world, param1.resource);
 }
 
+fn table_erased_run_without_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, without_type_id: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let without_component_id = table_erased_world_component_id_for_type<R, M>(world, without_type_id);
+    return table_erased_run_without_query_resource_system<T, R, M>(world, component_id, type_id, without_component_id, run);
+}
+
 const TABLE_ERASED_PARAM_POS_TYPE: i32 = 441;
 const TABLE_ERASED_PARAM_VEL_TYPE: i32 = 442;
 const TABLE_ERASED_PARAM_MARKER_TYPE: i32 = 443;
@@ -155,7 +172,7 @@ fn table_erased_param_reader_resmut_system(param: TableErasedResMutMessageReadPa
 
 fn table_erased_param_commands_system(param: TableErasedCommandsParam<TableErasedParamTime, TableErasedParamEvent>) -> TableErasedCommandsParam<TableErasedParamTime, TableErasedParamEvent> {
     let (param1, entity) = table_erased_commands_param_reserve_entity<TableErasedParamTime, TableErasedParamEvent>(param);
-    let param2 = table_erased_commands_param_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(param1, entity, 1, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 12, y: 0 });
+    let param2 = table_erased_commands_param_insert_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(param1, entity, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 12, y: 0 });
     let param3 = table_erased_commands_param_insert_resource<TableErasedParamTime, TableErasedParamEvent>(param2, TableErasedParamTime { tick: 7 });
     return table_erased_commands_param_write_message<TableErasedParamTime, TableErasedParamEvent>(param3, TableErasedParamEvent { amount: 4 });
 }
@@ -179,7 +196,7 @@ fn table_erased_param_count_query_system(param: TableErasedQueryResourceParam<Ta
     let before = w5.registry.change_tick;
     let group_before = table_erased_world_entity_archetype_id<TableErasedParamTime, TableErasedParamEvent>(w5, entity);
     let row_before = table_erased_world_entity_row<TableErasedParamTime, TableErasedParamEvent>(w5, entity);
-    let w6 = table_erased_run_pair_mut_system<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w5, position.id, TABLE_ERASED_PARAM_POS_TYPE, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_movement_system);
+    let w6 = table_erased_run_pair_mut_system_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w5, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_movement_system);
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w6, entity, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 11 { panic(12000); };
     if table_erased_world_entity_archetype_id<TableErasedParamTime, TableErasedParamEvent>(w6, entity) != group_before { panic(12001); };
     if table_erased_world_entity_row<TableErasedParamTime, TableErasedParamEvent>(w6, entity) != row_before { panic(12002); };
@@ -206,7 +223,7 @@ fn table_erased_param_count_query_system(param: TableErasedQueryResourceParam<Ta
     let (w2, selected) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
     let w3 = table_erased_run_commands_system<TableErasedParamTime, TableErasedParamEvent>(w2, table_erased_param_commands_system);
     let w4 = table_erased_run_message_writer_system<TableErasedParamTime, TableErasedParamEvent>(w3, table_erased_param_writer_system);
-    let w5 = table_erased_run_without_query_resource_system<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w4, position.id, TABLE_ERASED_PARAM_POS_TYPE, selected.id, table_erased_param_count_query_system);
+    let w5 = table_erased_run_without_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w4, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_count_query_system);
     let read1 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w5, message_reader_new(), table_erased_param_event_default());
     let (w6, reader2) = table_erased_run_message_reader_res_mut_system<TableErasedParamTime, TableErasedParamEvent>(w5, read1.reader, table_erased_param_event_default(), table_erased_param_reader_resmut_system);
     if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w6).tick != 3 { panic(12020); };

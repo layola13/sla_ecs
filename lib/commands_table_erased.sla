@@ -48,6 +48,11 @@ fn table_erased_commands_insert<T, R, M>(commands: TableErasedCommands<R, M>, en
     return commands;
 }
 
+fn table_erased_commands_insert_auto<T, R, M>(world: TableErasedWorld<R, M>, commands: TableErasedCommands<R, M>, entity: Entity, type_id: i32, value: T) -> TableErasedCommands<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_commands_insert<T, R, M>(commands, entity, component_id, type_id, value);
+}
+
 fn table_erased_commands_despawn<R, M>(commands: TableErasedCommands<R, M>, entity: Entity) -> TableErasedCommands<R, M> {
     commands.items.push(table_erased_command(TABLE_ERASED_COMMAND_DESPAWN, entity, 0, -1));
     return commands;
@@ -168,4 +173,17 @@ fn table_erased_cmd_marker_drop(raw: *u8) -> void { let typed = raw as *TableEra
     if time.tick != 8 { panic(11814); };
     if read.value.amount != 6 { panic(11815); };
     if table_erased_commands_len<TableErasedCmdTime, TableErasedCmdEvent>(c10) != 0 { panic(11816); };
+}
+
+@test "table erased commands auto insert by component type metadata"() {
+    let w0 = table_erased_cmd_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, table_erased_cmd_pos_drop);
+    let c0 = table_erased_cmd_commands_new();
+    let (w2, c1, entity) = table_erased_commands_reserve_entity<TableErasedCmdTime, TableErasedCmdEvent>(w1, c0);
+    let c2 = table_erased_commands_insert_auto<TableErasedCmdPos, TableErasedCmdTime, TableErasedCmdEvent>(w2, c1, entity, TABLE_ERASED_CMD_POS_TYPE, TableErasedCmdPos { x: 14, y: 0 });
+    let (w3, c3) = table_erased_commands_apply<TableErasedCmdTime, TableErasedCmdEvent>(w2, c2);
+    if table_erased_world_has_type<TableErasedCmdTime, TableErasedCmdEvent>(w3, entity, TABLE_ERASED_CMD_POS_TYPE) != true { panic(11820); };
+    if table_erased_world_get_auto<TableErasedCmdPos, TableErasedCmdTime, TableErasedCmdEvent>(w3, entity, TABLE_ERASED_CMD_POS_TYPE).x != 14 { panic(11821); };
+    if table_erased_world_component_id_for_type<TableErasedCmdTime, TableErasedCmdEvent>(w3, TABLE_ERASED_CMD_POS_TYPE) != position.id { panic(11822); };
+    if table_erased_commands_len<TableErasedCmdTime, TableErasedCmdEvent>(c3) != 0 { panic(11823); };
 }
