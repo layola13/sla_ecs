@@ -34,7 +34,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [ ] Replace fixed-capacity demo storage with reusable component storage backed by dynamic `sa_std Vec` where compiler support permits.
 - [x] Add component registration metadata and storage-kind selection: table default, sparse-set opt-in.
 - [x] Implement verified registry-driven arbitrary component id membership index: registration, insert/remove membership, despawn cleanup, With/Without entity queries, Added/Changed ticks, and `for in` query iteration.
-- [ ] Attach typed component value stores to registry-driven component ids, then replace A/B-specific value ownership with registry-owned columns.
+- [x] Attach typed A/B component value stores to registry-driven component ids for a verified registry-bound typed value owner.
+- [ ] Replace A/B-specific value ownership with a registry-owned type-erased column store for arbitrary component types.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -62,6 +63,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
 - [x] Add verified DynamicWorld deferred Commands example: `examples/dynamic_commands_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
+- [x] Add verified registry-bound typed value world example: `examples/registry_typed_world_demo.sla`.
 - [ ] Add Bevy README parity examples for movement, resources/time, filters, change detection, messages, and schedule pipeline.
 - [x] Verify all current examples with `SA_PLUGIN_DEV=1 sa sla test examples/*.sla` equivalent loop.
 

@@ -53,6 +53,7 @@ lib/
 ├── sparse_store.sla  — Generic Vec-backed SparseComponentStore<T>
 ├── component.sla     — Component registry metadata: table default, sparse-set opt-in
 ├── world_registry.sla — Registry-driven arbitrary component id membership, filters, and ticks
+├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T> + reader cursor
 ├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
@@ -69,7 +70,8 @@ examples/
 ├── dynamic_schedule_demo.sla       — DynamicWorld Schedule pipeline demo
 ├── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
 ├── dynamic_commands_demo.sla        — DynamicWorld deferred Commands demo
-└── registry_world_demo.sla          — Arbitrary component id registry/membership demo
+├── registry_world_demo.sla          — Arbitrary component id registry/membership demo
+└── registry_typed_world_demo.sla    — Registry-bound typed value world demo
 ```
 
 ## Running
@@ -82,6 +84,7 @@ SA_PLUGIN_DEV=1 sa sla test lib/dyn_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/sparse_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/component.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world_registry_typed.sla
 SA_PLUGIN_DEV=1 sa sla test lib/resource.sla
 SA_PLUGIN_DEV=1 sa sla test lib/messages.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world.sla
@@ -97,6 +100,7 @@ SA_PLUGIN_DEV=1 sa sla test examples/dynamic_schedule_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_resource_change_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_commands_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/registry_world_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/registry_typed_world_demo.sla
 ```
 
 ## Compiler Fix
@@ -124,8 +128,9 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Current Gaps
 
-- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. Actual component values are still stored in typed stores rather than a single type-erased registry-owned value store.
-- `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` are verified typed-column steps while registry-owned value storage matures.
+- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth.
+- A single type-erased registry-owned value store for arbitrary Sla component types is still pending.
+- `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
 - Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; arbitrary component columns and parallel execution are not complete.
 - Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
