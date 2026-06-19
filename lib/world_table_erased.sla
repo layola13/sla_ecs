@@ -390,6 +390,35 @@ fn table_erased_world_insert_new<T, R, M>(world: TableErasedWorld<R, M>, entity:
     return table_erased_world_attach_with_values<R, M>(world, entity, signature, values);
 }
 
+fn table_erased_world_replace_erased_existing<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> TableErasedWorld<R, M> {
+    let def = table_erased_world_def_for<R, M>(world, component_id);
+    if def.type_id != value.type_id { panic(11605); };
+    world = table_erased_world_drop_value<R, M>(world, entity, component_id);
+    let location = world.locations[entity.id];
+    let archetype_slot = location.archetype_id as i64;
+    let column_slot = table_erased_world_column_slot<R, M>(world, archetype_slot, component_id);
+    world.archetypes[archetype_slot].columns[column_slot].values[location.row] = value;
+    world.registry = registry_world_insert_component(world.registry, entity, component_id);
+    return world;
+}
+
+fn table_erased_world_insert_erased_new<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> TableErasedWorld<R, M> {
+    let def = table_erased_world_def_for<R, M>(world, component_id);
+    if def.type_id != value.type_id { panic(11605); };
+    world.registry = registry_world_insert_component(world.registry, entity, component_id);
+    let signature = table_erased_world_signature_for_entity<R, M>(world, entity);
+    let values = table_erased_world_collect_values<R, M>(world, entity, signature, component_id, value);
+    world = table_erased_world_detach_no_drop<R, M>(world, entity);
+    return table_erased_world_attach_with_values<R, M>(world, entity, signature, values);
+}
+
+fn table_erased_world_insert_erased<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> TableErasedWorld<R, M> {
+    if table_erased_world_has<R, M>(world, entity, component_id) {
+        return table_erased_world_replace_erased_existing<R, M>(world, entity, component_id, value);
+    };
+    return table_erased_world_insert_erased_new<R, M>(world, entity, component_id, value);
+}
+
 fn table_erased_world_insert<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedWorld<R, M> {
     if table_erased_world_has<R, M>(world, entity, component_id) {
         return table_erased_world_replace_existing<T, R, M>(world, entity, component_id, type_id, value);

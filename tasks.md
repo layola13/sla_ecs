@@ -44,6 +44,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row homogeneous value world: component values stored inside archetype columns by entity row, row migration on add/remove/despawn, row-preserving writeback, queries, Added/Changed, resources, and messages.
 - [x] Add verified archetype table-row type-erased heterogeneous value world: boxed component payloads stored inside archetype columns by entity row, row migration on add/remove/despawn, typed get/query, pair-mut writeback, Added/Changed, resources, messages, and cleanup.
 - [x] Add verified table-row Commands, Schedule, and system-param adapters over `TableValueWorld<T, R, M>`.
+- [x] Add verified table-row type-erased Commands and Schedule over `TableErasedWorld<R, M>`.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -85,6 +86,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype-backed value storage example: `examples/archetype_value_world_demo.sla`.
 - [x] Add verified archetype table-row storage example: `examples/table_value_world_demo.sla`.
 - [x] Add verified archetype table-row type-erased heterogeneous storage example: `examples/table_erased_world_demo.sla`.
+- [x] Add verified archetype table-row type-erased Commands/Schedule example: `examples/table_erased_schedule_commands_demo.sla`.
 - [x] Add verified table-row system-param example: `examples/table_system_param_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
