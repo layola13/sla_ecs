@@ -36,6 +36,8 @@ struct TableErasedWorld<R, M> {
     locations: Vec<TableErasedLocation>,
     resource: ResourceSlot<R>,
     messages: Messages<M>,
+    resource_added_tick: i32,
+    resource_changed_tick: i32,
 }
 
 struct TableErasedMut<T> {
@@ -127,6 +129,8 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
         locations: locations,
         resource: resource_slot_new<R>(default_r),
         messages: messages_new<M>(default_m),
+        resource_added_tick: 0,
+        resource_changed_tick: 0,
     };
     world.archetypes.push(table_erased_archetype_new<R, M>(world, 0, table_erased_signature_empty()));
     return world;
@@ -556,8 +560,46 @@ fn table_erased_world_pair_write_first<A, B, R, M>(world: TableErasedWorld<R, M>
     return table_erased_world_write<A, R, M>(world, item.first, value);
 }
 
-fn table_erased_world_insert_resource<R, M>(world: TableErasedWorld<R, M>, value: R) -> TableErasedWorld<R, M> { world.resource = resource_insert<R>(world.resource, value); return world; }
+fn table_erased_world_insert_resource<R, M>(world: TableErasedWorld<R, M>, value: R) -> TableErasedWorld<R, M> {
+    if resource_has<R>(world.resource) != true { world.resource_added_tick = world.registry.change_tick; };
+    world.resource = resource_insert<R>(world.resource, value);
+    world.resource_changed_tick = world.registry.change_tick;
+    return world;
+}
 fn table_erased_world_get_resource<R, M>(world: TableErasedWorld<R, M>) -> R { return resource_get<R>(world.resource); }
+fn table_erased_world_has_resource<R, M>(world: TableErasedWorld<R, M>) -> bool { return resource_has<R>(world.resource); }
+
+fn table_erased_world_res<R, M>(world: TableErasedWorld<R, M>) -> Res<R> {
+    return Res<R> { value: table_erased_world_get_resource<R, M>(world), added_tick: world.resource_added_tick, changed_tick: world.resource_changed_tick };
+}
+
+fn table_erased_world_res_mut<R, M>(world: TableErasedWorld<R, M>) -> ResMut<R> {
+    return ResMut<R> { value: table_erased_world_get_resource<R, M>(world), added_tick: world.resource_added_tick, changed_tick: world.resource_changed_tick };
+}
+
+fn table_erased_world_resource_added_since<R, M>(world: TableErasedWorld<R, M>, tick: i32) -> bool {
+    if table_erased_world_has_resource<R, M>(world) != true { return false; };
+    return world.resource_added_tick > tick;
+}
+
+fn table_erased_world_resource_changed_since<R, M>(world: TableErasedWorld<R, M>, tick: i32) -> bool {
+    if table_erased_world_has_resource<R, M>(world) != true { return false; };
+    return world.resource_changed_tick > tick;
+}
+
+fn table_erased_world_res_mut_write<R, M>(world: TableErasedWorld<R, M>, res: ResMut<R>, value: R) -> TableErasedWorld<R, M> {
+    if table_erased_world_has_resource<R, M>(world) != true { return world; };
+    world.resource = resource_insert<R>(world.resource, value);
+    world.resource_changed_tick = world.registry.change_tick;
+    return world;
+}
+
+fn table_erased_world_remove_resource<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> {
+    world.resource = resource_remove<R>(world.resource);
+    world.resource_added_tick = 0;
+    world.resource_changed_tick = 0;
+    return world;
+}
 fn table_erased_world_write_message<R, M>(world: TableErasedWorld<R, M>, value: M) -> TableErasedWorld<R, M> { world.messages = messages_write<M>(world.messages, value); return world; }
 fn table_erased_world_read_message<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageRead<M> { return messages_read_next<M>(world.messages, reader, default_value); }
 
