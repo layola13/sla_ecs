@@ -1,0 +1,1598 @@
+@import "sa_std/vec.sa"
+@import "sa_std/core/box.sa"
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@import "sa_std/core/box.sa"
+@import "sa_std/vec.sa"
+@const SLA_FNPTR_VT_message_reader_new = vtable { call = @sla__message_reader_new }
+@const SLA_FNPTR_VT_test_damage_messages_new = vtable { call = @sla__test_damage_messages_new }
+@const SLA_FNPTR_VT_test_damage_default = vtable { call = @sla__test_damage_default }
+@const SLA_FNPTR_VT_erased_messages_new = vtable { call = @sla__erased_messages_new }
+@const SLA_FNPTR_VT_erased_message_channel_new = vtable { call = @sla__erased_message_channel_new }
+@const SLA_FNPTR_VT_erased_messages_channel_slot = vtable { call = @sla__erased_messages_channel_slot }
+@const SLA_FNPTR_VT_erased_messages_channel_count = vtable { call = @sla__erased_messages_channel_count }
+@const SLA_FNPTR_VT_erased_messages_channel_len = vtable { call = @sla__erased_messages_channel_len }
+@const SLA_FNPTR_VT_erased_messages_ensure_channel = vtable { call = @sla__erased_messages_ensure_channel }
+@const SLA_FNPTR_VT_erased_message_writer_new = vtable { call = @sla__erased_message_writer_new }
+@const SLA_FNPTR_VT_erased_messages_apply_writer = vtable { call = @sla__erased_messages_apply_writer }
+@const SLA_FNPTR_VT_erased_messages_clear_channel = vtable { call = @sla__erased_messages_clear_channel }
+@const SLA_FNPTR_VT_erased_damage_message_drop = vtable { call = @sla__erased_damage_message_drop }
+@const SLA_FNPTR_VT_erased_spawn_message_drop = vtable { call = @sla__erased_spawn_message_drop }
+@const SLA_FNPTR_VT_erased_damage_default = vtable { call = @sla__erased_damage_default }
+@const SLA_FNPTR_VT_erased_spawn_default = vtable { call = @sla__erased_spawn_default }
+@const SLA_FNPTR_VT_messages_new_TestDamageMessage = vtable { call = @sla__messages_new_TestDamageMessage }
+@const SLA_FNPTR_VT_messages_write_TestDamageMessage = vtable { call = @sla__messages_write_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_new_TestDamageMessage = vtable { call = @sla__message_writer_new_TestDamageMessage }
+@const SLA_FNPTR_VT_message_writer_send_TestDamageMessage = vtable { call = @sla__message_writer_send_TestDamageMessage }
+@const SLA_FNPTR_VT_messages_apply_writer_TestDamageMessage = vtable { call = @sla__messages_apply_writer_TestDamageMessage }
+@const SLA_FNPTR_VT_messages_read_next_TestDamageMessage = vtable { call = @sla__messages_read_next_TestDamageMessage }
+@const SLA_FNPTR_VT_erased_message_value_new_ErasedDamageMessage = vtable { call = @sla__erased_message_value_new_ErasedDamageMessage }
+@const SLA_FNPTR_VT_erased_messages_write_ErasedDamageMessage = vtable { call = @sla__erased_messages_write_ErasedDamageMessage }
+@const SLA_FNPTR_VT_erased_message_value_new_ErasedSpawnMessage = vtable { call = @sla__erased_message_value_new_ErasedSpawnMessage }
+@const SLA_FNPTR_VT_erased_messages_write_ErasedSpawnMessage = vtable { call = @sla__erased_messages_write_ErasedSpawnMessage }
+@const SLA_FNPTR_VT_erased_message_value_read_ErasedDamageMessage = vtable { call = @sla__erased_message_value_read_ErasedDamageMessage }
+@const SLA_FNPTR_VT_erased_messages_read_next_ErasedDamageMessage = vtable { call = @sla__erased_messages_read_next_ErasedDamageMessage }
+@const SLA_FNPTR_VT_erased_message_value_read_ErasedSpawnMessage = vtable { call = @sla__erased_message_value_read_ErasedSpawnMessage }
+@const SLA_FNPTR_VT_erased_messages_read_next_ErasedSpawnMessage = vtable { call = @sla__erased_messages_read_next_ErasedSpawnMessage }
+@const SLA_FNPTR_VT_erased_message_writer_send_ErasedDamageMessage = vtable { call = @sla__erased_message_writer_send_ErasedDamageMessage }
+@sla__message_reader_new() -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 8
+    tmp_1 = 0
+    store tmp_0+0, tmp_1 as i64
+    !tmp_1
+    return tmp_0
+
+@sla__test_damage_messages_new() -> ptr:
+L_ENTRY:
+    tmp_2 = alloc 4
+    tmp_3 = 0
+    store tmp_2+0, tmp_3 as i32
+    !tmp_3
+    tmp_4 = call @sla__messages_new_TestDamageMessage(tmp_2)
+    !tmp_2
+    return tmp_4
+
+@sla__test_damage_default() -> ptr:
+L_ENTRY:
+    tmp_5 = alloc 4
+    tmp_6 = 0
+    store tmp_5+0, tmp_6 as i32
+    !tmp_6
+    return tmp_5
+
+@sla__erased_messages_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_7
+    channels = tmp_7
+    tmp_8 = alloc 8
+    store tmp_8+0, channels as ptr
+    return tmp_8
+
+@sla__erased_message_channel_new(type_id: i32, drop_fn: ptr) -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_9
+    values = tmp_9
+    tmp_10 = alloc 24
+    store tmp_10+0, type_id as i32
+    store tmp_10+8, drop_fn as ptr
+    store tmp_10+16, values as ptr
+    return tmp_10
+
+@sla__erased_messages_channel_slot(messages: ptr, type_id: i32) -> i64:
+L_ENTRY:
+    tmp_11 = 0
+    i = tmp_11
+    tmp_12 = load messages+0 as ptr
+    EXPAND VEC_LEN tmp_13, tmp_12
+    !tmp_12
+    tmp_14 = tmp_13 as i64
+    cnt = tmp_14
+    jmp L_WHILE_HEAD_0
+
+L_WHILE_HEAD_0:
+    tmp_15 = slt i, cnt
+    br tmp_15 -> L_WHILE_BODY_1, L_WHILE_COND_FALSE_2
+
+L_WHILE_BODY_1:
+    !tmp_15
+    tmp_16 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_17, tmp_16, i
+    !tmp_16
+    tmp_18 = tmp_17 as ptr
+    tmp_19 = load tmp_18+0 as i32
+    !tmp_18
+    tmp_20 = eq tmp_19, type_id
+    !tmp_19
+    br tmp_20 -> L_THEN_4, L_ELSE_5
+
+L_THEN_4:
+    !tmp_20
+    !cnt
+    !type_id
+    !messages
+    return i
+
+L_ELSE_5:
+    !tmp_20
+    jmp L_MERGE_6
+
+L_MERGE_6:
+    tmp_22 = 1
+    tmp_23 = add i, tmp_22
+    !tmp_22
+    !i
+    i = tmp_23
+    jmp L_WHILE_HEAD_0
+
+L_WHILE_COND_FALSE_2:
+    !tmp_15
+    jmp L_WHILE_EXIT_3
+
+L_WHILE_EXIT_3:
+    tmp_24 = 0
+    tmp_25 = 1
+    tmp_26 = sub tmp_24, tmp_25
+    !tmp_24
+    !tmp_25
+    !cnt
+    !i
+    !type_id
+    !messages
+    return tmp_26
+
+@sla__erased_messages_channel_count(messages: ptr) -> i64:
+L_ENTRY:
+    tmp_27 = load messages+0 as ptr
+    EXPAND VEC_LEN tmp_28, tmp_27
+    !tmp_27
+    tmp_29 = tmp_28 as i64
+    !messages
+    return tmp_29
+
+@sla__erased_messages_channel_len(messages: ptr, type_id: i32) -> i64:
+L_ENTRY:
+    tmp_30 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_30
+    tmp_31 = 0
+    tmp_32 = slt slot, tmp_31
+    !tmp_31
+    br tmp_32 -> L_THEN_7, L_ELSE_8
+
+L_THEN_7:
+    !tmp_32
+    tmp_33 = 0
+    !slot
+    !type_id
+    !messages
+    return tmp_33
+
+L_ELSE_8:
+    !tmp_32
+    jmp L_MERGE_9
+
+L_MERGE_9:
+    tmp_35 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_36, tmp_35, slot
+    !tmp_35
+    tmp_37 = tmp_36 as ptr
+    tmp_38 = load tmp_37+16 as ptr
+    !tmp_37
+    EXPAND VEC_LEN tmp_39, tmp_38
+    !tmp_38
+    tmp_40 = tmp_39 as i64
+    !slot
+    !type_id
+    !messages
+    return tmp_40
+
+@sla__erased_messages_ensure_channel(messages: ptr, type_id: i32, drop_fn: ptr) -> ptr:
+L_ENTRY:
+    tmp_41 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_41
+    tmp_42 = 0
+    tmp_43 = sge slot, tmp_42
+    !tmp_42
+    br tmp_43 -> L_THEN_10, L_ELSE_11
+
+L_THEN_10:
+    !tmp_43
+    !slot
+    !type_id
+    !drop_fn
+    return messages
+
+L_ELSE_11:
+    !tmp_43
+    jmp L_MERGE_12
+
+L_MERGE_12:
+    tmp_45 = load messages+0 as ptr
+    tmp_46 = call @sla__erased_message_channel_new(type_id, drop_fn)
+    EXPAND VEC_PUSH tmp_45, tmp_46, 8
+    !tmp_46
+    !tmp_45
+    !slot
+    !type_id
+    !drop_fn
+    return messages
+
+@sla__erased_message_writer_new(type_id: i32, drop_fn: ptr) -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_47
+    values = tmp_47
+    tmp_48 = alloc 24
+    store tmp_48+0, type_id as i32
+    store tmp_48+8, drop_fn as ptr
+    store tmp_48+16, values as ptr
+    return tmp_48
+
+@sla__erased_messages_apply_writer(messages: ptr, writer: ptr) -> ptr:
+L_ENTRY:
+    tmp_49 = load writer+0 as i32
+    tmp_50 = load writer+8 as ptr
+    tmp_51 = call @sla__erased_messages_ensure_channel(messages, tmp_49, tmp_50)
+    !tmp_49
+    !tmp_50
+    !messages
+    messages = tmp_51
+    tmp_52 = load writer+0 as i32
+    tmp_53 = call @sla__erased_messages_channel_slot(messages, tmp_52)
+    !tmp_52
+    slot = tmp_53
+    tmp_54 = 0
+    i = tmp_54
+    tmp_55 = load writer+16 as ptr
+    EXPAND VEC_LEN tmp_56, tmp_55
+    !tmp_55
+    tmp_57 = tmp_56 as i64
+    cnt = tmp_57
+    jmp L_WHILE_HEAD_13
+
+L_WHILE_HEAD_13:
+    tmp_58 = slt i, cnt
+    br tmp_58 -> L_WHILE_BODY_14, L_WHILE_COND_FALSE_15
+
+L_WHILE_BODY_14:
+    !tmp_58
+    tmp_59 = load writer+16 as ptr
+    EXPAND VEC_GET tmp_60, tmp_59, i
+    !tmp_59
+    tmp_61 = tmp_60 as ptr
+    value = tmp_61
+    tmp_62 = load value+0 as i32
+    tmp_63 = load writer+0 as i32
+    tmp_64 = ne tmp_62, tmp_63
+    !tmp_62
+    !tmp_63
+    br tmp_64 -> L_THEN_17, L_ELSE_18
+
+L_THEN_17:
+    !tmp_64
+    panic(12701)
+
+L_ELSE_18:
+    !tmp_64
+    jmp L_MERGE_19
+
+L_MERGE_19:
+    tmp_67 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_68, tmp_67, slot
+    !tmp_67
+    tmp_69 = tmp_68 as ptr
+    tmp_70 = load tmp_69+16 as ptr
+    !tmp_69
+    EXPAND VEC_PUSH tmp_70, value, 8
+    !tmp_70
+    tmp_71 = 1
+    tmp_72 = add i, tmp_71
+    !tmp_71
+    !i
+    i = tmp_72
+    !value
+    jmp L_WHILE_HEAD_13
+
+L_WHILE_COND_FALSE_15:
+    !tmp_58
+    jmp L_WHILE_EXIT_16
+
+L_WHILE_EXIT_16:
+    !cnt
+    !i
+    !slot
+    !writer
+    return messages
+
+@sla__erased_messages_clear_channel(messages: ptr, type_id: i32) -> ptr:
+L_ENTRY:
+    tmp_73 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_73
+    tmp_74 = 0
+    tmp_75 = slt slot, tmp_74
+    !tmp_74
+    br tmp_75 -> L_THEN_20, L_ELSE_21
+
+L_THEN_20:
+    !tmp_75
+    !slot
+    !type_id
+    return messages
+
+L_ELSE_21:
+    !tmp_75
+    jmp L_MERGE_22
+
+L_MERGE_22:
+    tmp_77 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_78, tmp_77, slot
+    !tmp_77
+    tmp_79 = tmp_78 as ptr
+    tmp_80 = load tmp_79+8 as ptr
+    !tmp_79
+    drop_fn = tmp_80
+    tmp_81 = 0
+    i = tmp_81
+    tmp_82 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_83, tmp_82, slot
+    !tmp_82
+    tmp_84 = tmp_83 as ptr
+    tmp_85 = load tmp_84+16 as ptr
+    !tmp_84
+    EXPAND VEC_LEN tmp_86, tmp_85
+    !tmp_85
+    tmp_87 = tmp_86 as i64
+    cnt = tmp_87
+    jmp L_WHILE_HEAD_23
+
+L_WHILE_HEAD_23:
+    tmp_88 = slt i, cnt
+    br tmp_88 -> L_WHILE_BODY_24, L_WHILE_COND_FALSE_25
+
+L_WHILE_BODY_24:
+    !tmp_88
+    tmp_89 = load drop_fn+8 as ptr
+    tmp_90 = load tmp_89+0 as ptr
+    tmp_91 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_92, tmp_91, slot
+    !tmp_91
+    tmp_93 = tmp_92 as ptr
+    tmp_94 = load tmp_93+16 as ptr
+    !tmp_93
+    EXPAND VEC_GET tmp_95, tmp_94, i
+    !tmp_94
+    tmp_96 = tmp_95 as ptr
+    tmp_97 = load tmp_96+8 as ptr
+    !tmp_96
+    tmp_98 = call_indirect tmp_90(tmp_97)
+    !tmp_90
+    !tmp_89
+    !tmp_97
+    !tmp_98
+    tmp_99 = 1
+    tmp_100 = add i, tmp_99
+    !tmp_99
+    !i
+    i = tmp_100
+    jmp L_WHILE_HEAD_23
+
+L_WHILE_COND_FALSE_25:
+    !tmp_88
+    jmp L_WHILE_EXIT_26
+
+L_WHILE_EXIT_26:
+    EXPAND VEC_NEW tmp_101
+    values = tmp_101
+    tmp_102 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_103, tmp_102, slot
+    !tmp_102
+    tmp_104 = tmp_103 as ptr
+    store tmp_104+16, values as ptr
+    !tmp_104
+    !values
+    !cnt
+    !drop_fn
+    !i
+    !slot
+    !type_id
+    return messages
+
+@sla__erased_damage_message_drop(raw: ptr):
+L_ENTRY:
+    typed = raw
+    EXPAND BOX_FROM_RAW tmp_106, typed
+    tmp_105 = tmp_106
+    boxed = tmp_105
+    !typed
+    !boxed
+    return
+
+@sla__erased_spawn_message_drop(raw: ptr):
+L_ENTRY:
+    typed = raw
+    EXPAND BOX_FROM_RAW tmp_108, typed
+    tmp_107 = tmp_108
+    boxed = tmp_107
+    !typed
+    !boxed
+    return
+
+@sla__erased_damage_default() -> ptr:
+L_ENTRY:
+    tmp_109 = alloc 4
+    tmp_110 = 0
+    store tmp_109+0, tmp_110 as i32
+    !tmp_110
+    return tmp_109
+
+@sla__erased_spawn_default() -> ptr:
+L_ENTRY:
+    tmp_111 = alloc 4
+    tmp_112 = 0
+    store tmp_111+0, tmp_112 as i32
+    !tmp_112
+    return tmp_111
+
+@sla__messages_new_TestDamageMessage(default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_113 = alloc 16
+    tmp_114 = 0
+    store tmp_113+0, tmp_114 as i64
+    !tmp_114
+    tmp_115 = alloc 128
+    store tmp_115+0, default_value as ptr
+    store tmp_115+8, default_value as ptr
+    store tmp_115+16, default_value as ptr
+    store tmp_115+24, default_value as ptr
+    store tmp_115+32, default_value as ptr
+    store tmp_115+40, default_value as ptr
+    store tmp_115+48, default_value as ptr
+    store tmp_115+56, default_value as ptr
+    store tmp_115+64, default_value as ptr
+    store tmp_115+72, default_value as ptr
+    store tmp_115+80, default_value as ptr
+    store tmp_115+88, default_value as ptr
+    store tmp_115+96, default_value as ptr
+    store tmp_115+104, default_value as ptr
+    store tmp_115+112, default_value as ptr
+    store tmp_115+120, default_value as ptr
+    store tmp_113+8, tmp_115 as ptr
+    !tmp_115
+    return tmp_113
+
+@sla__messages_write_TestDamageMessage(messages: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_116 = load messages+0 as i64
+    slot = tmp_116
+    tmp_117 = 16
+    tmp_118 = sge slot, tmp_117
+    !tmp_117
+    br tmp_118 -> L_THEN_27, L_ELSE_28
+
+L_THEN_27:
+    !tmp_118
+    panic(6001)
+
+L_ELSE_28:
+    !tmp_118
+    jmp L_MERGE_29
+
+L_MERGE_29:
+    tmp_121 = load messages+8 as ptr
+    tmp_122 = mul slot, 8
+    tmp_123 = ptr_add tmp_121, tmp_122
+    !tmp_122
+    store tmp_123+0, value as ptr
+    !tmp_123
+    !tmp_121
+    !value
+    tmp_124 = 1
+    tmp_125 = add slot, tmp_124
+    !tmp_124
+    store messages+0, tmp_125 as i64
+    !tmp_125
+    !slot
+    return messages
+
+@sla__message_writer_new_TestDamageMessage() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_126
+    values = tmp_126
+    tmp_127 = alloc 8
+    store tmp_127+0, values as ptr
+    return tmp_127
+
+@sla__message_writer_send_TestDamageMessage(writer: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_128 = load writer+0 as ptr
+    EXPAND VEC_PUSH tmp_128, value, 8
+    !tmp_128
+    !value
+    return writer
+
+@sla__messages_apply_writer_TestDamageMessage(messages: ptr, writer: ptr) -> ptr:
+L_ENTRY:
+    tmp_129 = 0
+    i = tmp_129
+    tmp_130 = load writer+0 as ptr
+    EXPAND VEC_LEN tmp_131, tmp_130
+    !tmp_130
+    tmp_132 = tmp_131 as i64
+    cnt = tmp_132
+    jmp L_WHILE_HEAD_30
+
+L_WHILE_HEAD_30:
+    tmp_133 = slt i, cnt
+    br tmp_133 -> L_WHILE_BODY_31, L_WHILE_COND_FALSE_32
+
+L_WHILE_BODY_31:
+    !tmp_133
+    tmp_134 = load writer+0 as ptr
+    EXPAND VEC_GET tmp_135, tmp_134, i
+    !tmp_134
+    tmp_136 = tmp_135 as ptr
+    tmp_137 = call @sla__messages_write_TestDamageMessage(messages, tmp_136)
+    !tmp_136
+    !messages
+    messages = tmp_137
+    tmp_138 = 1
+    tmp_139 = add i, tmp_138
+    !tmp_138
+    !i
+    i = tmp_139
+    jmp L_WHILE_HEAD_30
+
+L_WHILE_COND_FALSE_32:
+    !tmp_133
+    jmp L_WHILE_EXIT_33
+
+L_WHILE_EXIT_33:
+    !cnt
+    !i
+    !writer
+    return messages
+
+@sla__messages_read_next_TestDamageMessage(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_140 = load reader+0 as i64
+    tmp_141 = load messages+0 as i64
+    tmp_142 = sge tmp_140, tmp_141
+    !tmp_140
+    !tmp_141
+    br tmp_142 -> L_THEN_34, L_ELSE_35
+
+L_THEN_34:
+    !tmp_142
+    tmp_143 = alloc 24
+    tmp_144 = 0
+    store tmp_143+0, tmp_144 as u8
+    !tmp_144
+    store tmp_143+8, default_value as ptr
+    store tmp_143+16, reader as ptr
+    !messages
+    return tmp_143
+
+L_ELSE_35:
+    !tmp_142
+    jmp L_MERGE_36
+
+L_MERGE_36:
+    tmp_146 = load messages+8 as ptr
+    tmp_147 = load reader+0 as i64
+    tmp_148 = mul tmp_147, 8
+    tmp_149 = ptr_add tmp_146, tmp_148
+    !tmp_148
+    !tmp_147
+    tmp_150 = load tmp_149+0 as ptr
+    !tmp_149
+    !tmp_146
+    value = tmp_150
+    tmp_151 = load reader+0 as i64
+    tmp_152 = 1
+    tmp_153 = add tmp_151, tmp_152
+    !tmp_151
+    !tmp_152
+    store reader+0, tmp_153 as i64
+    !tmp_153
+    tmp_154 = alloc 24
+    tmp_155 = 1
+    store tmp_154+0, tmp_155 as u8
+    !tmp_155
+    store tmp_154+8, value as ptr
+    store tmp_154+16, reader as ptr
+    !messages
+    !default_value
+    return tmp_154
+
+@sla__erased_message_value_new_ErasedDamageMessage(type_id: i32, value: ptr) -> ptr:
+L_ENTRY:
+    EXPAND BOX_NEW tmp_156, value
+    boxed = tmp_156
+    EXPAND BOX_INTO_RAW tmp_157, boxed
+    raw = tmp_157
+    tmp_158 = alloc 16
+    store tmp_158+0, type_id as i32
+    store tmp_158+8, raw as ptr
+    !value
+    return tmp_158
+
+@sla__erased_messages_write_ErasedDamageMessage(messages: ptr, type_id: i32, drop_fn: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_159 = call @sla__erased_messages_ensure_channel(messages, type_id, drop_fn)
+    !messages
+    messages = tmp_159
+    tmp_160 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_160
+    tmp_161 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_162, tmp_161, slot
+    !tmp_161
+    tmp_163 = tmp_162 as ptr
+    tmp_164 = load tmp_163+16 as ptr
+    !tmp_163
+    tmp_165 = call @sla__erased_message_value_new_ErasedDamageMessage(type_id, value)
+    EXPAND VEC_PUSH tmp_164, tmp_165, 8
+    !tmp_165
+    !tmp_164
+    !slot
+    !type_id
+    !value
+    !drop_fn
+    return messages
+
+@sla__erased_message_value_new_ErasedSpawnMessage(type_id: i32, value: ptr) -> ptr:
+L_ENTRY:
+    EXPAND BOX_NEW tmp_166, value
+    boxed = tmp_166
+    EXPAND BOX_INTO_RAW tmp_167, boxed
+    raw = tmp_167
+    tmp_168 = alloc 16
+    store tmp_168+0, type_id as i32
+    store tmp_168+8, raw as ptr
+    !value
+    return tmp_168
+
+@sla__erased_messages_write_ErasedSpawnMessage(messages: ptr, type_id: i32, drop_fn: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_169 = call @sla__erased_messages_ensure_channel(messages, type_id, drop_fn)
+    !messages
+    messages = tmp_169
+    tmp_170 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_170
+    tmp_171 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_172, tmp_171, slot
+    !tmp_171
+    tmp_173 = tmp_172 as ptr
+    tmp_174 = load tmp_173+16 as ptr
+    !tmp_173
+    tmp_175 = call @sla__erased_message_value_new_ErasedSpawnMessage(type_id, value)
+    EXPAND VEC_PUSH tmp_174, tmp_175, 8
+    !tmp_175
+    !tmp_174
+    !slot
+    !type_id
+    !value
+    !drop_fn
+    return messages
+
+@sla__erased_message_value_read_ErasedDamageMessage(value: ptr, type_id: i32) -> ptr:
+L_ENTRY:
+    tmp_176 = load value+0 as i32
+    tmp_177 = ne tmp_176, type_id
+    !tmp_176
+    br tmp_177 -> L_THEN_37, L_ELSE_38
+
+L_THEN_37:
+    !tmp_177
+    panic(12700)
+
+L_ELSE_38:
+    !tmp_177
+    jmp L_MERGE_39
+
+L_MERGE_39:
+    tmp_180 = load value+8 as ptr
+    typed = tmp_180
+    tmp_182 = load typed+0 as ptr
+    tmp_181 = tmp_182
+    !typed
+    !value
+    !type_id
+    return tmp_181
+
+@sla__erased_messages_read_next_ErasedDamageMessage(messages: ptr, type_id: i32, reader: ptr, default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_183 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_183
+    tmp_184 = 0
+    tmp_185 = slt slot, tmp_184
+    !tmp_184
+    br tmp_185 -> L_THEN_40, L_ELSE_41
+
+L_THEN_40:
+    !tmp_185
+    tmp_186 = alloc 24
+    tmp_187 = 0
+    store tmp_186+0, tmp_187 as u8
+    !tmp_187
+    store tmp_186+8, default_value as ptr
+    store tmp_186+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    return tmp_186
+
+L_ELSE_41:
+    !tmp_185
+    jmp L_MERGE_42
+
+L_MERGE_42:
+    tmp_189 = load reader+0 as i64
+    tmp_190 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_191, tmp_190, slot
+    !tmp_190
+    tmp_192 = tmp_191 as ptr
+    tmp_193 = load tmp_192+16 as ptr
+    !tmp_192
+    EXPAND VEC_LEN tmp_194, tmp_193
+    !tmp_193
+    tmp_195 = tmp_194 as i64
+    tmp_196 = sge tmp_189, tmp_195
+    !tmp_189
+    !tmp_195
+    br tmp_196 -> L_THEN_43, L_ELSE_44
+
+L_THEN_43:
+    !tmp_196
+    tmp_197 = alloc 24
+    tmp_198 = 0
+    store tmp_197+0, tmp_198 as u8
+    !tmp_198
+    store tmp_197+8, default_value as ptr
+    store tmp_197+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    return tmp_197
+
+L_ELSE_44:
+    !tmp_196
+    jmp L_MERGE_45
+
+L_MERGE_45:
+    tmp_200 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_201, tmp_200, slot
+    !tmp_200
+    tmp_202 = tmp_201 as ptr
+    tmp_203 = load tmp_202+16 as ptr
+    !tmp_202
+    tmp_204 = load reader+0 as i64
+    EXPAND VEC_GET tmp_205, tmp_203, tmp_204
+    !tmp_204
+    !tmp_203
+    tmp_206 = tmp_205 as ptr
+    tmp_207 = call @sla__erased_message_value_read_ErasedDamageMessage(tmp_206, type_id)
+    !tmp_206
+    value = tmp_207
+    tmp_208 = load reader+0 as i64
+    tmp_209 = 1
+    tmp_210 = add tmp_208, tmp_209
+    !tmp_208
+    !tmp_209
+    store reader+0, tmp_210 as i64
+    !tmp_210
+    tmp_211 = alloc 24
+    tmp_212 = 1
+    store tmp_211+0, tmp_212 as u8
+    !tmp_212
+    store tmp_211+8, value as ptr
+    store tmp_211+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    !default_value
+    return tmp_211
+
+@sla__erased_message_value_read_ErasedSpawnMessage(value: ptr, type_id: i32) -> ptr:
+L_ENTRY:
+    tmp_213 = load value+0 as i32
+    tmp_214 = ne tmp_213, type_id
+    !tmp_213
+    br tmp_214 -> L_THEN_46, L_ELSE_47
+
+L_THEN_46:
+    !tmp_214
+    panic(12700)
+
+L_ELSE_47:
+    !tmp_214
+    jmp L_MERGE_48
+
+L_MERGE_48:
+    tmp_217 = load value+8 as ptr
+    typed = tmp_217
+    tmp_219 = load typed+0 as ptr
+    tmp_218 = tmp_219
+    !typed
+    !value
+    !type_id
+    return tmp_218
+
+@sla__erased_messages_read_next_ErasedSpawnMessage(messages: ptr, type_id: i32, reader: ptr, default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_220 = call @sla__erased_messages_channel_slot(messages, type_id)
+    slot = tmp_220
+    tmp_221 = 0
+    tmp_222 = slt slot, tmp_221
+    !tmp_221
+    br tmp_222 -> L_THEN_49, L_ELSE_50
+
+L_THEN_49:
+    !tmp_222
+    tmp_223 = alloc 24
+    tmp_224 = 0
+    store tmp_223+0, tmp_224 as u8
+    !tmp_224
+    store tmp_223+8, default_value as ptr
+    store tmp_223+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    return tmp_223
+
+L_ELSE_50:
+    !tmp_222
+    jmp L_MERGE_51
+
+L_MERGE_51:
+    tmp_226 = load reader+0 as i64
+    tmp_227 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_228, tmp_227, slot
+    !tmp_227
+    tmp_229 = tmp_228 as ptr
+    tmp_230 = load tmp_229+16 as ptr
+    !tmp_229
+    EXPAND VEC_LEN tmp_231, tmp_230
+    !tmp_230
+    tmp_232 = tmp_231 as i64
+    tmp_233 = sge tmp_226, tmp_232
+    !tmp_226
+    !tmp_232
+    br tmp_233 -> L_THEN_52, L_ELSE_53
+
+L_THEN_52:
+    !tmp_233
+    tmp_234 = alloc 24
+    tmp_235 = 0
+    store tmp_234+0, tmp_235 as u8
+    !tmp_235
+    store tmp_234+8, default_value as ptr
+    store tmp_234+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    return tmp_234
+
+L_ELSE_53:
+    !tmp_233
+    jmp L_MERGE_54
+
+L_MERGE_54:
+    tmp_237 = load messages+0 as ptr
+    EXPAND VEC_GET tmp_238, tmp_237, slot
+    !tmp_237
+    tmp_239 = tmp_238 as ptr
+    tmp_240 = load tmp_239+16 as ptr
+    !tmp_239
+    tmp_241 = load reader+0 as i64
+    EXPAND VEC_GET tmp_242, tmp_240, tmp_241
+    !tmp_241
+    !tmp_240
+    tmp_243 = tmp_242 as ptr
+    tmp_244 = call @sla__erased_message_value_read_ErasedSpawnMessage(tmp_243, type_id)
+    !tmp_243
+    value = tmp_244
+    tmp_245 = load reader+0 as i64
+    tmp_246 = 1
+    tmp_247 = add tmp_245, tmp_246
+    !tmp_245
+    !tmp_246
+    store reader+0, tmp_247 as i64
+    !tmp_247
+    tmp_248 = alloc 24
+    tmp_249 = 1
+    store tmp_248+0, tmp_249 as u8
+    !tmp_249
+    store tmp_248+8, value as ptr
+    store tmp_248+16, reader as ptr
+    !slot
+    !type_id
+    !messages
+    !default_value
+    return tmp_248
+
+@sla__erased_message_writer_send_ErasedDamageMessage(writer: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_250 = load writer+16 as ptr
+    tmp_251 = load writer+0 as i32
+    tmp_252 = call @sla__erased_message_value_new_ErasedDamageMessage(tmp_251, value)
+    !tmp_251
+    EXPAND VEC_PUSH tmp_250, tmp_252, 8
+    !tmp_252
+    !tmp_250
+    !value
+    return writer
+
+@test "messages generic constructor"():
+L_TEST_ENTRY_55:
+    tmp_253 = call @sla__test_damage_default()
+    tmp_254 = call @sla__messages_new_TestDamageMessage(tmp_253)
+    !tmp_253
+    m = tmp_254
+    tmp_255 = load m+0 as i64
+    tmp_256 = 0
+    tmp_257 = ne tmp_255, tmp_256
+    !tmp_255
+    !tmp_256
+    br tmp_257 -> L_THEN_56, L_ELSE_57
+
+L_THEN_56:
+    !tmp_257
+    panic(2390)
+
+L_ELSE_57:
+    !tmp_257
+    jmp L_MERGE_58
+
+L_MERGE_58:
+    !m
+    return
+
+@test "messages writer appends"():
+L_TEST_ENTRY_59:
+    tmp_260 = call @sla__test_damage_messages_new()
+    m0 = tmp_260
+    tmp_261 = alloc 4
+    tmp_262 = 5
+    store tmp_261+0, tmp_262 as i32
+    !tmp_262
+    tmp_263 = call @sla__messages_write_TestDamageMessage(m0, tmp_261)
+    !tmp_261
+    m1 = tmp_263
+    tmp_264 = alloc 4
+    tmp_265 = 7
+    store tmp_264+0, tmp_265 as i32
+    !tmp_265
+    tmp_266 = call @sla__messages_write_TestDamageMessage(m1, tmp_264)
+    !tmp_264
+    m2 = tmp_266
+    tmp_267 = load m2+0 as i64
+    tmp_268 = 2
+    tmp_269 = ne tmp_267, tmp_268
+    !tmp_267
+    !tmp_268
+    br tmp_269 -> L_THEN_60, L_ELSE_61
+
+L_THEN_60:
+    !tmp_269
+    panic(2400)
+
+L_ELSE_61:
+    !tmp_269
+    jmp L_MERGE_62
+
+L_MERGE_62:
+    !m2
+    !m0
+    !m1
+    return
+
+@test "message writer param batches appends"():
+L_TEST_ENTRY_63:
+    tmp_272 = call @sla__test_damage_messages_new()
+    m0 = tmp_272
+    tmp_273 = call @sla__message_writer_new_TestDamageMessage()
+    w0 = tmp_273
+    tmp_274 = alloc 4
+    tmp_275 = 3
+    store tmp_274+0, tmp_275 as i32
+    !tmp_275
+    tmp_276 = call @sla__message_writer_send_TestDamageMessage(w0, tmp_274)
+    !tmp_274
+    w1 = tmp_276
+    tmp_277 = alloc 4
+    tmp_278 = 9
+    store tmp_277+0, tmp_278 as i32
+    !tmp_278
+    tmp_279 = call @sla__message_writer_send_TestDamageMessage(w1, tmp_277)
+    !tmp_277
+    w2 = tmp_279
+    tmp_280 = call @sla__messages_apply_writer_TestDamageMessage(m0, w2)
+    m1 = tmp_280
+    tmp_281 = call @sla__message_reader_new()
+    r0 = tmp_281
+    tmp_282 = call @sla__test_damage_default()
+    tmp_283 = call @sla__messages_read_next_TestDamageMessage(m1, r0, tmp_282)
+    !tmp_282
+    read1 = tmp_283
+    tmp_284 = load read1+16 as ptr
+    tmp_285 = call @sla__test_damage_default()
+    tmp_286 = call @sla__messages_read_next_TestDamageMessage(m1, tmp_284, tmp_285)
+    !tmp_284
+    !tmp_285
+    read2 = tmp_286
+    tmp_287 = load read1+8 as ptr
+    tmp_288 = load tmp_287+0 as i32
+    !tmp_287
+    tmp_289 = 3
+    tmp_290 = ne tmp_288, tmp_289
+    !tmp_288
+    !tmp_289
+    br tmp_290 -> L_THEN_64, L_ELSE_65
+
+L_THEN_64:
+    !tmp_290
+    panic(2420)
+
+L_ELSE_65:
+    !tmp_290
+    jmp L_MERGE_66
+
+L_MERGE_66:
+    tmp_293 = load read2+8 as ptr
+    tmp_294 = load tmp_293+0 as i32
+    !tmp_293
+    tmp_295 = 9
+    tmp_296 = ne tmp_294, tmp_295
+    !tmp_294
+    !tmp_295
+    br tmp_296 -> L_THEN_67, L_ELSE_68
+
+L_THEN_67:
+    !tmp_296
+    panic(2421)
+
+L_ELSE_68:
+    !tmp_296
+    jmp L_MERGE_69
+
+L_MERGE_69:
+    !read1
+    !m0
+    !w0
+    !m1
+    !w1
+    !w2
+    !read2
+    !r0
+    return
+
+@test "message reader cursor advances independently"():
+L_TEST_ENTRY_70:
+    tmp_299 = call @sla__test_damage_messages_new()
+    m0 = tmp_299
+    tmp_300 = alloc 4
+    tmp_301 = 5
+    store tmp_300+0, tmp_301 as i32
+    !tmp_301
+    tmp_302 = call @sla__messages_write_TestDamageMessage(m0, tmp_300)
+    !tmp_300
+    m1 = tmp_302
+    tmp_303 = alloc 4
+    tmp_304 = 7
+    store tmp_303+0, tmp_304 as i32
+    !tmp_304
+    tmp_305 = call @sla__messages_write_TestDamageMessage(m1, tmp_303)
+    !tmp_303
+    m2 = tmp_305
+    tmp_306 = call @sla__message_reader_new()
+    r0 = tmp_306
+    tmp_307 = call @sla__message_reader_new()
+    r_other = tmp_307
+    tmp_308 = call @sla__test_damage_default()
+    tmp_309 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_308)
+    !tmp_308
+    read1 = tmp_309
+    tmp_310 = load read1+0 as u8
+    tmp_311 = 1
+    tmp_312 = ne tmp_310, tmp_311
+    !tmp_310
+    !tmp_311
+    br tmp_312 -> L_THEN_71, L_ELSE_72
+
+L_THEN_71:
+    !tmp_312
+    panic(2410)
+
+L_ELSE_72:
+    !tmp_312
+    jmp L_MERGE_73
+
+L_MERGE_73:
+    tmp_315 = load read1+8 as ptr
+    tmp_316 = load tmp_315+0 as i32
+    !tmp_315
+    tmp_317 = 5
+    tmp_318 = ne tmp_316, tmp_317
+    !tmp_316
+    !tmp_317
+    br tmp_318 -> L_THEN_74, L_ELSE_75
+
+L_THEN_74:
+    !tmp_318
+    panic(2411)
+
+L_ELSE_75:
+    !tmp_318
+    jmp L_MERGE_76
+
+L_MERGE_76:
+    tmp_321 = load read1+16 as ptr
+    tmp_322 = call @sla__test_damage_default()
+    tmp_323 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_321, tmp_322)
+    !tmp_321
+    !tmp_322
+    read2 = tmp_323
+    tmp_324 = load read2+0 as u8
+    tmp_325 = 1
+    tmp_326 = ne tmp_324, tmp_325
+    !tmp_324
+    !tmp_325
+    br tmp_326 -> L_THEN_77, L_ELSE_78
+
+L_THEN_77:
+    !tmp_326
+    panic(2412)
+
+L_ELSE_78:
+    !tmp_326
+    jmp L_MERGE_79
+
+L_MERGE_79:
+    tmp_329 = load read2+8 as ptr
+    tmp_330 = load tmp_329+0 as i32
+    !tmp_329
+    tmp_331 = 7
+    tmp_332 = ne tmp_330, tmp_331
+    !tmp_330
+    !tmp_331
+    br tmp_332 -> L_THEN_80, L_ELSE_81
+
+L_THEN_80:
+    !tmp_332
+    panic(2413)
+
+L_ELSE_81:
+    !tmp_332
+    jmp L_MERGE_82
+
+L_MERGE_82:
+    tmp_335 = load read2+16 as ptr
+    tmp_336 = call @sla__test_damage_default()
+    tmp_337 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_335, tmp_336)
+    !tmp_335
+    !tmp_336
+    read3 = tmp_337
+    tmp_338 = load read3+0 as u8
+    tmp_339 = 0
+    tmp_340 = ne tmp_338, tmp_339
+    !tmp_338
+    !tmp_339
+    br tmp_340 -> L_THEN_83, L_ELSE_84
+
+L_THEN_83:
+    !tmp_340
+    panic(2414)
+
+L_ELSE_84:
+    !tmp_340
+    jmp L_MERGE_85
+
+L_MERGE_85:
+    tmp_343 = call @sla__test_damage_default()
+    tmp_344 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_343)
+    !tmp_343
+    other = tmp_344
+    tmp_345 = load other+8 as ptr
+    tmp_346 = load tmp_345+0 as i32
+    !tmp_345
+    tmp_347 = 5
+    tmp_348 = ne tmp_346, tmp_347
+    !tmp_346
+    !tmp_347
+    br tmp_348 -> L_THEN_86, L_ELSE_87
+
+L_THEN_86:
+    !tmp_348
+    panic(2415)
+
+L_ELSE_87:
+    !tmp_348
+    jmp L_MERGE_88
+
+L_MERGE_88:
+    !m2
+    !m0
+    !read1
+    !r_other
+    !other
+    !read3
+    !m1
+    !read2
+    !r0
+    return
+
+@test "erased messages keep channels independent by type"():
+L_TEST_ENTRY_89:
+    tmp_351 = 1840245689
+    damage_type = tmp_351
+    tmp_352 = 1601687045
+    spawn_type = tmp_352
+    tmp_353 = 0
+    tmp_354 = sle damage_type, tmp_353
+    !tmp_353
+    br tmp_354 -> L_THEN_90, L_ELSE_91
+
+L_THEN_90:
+    !tmp_354
+    panic(12710)
+
+L_ELSE_91:
+    !tmp_354
+    jmp L_MERGE_92
+
+L_MERGE_92:
+    tmp_357 = 0
+    tmp_358 = sle spawn_type, tmp_357
+    !tmp_357
+    br tmp_358 -> L_THEN_93, L_ELSE_94
+
+L_THEN_93:
+    !tmp_358
+    panic(12711)
+
+L_ELSE_94:
+    !tmp_358
+    jmp L_MERGE_95
+
+L_MERGE_95:
+    tmp_361 = eq damage_type, spawn_type
+    br tmp_361 -> L_THEN_96, L_ELSE_97
+
+L_THEN_96:
+    !tmp_361
+    panic(12712)
+
+L_ELSE_97:
+    !tmp_361
+    jmp L_MERGE_98
+
+L_MERGE_98:
+    tmp_364 = call @sla__erased_messages_new()
+    messages0 = tmp_364
+    tmp_365 = alloc 16
+    store tmp_365+0, 0 as ptr
+    store tmp_365+8, &SLA_FNPTR_VT_erased_damage_message_drop as ptr
+    tmp_366 = alloc 4
+    tmp_367 = 5
+    store tmp_366+0, tmp_367 as i32
+    !tmp_367
+    tmp_368 = call @sla__erased_messages_write_ErasedDamageMessage(messages0, damage_type, tmp_365, tmp_366)
+    !tmp_365
+    !tmp_366
+    messages1 = tmp_368
+    tmp_369 = alloc 16
+    store tmp_369+0, 0 as ptr
+    store tmp_369+8, &SLA_FNPTR_VT_erased_spawn_message_drop as ptr
+    tmp_370 = alloc 4
+    tmp_371 = 9
+    store tmp_370+0, tmp_371 as i32
+    !tmp_371
+    tmp_372 = call @sla__erased_messages_write_ErasedSpawnMessage(messages1, spawn_type, tmp_369, tmp_370)
+    !tmp_369
+    !tmp_370
+    messages2 = tmp_372
+    tmp_373 = alloc 16
+    store tmp_373+0, 0 as ptr
+    store tmp_373+8, &SLA_FNPTR_VT_erased_damage_message_drop as ptr
+    tmp_374 = alloc 4
+    tmp_375 = 7
+    store tmp_374+0, tmp_375 as i32
+    !tmp_375
+    tmp_376 = call @sla__erased_messages_write_ErasedDamageMessage(messages2, damage_type, tmp_373, tmp_374)
+    !tmp_373
+    !tmp_374
+    messages3 = tmp_376
+    tmp_377 = call @sla__erased_messages_channel_count(messages3)
+    tmp_378 = 2
+    tmp_379 = ne tmp_377, tmp_378
+    !tmp_377
+    !tmp_378
+    br tmp_379 -> L_THEN_99, L_ELSE_100
+
+L_THEN_99:
+    !tmp_379
+    panic(12713)
+
+L_ELSE_100:
+    !tmp_379
+    jmp L_MERGE_101
+
+L_MERGE_101:
+    tmp_382 = call @sla__erased_messages_channel_len(messages3, damage_type)
+    tmp_383 = 2
+    tmp_384 = ne tmp_382, tmp_383
+    !tmp_382
+    !tmp_383
+    br tmp_384 -> L_THEN_102, L_ELSE_103
+
+L_THEN_102:
+    !tmp_384
+    panic(12714)
+
+L_ELSE_103:
+    !tmp_384
+    jmp L_MERGE_104
+
+L_MERGE_104:
+    tmp_387 = call @sla__erased_messages_channel_len(messages3, spawn_type)
+    tmp_388 = 1
+    tmp_389 = ne tmp_387, tmp_388
+    !tmp_387
+    !tmp_388
+    br tmp_389 -> L_THEN_105, L_ELSE_106
+
+L_THEN_105:
+    !tmp_389
+    panic(12715)
+
+L_ELSE_106:
+    !tmp_389
+    jmp L_MERGE_107
+
+L_MERGE_107:
+    tmp_392 = call @sla__message_reader_new()
+    damage_reader = tmp_392
+    tmp_393 = call @sla__message_reader_new()
+    spawn_reader = tmp_393
+    tmp_394 = call @sla__erased_damage_default()
+    tmp_395 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages3, damage_type, damage_reader, tmp_394)
+    !tmp_394
+    d1 = tmp_395
+    tmp_396 = load d1+16 as ptr
+    tmp_397 = call @sla__erased_damage_default()
+    tmp_398 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages3, damage_type, tmp_396, tmp_397)
+    !tmp_396
+    !tmp_397
+    d2 = tmp_398
+    tmp_399 = call @sla__erased_spawn_default()
+    tmp_400 = call @sla__erased_messages_read_next_ErasedSpawnMessage(messages3, spawn_type, spawn_reader, tmp_399)
+    !tmp_399
+    s1 = tmp_400
+    tmp_401 = load d1+8 as ptr
+    tmp_402 = load tmp_401+0 as i32
+    !tmp_401
+    tmp_403 = 5
+    tmp_404 = ne tmp_402, tmp_403
+    !tmp_402
+    !tmp_403
+    br tmp_404 -> L_THEN_108, L_ELSE_109
+
+L_THEN_108:
+    !tmp_404
+    panic(12716)
+
+L_ELSE_109:
+    !tmp_404
+    jmp L_MERGE_110
+
+L_MERGE_110:
+    tmp_407 = load d2+8 as ptr
+    tmp_408 = load tmp_407+0 as i32
+    !tmp_407
+    tmp_409 = 7
+    tmp_410 = ne tmp_408, tmp_409
+    !tmp_408
+    !tmp_409
+    br tmp_410 -> L_THEN_111, L_ELSE_112
+
+L_THEN_111:
+    !tmp_410
+    panic(12717)
+
+L_ELSE_112:
+    !tmp_410
+    jmp L_MERGE_113
+
+L_MERGE_113:
+    tmp_413 = load s1+8 as ptr
+    tmp_414 = load tmp_413+0 as i32
+    !tmp_413
+    tmp_415 = 9
+    tmp_416 = ne tmp_414, tmp_415
+    !tmp_414
+    !tmp_415
+    br tmp_416 -> L_THEN_114, L_ELSE_115
+
+L_THEN_114:
+    !tmp_416
+    panic(12718)
+
+L_ELSE_115:
+    !tmp_416
+    jmp L_MERGE_116
+
+L_MERGE_116:
+    !s1
+    !d1
+    !d2
+    !spawn_reader
+    !damage_reader
+    !messages2
+    !messages0
+    !messages1
+    !messages3
+    !damage_type
+    !spawn_type
+    return
+
+@test "erased message writer batches and readers advance independently"():
+L_TEST_ENTRY_117:
+    tmp_419 = 1840245689
+    damage_type = tmp_419
+    tmp_420 = call @sla__erased_messages_new()
+    messages0 = tmp_420
+    tmp_421 = alloc 16
+    store tmp_421+0, 0 as ptr
+    store tmp_421+8, &SLA_FNPTR_VT_erased_damage_message_drop as ptr
+    tmp_422 = call @sla__erased_message_writer_new(damage_type, tmp_421)
+    !tmp_421
+    writer0 = tmp_422
+    tmp_423 = alloc 4
+    tmp_424 = 3
+    store tmp_423+0, tmp_424 as i32
+    !tmp_424
+    tmp_425 = call @sla__erased_message_writer_send_ErasedDamageMessage(writer0, tmp_423)
+    !tmp_423
+    writer1 = tmp_425
+    tmp_426 = alloc 4
+    tmp_427 = 4
+    store tmp_426+0, tmp_427 as i32
+    !tmp_427
+    tmp_428 = call @sla__erased_message_writer_send_ErasedDamageMessage(writer1, tmp_426)
+    !tmp_426
+    writer2 = tmp_428
+    tmp_429 = call @sla__erased_messages_apply_writer(messages0, writer2)
+    messages1 = tmp_429
+    tmp_430 = call @sla__message_reader_new()
+    reader_a = tmp_430
+    tmp_431 = call @sla__message_reader_new()
+    reader_b = tmp_431
+    tmp_432 = call @sla__erased_damage_default()
+    tmp_433 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages1, damage_type, reader_a, tmp_432)
+    !tmp_432
+    a1 = tmp_433
+    tmp_434 = load a1+16 as ptr
+    tmp_435 = call @sla__erased_damage_default()
+    tmp_436 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages1, damage_type, tmp_434, tmp_435)
+    !tmp_434
+    !tmp_435
+    a2 = tmp_436
+    tmp_437 = load a2+16 as ptr
+    tmp_438 = call @sla__erased_damage_default()
+    tmp_439 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages1, damage_type, tmp_437, tmp_438)
+    !tmp_437
+    !tmp_438
+    a3 = tmp_439
+    tmp_440 = call @sla__erased_damage_default()
+    tmp_441 = call @sla__erased_messages_read_next_ErasedDamageMessage(messages1, damage_type, reader_b, tmp_440)
+    !tmp_440
+    b1 = tmp_441
+    tmp_442 = load a1+8 as ptr
+    tmp_443 = load tmp_442+0 as i32
+    !tmp_442
+    tmp_444 = 3
+    tmp_445 = ne tmp_443, tmp_444
+    !tmp_443
+    !tmp_444
+    br tmp_445 -> L_THEN_118, L_ELSE_119
+
+L_THEN_118:
+    !tmp_445
+    panic(12720)
+
+L_ELSE_119:
+    !tmp_445
+    jmp L_MERGE_120
+
+L_MERGE_120:
+    tmp_448 = load a2+8 as ptr
+    tmp_449 = load tmp_448+0 as i32
+    !tmp_448
+    tmp_450 = 4
+    tmp_451 = ne tmp_449, tmp_450
+    !tmp_449
+    !tmp_450
+    br tmp_451 -> L_THEN_121, L_ELSE_122
+
+L_THEN_121:
+    !tmp_451
+    panic(12721)
+
+L_ELSE_122:
+    !tmp_451
+    jmp L_MERGE_123
+
+L_MERGE_123:
+    tmp_454 = load a3+0 as u8
+    tmp_455 = 0
+    tmp_456 = ne tmp_454, tmp_455
+    !tmp_454
+    !tmp_455
+    br tmp_456 -> L_THEN_124, L_ELSE_125
+
+L_THEN_124:
+    !tmp_456
+    panic(12722)
+
+L_ELSE_125:
+    !tmp_456
+    jmp L_MERGE_126
+
+L_MERGE_126:
+    tmp_459 = load b1+8 as ptr
+    tmp_460 = load tmp_459+0 as i32
+    !tmp_459
+    tmp_461 = 3
+    tmp_462 = ne tmp_460, tmp_461
+    !tmp_460
+    !tmp_461
+    br tmp_462 -> L_THEN_127, L_ELSE_128
+
+L_THEN_127:
+    !tmp_462
+    panic(12723)
+
+L_ELSE_128:
+    !tmp_462
+    jmp L_MERGE_129
+
+L_MERGE_129:
+    tmp_465 = call @sla__erased_messages_clear_channel(messages1, damage_type)
+    messages2 = tmp_465
+    tmp_466 = call @sla__erased_messages_channel_len(messages2, damage_type)
+    tmp_467 = 0
+    tmp_468 = ne tmp_466, tmp_467
+    !tmp_466
+    !tmp_467
+    br tmp_468 -> L_THEN_130, L_ELSE_131
+
+L_THEN_130:
+    !tmp_468
+    panic(12724)
+
+L_ELSE_131:
+    !tmp_468
+    jmp L_MERGE_132
+
+L_MERGE_132:
+    !writer1
+    !writer2
+    !reader_b
+    !b1
+    !messages1
+    !reader_a
+    !a1
+    !a2
+    !writer0
+    !messages2
+    !messages0
+    !a3
+    !damage_type
+    return
+

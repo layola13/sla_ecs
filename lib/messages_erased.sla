@@ -1,0 +1,193 @@
+// Type-erased multi-message channels keyed by Sla-generated message type ids.
+// Each message type has an independent append-only channel and readers keep
+// their own cursor per channel, matching Bevy's Messages<T> semantics.
+@import "messages.sla"
+@import "sa_std/core/box.sa"
+
+struct ErasedMessageValue {
+    type_id: i32,
+    raw: *u8,
+}
+
+struct ErasedMessageChannel {
+    type_id: i32,
+    drop_fn: fn(*u8) -> void,
+    values: Vec<ErasedMessageValue>,
+}
+
+struct ErasedMessages {
+    channels: Vec<ErasedMessageChannel>,
+}
+
+struct ErasedMessageWriter {
+    type_id: i32,
+    drop_fn: fn(*u8) -> void,
+    values: Vec<ErasedMessageValue>,
+}
+
+struct ErasedMessageRead<T> {
+    has_value: bool,
+    value: T,
+    reader: MessageReader,
+}
+
+fn erased_message_value_new<T>(type_id: i32, value: T) -> ErasedMessageValue {
+    let boxed = Box::new(value);
+    let raw = Box::into_raw(boxed) as *u8;
+    return ErasedMessageValue { type_id: type_id, raw: raw };
+}
+
+fn erased_message_value_read<T>(value: ErasedMessageValue, type_id: i32) -> T {
+    if value.type_id != type_id { panic(12700); };
+    let typed = value.raw as *T;
+    return unsafe { *typed };
+}
+
+fn erased_messages_new() -> ErasedMessages {
+    let channels: Vec<ErasedMessageChannel> = Vec::new();
+    return ErasedMessages { channels: channels };
+}
+
+fn erased_message_channel_new(type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessageChannel {
+    let values: Vec<ErasedMessageValue> = Vec::new();
+    return ErasedMessageChannel { type_id: type_id, drop_fn: drop_fn, values: values };
+}
+
+fn erased_messages_channel_slot(messages: ErasedMessages, type_id: i32) -> i64 {
+    let i: i64 = 0;
+    let cnt = len(messages.channels) as i64;
+    while i < cnt {
+        if messages.channels[i].type_id == type_id { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn erased_messages_channel_count(messages: ErasedMessages) -> i64 {
+    return len(messages.channels) as i64;
+}
+
+fn erased_messages_channel_len(messages: ErasedMessages, type_id: i32) -> i64 {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return 0; };
+    return len(messages.channels[slot].values) as i64;
+}
+
+fn erased_messages_ensure_channel(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessages {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot >= 0 { return messages; };
+    messages.channels.push(erased_message_channel_new(type_id, drop_fn));
+    return messages;
+}
+
+fn erased_messages_write<T>(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> ErasedMessages {
+    messages = erased_messages_ensure_channel(messages, type_id, drop_fn);
+    let slot = erased_messages_channel_slot(messages, type_id);
+    messages.channels[slot].values.push(erased_message_value_new<T>(type_id, value));
+    return messages;
+}
+
+fn erased_message_writer_new(type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessageWriter {
+    let values: Vec<ErasedMessageValue> = Vec::new();
+    return ErasedMessageWriter { type_id: type_id, drop_fn: drop_fn, values: values };
+}
+
+fn erased_message_writer_send<T>(writer: ErasedMessageWriter, value: T) -> ErasedMessageWriter {
+    writer.values.push(erased_message_value_new<T>(writer.type_id, value));
+    return writer;
+}
+
+fn erased_messages_apply_writer(messages: ErasedMessages, writer: ErasedMessageWriter) -> ErasedMessages {
+    messages = erased_messages_ensure_channel(messages, writer.type_id, writer.drop_fn);
+    let slot = erased_messages_channel_slot(messages, writer.type_id);
+    let i: i64 = 0;
+    let cnt = len(writer.values) as i64;
+    while i < cnt {
+        let value = writer.values[i];
+        if value.type_id != writer.type_id { panic(12701); };
+        messages.channels[slot].values.push(value);
+        i = i + 1;
+    }
+    return messages;
+}
+
+fn erased_messages_read_next<T>(messages: ErasedMessages, type_id: i32, reader: MessageReader, default_value: T) -> ErasedMessageRead<T> {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return ErasedMessageRead<T> { has_value: false, value: default_value, reader: reader }; };
+    if reader.cursor >= (len(messages.channels[slot].values) as i64) {
+        return ErasedMessageRead<T> { has_value: false, value: default_value, reader: reader };
+    };
+    let value = erased_message_value_read<T>(messages.channels[slot].values[reader.cursor], type_id);
+    reader.cursor = reader.cursor + 1;
+    return ErasedMessageRead<T> { has_value: true, value: value, reader: reader };
+}
+
+fn erased_messages_clear_channel(messages: ErasedMessages, type_id: i32) -> ErasedMessages {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return messages; };
+    let drop_fn = messages.channels[slot].drop_fn;
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        drop_fn(messages.channels[slot].values[i].raw);
+        i = i + 1;
+    }
+    let values: Vec<ErasedMessageValue> = Vec::new();
+    messages.channels[slot].values = values;
+    return messages;
+}
+
+@derive(Message)
+struct ErasedDamageMessage { amount: i32 }
+
+@derive(Message)
+struct ErasedSpawnMessage { entity_id: i32 }
+
+fn erased_damage_message_drop(raw: *u8) -> void { let typed = raw as *ErasedDamageMessage; let boxed = unsafe { Box::from_raw(typed) }; }
+fn erased_spawn_message_drop(raw: *u8) -> void { let typed = raw as *ErasedSpawnMessage; let boxed = unsafe { Box::from_raw(typed) }; }
+fn erased_damage_default() -> ErasedDamageMessage { return ErasedDamageMessage { amount: 0 }; }
+fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { entity_id: 0 }; }
+
+@test "erased messages keep channels independent by type"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let spawn_type = ErasedSpawnMessage::message_type_id();
+    if damage_type <= 0 { panic(12710); };
+    if spawn_type <= 0 { panic(12711); };
+    if damage_type == spawn_type { panic(12712); };
+    let messages0 = erased_messages_new();
+    let messages1 = erased_messages_write<ErasedDamageMessage>(messages0, damage_type, erased_damage_message_drop, ErasedDamageMessage { amount: 5 });
+    let messages2 = erased_messages_write<ErasedSpawnMessage>(messages1, spawn_type, erased_spawn_message_drop, ErasedSpawnMessage { entity_id: 9 });
+    let messages3 = erased_messages_write<ErasedDamageMessage>(messages2, damage_type, erased_damage_message_drop, ErasedDamageMessage { amount: 7 });
+    if erased_messages_channel_count(messages3) != 2 { panic(12713); };
+    if erased_messages_channel_len(messages3, damage_type) != 2 { panic(12714); };
+    if erased_messages_channel_len(messages3, spawn_type) != 1 { panic(12715); };
+    let damage_reader = message_reader_new();
+    let spawn_reader = message_reader_new();
+    let d1 = erased_messages_read_next<ErasedDamageMessage>(messages3, damage_type, damage_reader, erased_damage_default());
+    let d2 = erased_messages_read_next<ErasedDamageMessage>(messages3, damage_type, d1.reader, erased_damage_default());
+    let s1 = erased_messages_read_next<ErasedSpawnMessage>(messages3, spawn_type, spawn_reader, erased_spawn_default());
+    if d1.value.amount != 5 { panic(12716); };
+    if d2.value.amount != 7 { panic(12717); };
+    if s1.value.entity_id != 9 { panic(12718); };
+}
+
+@test "erased message writer batches and readers advance independently"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let writer0 = erased_message_writer_new(damage_type, erased_damage_message_drop);
+    let writer1 = erased_message_writer_send<ErasedDamageMessage>(writer0, ErasedDamageMessage { amount: 3 });
+    let writer2 = erased_message_writer_send<ErasedDamageMessage>(writer1, ErasedDamageMessage { amount: 4 });
+    let messages1 = erased_messages_apply_writer(messages0, writer2);
+    let reader_a = message_reader_new();
+    let reader_b = message_reader_new();
+    let a1 = erased_messages_read_next<ErasedDamageMessage>(messages1, damage_type, reader_a, erased_damage_default());
+    let a2 = erased_messages_read_next<ErasedDamageMessage>(messages1, damage_type, a1.reader, erased_damage_default());
+    let a3 = erased_messages_read_next<ErasedDamageMessage>(messages1, damage_type, a2.reader, erased_damage_default());
+    let b1 = erased_messages_read_next<ErasedDamageMessage>(messages1, damage_type, reader_b, erased_damage_default());
+    if a1.value.amount != 3 { panic(12720); };
+    if a2.value.amount != 4 { panic(12721); };
+    if a3.has_value != false { panic(12722); };
+    if b1.value.amount != 3 { panic(12723); };
+    let messages2 = erased_messages_clear_channel(messages1, damage_type);
+    if erased_messages_channel_len(messages2, damage_type) != 0 { panic(12724); };
+}
