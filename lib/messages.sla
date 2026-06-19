@@ -1,0 +1,88 @@
+// Fixed-capacity typed message queue. This mirrors Bevy's Messages<T> concept
+// at the semantic level: writers append, readers keep independent cursors.
+
+struct Messages<T> {
+    count: i64,
+    values: [T; 16],
+}
+
+struct MessageReader {
+    cursor: i64,
+}
+
+struct MessageRead<T> {
+    has_value: bool,
+    value: T,
+    reader: MessageReader,
+}
+
+fn messages_new<T>(default_value: T) -> Messages<T> {
+    return Messages<T> {
+        count: 0,
+        values: [default_value; 16],
+    };
+}
+
+fn message_reader_new() -> MessageReader {
+    return MessageReader { cursor: 0 };
+}
+
+fn messages_write<T>(messages: Messages<T>, value: T) -> Messages<T> {
+    let slot = messages.count;
+    if slot >= 16 { panic(6001); };
+    messages.values[slot] = value;
+    messages.count = slot + 1;
+    return messages;
+}
+
+fn messages_read_next<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageRead<T> {
+    if reader.cursor >= messages.count {
+        return MessageRead<T> { has_value: false, value: default_value, reader: reader };
+    };
+    let value = messages.values[reader.cursor];
+    reader.cursor = reader.cursor + 1;
+    return MessageRead<T> { has_value: true, value: value, reader: reader };
+}
+
+struct TestDamageMessage {
+    amount: i32,
+}
+
+fn test_damage_messages_new() -> Messages<TestDamageMessage> {
+    return messages_new<TestDamageMessage>(TestDamageMessage { amount: 0 });
+}
+
+fn test_damage_default() -> TestDamageMessage {
+    return TestDamageMessage { amount: 0 };
+}
+
+@test "messages generic constructor"() {
+    let m = messages_new<TestDamageMessage>(test_damage_default());
+    if m.count != 0 { panic(2390); };
+}
+
+@test "messages writer appends"() {
+    let m0 = test_damage_messages_new();
+    let m1 = messages_write<TestDamageMessage>(m0, TestDamageMessage { amount: 5 });
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 7 });
+    if m2.count != 2 { panic(2400); };
+}
+
+@test "message reader cursor advances independently"() {
+    let m0 = test_damage_messages_new();
+    let m1 = messages_write<TestDamageMessage>(m0, TestDamageMessage { amount: 5 });
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 7 });
+    let r0 = message_reader_new();
+    let r_other = message_reader_new();
+    let read1 = messages_read_next<TestDamageMessage>(m2, r0, test_damage_default());
+    if read1.has_value != true { panic(2410); };
+    if read1.value.amount != 5 { panic(2411); };
+    let read2 = messages_read_next<TestDamageMessage>(m2, read1.reader, test_damage_default());
+    if read2.has_value != true { panic(2412); };
+    if read2.value.amount != 7 { panic(2413); };
+    let read3 = messages_read_next<TestDamageMessage>(m2, read2.reader, test_damage_default());
+    if read3.has_value != false { panic(2414); };
+
+    let other = messages_read_next<TestDamageMessage>(m2, r_other, test_damage_default());
+    if other.value.amount != 5 { panic(2415); };
+}

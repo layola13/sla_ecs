@@ -1,0 +1,65 @@
+# sla_ecs Tasks
+
+Update this file whenever a task is completed. Do not mark a task done until the relevant implementation and verification command have both passed.
+
+## Phase 1: Sla Compiler Unblockers
+
+- [x] Confirm current baseline: all `src/*.sla` prototype tests pass, while `examples/movement_demo.sla` fails on a Sla codegen cleanup issue.
+- [x] Add compiler regression for chained `array-of-struct` field access inside control flow.
+- [x] Fix Sla codegen cleanup for expressions like `game.positions.values[i].x`.
+- [x] Run the focused new compiler regression with `zig build local-cli -- sla test tests/test_unit_array_struct_field_cleanup.sla` or equivalent.
+- [x] Fix assignment move cleanup for `target = local_owner` and `holder.field = local_owner` patterns.
+- [x] Add regressions for assignment move cleanup, field assignment move cleanup, and struct-field scalar reads not moving the owner.
+- [x] Rebuild and reinstall the Sla plugin after Sla feature/compiler changes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
+- [x] Verify `SA_PLUGIN_DEV=1 sa sla test examples/movement_demo.sla` passes after plugin reinstall.
+- [x] Improve `.sla` import expansion so non-`.sla` imports inside imported files resolve relative to the imported file, not the root source file.
+- [x] Verify nested `.sla` import contract resolution with `zig build local-cli -- sla check tests/test_unit_sla_import_nested_contract.sla`.
+- [x] Add and verify wildcard `.sla` imports: `@import "path/*.sla"` and bare `@import path/*.sla`; reinstall dev plugin after the fix.
+- [x] Add and verify Sla `Vec<T>` index assignment, including `Vec` fields inside loops; reinstall dev plugin after the fix.
+- [x] Fix nested generic close parsing so `Vec<Vec<T>>` and `Vec<Pair<A, B>>` do not require a spacing workaround before `>>`.
+- [x] Fix Sla codegen cleanup for method calls on `Vec` fields such as `query.items.push(...)`.
+- [x] Fix Sla monomorphization for generic impl protocol methods so `impl Query<T> { iter_len/iter_at }` supports `for item in query`; regression: `test_unit_generic_for_in_protocol.sla`.
+- [x] Fix Sla function pointer values so systems can be stored and passed as `fn(World) -> World`; regression: `test_unit_fn_ptr_value.sla`.
+- [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
+- [x] Re-run legacy prototype baseline: all `src/*.sla` tests pass after plugin reinstall.
+
+## Phase 2: Bevy-Style Core Runtime
+
+- [x] Implement reusable Bevy-style `Entity` identity in `lib/`: index + generation, placeholder, bit conversion, stale rejection, free-list reuse.
+- [x] Implement verified dynamic `DynamicEntityAllocator`: Vec-backed generations/free-list/live occupancy, grows beyond 16 entities, rejects stale/fabricated generations.
+- [x] Add verified fixed-capacity generic `ComponentStore<T>` behavior tests: insert/get/has/slot/write/swap-remove.
+- [x] Add verified `DynamicComponentStore<T>` backed by `sa_std Vec`: grows past 16 components, get/has/slot/write/swap-remove.
+- [ ] Replace fixed-capacity demo storage with reusable component storage backed by dynamic `sa_std Vec` where compiler support permits.
+- [x] Add component registration metadata and storage-kind selection: table default, sparse-set opt-in.
+- [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
+- [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
+- [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
+- [x] Add focused fixed-capacity World tests for spawn/despawn, generation bumping, stale entity rejection, component insert/remove, query pair writeback, resources, and messages.
+- [x] Add focused tests for spawn/despawn, generation bumping, stale entity rejection, table insert/remove, and sparse-set insert/remove.
+
+## Phase 3: Query, System, Schedule
+
+- [x] Implement verified DynamicWorld query forms using SA-native wrappers: `Query<T>`, `Query<Mut<T>>`, `Query<EntityItem<T>>`, `Query<PairMutItem<A, B>>`; Rust `&T` / `&mut T` parsing is compatibility sugar only. Current surface is bound to `DynamicWorld<A, B, R, M>`'s A/B component shape.
+- [x] Implement verified DynamicWorld filters: `With<T>`, `Without<T>`, `Added<T>`, `Changed<T>` for the current A/B world shape.
+- [x] Implement verified writeback semantics for `Mut<T>` query items without violating SA Referee ownership rules; `query_mut_a_write` and `query_pair_mut_a_write` update component storage and changed ticks.
+- [x] Implement verified DynamicWorld system adapters from Bevy-shaped Sla `fn(World) -> World` functions to the safe runtime execution model using stored function pointers.
+- [x] Implement verified sequential `Schedule::default`, `add_systems`, and `run` with component/resource/message read/write access conflict tracking for the current A/B world shape.
+
+## Phase 4: Resources, Messages, Examples
+
+- [x] Implement fixed-capacity typed unique resources: insert, get, replace, remove.
+- [x] Implement verified DynamicWorld `Res<T>` / `ResMut<T>` wrappers and resource added/changed detection.
+- [x] Implement fixed-capacity `Messages<T>` and reader cursor behavior.
+- [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
+- [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
+- [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
+- [x] Add verified DynamicWorld schedule pipeline example: `examples/dynamic_schedule_demo.sla`.
+- [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
+- [ ] Add Bevy README parity examples for movement, resources/time, filters, change detection, messages, and schedule pipeline.
+- [x] Verify all current examples with `SA_PLUGIN_DEV=1 sa sla test examples/*.sla` equivalent loop.
+
+## Phase 5: Documentation and Progress
+
+- [x] Rewrite `README.md` around the actual implemented reusable API.
+- [x] Update `progress.md` with verified status, test counts, compiler fixes, and known limitations.
+- [x] Keep old `src/*.sla` prototype tests passing until the new `lib/` examples fully supersede them.

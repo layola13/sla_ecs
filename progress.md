@@ -1,0 +1,60 @@
+# sla_ecs progress
+
+- [done] Created standalone `sla_ecs` project so ECS work no longer lands in `sa_plugin_sla` by default.
+- [done] Added Sla plugin support for non-array `for item in source` via library-defined `iter_len(self)` and `iter_at(self, index)` methods.
+- [done] Fixed Sla parser postfix precedence so field/index/method access binds tighter than arithmetic.
+- [done] Added `sa_plugin_sla/tests/test_unit_for_in_protocol.sla`.
+- [done] Updated `src/query_iter_probe.sla` to implement a concrete Query protocol surface.
+- [done] Added `src/query_write_probe.sla` to prove Query items can carry writeback slots.
+- [done] Fixed Sla codegen to release struct-literal field temporaries after store.
+- [done] Fixed generic Sla codegen cleanup for struct-field array indexing and field assignment temporaries.
+- [done] Fixed codegen bug: `typeSize(.array)` returned inline byte count but arrays are stored as heap pointers (8 bytes) in structs. This caused wrong field offsets and segfaults in loops.
+- [done] Regression test: `sa_plugin_sla/tests/test_unit_struct_field_array_loop.sla` (2 tests).
+- [done] Implemented Entity layer (`src/entity.sla`): Entity struct + EntityAllocator with generation tracking, 16 slots, 3 tests.
+- [done] Implemented Storage layer (`src/storage.sla`): PositionStorage, VelocityStorage, HealthStorage with SoA layout, for-in protocol, insert/remove/get/write_back, 5 tests.
+- [done] Implemented World layer (`src/world.sla`): World aggregate struct, spawn/insert functions, QueryPosVel with for-in + writeback, movement_system, 3 tests.
+- [done] Implemented Demo: Movement (`src/demo_movement.sla`): 3 entities (player/enemy/bullet), 10-tick simulation, App runner with run_once/run_n, 2 tests.
+- [done] Implemented Demo: Health (`src/demo_health.sla`): damage_system + death_system, damage queue, swap-remove dead entities, 3 tests.
+- [done] Implemented Demo: Full (`src/demo_full.sla`): 4 entities, 4 systems (movement/damage/death/heal), 3-tick multi-system pipeline, 3 tests.
+- [done] All 23 tests pass across 10 .sla files.
+- [done] Documentation: README.md, docs/summary_cn.md.
+- [done] Added project execution plan: `plan.md`.
+- [done] Added live task checklist: `tasks.md`; update it whenever an implementation item is completed.
+- [done] Fixed Sla codegen cleanup for chained array-of-struct field access (`store.values[i].x`). Regression: `sa_plugin_sla/tests/test_unit_array_struct_field_cleanup.sla`.
+- [done] Fixed Sla assignment move cleanup for `target = local_owner` and `holder.field = local_owner`. Regressions: `test_unit_assign_move_cleanup.sla`, `test_unit_field_assign_move_cleanup.sla`.
+- [done] Fixed Sla type-check/codegen handling so scalar field reads like `entity.id` do not move the owning struct. Regression: `test_unit_struct_field_copy_not_move.sla`.
+- [done] Improved `.sla` import expansion so non-`.sla` imports inside imported files resolve relative to the imported file. Regression: `test_unit_sla_import_nested_contract.sla`.
+- [done] Added wildcard `.sla` import support for `@import "path/*.sla"` and bare `@import path/*.sla`. Regressions: `test_unit_sla_import_wildcard.sla`, `test_unit_sla_import_wildcard_bare.sla`.
+- [done] Added Sla `Vec<T>` index assignment, fixed Vec field index reads in loops, and fixed method-call cleanup for `Vec` fields such as `query.items.push(...)`. Regression: `test_unit_vec_index_assign.sla` (4 tests).
+- [done] Fixed nested generic close parsing so `Vec<Vec<T>>` and `Vec<Pair<A, B>>` do not require a spacing workaround before `>>`. Regression: `test_unit_nested_generic_close.sla`.
+- [done] Fixed Sla monomorphization for generic impl protocol methods so `impl Query<T> { iter_len/iter_at }` supports `for item in query`. Regression: `test_unit_generic_for_in_protocol.sla`.
+- [done] Fixed Sla function pointer value codegen so `fn(World) -> World` systems can be stored in schedule data and passed as arguments. Regression: `test_unit_fn_ptr_value.sla`.
+- [done] Improved Sla `UseAfterMove` diagnostics so identifier expressions report the consumed variable name.
+- [done] Reinstalled Sla dev plugin with `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla` after compiler changes.
+- [done] Implemented reusable `lib/entity.sla`: placeholder, index/generation helpers, bit roundtrip, stale-generation rejection, 4 tests.
+- [done] Implemented `lib/entity_dynamic.sla`: Vec-backed dynamic allocator with live occupancy, generation reuse, stale/fabricated generation rejection, and growth past 16 entities.
+- [done] Added generic constructors and verified fixed-capacity `lib/store.sla` tests for insert/get/has/slot/write/swap-remove.
+- [done] Implemented `lib/dyn_store.sla`: `sa_std Vec`-backed table-style `DynamicComponentStore<T>` with growth past 16 components, get/has/slot/write/swap-remove.
+- [done] Implemented `lib/component.sla`: component registry metadata with table storage default and sparse-set opt-in.
+- [done] Implemented `lib/sparse_store.sla`: `sa_std Vec`-backed `SparseComponentStore<T>` with dense iteration vectors, sparse locations, writeback, and swap-remove mapping updates.
+- [done] Implemented `lib/resource.sla`: typed resource slot insert/get/replace/remove and generic constructor.
+- [done] Implemented `lib/messages.sla`: typed fixed-capacity message queue, generic constructor, and independent reader cursor behavior.
+- [done] Implemented `lib/world.sla`: fixed-capacity `World<A, B, R, M>` owner with entity lifecycle, two component stores, resource slot, message queue, added/changed ticks, pair query, and writeback.
+- [done] Implemented `lib/world_dynamic.sla`: dynamic `DynamicWorld<A, B, R, M>` with dynamic entity allocation, dynamic A/B component stores, dynamic added/changed ticks, resources, messages, pair query, and writeback.
+- [done] Added DynamicWorld resource tick tracking plus `Res<T>` / `ResMut<T>` wrappers and resource added/changed detection.
+- [done] Implemented `lib/world_dynamic3.sla`: dynamic `DynamicWorld3<A, B, C, R, M>` with three component columns, spawn bundle helper, triple query, third-component filters, C added/changed detection, and despawn cleanup.
+- [done] Implemented `lib/query_dynamic.sla`: verified `Query<T>`, `Query<Mut<T>>`, entity-bearing query items, pair mutable query items, `With/Without/Added/Changed` filters, `for in` iteration, and `Mut<T>` writeback over the current `DynamicWorld<A, B, R, M>` A/B shape.
+- [done] Implemented `lib/schedule_dynamic.sla`: verified `Schedule<A, B, R, M>` with stored system function pointers, `schedule_default`, `schedule_add_systems`, sequential `schedule_run`, and read/write conflict counting for components/resources/messages.
+- [done] Added `examples/world_movement_demo.sla`: movement system over `lib/world.sla`, plus resource and message usage.
+- [done] Added `examples/dynamic_world_movement_demo.sla`: movement/resource/message demo over `DynamicWorld` with 20 entities, proving the old 16-entity cap is no longer part of the dynamic world path.
+- [done] Added `examples/dynamic_world3_bundle_demo.sla`: three-component bundle/query/filter demo over `DynamicWorld3`.
+- [done] Added `examples/dynamic_schedule_demo.sla`: schedule pipeline demo over `DynamicWorld` with movement, resource, and message systems.
+- [done] Added `examples/dynamic_resource_change_demo.sla`: resource changed observer plus `ResMut<T>` writeback demo over `DynamicWorld` schedule.
+- [done] Verification snapshot: all `lib/*.sla`, `examples/*.sla`, and `src/*.sla` tests pass with installed Sla plugin after Res/ResMut resource change detection additions.
+
+## Current gaps
+
+- Dynamic `DynamicWorld` is implemented for the current two-component owner shape, but the older fixed `World` remains as a compatibility/regression layer.
+- Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, and sequential schedules are verified for the current A/B world shape; parallel execution is still pending.
+- Current dynamic worlds support verified two-column and three-column typed shapes rather than truly arbitrary registered component columns.
+- Component registration metadata is explicit Sla runtime metadata; automatic derive/type metadata is still pending.

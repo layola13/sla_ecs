@@ -1,0 +1,233 @@
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@const SLA_FNPTR_VT_test_time_slot_new = vtable { call = @sla__test_time_slot_new }
+@const SLA_FNPTR_VT_resource_slot_new_TestTime = vtable { call = @sla__resource_slot_new_TestTime }
+@const SLA_FNPTR_VT_resource_has_TestTime = vtable { call = @sla__resource_has_TestTime }
+@const SLA_FNPTR_VT_resource_insert_TestTime = vtable { call = @sla__resource_insert_TestTime }
+@const SLA_FNPTR_VT_resource_get_TestTime = vtable { call = @sla__resource_get_TestTime }
+@const SLA_FNPTR_VT_resource_remove_TestTime = vtable { call = @sla__resource_remove_TestTime }
+@sla__test_time_slot_new() -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 4
+    tmp_1 = 0
+    store tmp_0+0, tmp_1 as i32
+    !tmp_1
+    tmp_2 = call @sla__resource_slot_new_TestTime(tmp_0)
+    !tmp_0
+    return tmp_2
+
+@sla__resource_slot_new_TestTime(default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_3 = alloc 16
+    tmp_4 = 0
+    store tmp_3+0, tmp_4 as u8
+    !tmp_4
+    store tmp_3+8, default_value as ptr
+    return tmp_3
+
+@sla__resource_has_TestTime(slot: ptr) -> u8:
+L_ENTRY:
+    tmp_5 = load slot+0 as u8
+    !slot
+    return tmp_5
+
+@sla__resource_insert_TestTime(slot: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_6 = 1
+    store slot+0, tmp_6 as u8
+    !tmp_6
+    store slot+8, value as ptr
+    !value
+    return slot
+
+@sla__resource_get_TestTime(slot: ptr) -> ptr:
+L_ENTRY:
+    tmp_7 = load slot+0 as u8
+    tmp_8 = 1
+    tmp_9 = ne tmp_7, tmp_8
+    !tmp_7
+    !tmp_8
+    br tmp_9 -> L_THEN_0, L_ELSE_1
+
+L_THEN_0:
+    !tmp_9
+    panic(5001)
+
+L_ELSE_1:
+    !tmp_9
+    jmp L_MERGE_2
+
+L_MERGE_2:
+    tmp_12 = load slot+8 as ptr
+    !slot
+    return tmp_12
+
+@sla__resource_remove_TestTime(slot: ptr) -> ptr:
+L_ENTRY:
+    tmp_13 = 0
+    store slot+0, tmp_13 as u8
+    !tmp_13
+    return slot
+
+@test "resource generic constructor"():
+L_TEST_ENTRY_3:
+    tmp_14 = alloc 4
+    tmp_15 = 0
+    store tmp_14+0, tmp_15 as i32
+    !tmp_15
+    tmp_16 = call @sla__resource_slot_new_TestTime(tmp_14)
+    !tmp_14
+    r = tmp_16
+    tmp_17 = call @sla__resource_has_TestTime(r)
+    tmp_18 = 0
+    tmp_19 = ne tmp_17, tmp_18
+    !tmp_17
+    !tmp_18
+    br tmp_19 -> L_THEN_4, L_ELSE_5
+
+L_THEN_4:
+    !tmp_19
+    panic(2290)
+
+L_ELSE_5:
+    !tmp_19
+    jmp L_MERGE_6
+
+L_MERGE_6:
+    !r
+    return
+
+@test "resource insert get remove"():
+L_TEST_ENTRY_7:
+    tmp_22 = call @sla__test_time_slot_new()
+    r0 = tmp_22
+    tmp_23 = call @sla__resource_has_TestTime(r0)
+    tmp_24 = 0
+    tmp_25 = ne tmp_23, tmp_24
+    !tmp_23
+    !tmp_24
+    br tmp_25 -> L_THEN_8, L_ELSE_9
+
+L_THEN_8:
+    !tmp_25
+    panic(2300)
+
+L_ELSE_9:
+    !tmp_25
+    jmp L_MERGE_10
+
+L_MERGE_10:
+    tmp_28 = alloc 4
+    tmp_29 = 7
+    store tmp_28+0, tmp_29 as i32
+    !tmp_29
+    tmp_30 = call @sla__resource_insert_TestTime(r0, tmp_28)
+    !tmp_28
+    r1 = tmp_30
+    tmp_31 = call @sla__resource_has_TestTime(r1)
+    tmp_32 = 1
+    tmp_33 = ne tmp_31, tmp_32
+    !tmp_31
+    !tmp_32
+    br tmp_33 -> L_THEN_11, L_ELSE_12
+
+L_THEN_11:
+    !tmp_33
+    panic(2301)
+
+L_ELSE_12:
+    !tmp_33
+    jmp L_MERGE_13
+
+L_MERGE_13:
+    tmp_36 = call @sla__resource_get_TestTime(r1)
+    t = tmp_36
+    tmp_37 = load t+0 as i32
+    tmp_38 = 7
+    tmp_39 = ne tmp_37, tmp_38
+    !tmp_37
+    !tmp_38
+    br tmp_39 -> L_THEN_14, L_ELSE_15
+
+L_THEN_14:
+    !tmp_39
+    panic(2302)
+
+L_ELSE_15:
+    !tmp_39
+    jmp L_MERGE_16
+
+L_MERGE_16:
+    tmp_42 = call @sla__resource_remove_TestTime(r1)
+    r2 = tmp_42
+    tmp_43 = call @sla__resource_has_TestTime(r2)
+    tmp_44 = 0
+    tmp_45 = ne tmp_43, tmp_44
+    !tmp_43
+    !tmp_44
+    br tmp_45 -> L_THEN_17, L_ELSE_18
+
+L_THEN_17:
+    !tmp_45
+    panic(2303)
+
+L_ELSE_18:
+    !tmp_45
+    jmp L_MERGE_19
+
+L_MERGE_19:
+    !r1
+    !t
+    !r2
+    !r0
+    return
+
+@test "resource replace overwrites value"():
+L_TEST_ENTRY_20:
+    tmp_48 = call @sla__test_time_slot_new()
+    r0 = tmp_48
+    tmp_49 = alloc 4
+    tmp_50 = 1
+    store tmp_49+0, tmp_50 as i32
+    !tmp_50
+    tmp_51 = call @sla__resource_insert_TestTime(r0, tmp_49)
+    !tmp_49
+    r1 = tmp_51
+    tmp_52 = alloc 4
+    tmp_53 = 2
+    store tmp_52+0, tmp_53 as i32
+    !tmp_53
+    tmp_54 = call @sla__resource_insert_TestTime(r1, tmp_52)
+    !tmp_52
+    r2 = tmp_54
+    tmp_55 = call @sla__resource_get_TestTime(r2)
+    t = tmp_55
+    tmp_56 = load t+0 as i32
+    tmp_57 = 2
+    tmp_58 = ne tmp_56, tmp_57
+    !tmp_56
+    !tmp_57
+    br tmp_58 -> L_THEN_21, L_ELSE_22
+
+L_THEN_21:
+    !tmp_58
+    panic(2310)
+
+L_ELSE_22:
+    !tmp_58
+    jmp L_MERGE_23
+
+L_MERGE_23:
+    !r1
+    !r2
+    !t
+    !r0
+    return
+

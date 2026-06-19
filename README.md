@@ -1,0 +1,143 @@
+# sla_ecs
+
+SA-native Entity-Component-System runtime written in Sla.
+
+The project is moving from fixed demo prototypes toward Bevy Core ECS parity.
+Current reusable infrastructure lives in `lib/`; older self-contained proofs live
+in `src/` and remain as regression coverage.
+
+## Architecture
+
+An ECS framework built for SA's linear ownership model and Referee safety system. No `mut` keyword — write access is expressed through linear value passing (`fn(World) -> World`).
+
+### Design Principles
+
+- **Linear World** — systems take World by value, return World
+- **SoA Storage** — struct-of-arrays layout for cache-friendly iteration
+- **For-In Protocol** — query iteration via `iter_len`/`iter_at` methods
+- **Typed Queries** — `Query<T>` and `Mut<T>` wrappers with explicit writeback instead of Rust `mut` as the core model
+- **Sequential Systems** — systems compose as `let w1 = sys_a(world); let w2 = sys_b(w1);`
+
+### Capacity
+
+`lib/store.sla` and `lib/world.sla` still use fixed 16-slot arrays as a
+compatibility/regression layer. The dynamic path is `lib/entity_dynamic.sla`,
+`lib/dyn_store.sla`, `lib/sparse_store.sla`, and `lib/world_dynamic.sla`; it is
+`sa_std Vec`-backed and has verified growth beyond the old 16-entity/component
+cap.
+
+## Components
+
+- `Position { x: i32, y: i32 }`
+- `Velocity { x: i32, y: i32 }`
+- `Health { current: i32, max: i32 }`
+- `Damage { amount: i32, target_id: i32 }`
+
+## Systems
+
+| System | Description |
+|--------|-------------|
+| `movement_system` | Applies velocity to position for matching entities |
+| `damage_system` | Reduces health by damage events, clears damage queue |
+| `death_system` | Removes entities with 0 HP (swap-remove) |
+| `heal_system` | Regenerates 1 HP per tick up to max |
+
+## Files
+
+```
+lib/
+├── entity.sla        — Reusable Entity handle + allocator, generation checks, bit roundtrip
+├── entity_dynamic.sla — Vec-backed dynamic entity allocator with live/stale checks
+├── store.sla         — Generic fixed-capacity ComponentStore<T>
+├── dyn_store.sla     — Generic Vec-backed table-style DynamicComponentStore<T>
+├── sparse_store.sla  — Generic Vec-backed SparseComponentStore<T>
+├── component.sla     — Component registry metadata: table default, sparse-set opt-in
+├── resource.sla      — Generic ResourceSlot<T>
+├── messages.sla      — Generic fixed-capacity Messages<T> + reader cursor
+├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
+├── world_dynamic.sla — Vec-backed DynamicWorld<A, B, R, M> owner + pair query/writeback
+├── world_dynamic3.sla — Vec-backed DynamicWorld3<A, B, C, R, M> with triple bundle/query/filter support
+├── query_dynamic.sla — Bevy-shaped DynamicWorld Query<T>, Mut<T>, filters, and writeback
+└── schedule_dynamic.sla — Sequential Schedule with stored system functions and access tracking
+
+examples/
+├── movement_demo.sla              — Reusable lib/store.sla movement demo
+├── world_movement_demo.sla        — Fixed World movement/resource/message demo
+├── dynamic_world_movement_demo.sla — DynamicWorld demo with 20 entities
+├── dynamic_world3_bundle_demo.sla  — DynamicWorld3 bundle/query/filter demo
+├── dynamic_schedule_demo.sla       — DynamicWorld Schedule pipeline demo
+└── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
+
+src/
+├── entity.sla         — Entity + EntityAllocator (generation tracking)
+├── storage.sla        — PositionStorage, VelocityStorage, HealthStorage (SoA + for-in)
+├── world.sla          — World struct + spawn/insert + QueryPosVel + movement_system
+├── demo_movement.sla  — Movement demo: 3 entities, 10 ticks, App runner
+├── demo_health.sla    — Health demo: damage + death systems
+├── demo_full.sla      — Full demo: 4 entities, 4 systems, 3 ticks
+├── query_surface.sla  — Proves Query<(&T, &U)> generic syntax parses
+├── query_iter_probe.sla  — For-in protocol proof
+├── query_write_probe.sla — Mut writeback pattern proof
+└── world_min.sla      — Original minimal ECS prototype
+```
+
+## Running
+
+```bash
+SA_PLUGIN_DEV=1 sa sla test lib/entity.sla
+SA_PLUGIN_DEV=1 sa sla test lib/entity_dynamic.sla
+SA_PLUGIN_DEV=1 sa sla test lib/store.sla
+SA_PLUGIN_DEV=1 sa sla test lib/dyn_store.sla
+SA_PLUGIN_DEV=1 sa sla test lib/sparse_store.sla
+SA_PLUGIN_DEV=1 sa sla test lib/component.sla
+SA_PLUGIN_DEV=1 sa sla test lib/resource.sla
+SA_PLUGIN_DEV=1 sa sla test lib/messages.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic3.sla
+SA_PLUGIN_DEV=1 sa sla test lib/query_dynamic.sla
+SA_PLUGIN_DEV=1 sa sla test lib/schedule_dynamic.sla
+SA_PLUGIN_DEV=1 sa sla test examples/movement_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/world_movement_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world_movement_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world3_bundle_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/dynamic_schedule_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/dynamic_resource_change_demo.sla
+
+SA_PLUGIN_DEV=1 sa sla test src/demo_full.sla
+SA_PLUGIN_DEV=1 sa sla test src/demo_movement.sla
+SA_PLUGIN_DEV=1 sa sla test src/demo_health.sla
+SA_PLUGIN_DEV=1 sa sla test src/entity.sla
+SA_PLUGIN_DEV=1 sa sla test src/storage.sla
+SA_PLUGIN_DEV=1 sa sla test src/world.sla
+```
+
+## Compiler Fix
+
+This project required several Sla compiler fixes in `sa_plugin_sla`:
+
+- `typeSize(.array)` now returns pointer size (`8`) because arrays in structs are heap-backed pointers.
+- Chained array-of-struct field access such as `store.values[i].x` now releases temporary registers correctly.
+- Moving a local owner into an assignment target now avoids double cleanup; scalar field reads such as `entity.id` do not move the owner.
+- Nested `.sla` imports now resolve non-`.sla` imports relative to the imported file.
+- Wildcard `.sla` imports are supported as `@import "path/*.sla"` and bare `@import path/*.sla`.
+- `Vec<T>` index assignment is supported, including `Vec` fields used inside loops; this unblocks dynamic component writeback.
+- Method-call cleanup for `Vec` fields such as `query.items.push(...)` now releases receiver temporaries correctly.
+- Nested generic closes such as `Vec<Vec<i32>>` and `Vec<Pair<A, B>>` parse without spacing workarounds.
+- Generic impl protocol methods now monomorphize correctly, so `impl Query<T> { iter_len/iter_at }` supports `for item in query`.
+- Function pointer values can be stored and passed, which lets schedules keep real `fn(World) -> World` system adapters.
+- Use-after-move diagnostics now include the consumed identifier name.
+
+After changing Sla compiler features, reinstall the dev plugin:
+
+```bash
+SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla
+```
+
+## Current Gaps
+
+- `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` are verified typed-column steps. Truly arbitrary registered component columns are still pending.
+- The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, and sequential schedules are implemented for the current A/B world shape; arbitrary component columns and parallel execution are not complete.
+- Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
+- The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
