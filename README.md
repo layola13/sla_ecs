@@ -69,6 +69,7 @@ lib/
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
 ├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup
+├── bundle_table_erased.sla — TableErasedWorld component bundle constructors plus spawn/insert helpers
 ├── commands_registry_erased.sla — RegistryErasedWorld deferred Commands carrying erased payloads
 ├── schedule_registry_erased.sla — RegistryErasedWorld sequential Schedule with component-id access tracking
 ├── commands_table_erased.sla — TableErasedWorld deferred Commands carrying erased payloads, including type-id insert helpers
@@ -94,6 +95,7 @@ examples/
 ├── table_erased_schedule_commands_demo.sla — Type-erased table-row Commands + Schedule pipeline demo
 ├── table_erased_system_param_demo.sla — Type-erased table-row system-param demo
 ├── table_erased_auto_metadata_demo.sla — Type-id metadata lookup demo over the table-erased path
+├── table_erased_bundle_demo.sla — Component bundle spawn/insert demo over the table-erased path
 ├── table_erased_derive_component_demo.sla — `@derive(Component)` metadata demo over the table-erased path
 ├── resource_derive_multi_demo.sla — `@derive(Resource)` multi-resource identity demo
 ├── table_system_param_demo.sla      — Table-row schedule/system-param/Commands demo
@@ -136,6 +138,7 @@ SA_PLUGIN_DEV=1 sa sla test lib/world_registry_typed.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/bundle_table_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/commands_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/schedule_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/commands_table_erased.sla
@@ -159,6 +162,7 @@ SA_PLUGIN_DEV=1 sa sla test examples/table_erased_world_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_schedule_commands_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_system_param_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_auto_metadata_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/table_erased_bundle_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_derive_component_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/resource_derive_multi_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_system_param_demo.sla
@@ -211,5 +215,5 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
 - Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous, type-erased, and archetype-backed value paths now also have component-id queries, commands, schedules, resources/messages, and demos. `archetype_registry.sla` verifies Bevy-style entity location migration between component-signature archetypes, `world_archetype_value.sla` connects those locations to real homogeneous component value columns and tracks resource added/changed ticks, `world_table_value.sla` stores homogeneous component values directly inside archetype table rows with row migration, and `world_table_erased.sla` extends that table-row path to heterogeneous boxed component values plus type-id lookup helpers. `commands_table_value.sla` / `schedule_table_value.sla` / `system_param_table_value.sla` run deferred commands, schedules, and injected params over the homogeneous table-row path; `commands_table_erased.sla` / `schedule_table_erased.sla` / `system_param_table_erased.sla` now cover deferred commands, schedules, injected params, type-id helper APIs, and no-conflict parallel batch planning for heterogeneous table rows. True multi-threaded World execution is not complete.
-- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The first automatic Rust-style metadata path is now implemented through Sla `@derive(Component)` for non-generic structs, producing stable component type ids plus table/sparse-set storage metadata. `@derive(Resource)` now feeds `lib/resource_erased.sla`, where multiple resource types are keyed by generated type id and stored uniquely per type. Bundle/Message/Event derives and generated drop glue are still pending.
+- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The first automatic Rust-style metadata path is now implemented through Sla `@derive(Component)` for non-generic structs, producing stable component type ids plus table/sparse-set storage metadata. `bundle_table_erased.sla` adds Bevy-style bundle spawn/insert helpers over the table-erased path. `@derive(Resource)` now feeds `lib/resource_erased.sla`, where multiple resource types are keyed by generated type id and stored uniquely per type. Bundle/Message/Event derives and generated drop glue are still pending.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
