@@ -20,8 +20,10 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Fix Sla codegen cleanup for method calls on `Vec` fields such as `query.items.push(...)`.
 - [x] Fix Sla monomorphization for generic impl protocol methods so `impl Query<T> { iter_len/iter_at }` supports `for item in query`; regression: `test_unit_generic_for_in_protocol.sla`.
 - [x] Fix Sla function pointer values so systems can be stored and passed as `fn(World) -> World`; regression: `test_unit_fn_ptr_value.sla`.
+- [x] Fix Sla top-level scalar constant codegen so command tags like `const KIND: i32 = 1` work without illegal numeric SA `@const` output; regression: `test_unit_top_level_numeric_const.sla`.
 - [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
-- [x] Re-run legacy prototype baseline: all `src/*.sla` tests pass after plugin reinstall.
+- [x] Rebuild and reinstall the Sla plugin after top-level scalar constant codegen fix: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
+- [x] Audit current source tree after resumed work: current tree contains `lib/*.sla` and `examples/*.sla`; old `src/*.sla` prototypes are not present on disk.
 
 ## Phase 2: Bevy-Style Core Runtime
 
@@ -44,6 +46,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified writeback semantics for `Mut<T>` query items without violating SA Referee ownership rules; `query_mut_a_write` and `query_pair_mut_a_write` update component storage and changed ticks.
 - [x] Implement verified DynamicWorld system adapters from Bevy-shaped Sla `fn(World) -> World` functions to the safe runtime execution model using stored function pointers.
 - [x] Implement verified sequential `Schedule::default`, `add_systems`, and `run` with component/resource/message read/write access conflict tracking for the current A/B world shape.
+- [x] Implement verified deferred `Commands<A, B, R, M>` for the current DynamicWorld A/B shape: reserve entity, insert A/B, despawn, insert resource, write message, ordered apply, and clear-after-apply.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -55,6 +58,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
 - [x] Add verified DynamicWorld schedule pipeline example: `examples/dynamic_schedule_demo.sla`.
 - [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
+- [x] Add verified DynamicWorld deferred Commands example: `examples/dynamic_commands_demo.sla`.
 - [ ] Add Bevy README parity examples for movement, resources/time, filters, change detection, messages, and schedule pipeline.
 - [x] Verify all current examples with `SA_PLUGIN_DEV=1 sa sla test examples/*.sla` equivalent loop.
 
@@ -62,4 +66,5 @@ Update this file whenever a task is completed. Do not mark a task done until the
 
 - [x] Rewrite `README.md` around the actual implemented reusable API.
 - [x] Update `progress.md` with verified status, test counts, compiler fixes, and known limitations.
-- [x] Keep old `src/*.sla` prototype tests passing until the new `lib/` examples fully supersede them.
+- [x] Update `README.md` and `progress.md` to reflect the current tree accurately: verified `lib/` and `examples/`, no present `src/` prototype directory.
+- [ ] Restore or intentionally supersede old `src/*.sla` prototype sources if future history requires them.

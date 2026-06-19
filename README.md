@@ -3,8 +3,8 @@
 SA-native Entity-Component-System runtime written in Sla.
 
 The project is moving from fixed demo prototypes toward Bevy Core ECS parity.
-Current reusable infrastructure lives in `lib/`; older self-contained proofs live
-in `src/` and remain as regression coverage.
+Current reusable infrastructure lives in `lib/`; verified executable examples live
+in `examples/`.
 
 ## Architecture
 
@@ -58,27 +58,16 @@ lib/
 ├── world_dynamic.sla — Vec-backed DynamicWorld<A, B, R, M> owner + pair query/writeback
 ├── world_dynamic3.sla — Vec-backed DynamicWorld3<A, B, C, R, M> with triple bundle/query/filter support
 ├── query_dynamic.sla — Bevy-shaped DynamicWorld Query<T>, Mut<T>, filters, and writeback
-└── schedule_dynamic.sla — Sequential Schedule with stored system functions and access tracking
+├── schedule_dynamic.sla — Sequential Schedule with stored system functions and access tracking
+└── commands_dynamic.sla — Deferred Commands queue for reserve/insert/despawn/resource/message apply
 
 examples/
-├── movement_demo.sla              — Reusable lib/store.sla movement demo
 ├── world_movement_demo.sla        — Fixed World movement/resource/message demo
 ├── dynamic_world_movement_demo.sla — DynamicWorld demo with 20 entities
 ├── dynamic_world3_bundle_demo.sla  — DynamicWorld3 bundle/query/filter demo
 ├── dynamic_schedule_demo.sla       — DynamicWorld Schedule pipeline demo
-└── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
-
-src/
-├── entity.sla         — Entity + EntityAllocator (generation tracking)
-├── storage.sla        — PositionStorage, VelocityStorage, HealthStorage (SoA + for-in)
-├── world.sla          — World struct + spawn/insert + QueryPosVel + movement_system
-├── demo_movement.sla  — Movement demo: 3 entities, 10 ticks, App runner
-├── demo_health.sla    — Health demo: damage + death systems
-├── demo_full.sla      — Full demo: 4 entities, 4 systems, 3 ticks
-├── query_surface.sla  — Proves Query<(&T, &U)> generic syntax parses
-├── query_iter_probe.sla  — For-in protocol proof
-├── query_write_probe.sla — Mut writeback pattern proof
-└── world_min.sla      — Original minimal ECS prototype
+├── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
+└── dynamic_commands_demo.sla        — DynamicWorld deferred Commands demo
 ```
 
 ## Running
@@ -97,19 +86,13 @@ SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic3.sla
 SA_PLUGIN_DEV=1 sa sla test lib/query_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test lib/schedule_dynamic.sla
-SA_PLUGIN_DEV=1 sa sla test examples/movement_demo.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test examples/world_movement_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world_movement_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world3_bundle_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_schedule_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_resource_change_demo.sla
-
-SA_PLUGIN_DEV=1 sa sla test src/demo_full.sla
-SA_PLUGIN_DEV=1 sa sla test src/demo_movement.sla
-SA_PLUGIN_DEV=1 sa sla test src/demo_health.sla
-SA_PLUGIN_DEV=1 sa sla test src/entity.sla
-SA_PLUGIN_DEV=1 sa sla test src/storage.sla
-SA_PLUGIN_DEV=1 sa sla test src/world.sla
+SA_PLUGIN_DEV=1 sa sla test examples/dynamic_commands_demo.sla
 ```
 
 ## Compiler Fix
@@ -126,6 +109,7 @@ This project required several Sla compiler fixes in `sa_plugin_sla`:
 - Nested generic closes such as `Vec<Vec<i32>>` and `Vec<Pair<A, B>>` parse without spacing workarounds.
 - Generic impl protocol methods now monomorphize correctly, so `impl Query<T> { iter_len/iter_at }` supports `for item in query`.
 - Function pointer values can be stored and passed, which lets schedules keep real `fn(World) -> World` system adapters.
+- Top-level scalar constants such as `const KIND: i32 = 1` lower correctly by inlining scalar literals at use sites; this unblocks command kind tags.
 - Use-after-move diagnostics now include the consumed identifier name.
 
 After changing Sla compiler features, reinstall the dev plugin:
@@ -138,6 +122,6 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` are verified typed-column steps. Truly arbitrary registered component columns are still pending.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
-- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, and sequential schedules are implemented for the current A/B world shape; arbitrary component columns and parallel execution are not complete.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; arbitrary component columns and parallel execution are not complete.
 - Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.

@@ -29,6 +29,7 @@
 - [done] Fixed nested generic close parsing so `Vec<Vec<T>>` and `Vec<Pair<A, B>>` do not require a spacing workaround before `>>`. Regression: `test_unit_nested_generic_close.sla`.
 - [done] Fixed Sla monomorphization for generic impl protocol methods so `impl Query<T> { iter_len/iter_at }` supports `for item in query`. Regression: `test_unit_generic_for_in_protocol.sla`.
 - [done] Fixed Sla function pointer value codegen so `fn(World) -> World` systems can be stored in schedule data and passed as arguments. Regression: `test_unit_fn_ptr_value.sla`.
+- [done] Fixed Sla top-level scalar constant codegen so `const KIND: i32 = 1` and boolean tags can be used by generated SA without illegal numeric `@const` declarations. Regression: `test_unit_top_level_numeric_const.sla`.
 - [done] Improved Sla `UseAfterMove` diagnostics so identifier expressions report the consumed variable name.
 - [done] Reinstalled Sla dev plugin with `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla` after compiler changes.
 - [done] Implemented reusable `lib/entity.sla`: placeholder, index/generation helpers, bit roundtrip, stale-generation rejection, 4 tests.
@@ -45,16 +46,18 @@
 - [done] Implemented `lib/world_dynamic3.sla`: dynamic `DynamicWorld3<A, B, C, R, M>` with three component columns, spawn bundle helper, triple query, third-component filters, C added/changed detection, and despawn cleanup.
 - [done] Implemented `lib/query_dynamic.sla`: verified `Query<T>`, `Query<Mut<T>>`, entity-bearing query items, pair mutable query items, `With/Without/Added/Changed` filters, `for in` iteration, and `Mut<T>` writeback over the current `DynamicWorld<A, B, R, M>` A/B shape.
 - [done] Implemented `lib/schedule_dynamic.sla`: verified `Schedule<A, B, R, M>` with stored system function pointers, `schedule_default`, `schedule_add_systems`, sequential `schedule_run`, and read/write conflict counting for components/resources/messages.
+- [done] Implemented `lib/commands_dynamic.sla`: verified Bevy-style deferred `Commands<A, B, R, M>` for reserve entity, insert A/B, despawn, insert resource, write message, and ordered apply over `DynamicWorld<A, B, R, M>`.
 - [done] Added `examples/world_movement_demo.sla`: movement system over `lib/world.sla`, plus resource and message usage.
 - [done] Added `examples/dynamic_world_movement_demo.sla`: movement/resource/message demo over `DynamicWorld` with 20 entities, proving the old 16-entity cap is no longer part of the dynamic world path.
 - [done] Added `examples/dynamic_world3_bundle_demo.sla`: three-component bundle/query/filter demo over `DynamicWorld3`.
 - [done] Added `examples/dynamic_schedule_demo.sla`: schedule pipeline demo over `DynamicWorld` with movement, resource, and message systems.
 - [done] Added `examples/dynamic_resource_change_demo.sla`: resource changed observer plus `ResMut<T>` writeback demo over `DynamicWorld` schedule.
-- [done] Verification snapshot: all `lib/*.sla`, `examples/*.sla`, and `src/*.sla` tests pass with installed Sla plugin after Res/ResMut resource change detection additions.
+- [done] Added `examples/dynamic_commands_demo.sla`: deferred component/resource/message/despawn demo over `DynamicWorld` Commands.
+- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after Commands additions. The old `src/` prototype directory is not present in the current tree.
 
 ## Current gaps
 
 - Dynamic `DynamicWorld` is implemented for the current two-component owner shape, but the older fixed `World` remains as a compatibility/regression layer.
-- Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, and sequential schedules are verified for the current A/B world shape; parallel execution is still pending.
+- Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred Commands are verified for the current A/B world shape; parallel execution is still pending.
 - Current dynamic worlds support verified two-column and three-column typed shapes rather than truly arbitrary registered component columns.
 - Component registration metadata is explicit Sla runtime metadata; automatic derive/type metadata is still pending.
