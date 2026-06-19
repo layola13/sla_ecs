@@ -62,7 +62,9 @@ lib/
 ├── world_dynamic3.sla — Vec-backed DynamicWorld3<A, B, C, R, M> with triple bundle/query/filter support
 ├── query_dynamic.sla — Bevy-shaped DynamicWorld Query<T>, Mut<T>, filters, and writeback
 ├── schedule_dynamic.sla — Sequential Schedule with stored system functions and access tracking
-└── commands_dynamic.sla — Deferred Commands queue for reserve/insert/despawn/resource/message apply
+├── commands_dynamic.sla — Deferred Commands queue for reserve/insert/despawn/resource/message apply
+├── schedule_registry_value.sla — RegistryValueWorld sequential Schedule with component-id access tracking
+└── commands_registry_value.sla — RegistryValueWorld deferred Commands keyed by component id
 
 examples/
 ├── world_movement_demo.sla        — Fixed World movement/resource/message demo
@@ -71,6 +73,7 @@ examples/
 ├── dynamic_schedule_demo.sla       — DynamicWorld Schedule pipeline demo
 ├── dynamic_resource_change_demo.sla — DynamicWorld Res/ResMut change detection demo
 ├── dynamic_commands_demo.sla        — DynamicWorld deferred Commands demo
+├── bevy_readme_parity_demo.sla      — Combined Bevy README ECS flow over registry APIs
 ├── registry_world_demo.sla          — Arbitrary component id registry/membership demo
 ├── registry_typed_world_demo.sla    — Registry-bound typed value world demo
 └── registry_value_world_demo.sla    — Registry-owned multi-column typed value join demo
@@ -96,6 +99,9 @@ SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic3.sla
 SA_PLUGIN_DEV=1 sa sla test lib/query_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test lib/schedule_dynamic.sla
 SA_PLUGIN_DEV=1 sa sla test lib/commands_dynamic.sla
+SA_PLUGIN_DEV=1 sa sla test lib/schedule_registry_value.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_registry_value.sla
+SA_PLUGIN_DEV=1 sa sla test examples/bevy_readme_parity_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/world_movement_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world_movement_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/dynamic_world3_bundle_demo.sla
@@ -132,10 +138,10 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Current Gaps
 
-- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback.
+- `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback. `commands_registry_value.sla` and `schedule_registry_value.sla` add deferred mutation and ordered system execution over the registry-owned path.
 - A single type-erased registry-owned value store spanning arbitrary Sla component types is still pending.
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
-- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; arbitrary component columns and parallel execution are not complete.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous value path now also has component-id queries, commands, schedules, and a combined README-parity demo. Type-erased arbitrary component values and parallel execution are not complete.
 - Component registration uses explicit Sla metadata IDs today; automatic Rust-style `#[derive(Component)]` type metadata is not implemented.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.

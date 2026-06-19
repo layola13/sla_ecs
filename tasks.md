@@ -52,6 +52,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified DynamicWorld system adapters from Bevy-shaped Sla `fn(World) -> World` functions to the safe runtime execution model using stored function pointers.
 - [x] Implement verified sequential `Schedule::default`, `add_systems`, and `run` with component/resource/message read/write access conflict tracking for the current A/B world shape.
 - [x] Implement verified deferred `Commands<A, B, R, M>` for the current DynamicWorld A/B shape: reserve entity, insert A/B, despawn, insert resource, write message, ordered apply, and clear-after-apply.
+- [x] Implement verified `RegistryValueCommands<T, R, M>` for component-id keyed reserve, insert, despawn, resource, message, ordered apply, and clear-after-apply over `RegistryValueWorld`.
+- [x] Implement verified `RegistryValueSchedule<T, R, M>` with stored system function pointers and component-id/resource/message access conflict tracking over `RegistryValueWorld`.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -67,7 +69,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
 - [x] Add verified registry-bound typed value world example: `examples/registry_typed_world_demo.sla`.
 - [x] Add verified registry-owned multi-column typed value example: `examples/registry_value_world_demo.sla`, including pair joins, `Added`/`Changed`, writeback, resources, messages, and despawn cleanup.
-- [ ] Add Bevy README parity examples for movement, resources/time, filters, change detection, messages, and schedule pipeline.
+- [x] Add verified Bevy README parity example for movement, resources/time, filters, change detection, messages, Commands, and schedule pipeline: `examples/bevy_readme_parity_demo.sla`.
 - [x] Verify all current examples with `SA_PLUGIN_DEV=1 sa sla test examples/*.sla` equivalent loop.
 
 ## Phase 5: Documentation and Progress
