@@ -57,6 +57,8 @@
 - [done] Implemented `lib/schedule_registry_value.sla`: verified sequential schedules over `RegistryValueWorld<T, R, M>` with stored `fn(World) -> World` systems and component-id/resource/message access conflict tracking.
 - [done] Implemented `lib/commands_registry_erased.sla`: verified Bevy-style deferred commands over `RegistryErasedWorld<R, M>` with heterogeneous erased component payloads, insert/replace, despawn, resource/message commands, ordered apply, and clear-after-apply.
 - [done] Implemented `lib/schedule_registry_erased.sla`: verified sequential schedules over `RegistryErasedWorld<R, M>` with stored `fn(World) -> World` systems and component-id/resource/message access conflict tracking.
+- [done] Implemented `lib/commands_archetype_value.sla`: verified Bevy-style deferred commands over `ArchetypeValueWorld<T, R, M>` with component insertion migrating archetype signatures, replacement preserving archetype row, despawn cleanup, resource/message commands, ordered apply, and clear-after-apply.
+- [done] Implemented `lib/schedule_archetype_value.sla`: verified sequential schedules over `ArchetypeValueWorld<T, R, M>` with stored `fn(World) -> World` systems and component-id/resource/message access conflict tracking.
 - [done] Added `examples/bevy_readme_parity_demo.sla`: combined Bevy README-style ECS flow using registry Commands, Schedule, movement pair query, With/Without filter, Added/Changed detection, resource time, messages, and despawn cleanup.
 - [done] Added `examples/world_movement_demo.sla`: movement system over `lib/world.sla`, plus resource and message usage.
 - [done] Added `examples/dynamic_world_movement_demo.sla`: movement/resource/message demo over `DynamicWorld` with 20 entities, proving the old 16-entity cap is no longer part of the dynamic world path.
@@ -64,6 +66,7 @@
 - [done] Added `examples/dynamic_schedule_demo.sla`: schedule pipeline demo over `DynamicWorld` with movement, resource, and message systems.
 - [done] Added `examples/dynamic_resource_change_demo.sla`: resource changed observer plus `ResMut<T>` writeback demo over `DynamicWorld` schedule.
 - [done] Added `examples/dynamic_commands_demo.sla`: deferred component/resource/message/despawn demo over `DynamicWorld` Commands.
+- [done] Added `examples/archetype_schedule_commands_demo.sla`: archetype-backed Commands plus Schedule pipeline demo with deferred spawn/insert/message, movement writeback, resource update, and conflict tracking.
 - [done] Added `examples/archetype_value_world_demo.sla`: archetype-backed value movement/filter/resource/message/despawn demo with component add/remove migration.
 - [done] Added `examples/registry_archetype_demo.sla`: archetype signature migration demo over `RegistryArchetypeWorld`.
 - [done] Added `examples/registry_world_demo.sla`: arbitrary component id registry/membership demo with With/Without, Changed, and despawn cleanup.
@@ -71,11 +74,11 @@
 - [done] Added `examples/registry_value_world_demo.sla`: registry-owned multi-column typed value demo with pair joins, query filters, Added/Changed, writeback, resource/message, and despawn cleanup.
 - [done] Added `examples/registry_erased_world_demo.sla`: type-erased heterogeneous component movement/filter/resource/message/despawn demo over `RegistryErasedWorld`.
 - [done] Added `examples/registry_erased_schedule_commands_demo.sla`: type-erased Commands plus Schedule pipeline demo with deferred spawn/insert/message, movement writeback, resource update, and conflict tracking.
-- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after the archetype-backed value storage addition; generated `.test.sa` files also pass the no-absolute-`sa_std` import check. The old `src/` prototype directory is not present in the current tree.
+- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after archetype-backed value Commands/Schedule additions; generated `.test.sa` files also pass the no-absolute-`sa_std` import check. The old `src/` prototype directory is not present in the current tree.
 
 ## Current gaps
 
 - Dynamic `DynamicWorld` is implemented for the current two-component owner shape, but the older fixed `World` remains as a compatibility/regression layer.
-- Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred Commands are verified for the current A/B world shape; registry-owned homogeneous and type-erased value Commands/Schedule are now also verified. Parallel execution is still pending.
-- Current dynamic worlds support verified two-column and three-column typed value shapes. Arbitrary component id membership, registry-bound typed A/B value ownership, registry-owned homogeneous typed multi-column storage with pair joins/commands/schedules, registry-owned type-erased heterogeneous component storage plus commands/schedules, registry archetype grouping, and archetype-backed homogeneous value storage are now verified. Full Bevy table-row layout and parallel execution remain pending.
+- Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred Commands are verified for the current A/B world shape; registry-owned homogeneous, type-erased, and archetype-backed value Commands/Schedule are now also verified. Parallel execution is still pending.
+- Current dynamic worlds support verified two-column and three-column typed value shapes. Arbitrary component id membership, registry-bound typed A/B value ownership, registry-owned homogeneous typed multi-column storage with pair joins/commands/schedules, registry-owned type-erased heterogeneous component storage plus commands/schedules, registry archetype grouping, and archetype-backed homogeneous value storage plus commands/schedules are now verified. Full Bevy table-row layout and parallel execution remain pending.
 - Component registration metadata is explicit Sla runtime metadata; automatic derive/type metadata is still pending.
