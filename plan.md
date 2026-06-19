@@ -8,16 +8,18 @@ The first deliverable is **Bevy Core ECS parity**, not the entire `bevy_ecs` cra
 
 ## Current Baseline
 
-- `src/*.sla` remains a passing prototype/regression layer across entity, storage, world, movement, health, full demo, and query probes.
-- `lib/` now contains reusable Entity, dynamic Entity allocator, fixed ComponentStore, Vec-backed DynamicComponentStore, Vec-backed SparseComponentStore, component metadata registry, resources, messages, fixed-capacity World, and dynamic Vec-backed DynamicWorld.
-- `examples/movement_demo.sla`, `examples/world_movement_demo.sla`, and `examples/dynamic_world_movement_demo.sla` pass with the installed Sla dev plugin.
+- The current tree contains the reusable `lib/` runtime and verified `examples/`; the old `src/` prototype directory is not present on disk.
+- `lib/` now contains reusable Entity, dynamic Entity allocator, fixed ComponentStore, Vec-backed DynamicComponentStore, Vec-backed SparseComponentStore, component metadata registry, registry-driven component id membership, resources, messages, fixed-capacity World, and dynamic Vec-backed DynamicWorld.
+- `examples/world_movement_demo.sla`, `examples/dynamic_world_movement_demo.sla`, `examples/dynamic_world3_bundle_demo.sla`, `examples/dynamic_schedule_demo.sla`, `examples/dynamic_resource_change_demo.sla`, `examples/dynamic_commands_demo.sla`, and `examples/registry_world_demo.sla` pass with the installed Sla dev plugin.
 - `lib/world_dynamic.sla` removes the old fixed-capacity limit for the current two-component owner shape and verifies dynamic entities, components, change ticks, resources, messages, pair query, and writeback.
 - `lib/world_dynamic.sla` also tracks resource added/changed ticks and exposes `Res<T>` / `ResMut<T>` wrappers for Bevy-style resource systems.
 - `lib/world_dynamic3.sla` extends the typed dynamic owner to three component columns and verifies bundle spawn, triple query, third-component filters, and C-component change detection.
 - `lib/query_dynamic.sla` adds verified Bevy-shaped query wrappers for the current dynamic A/B world: `Query<T>`, `Query<Mut<T>>`, entity-bearing items, pair mutable items, `With/Without/Added/Changed`, `for in`, and explicit `Mut<T>` writeback.
 - `lib/schedule_dynamic.sla` adds verified Bevy-shaped sequential scheduling for the current dynamic A/B world: stored `fn(World) -> World` systems, `schedule_default`, `schedule_add_systems`, `schedule_run`, and access conflict tracking.
-- The next runtime step is replacing these fixed typed-column shapes with a registry-driven component column owner, then broadening examples and parallel scheduling.
-- `sa_plugin_sla` remains part of the implementation surface when Sla syntax/codegen blocks ECS semantics; recent fixes include wildcard `.sla` imports, nested generic `>>` parsing, `Vec<T>` index assignment, `Vec` field method-call cleanup, generic impl protocol monomorphization for `for in`, and function pointer value codegen for schedules.
+- `lib/commands_dynamic.sla` adds verified Bevy-style deferred commands for the current dynamic A/B world: reserve entity, insert A/B, despawn, insert resource, write message, ordered apply, and clear-after-apply.
+- `lib/world_registry.sla` adds verified registry-driven arbitrary component id membership, With/Without entity queries, Added/Changed ticks, despawn cleanup, and `for in` entity iteration. Typed component values still live in typed stores; registry-owned type-erased value storage remains pending.
+- The next runtime step is attaching typed value columns to registry component ids and then replacing the fixed A/B value ownership paths, followed by broader system params and parallel scheduling.
+- `sa_plugin_sla` remains part of the implementation surface when Sla syntax/codegen blocks ECS semantics; recent fixes include wildcard `.sla` imports, nested generic `>>` parsing, `Vec<T>` index assignment, `Vec` field method-call cleanup, generic impl protocol monomorphization for `for in`, function pointer value codegen for schedules, and top-level scalar const codegen.
 
 ## Implementation Phases
 
@@ -69,8 +71,7 @@ Update docs only after behavior is implemented and verified.
 
 ## Acceptance Criteria
 
-- `SA_PLUGIN_DEV=1 sa sla test examples/movement_demo.sla` passes.
-- All old `src/*.sla` tests keep passing.
-- New Bevy Core examples pass through `sa sla test` and exercise the public ECS API rather than private demo-specific storage.
+- All current `lib/*.sla` and `examples/*.sla` pass through `sa sla test` and exercise the public ECS API rather than private demo-specific storage.
+- If old `src/*.sla` prototype sources are restored, they must either pass or be intentionally superseded by equivalent `lib/`/`examples/` coverage.
 - Compiler fixes have focused regression tests under `sa_plugin_sla/tests/`.
 - README does not claim support for Bevy features that are not implemented.

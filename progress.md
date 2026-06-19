@@ -37,6 +37,7 @@
 - [done] Added generic constructors and verified fixed-capacity `lib/store.sla` tests for insert/get/has/slot/write/swap-remove.
 - [done] Implemented `lib/dyn_store.sla`: `sa_std Vec`-backed table-style `DynamicComponentStore<T>` with growth past 16 components, get/has/slot/write/swap-remove.
 - [done] Implemented `lib/component.sla`: component registry metadata with table storage default and sparse-set opt-in.
+- [done] Implemented `lib/world_registry.sla`: registry-driven arbitrary component id membership index with table/sparse metadata, spawn/despawn cleanup, With/Without entity queries, Added/Changed ticks, and `for in` query iteration.
 - [done] Implemented `lib/sparse_store.sla`: `sa_std Vec`-backed `SparseComponentStore<T>` with dense iteration vectors, sparse locations, writeback, and swap-remove mapping updates.
 - [done] Implemented `lib/resource.sla`: typed resource slot insert/get/replace/remove and generic constructor.
 - [done] Implemented `lib/messages.sla`: typed fixed-capacity message queue, generic constructor, and independent reader cursor behavior.
@@ -53,11 +54,12 @@
 - [done] Added `examples/dynamic_schedule_demo.sla`: schedule pipeline demo over `DynamicWorld` with movement, resource, and message systems.
 - [done] Added `examples/dynamic_resource_change_demo.sla`: resource changed observer plus `ResMut<T>` writeback demo over `DynamicWorld` schedule.
 - [done] Added `examples/dynamic_commands_demo.sla`: deferred component/resource/message/despawn demo over `DynamicWorld` Commands.
-- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after Commands additions. The old `src/` prototype directory is not present in the current tree.
+- [done] Added `examples/registry_world_demo.sla`: arbitrary component id registry/membership demo with With/Without, Changed, and despawn cleanup.
+- [done] Verification snapshot: all current `lib/*.sla` and `examples/*.sla` files pass with installed Sla dev plugin after registry-world additions. The old `src/` prototype directory is not present in the current tree.
 
 ## Current gaps
 
 - Dynamic `DynamicWorld` is implemented for the current two-component owner shape, but the older fixed `World` remains as a compatibility/regression layer.
 - Bevy-style dynamic `Query<Mut<T>>`, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred Commands are verified for the current A/B world shape; parallel execution is still pending.
-- Current dynamic worlds support verified two-column and three-column typed shapes rather than truly arbitrary registered component columns.
+- Current dynamic worlds support verified two-column and three-column typed value shapes. Arbitrary component id membership is now registry-driven, but a single registry-owned type-erased value store is still pending.
 - Component registration metadata is explicit Sla runtime metadata; automatic derive/type metadata is still pending.
