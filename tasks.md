@@ -60,6 +60,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified `RegistryErasedSchedule<R, M>` with stored system function pointers and component-id/resource/message access conflict tracking over `RegistryErasedWorld`.
 - [x] Implement verified `ArchetypeValueCommands<T, R, M>` for reserve, insert/replace with archetype migration, despawn, resource, message, ordered apply, and clear-after-apply over `ArchetypeValueWorld`.
 - [x] Implement verified `ArchetypeValueSchedule<T, R, M>` with stored system function pointers and component-id/resource/message access conflict tracking over `ArchetypeValueWorld`.
+- [x] Implement verified archetype-backed system parameter adapters for injected pair-mut query params, resource params, message writer params, adapter writeback, and schedule execution.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -73,6 +74,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
 - [x] Add verified DynamicWorld deferred Commands example: `examples/dynamic_commands_demo.sla`.
 - [x] Add verified archetype-backed Commands/Schedule pipeline example: `examples/archetype_schedule_commands_demo.sla`.
+- [x] Add verified archetype-backed system parameter example: `examples/archetype_system_param_demo.sla`.
 - [x] Add verified archetype-backed value storage example: `examples/archetype_value_world_demo.sla`.
 - [x] Add verified registry archetype migration example: `examples/registry_archetype_demo.sla`.
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
