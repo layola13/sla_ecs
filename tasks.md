@@ -37,7 +37,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Attach typed A/B component value stores to registry-driven component ids for a verified registry-bound typed value owner.
 - [x] Replace A/B-specific value ownership for homogeneous component groups with registry-owned arbitrary typed value columns.
 - [x] Add verified registry-owned homogeneous value pair joins: pair query, pair `Without` filter, `Added` query, and pair-mut first-component writeback.
-- [ ] Replace homogeneous typed value groups with a registry-owned type-erased column store spanning arbitrary component types.
+- [x] Add verified registry-owned type-erased column store spanning arbitrary concrete component types with boxed raw pointers, per-component drop functions, typed get/query, `Without`, Added/Changed, pair joins, writeback, resources/messages, and despawn cleanup.
 - [x] Implement fixed-capacity `World` as the owner of entities, component storage, resources, change ticks, and message queues.
 - [x] Implement dynamic `DynamicWorld` owner with dynamic entity allocation, dynamic A/B component stores, dynamic change ticks, resources, messages, pair query, and writeback.
 - [x] Implement verified `DynamicWorld3` owner with dynamic A/B/C component stores, spawn bundle helper, triple query, third-component filters, C change detection, and despawn cleanup.
@@ -69,6 +69,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified registry-driven component membership example: `examples/registry_world_demo.sla`.
 - [x] Add verified registry-bound typed value world example: `examples/registry_typed_world_demo.sla`.
 - [x] Add verified registry-owned multi-column typed value example: `examples/registry_value_world_demo.sla`, including pair joins, `Added`/`Changed`, writeback, resources, messages, and despawn cleanup.
+- [x] Add verified registry-owned type-erased heterogeneous component example: `examples/registry_erased_world_demo.sla`.
 - [x] Add verified Bevy README parity example for movement, resources/time, filters, change detection, messages, Commands, and schedule pipeline: `examples/bevy_readme_parity_demo.sla`.
 - [x] Verify all current examples with `SA_PLUGIN_DEV=1 sa sla test examples/*.sla` equivalent loop.
 
