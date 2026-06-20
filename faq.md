@@ -2,7 +2,7 @@
 
 > 本文件由进度巡检线程每 10 分钟更新。todo 形式记录:Sla 语言陷阱、编译器 bug、架构忠实度建议。
 > codex 写代码,本线程只读巡检 + 在此留指导。
-> 最近更新:2026-06-19 06:34
+> 最近更新:2026-06-20 04:38
 
 ---
 
@@ -13,26 +13,63 @@
 - [ ] **`x = func(x)` 触发 UseAfterMove**:给同一变量重新赋值时,若右侧函数消费了它,会报错。用新 `let` 绑定:`let x2 = func(x);`。
 - [ ] **impl 方法内 while 循环里 `return self` 可能 TypeMismatch**:复杂的带提前返回的循环方法,改用自由函数 `fn op(store: T, ...) -> T`。
 - [ ] **泛型 `impl<T>` 方法不工作**:`impl<T> Foo<T> { fn m() }` 解析失败。泛型操作一律用泛型自由函数 `fn op<T>(...)`,已验证可单态化。
-- [ ] **`Type.static_method()` 关联函数不工作**:用自由构造函数 `fn type_new() -> Type` 代替。
+- [x] **`Type::method()` 关联函数现已可用(含用户自定义)**:derive 生成的 `Type::component_type_id()` 和**手写** `impl T { fn event_type_id() -> i32 }` 都能用 `::` 调用(16:12 event_observer_demo 验证 `ObserverSpeakEvent::event_type_id()`)。此前记的"不工作"是旧状态。
 - [ ] **函数指针不能存进 struct 字段**:`struct S { f: fn(i32)->i32 }` 取用会 UndefinedCall。函数指针只能作函数参数传递。schedule 存系统已验证可行(说明有特例,注意写法)。
+- [ ] **Entity(值类型 struct)多次传参触发 UseAfterMove**:`Entity` 传给函数即被线性消费,同一 `parent`/`child` 变量连续传两次会报 UseAfterMove。codex 通行规避法:开头拆 `let pid = parent.id; let pgen = parent.gen;`,之后每次用 `entity_new(pid, pgen)` 重建。`hierarchy.sla` + 其 demo 全程用此法(已验证可靠)。
 - [ ] **大数组字面量 + 多 struct 同文件**:曾见 `[0;64]` 级字面量在多 storage 结构体同文件时 TypeMismatch。优先用 Vec 动态存储,避免巨型固定数组。
 
 ## B. 编译器 bug 状态(sa_plugin_sla)
 
 - [x] **typeSize(.array) bug 已修**:结构体内数组按指针(8字节)算偏移,循环内访问 struct 字段数组不再 segfault。回归测试 `test_unit_struct_field_array_loop.sla`。
 - [x] **跨文件 .sla import 已修**:parser 预扫描导入类型名。回归 `test_unit_sla_import.sla`。
+- [x] **全局 scalar const 作为函数参数的 PhiStateConflict 已修**:`matches(i, GLOBAL_MARKER)` 这类调用在 while/if 分支里会生成临时寄存器,此前调用后未释放,回到循环头时报 PhiStateConflict。已在 `sa_plugin_sla` 做通用 call-arg cleanup,回归 `test_unit_global_const_call_arg_cleanup.sla`,并已 `SA_PLUGIN_DEV=1 sa plugin install --dev ...`。
+- [x] **【架构修正,18:xx】ECS 语义已移出编译器,改为引擎无关**:⚠️ 更正此前记录 —— codex 决策(见 progress.md "Architecture correction"):`sa_plugin_sla` 是**通用 Sla 语言编译器,不得硬编码 Component/Resource/Message/Event/Bundle 等引擎词汇**。已把 ECS 专属 derive 元数据从编译器移出。现状:`@derive(Component)` 等退化为**纯标记注解(无编译器语义)**;`component_type_id()` 由用户在 `impl T { fn component_type_id() -> i32 { return <id>; } }` **手写**普通关联函数返回。编译器只保留通用能力:`@derive(...)` 属性解析、关联/静态 impl 方法、宏、const eval、metadata hook。grep 确认编译器已无 ECS 词。
+- [x] **通用语言能力可用(编译器层)**:`@derive(...)` 属性解析(parser.zig:321-355)、`Type::assoc_fn()` 静态关联函数(含手写)、`@component`/属性解析框架 —— 这些是**引擎无关的通用机制**,ECS 名字与语义由 sla_ecs 拥有。派生标记 4 种 `Component`/`Resource`/`Message`/`Event` 仅作项目级标注。demo `table_erased_derive_component_demo` 42、`event_observer_demo` 7 PASS。
 - [ ] **观察**:`lib/commands_dynamic.sla` 曾报瞬时 codegen error,重跑即过 — 疑似 `.test.sa` 缓存陈旧。若再现,先 `rm *.test.sa` 再跑。
 - [ ] 发现编译器层 bug 请记录在此,由编译器线程统一修,勿在 ECS 代码里绕过埋坑。
 
 ## C. 架构忠实度建议(对照 bevy_ecs)
 
-- [ ] **【最大缺口】无真正 Archetype/Table 概念**:当前 `DynamicWorld<A,B,R,M>` 把实体平铺在并行 Vec 列里,没有"同组件集实体归入同一原型"的分组。bevy 核心就是 archetype。建议下一阶段引入 `ArchetypeId` + 原型签名(组件位掩码 u32)+ 实体按原型分组。
-- [ ] **【硬编码组件数】`DynamicWorld<A,B,R,M>` 只支持 2 组件 1 资源 1 消息**。bevy 支持任意多组件。Sla 无类型擦除,短期难做任意多;建议路线:用 ComponentRegistry + 每组件类型一个 Vec 列 + 位掩码原型签名,逐步加到 world_dynamic4/5 或改成注册式。
-- [ ] **已有好基础**:`ComponentRegistry` + `ComponentStorageKind(Table/SparseSet)` 已对齐 bevy 的 StorageType 语义;`dyn_store`(Vec 列式)+ `sparse_store`(稀疏集)双存储已具雏形。下一步是让 World 真正用 registry 驱动列,而非硬编码 A/B。
-- [ ] **EntityLocation 缺失**:bevy 的 Entity 通过 `{archetype_id, archetype_row, table_id, table_row}` 间接定位。当前 entity 直接线性查找。引入 archetype 后应补 location 表。
-- [ ] **change detection 已有 tick**:保持;对齐 bevy 的 added/changed ComponentTicks 即可。
-- [ ] **Commands 延迟队列设计不错**:并行 typed Vec 列 + 命令元数据流,apply 时按序执行 —— 这是绕过"无类型擦除队列"的合理忠实适配,保留。
+- [x] **【最后大件完成!】Archetype 分组 + EntityLocation 已落地**:`lib/archetype_registry.sla`(原型按精确组件签名 Vec<i32> 分组,RegistryArchetypeLocation{archetype_id,row},get_or_create_archetype,attach/detach swap-remove,insert/remove/despawn 触发原型迁移 sync_entity)。12 tests PASS。忠实对应 bevy archetype + EntityLocation。
+  - 配套:`world_archetype_value`(32)、`system_param_archetype_value`(44,SystemParam!)、`world_table_value`(30,table 列式)、`examples/archetype_system_param_demo`(45)。全绿。
+  - 注:之前 08:23 巡检见 `UnexpectedTypeToken` 是 codex 写到一半的瞬时状态,现已修好,非编译器 bug。
+- [x] **【类型擦除已突破!】`lib/world_registry_erased.sla`(07:40)**:用 `Box::into_raw` + `*u8` 裸指针 + type_id + drop_fn 实现真类型擦除列(`columns: Vec<ErasedComponentColumn>`),**一个 World 持任意多具体组件类型** —— 忠实对应 bevy BlobVec。彻底解决"硬编码组件数"缺口。28 tests PASS。
+  - [x] **drop_fn 泄漏已闭环(07:52)**:codex 响应提示,insert 覆盖/write/remove/writeback 各路径都调用 drop_fn 释放旧 Box(行 139/168/189/323),不再泄漏。配套 `examples/registry_erased_world_demo.sla` 29 tests PASS。
+  - [x] type_id 运行时校验已在每条读路径(`registry_erased_value_read` panic 9400)。
+  - [ ] **观察**:erased 列用 `Vec.remove(last)` 做 swap-remove,值是裸指针 ErasedComponentValue。已验证测试全过;后续若做大规模迁移注意裸指针所有权别 double-free(目前 remove 前先 drop,语义正确)。
+- [x] **registry 驱动值世界成型**:`world_registry_store`、`commands_registry_value`、`schedule_registry_value`(07:10-07:17)+ `bevy_readme_parity_demo`(对标 bevy README 的 movement+time+event 系统流水线)。全绿。
+- [x] **registry 成员索引 + StorageKind(Table/SparseSet)** 对齐 bevy;dyn_store/sparse_store 双存储到位。
+- [ ] **change detection tick** 保持,对齐 added/changed ComponentTicks。
+- [ ] **Commands 延迟队列** 设计合理,保留。
+- [ ] **下一步建议**:核心子系统已基本对齐 bevy(Entity/Component/Archetype/Table/类型擦除列/Query/SystemParam/Schedule/Commands/Resource/Message/change tick)。建议收尾:① 统一一个总 World 把 archetype+erased 列+SystemParam 整合成单一对外 API(目前是多个并行 stepping-stone world);② 一个完整对标 bevy README 的端到端 example;③ 更新 README/progress 汇总最终架构与忠实度对照表。
+- [x] **【整合体落地!】`lib/world_table_erased.sla`(09:57)**:把 archetype(按签名分组)+ table 列式(每原型 Vec<TableErasedColumn>)+ 类型擦除(ErasedComponentValue boxed)+ EntityLocation{archetype_id,row} **全部合一**。组件 payload 为类型擦除 boxed 值,存原型 table 列、按 entity row 对齐 —— 忠实对应 bevy `Archetype → Table → Column<BlobVec>` 真实结构。31 tests PASS,配套 demo 32。这是核心架构的最终统一形态。
+- [x] codex 已更新 README/plan/progress/tasks(10:02 git 显示 M)。建议据此核对忠实度对照表是否完整。
+- [x] **table_erased 整合系列完整(10:30-10:47)**:`world_table_erased` + `system_param_table_erased`(41)+ `commands_table_erased`(34)+ `schedule_table_erased`(38)+ 3 demo(system_param 42 / schedule_commands 39 / auto_metadata 42)。`auto_metadata_demo` 用 const 组件 id + drop_fn,列按 component_id 懒建(ensure_column),用户用 `Query<TableErasedPairMut<A,B>>` bevy 风格迭代。
+- [x] **【Component marker + metadata impl 落地】`examples/table_erased_derive_component_demo.sla`**:`@derive(Component)` 只作为语言无关注解保留,ECS type id/storage 由 `sla_ecs` 里的普通 `impl`/metadata descriptor 提供,配合 `table_erased_world_register_table` + `insert_auto`/`query_auto` 实现 bevy 风格用户体验。新增 `lib/component_metadata.sai/.sal` ABI 接口。42 tests PASS。
+- [x] **【Bundle 落地!】`lib/bundle_table_erased.sla`(14:39)**:`TableErasedBundle2/3` 组件元组 + `spawn_bundle2/3` 一次性 spawn 多组件实体(原型一次定位),`register_component_metadata` 注册。对标 bevy Bundle。33 tests PASS,demo 34。
+- [x] **【Observer 落地!】`lib/event_observer_erased.sla`(15:17)**:bevy 反应式 Observer —— `trigger` 事件立即调用所有注册 observer(区别于 Messages 的 reader-driven 通道),类型擦除 ErasedEventValue + 函数指针 run。6 tests PASS。
+- [x] **【erased 资源/消息 derive 化】`resource_erased`(21)+ `messages_erased`(6)+ multi demo**:资源/消息也走类型擦除 + derive type_id,支持一个 world 多种资源/消息类型。
+- [x] **【已修复】`lib/hierarchy.sla`(17:16,bevy 父子层级 ChildOf/Children)**:上轮 16:52 的 `UseAfterMove: parent` 已由 codex 修好(补齐遗漏的 Entity move 规避点)。现 11 tests PASS,配套 `examples/hierarchy_relationship_demo.sla` 12 PASS。功能完整:spawn_child、parent/child_count、relationship_sources、add_child(重挂父子)、replace_children —— 忠实对应 bevy ChildOf/Children 关系系统。用户代码全程 `entity_new(e.id,e.gen)` 重建规避 move。
+- [x] **【通用关系系统!】`lib/relationship.sla`(17:30,bevy 0.15+ Relationship)**:可注册任意关系类型(many/one 目标模式、linked_spawn 联动删除、allow_self),`set_related`/`spawn_related`/`sources`/`replace_related`/`despawn_related`/`detach_all_related`。父子层级只是其特例。11 tests PASS,配套 `examples/relationship_runtime_demo.sla` 12 PASS。忠实对应 bevy 通用 Relationship trait。
+- [ ] **下一步建议**:核心 + 进阶子系统已几乎全覆盖 bevy(Entity/Component/Archetype/Table/类型擦除列/Query+filter/SystemParam/Schedule/Commands/Resource/Message/change tick/**Bundle**/**Observer**/**metadata marker**)。收尾:① 统一对外 World API(目前多个 stepping-stone world 并存);② README/progress 忠实度对照表汇总;③ 后续用通用 macro/derive 设施生成 metadata,但不要写入编译器 ECS 关键字。
+- [ ] **接手推进(待命)**:规则更新 —— 默认只巡检不续写;仅当 codex 超 30 分钟无改动且收到明确续写指令时才动手。codex 自 10:47 暂停。候选续写项(待指令):① query_with(With<T> 额外组件存在过滤)+ query_added(Added<T>),table_erased query 目前有 without/changed 但缺 with/added;② 端到端对标 bevy README 的完整 example;③ 忠实度对照表收尾。
 
 ## D. 测试基线(最近巡检)
 
-- [x] 06:32 全绿:lib/ 全模块 + 全 examples 通过。commands_dynamic 20 tests,query_dynamic 22,schedule_dynamic 24,world_dynamic 18,dynamic_commands_demo 21。
+- [x] 04:58 全绿(compiler+table_erased parity):`test_unit_global_const_call_arg_cleanup.sla` PASS,`zig build test` PASS,dev plugin 已安装;`lib/world_table_erased.sla` 32 PASS,`examples/bevy_readme_parity_table_erased_demo.sla` 40 PASS,`lib/ecs_metadata.sla` 54 PASS,`examples/ecs_metadata_descriptor_demo.sla` 55 PASS;随后全量 54 个 `lib/*.sla` + 41 个 `examples/*.sla` 循环 PASS,生成 `.sa` 无绝对 `sa_std` import,两仓库 `git diff --check` PASS。
+- [x] 04:16 全绿(107 tests,codex 新增统一 ECS 元数据层):`lib/ecs_metadata.sla`(53)把 Component/Resource/Message/Event/Relationship 五类的 type_id/storage/drop glue/稳定类型标识(namespace+local id)统一成库级描述符(引擎无关)+ `examples/ecs_metadata_descriptor_demo.sla`(54)。
+- [x] 03:20 全绿(214 tests,codex 完成 Observer 在 table_erased 的全栈集成):system_param_table_erased_observer 46、table_erased_observer_system_param_demo 47、schedule_table_erased_observer 42、commands_table_erased_observer 39、table_erased_observer_demo 40。
+- [x] 02:31 全绿(224 tests,codex 把 Observer+Relationship 集成进 table_erased world):world_table_erased_observer 36、system_param_table_erased_relationship 49、commands_table_erased_relationship 43、schedule_table_erased_relationship 46、table_erased_relationship_system_param_demo 50。
+- [x] 00:29 codex 恢复工作:新增 `lib/hierarchy_relationship_adapter.sla`(15)把 hierarchy 桥接到通用 relationship runtime(progress.md 此前列的 pending 项)+ `examples/hierarchy_generic_relationship_demo.sla`(16)。全绿。
+- [x] 18:53 全量抽查全绿(codex 自 18:12 暂停,>30min 无改动,已收尾):world_table_erased 31、relationship 12、hierarchy 13、bundle_table_erased 33、event_observer_erased 6、system_param_table_erased 41、table_erased_bundle_demo 34、relationship_runtime_demo 13(8/8 模块,183 tests)。
+- [x] 00:14 无变化:codex 仍暂停(最近改动 18:12,距今 ~6h),项目稳定。
+
+- [x] 18:36 全绿(codex 收尾 hierarchy/relationship + 文档 + 架构修正):hierarchy.sla 13、relationship.sla 12、hierarchy_relationship_demo 14、relationship_runtime_demo 13。codex progress.md 自评:41 个 lib + 29 个 examples 全部 `sa sla test` 通过;ECS 语义已移出编译器(引擎无关边界)。待办:真并行多线程 World 执行、relationship/EntityEvent derive 宏糖。
+
+- [x] 18:06 全绿(codex 扩充 hierarchy/relationship 测试):hierarchy.sla 13、hierarchy_relationship_demo 14、relationship.sla 12、relationship_runtime_demo 13。⚠️ 巡检中途见 hierarchy 1 failed,系 codex 18:05 写到一半瞬时状态,文件稳定后复测全绿。**教训:对正在改动(mtime <2分钟)的文件,失败先复测再下结论。**
+- [x] 17:45 全绿(codex 新增通用关系系统):lib/relationship.sla 11、relationship_runtime_demo 12、hierarchy.sla 11(复测仍绿)。
+
+- [x] 17:23 全绿(codex 已修复 hierarchy):lib/hierarchy.sla 11、hierarchy_relationship_demo 12。上轮 UseAfterMove 阻塞已解除。
+- [ ] 16:56 **`lib/hierarchy.sla`(16:52 新增)typecheck 失败**:`UseAfterMove: parent`(详见 C 节)。其余模块未受影响,上轮基线仍有效。本线程未改,留 codex 修。
+- [x] 16:28 全绿(118 tests,无回归):event_observer_demo 7(新增,@derive(Event) + 手写关联函数)、event_observer_erased 6、message_derive_multi_demo 7、resource_derive_multi_demo 22、table_erased_bundle_demo 34、table_erased_derive_component_demo 42。codex 16:11-16:12 批量给 demo 加 @derive 标注。
+- [x] 15:19 全绿(129 tests):event_observer_erased 6、messages_erased 6、bundle_table_erased 33、resource_erased 21、message_derive_multi_demo 7、table_erased_bundle_demo 34、resource_derive_multi_demo 22。
