@@ -54,9 +54,9 @@ fn parity_te_move_query_system(q: Query<TableErasedPairMut<ParityTePosition, Par
     return q;
 }
 
-// Movement system: Query<(Mut<Position>, Velocity), Without<Frozen>>.
+// Movement system: Query<(Mut<Position>, Velocity), (With<Health>, Without<Frozen>)>.
 fn parity_te_move_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEvent>) -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {
-    return table_erased_run_pair_mut_system_without<ParityTePosition, ParityTeVelocity, ParityTeTime, ParityTeSpawnEvent>(world, 1, PARITY_TE_POSITION, 2, PARITY_TE_VELOCITY, 4, parity_te_move_query_system);
+    return table_erased_run_pair_mut_system_with_without<ParityTePosition, ParityTeVelocity, ParityTeTime, ParityTeSpawnEvent>(world, 1, PARITY_TE_POSITION, 2, PARITY_TE_VELOCITY, 3, 4, parity_te_move_query_system);
 }
 
 fn parity_te_time_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEvent>) -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {
@@ -72,7 +72,7 @@ fn parity_te_demo() -> i32 {
     let (w4, frozen) = table_erased_world_register_sparse_set<ParityTeTime, ParityTeSpawnEvent>(w3, PARITY_TE_FROZEN, parity_te_frozen_drop);
 
     let spawn_access = table_erased_access_write_messages(table_erased_access_write_component(table_erased_access_write_component(table_erased_access_write_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id), health.id), frozen.id));
-    let move_access = table_erased_access_read_component(table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id), frozen.id);
+    let move_access = table_erased_access_read_component(table_erased_access_read_component(table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id), health.id), frozen.id);
     let time_access = table_erased_access_write_resource(table_erased_system_access_none());
 
     let s0 = table_erased_schedule_default<ParityTeTime, ParityTeSpawnEvent>();
@@ -89,6 +89,9 @@ fn parity_te_demo() -> i32 {
     let hero_pos = mobile.items[0].value;
     if hero_pos.x != 3 { panic(12702); };
     if hero_pos.y != 1 { panic(12703); };
+
+    let relevant = table_erased_world_query_or_with<ParityTePosition, ParityTeTime, ParityTeSpawnEvent>(w5, position.id, PARITY_TE_POSITION, health.id, frozen.id);
+    if len(relevant.items) != 2 { panic(12707); };
 
     let foe_item = positions.items[1];
     let foe_ent = foe_item.entity;

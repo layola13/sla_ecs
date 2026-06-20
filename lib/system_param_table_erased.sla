@@ -24,6 +24,11 @@ struct TableErasedQueryResourceParam<T, R> {
     resource: R,
 }
 
+struct TableErasedItemQueryResourceParam<I, R> {
+    query: Query<I>,
+    resource: R,
+}
+
 fn table_erased_resource_message_param<R, M>(resource: R, message: M, should_write_message: bool) -> TableErasedResourceMessageParam<R, M> {
     return TableErasedResourceMessageParam<R, M> { resource: resource, message: message, should_write_message: should_write_message };
 }
@@ -60,6 +65,10 @@ fn table_erased_commands_param_write_message<R, M>(param: TableErasedCommandsPar
 
 fn table_erased_query_resource_param<T, R>(query: Query<EntityItem<T>>, resource: R) -> TableErasedQueryResourceParam<T, R> {
     return TableErasedQueryResourceParam<T, R> { query: query, resource: resource };
+}
+
+fn table_erased_item_query_resource_param<I, R>(query: Query<I>, resource: R) -> TableErasedItemQueryResourceParam<I, R> {
+    return TableErasedItemQueryResourceParam<I, R> { query: query, resource: resource };
 }
 
 fn table_erased_apply_pair_mut_updates<A, B, R, M>(world: TableErasedWorld<R, M>, updated: Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
@@ -109,6 +118,58 @@ fn table_erased_run_pair_mut_system_without_auto<A, B, R, M>(world: TableErasedW
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
     let without_component_id = table_erased_world_component_id_for_type<R, M>(world, without_type_id);
     return table_erased_run_pair_mut_system_without<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, without_component_id, run);
+}
+
+fn table_erased_run_pair_mut_system_with_without<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, with_component_id: i32, without_component_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_with_without<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, with_component_id, without_component_id);
+    let updated = run(query);
+    return table_erased_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_run_pair_mut_system_with_without_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, with_type_id: i32, without_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let with_component_id = table_erased_world_component_id_for_type<R, M>(world, with_type_id);
+    let without_component_id = table_erased_world_component_id_for_type<R, M>(world, without_type_id);
+    return table_erased_run_pair_mut_system_with_without<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, with_component_id, without_component_id, run);
+}
+
+fn table_erased_run_pair_mut_system_filter_or<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, left_kind: i32, left_component_id: i32, left_tick: i32, right_kind: i32, right_component_id: i32, right_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_filter_or<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, left_kind, left_component_id, left_tick, right_kind, right_component_id, right_tick);
+    let updated = run(query);
+    return table_erased_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_run_pair_mut_system_or_with_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, left_with_type_id: i32, right_with_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let left_with_component_id = table_erased_world_component_id_for_type<R, M>(world, left_with_type_id);
+    let right_with_component_id = table_erased_world_component_id_for_type<R, M>(world, right_with_type_id);
+    return table_erased_run_pair_mut_system_filter_or<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, TABLE_ERASED_FILTER_WITH, left_with_component_id, 0, TABLE_ERASED_FILTER_WITH, right_with_component_id, 0, run);
+}
+
+fn table_erased_run_pair_mut_system_or_without_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, left_without_type_id: i32, right_without_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let left_without_component_id = table_erased_world_component_id_for_type<R, M>(world, left_without_type_id);
+    let right_without_component_id = table_erased_world_component_id_for_type<R, M>(world, right_without_type_id);
+    return table_erased_run_pair_mut_system_filter_or<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, TABLE_ERASED_FILTER_WITHOUT, left_without_component_id, 0, TABLE_ERASED_FILTER_WITHOUT, right_without_component_id, 0, run);
+}
+
+fn table_erased_run_pair_mut_system_or_added_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, left_added_type_id: i32, right_added_type_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let left_added_component_id = table_erased_world_component_id_for_type<R, M>(world, left_added_type_id);
+    let right_added_component_id = table_erased_world_component_id_for_type<R, M>(world, right_added_type_id);
+    return table_erased_run_pair_mut_system_filter_or<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, TABLE_ERASED_FILTER_ADDED, left_added_component_id, since_tick, TABLE_ERASED_FILTER_ADDED, right_added_component_id, since_tick, run);
+}
+
+fn table_erased_run_pair_mut_system_or_changed_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, left_changed_type_id: i32, right_changed_type_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let left_changed_component_id = table_erased_world_component_id_for_type<R, M>(world, left_changed_type_id);
+    let right_changed_component_id = table_erased_world_component_id_for_type<R, M>(world, right_changed_type_id);
+    return table_erased_run_pair_mut_system_filter_or<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, TABLE_ERASED_FILTER_CHANGED, left_changed_component_id, since_tick, TABLE_ERASED_FILTER_CHANGED, right_changed_component_id, since_tick, run);
 }
 
 fn table_erased_run_pair_mut_system_added<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, filter_component_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedWorld<R, M> {
@@ -199,6 +260,55 @@ fn table_erased_run_with_query_resource_system_auto<T, R, M>(world: TableErasedW
     return table_erased_run_with_query_resource_system<T, R, M>(world, component_id, type_id, with_component_id, run);
 }
 
+fn table_erased_run_with_without_query_resource_system<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, with_component_id: i32, without_component_id: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_with_without<T, R, M>(world, component_id, type_id, with_component_id, without_component_id);
+    let param0 = table_erased_query_resource_param<T, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_with_without_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, with_type_id: i32, without_type_id: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let with_component_id = table_erased_world_component_id_for_type<R, M>(world, with_type_id);
+    let without_component_id = table_erased_world_component_id_for_type<R, M>(world, without_type_id);
+    return table_erased_run_with_without_query_resource_system<T, R, M>(world, component_id, type_id, with_component_id, without_component_id, run);
+}
+
+fn table_erased_run_filter_or_query_resource_system<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, left_kind: i32, left_component_id: i32, left_tick: i32, right_kind: i32, right_component_id: i32, right_tick: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_filter_or<T, R, M>(world, component_id, type_id, left_kind, left_component_id, left_tick, right_kind, right_component_id, right_tick);
+    let param0 = table_erased_query_resource_param<T, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_or_with_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, left_with_type_id: i32, right_with_type_id: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let left_with_component_id = table_erased_world_component_id_for_type<R, M>(world, left_with_type_id);
+    let right_with_component_id = table_erased_world_component_id_for_type<R, M>(world, right_with_type_id);
+    return table_erased_run_filter_or_query_resource_system<T, R, M>(world, component_id, type_id, TABLE_ERASED_FILTER_WITH, left_with_component_id, 0, TABLE_ERASED_FILTER_WITH, right_with_component_id, 0, run);
+}
+
+fn table_erased_run_or_without_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, left_without_type_id: i32, right_without_type_id: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let left_without_component_id = table_erased_world_component_id_for_type<R, M>(world, left_without_type_id);
+    let right_without_component_id = table_erased_world_component_id_for_type<R, M>(world, right_without_type_id);
+    return table_erased_run_filter_or_query_resource_system<T, R, M>(world, component_id, type_id, TABLE_ERASED_FILTER_WITHOUT, left_without_component_id, 0, TABLE_ERASED_FILTER_WITHOUT, right_without_component_id, 0, run);
+}
+
+fn table_erased_run_or_added_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, left_added_type_id: i32, right_added_type_id: i32, since_tick: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let left_added_component_id = table_erased_world_component_id_for_type<R, M>(world, left_added_type_id);
+    let right_added_component_id = table_erased_world_component_id_for_type<R, M>(world, right_added_type_id);
+    return table_erased_run_filter_or_query_resource_system<T, R, M>(world, component_id, type_id, TABLE_ERASED_FILTER_ADDED, left_added_component_id, since_tick, TABLE_ERASED_FILTER_ADDED, right_added_component_id, since_tick, run);
+}
+
+fn table_erased_run_or_changed_query_resource_system_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, left_changed_type_id: i32, right_changed_type_id: i32, since_tick: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let left_changed_component_id = table_erased_world_component_id_for_type<R, M>(world, left_changed_type_id);
+    let right_changed_component_id = table_erased_world_component_id_for_type<R, M>(world, right_changed_type_id);
+    return table_erased_run_filter_or_query_resource_system<T, R, M>(world, component_id, type_id, TABLE_ERASED_FILTER_CHANGED, left_changed_component_id, since_tick, TABLE_ERASED_FILTER_CHANGED, right_changed_component_id, since_tick, run);
+}
+
 fn table_erased_run_added_query_resource_system<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, since_tick: i32, run: fn(TableErasedQueryResourceParam<T, R>) -> TableErasedQueryResourceParam<T, R>) -> TableErasedWorld<R, M> {
     let query = table_erased_world_query_added<T, R, M>(world, component_id, type_id, since_tick);
     let param0 = table_erased_query_resource_param<T, R>(query, table_erased_world_get_resource<R, M>(world));
@@ -223,6 +333,32 @@ fn table_erased_run_changed_query_resource_system_auto<T, R, M>(world: TableEras
     return table_erased_run_changed_query_resource_system<T, R, M>(world, component_id, type_id, since_tick, run);
 }
 
+fn table_erased_run_pair_optional_second_query_resource_system<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<A, B>, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_pair_optional_second<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_second);
+    let param0 = table_erased_item_query_resource_param<TableErasedPairOptionalSecond<A, B>, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_pair_optional_second_query_resource_system_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<A, B>, R>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_run_pair_optional_second_query_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_second, run);
+}
+
+fn table_erased_run_any_of2_query_resource_system<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_any_of2<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second);
+    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf2<A, B>, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_any_of2_query_resource_system_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_run_any_of2_query_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second, run);
+}
+
 const TABLE_ERASED_PARAM_POS_TYPE: i32 = 441;
 const TABLE_ERASED_PARAM_VEL_TYPE: i32 = 442;
 const TABLE_ERASED_PARAM_MARKER_TYPE: i32 = 443;
@@ -235,6 +371,9 @@ struct TableErasedParamEvent { amount: i32 }
 
 fn table_erased_param_time_default() -> TableErasedParamTime { return TableErasedParamTime { tick: 0 }; }
 fn table_erased_param_event_default() -> TableErasedParamEvent { return TableErasedParamEvent { amount: 0 }; }
+fn table_erased_param_pos_default() -> TableErasedParamPos { return TableErasedParamPos { x: 0, y: 0 }; }
+fn table_erased_param_vel_default() -> TableErasedParamVel { return TableErasedParamVel { x: 0, y: 0 }; }
+fn table_erased_param_marker_default() -> TableErasedParamMarker { return TableErasedParamMarker { value: 0 }; }
 fn table_erased_param_world_new() -> TableErasedWorld<TableErasedParamTime, TableErasedParamEvent> { return table_erased_world_new<TableErasedParamTime, TableErasedParamEvent>(table_erased_param_time_default(), table_erased_param_event_default()); }
 fn table_erased_param_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamPos; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_param_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamVel; let boxed = unsafe { Box::from_raw(typed) }; }
@@ -277,6 +416,40 @@ fn table_erased_param_writer_system(writer: MessageWriter<TableErasedParamEvent>
 
 fn table_erased_param_count_query_system(param: TableErasedQueryResourceParam<TableErasedParamPos, TableErasedParamTime>) -> TableErasedQueryResourceParam<TableErasedParamPos, TableErasedParamTime> {
     return table_erased_query_resource_param<TableErasedParamPos, TableErasedParamTime>(param.query, TableErasedParamTime { tick: len(param.query.items) as i32 });
+}
+
+fn table_erased_param_optional_marker_count_system(param: TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<TableErasedParamPos, TableErasedParamMarker>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedPairOptionalSecond<TableErasedParamPos, TableErasedParamMarker>, TableErasedParamTime> {
+    let present: i32 = 0;
+    let missing: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].second.has_value {
+            present = present + 1;
+        } else {
+            missing = missing + 1;
+        };
+        i = i + 1;
+    }
+    return table_erased_item_query_resource_param<TableErasedPairOptionalSecond<TableErasedParamPos, TableErasedParamMarker>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: present * 10 + missing });
+}
+
+fn table_erased_param_anyof_marker_velocity_count_system(param: TableErasedItemQueryResourceParam<TableErasedAnyOf2<TableErasedParamMarker, TableErasedParamVel>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf2<TableErasedParamMarker, TableErasedParamVel>, TableErasedParamTime> {
+    let first_present: i32 = 0;
+    let first_missing: i32 = 0;
+    let second_present: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].first.has_value {
+            first_present = first_present + 1;
+        } else {
+            first_missing = first_missing + 1;
+        };
+        if param.query.items[i].second.has_value { second_present = second_present + 1; };
+        i = i + 1;
+    }
+    return table_erased_item_query_resource_param<TableErasedAnyOf2<TableErasedParamMarker, TableErasedParamVel>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: first_present * 100 + second_present * 10 + first_missing });
 }
 
 @test "table erased pair query system param writes back"() {
@@ -362,21 +535,102 @@ fn table_erased_param_count_query_system(param: TableErasedQueryResourceParam<Ta
     let w8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w7, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
     let w9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w8, e2, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
     let w10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w9, e2, marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
+    let w10r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w10, TableErasedParamTime { tick: 0 });
+    let w10q = table_erased_run_with_without_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10q).tick != 1 { panic(12035); };
+    let w10orq = table_erased_run_or_with_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10orq).tick != 2 { panic(12038); };
+    let w10orwq = table_erased_run_or_without_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10orwq).tick != 1 { panic(12047); };
+    let w10optq = table_erased_run_pair_optional_second_query_resource_system_auto<TableErasedParamPos, TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_default, table_erased_param_optional_marker_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10optq).tick != 11 { panic(12050); };
+    let w10anyq = table_erased_run_any_of2_query_resource_system_auto<TableErasedParamMarker, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_MARKER_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_marker_default, table_erased_param_vel_default, table_erased_param_anyof_marker_velocity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10anyq).tick != 121 { panic(12051); };
+    let w10ora = table_erased_run_or_added_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w10r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, 0, table_erased_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w10ora).tick != 2 { panic(12039); };
     let w11 = table_erased_run_pair_mut_system_without_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w10, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12033); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 40 { panic(12034); };
-    let w12 = table_erased_run_pair_mut_system_with_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w11, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
-    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w12, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12027); };
+    let w11b = table_erased_run_pair_mut_system_with_without_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w11, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11b, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 10 { panic(12036); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11b, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 40 { panic(12037); };
+    let w12 = table_erased_run_pair_mut_system_with_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w11b, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w12, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 10 { panic(12027); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w12, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 48 { panic(12028); };
     let w13 = table_erased_run_pair_mut_system_added_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w12, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, 0, table_erased_param_movement_system);
-    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w13, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 10 { panic(12029); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w13, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 13 { panic(12029); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w13, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 56 { panic(12030); };
     let before_change = w13.registry.change_tick;
     let w13a = table_erased_world_increment_tick<TableErasedParamTime, TableErasedParamEvent>(w13);
     let item = table_erased_world_query_pair_mut_first_without<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w13a, position.id, TABLE_ERASED_PARAM_POS_TYPE, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, marker.id).items[0];
     let next = TableErasedParamPos { x: 9, y: 0 };
     let w14 = table_erased_world_pair_write_first<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w13a, item, next);
+    let w14r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w14, TableErasedParamTime { tick: 0 });
+    let w14q = table_erased_run_or_changed_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w14r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, before_change, table_erased_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w14q).tick != 1 { panic(12042); };
     let w15 = table_erased_run_pair_mut_system_changed_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w14, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, before_change, table_erased_param_movement_system);
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w15, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 12 { panic(12031); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w15, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 56 { panic(12032); };
+    let o0 = table_erased_param_world_new();
+    let (o1, o_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
+    let (o2, o_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (o3, o_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(o2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (o4, oe1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(o3);
+    let (o5, oe2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(o4);
+    let o6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o5, oe1, o_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
+    let o7 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(o6, oe1, o_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
+    let o8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o7, oe2, o_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
+    let o9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(o8, oe2, o_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
+    let o10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(o9, oe2, o_marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
+    let o11 = table_erased_run_pair_mut_system_or_with_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(o10, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o11, oe1, o_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12040); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o11, oe2, o_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 48 { panic(12041); };
+    let u0 = table_erased_param_world_new();
+    let (u1, u_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
+    let (u2, u_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (u3, u_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(u2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (u4, ue1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(u3);
+    let (u5, ue2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(u4);
+    let u6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u5, ue1, u_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
+    let u7 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(u6, ue1, u_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
+    let u8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u7, ue2, u_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
+    let u9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(u8, ue2, u_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
+    let u10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(u9, ue2, u_marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
+    let u11 = table_erased_run_pair_mut_system_or_without_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(u10, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u11, ue1, u_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12048); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u11, ue2, u_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 40 { panic(12049); };
+    let a0 = table_erased_param_world_new();
+    let (a1, a_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
+    let (a2, a_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (a3, a_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(a2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (a4, ae1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(a3);
+    let (a5, ae2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(a4);
+    let a6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a5, ae1, a_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
+    let a7 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(a6, ae1, a_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
+    let a8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a7, ae2, a_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
+    let a9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(a8, ae2, a_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
+    let a10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(a9, ae2, a_marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
+    let a11 = table_erased_run_pair_mut_system_or_added_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(a10, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, 0, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a11, ae1, a_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12043); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a11, ae2, a_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 48 { panic(12044); };
+    let c0 = table_erased_param_world_new();
+    let (c1, c_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
+    let (c2, c_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (c3, c_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(c2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (c4, ce1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(c3);
+    let (c5, ce2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(c4);
+    let c6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c5, ce1, c_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
+    let c7 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c6, ce1, c_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
+    let c8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c7, ce2, c_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
+    let c9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c8, ce2, c_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
+    let c10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(c9, ce2, c_marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
+    let c_item = table_erased_world_query_pair_mut_first_without<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c10, c_position.id, TABLE_ERASED_PARAM_POS_TYPE, c_velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, c_marker.id).items[0];
+    let c11 = table_erased_world_pair_write_first<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c10, c_item, TableErasedParamPos { x: 7, y: 0 });
+    let c_before = c11.registry.change_tick;
+    let c12 = table_erased_world_increment_tick<TableErasedParamTime, TableErasedParamEvent>(c11);
+    let c_marked = table_erased_world_query_pair_mut_first_with_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c12, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE).items[0];
+    let c13 = table_erased_world_pair_write_first<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c12, c_marked, TableErasedParamPos { x: 48, y: 0 });
+    let c14 = table_erased_run_pair_mut_system_or_changed_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(c13, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, c_before, table_erased_param_movement_system);
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c14, ce1, c_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12045); };
+    if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c14, ce2, c_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 56 { panic(12046); };
 }
