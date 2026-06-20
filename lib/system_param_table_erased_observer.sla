@@ -92,9 +92,7 @@ fn table_erased_observer_query_resource_param<T, R>(query: Query<EntityItem<T>>,
     return TableErasedObserverQueryResourceParam<T, R> { query: query, resource: resource };
 }
 
-fn table_erased_observer_run_pair_mut_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
-    let query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id);
-    let updated = run(query);
+fn table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world: TableErasedObserverWorld<R, M>, updated: Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
     let i: i64 = 0;
     let cnt = len(updated.items) as i64;
     while i < cnt {
@@ -105,10 +103,68 @@ fn table_erased_observer_run_pair_mut_system<A, B, R, M>(world: TableErasedObser
     return world;
 }
 
+fn table_erased_observer_run_pair_mut_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id);
+    let updated = run(query);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
 fn table_erased_observer_run_pair_mut_system_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
     return table_erased_observer_run_pair_mut_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
+}
+
+fn table_erased_observer_run_pair_mut_system_with<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, with_component_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_with<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, with_component_id);
+    let updated = run(query);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_observer_run_pair_mut_system_with_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, with_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let with_component_id = table_erased_world_component_id_for_type<R, M>(world.table, with_type_id);
+    return table_erased_observer_run_pair_mut_system_with<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, with_component_id, run);
+}
+
+fn table_erased_observer_run_pair_mut_system_without<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, without_component_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_without<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, without_component_id);
+    let updated = run(query);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_observer_run_pair_mut_system_without_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, without_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let without_component_id = table_erased_world_component_id_for_type<R, M>(world.table, without_type_id);
+    return table_erased_observer_run_pair_mut_system_without<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, without_component_id, run);
+}
+
+fn table_erased_observer_run_pair_mut_system_added<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, filter_component_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_added<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, filter_component_id, since_tick);
+    let updated = run(query);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_observer_run_pair_mut_system_added_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, filter_type_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let filter_component_id = table_erased_world_component_id_for_type<R, M>(world.table, filter_type_id);
+    return table_erased_observer_run_pair_mut_system_added<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, filter_component_id, since_tick, run);
+}
+
+fn table_erased_observer_run_pair_mut_system_changed<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, filter_component_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_pair_mut_first_changed<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, filter_component_id, since_tick);
+    let updated = run(query);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, updated);
+}
+
+fn table_erased_observer_run_pair_mut_system_changed_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, filter_type_id: i32, since_tick: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let filter_component_id = table_erased_world_component_id_for_type<R, M>(world.table, filter_type_id);
+    return table_erased_observer_run_pair_mut_system_changed<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, filter_component_id, since_tick, run);
 }
 
 fn table_erased_observer_run_resource_message_system<R, M>(world: TableErasedObserverWorld<R, M>, default_message: M, run: fn(TableErasedObserverResourceMessageParam<R, M>) -> TableErasedObserverResourceMessageParam<R, M>) -> TableErasedObserverWorld<R, M> {
@@ -335,4 +391,35 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w13 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_pair_write_first<TableErasedPos, TableErasedMarker, TableErasedTime, TableErasedEvent>(w12.table, item, TableErasedPos { x: 9, y: 0 }), observers: w12.observers };
     let w14 = table_erased_observer_run_changed_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w13, TABLE_ERASED_POS_TYPE, before_change, table_erased_observer_param_count_query_system);
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w14.table).tick != 1 { panic(14436); };
+}
+
+@test "table erased observer filtered pair mut system params"() {
+    let w0 = table_erased_observer_test_world_new();
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let (w5, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
+    let w7 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w6, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 3, y: 0 });
+    let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 40, y: 0 });
+    let w9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 8, y: 0 });
+    let w10 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w9, e2, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let w11 = table_erased_observer_run_pair_mut_system_without_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_observer_param_movement_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e1, position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14450); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e2, position.id, TABLE_ERASED_POS_TYPE).x != 40 { panic(14451); };
+    let w12 = table_erased_observer_run_pair_mut_system_with_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w11, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_observer_param_movement_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, e1, position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14437); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, e2, position.id, TABLE_ERASED_POS_TYPE).x != 48 { panic(14438); };
+    let w13 = table_erased_observer_run_pair_mut_system_added_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w12, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_VEL_TYPE, 0, table_erased_observer_param_movement_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w13, e1, position.id, TABLE_ERASED_POS_TYPE).x != 10 { panic(14439); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w13, e2, position.id, TABLE_ERASED_POS_TYPE).x != 56 { panic(14447); };
+    let before_change = w13.table.registry.change_tick;
+    let w13a = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w13.table), observers: w13.observers };
+    let item = table_erased_world_query_pair_mut_first_without<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w13a.table, position.id, TABLE_ERASED_POS_TYPE, velocity.id, TABLE_ERASED_VEL_TYPE, marker.id).items[0];
+    let next = TableErasedPos { x: 9, y: 0 };
+    let w14 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_pair_write_first<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w13a.table, item, next), observers: w13a.observers };
+    let w15 = table_erased_observer_run_pair_mut_system_changed_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, before_change, table_erased_observer_param_movement_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w15, e1, position.id, TABLE_ERASED_POS_TYPE).x != 12 { panic(14448); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w15, e2, position.id, TABLE_ERASED_POS_TYPE).x != 56 { panic(14449); };
 }

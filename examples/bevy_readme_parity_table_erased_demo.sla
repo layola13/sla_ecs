@@ -2,7 +2,7 @@
 // This drives the type-erased archetype world that holds arbitrarily many
 // concrete component types, plus Commands, Query filters, a Schedule, a
 // Resource, and a Message channel: the Bevy README feature set.
-@import "../lib/schedule_table_erased.sla"
+@import "../lib/system_param_table_erased.sla"
 
 const PARITY_TE_POSITION: i32 = 471;
 const PARITY_TE_VELOCITY: i32 = 472;
@@ -44,17 +44,19 @@ fn parity_te_spawn_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEve
     return world3;
 }
 
-// Movement system: Query<(Mut<Position>, Velocity), Without<Frozen>>.
-fn parity_te_move_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEvent>) -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {
-    let q = table_erased_world_query_pair_mut_first_without<ParityTePosition, ParityTeVelocity, ParityTeTime, ParityTeSpawnEvent>(world, 1, PARITY_TE_POSITION, 2, PARITY_TE_VELOCITY, 4);
+fn parity_te_move_query_system(q: Query<TableErasedPairMut<ParityTePosition, ParityTeVelocity>>) -> Query<TableErasedPairMut<ParityTePosition, ParityTeVelocity>> {
     let i: i64 = 0;
     let cnt = len(q.items) as i64;
     while i < cnt {
-        let item = q.items[i];
-        world = table_erased_world_pair_write_first<ParityTePosition, ParityTeVelocity, ParityTeTime, ParityTeSpawnEvent>(world, item, ParityTePosition { x: item.first.value.x + item.second.dx, y: item.first.value.y + item.second.dy });
+        q.items[i].first.value = ParityTePosition { x: q.items[i].first.value.x + q.items[i].second.dx, y: q.items[i].first.value.y + q.items[i].second.dy };
         i = i + 1;
     }
-    return world;
+    return q;
+}
+
+// Movement system: Query<(Mut<Position>, Velocity), Without<Frozen>>.
+fn parity_te_move_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEvent>) -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {
+    return table_erased_run_pair_mut_system_without<ParityTePosition, ParityTeVelocity, ParityTeTime, ParityTeSpawnEvent>(world, 1, PARITY_TE_POSITION, 2, PARITY_TE_VELOCITY, 4, parity_te_move_query_system);
 }
 
 fn parity_te_time_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEvent>) -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {

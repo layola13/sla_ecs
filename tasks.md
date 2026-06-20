@@ -50,6 +50,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row type-erased heterogeneous value world: boxed component payloads stored inside archetype columns by entity row, row migration on add/remove/despawn, typed get/query, pair-mut writeback, Added/Changed, resources, messages, and cleanup.
 - [x] Add verified table-row type-erased pair-mut `Without` query helper for `Query<(Mut<A>, B), Without<C>>`-style movement systems. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 - [x] Add verified table-row type-erased `With<T>` and `Added<T>` value query helpers plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Add verified table-row type-erased pair query `Without<T>`, `With<T>`, `Added<T>`, and `Changed<T>` helpers plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Add verified table-row type-erased pair-mut query `With<T>`, `Added<T>`, and `Changed<T>` helpers plus type-id auto lookup variants, extending the existing pair-mut `Without<T>` path. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 - [x] Add verified homogeneous table-row `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_value.sla`.
 - [x] Add verified archetype-backed homogeneous `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_archetype_value.sla`.
 - [x] Add verified table-row type-erased relationship wrapper in `lib/world_table_erased_relationship.sla`: synchronized `TableErasedWorld` + `RelationshipWorld` entity allocation, component storage, relation source/target queries, linked despawn cleanup, and allocator free-list order preservation. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_relationship.sla`.
@@ -108,6 +110,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Extend verified homogeneous table-row system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_value.sla`.
 - [x] Extend verified table-row type-erased system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`.
 - [x] Extend verified table-row type-erased observer system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
+- [x] Extend verified table-row type-erased pair-mut system adapters with `Without<T>`, `With<T>`, `Added<T>`, and `Changed<T>` filters plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`.
+- [x] Extend verified table-row type-erased observer pair-mut system adapters with `Without<T>`, `With<T>`, `Added<T>`, and `Changed<T>` filters plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -141,6 +145,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-erased observer schedule/system-param example: `examples/table_erased_observer_system_param_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_observer_system_param_demo.sla`.
 - [x] Add verified metadata descriptor demo: `examples/ecs_metadata_descriptor_demo.sla`, covering component registration, explicit drop-function metadata, resources, messages, events, and relationship metadata. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/ecs_metadata_descriptor_demo.sla`.
 - [x] Add verified Bevy README parity demo over the table-erased full stack: arbitrary heterogeneous components, sparse `Frozen` filter, `Query<(Mut<Position>, Velocity), Without<Frozen>>`, Commands, Schedule, Resource, Message. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/bevy_readme_parity_table_erased_demo.sla`.
+- [x] Update verified Bevy README parity table-erased demo so `Query<(Mut<Position>, Velocity), Without<Frozen>>` runs through the system-param pair-mut adapter instead of hand-written query/writeback. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/bevy_readme_parity_table_erased_demo.sla`.
 - [x] Add verified table-erased component metadata example: `examples/table_erased_derive_component_demo.sla`, using project-level derive markers plus ordinary `impl` metadata, including sparse-set storage metadata driving sparse component registration.
 - [x] Add verified multi-resource metadata example: `examples/resource_derive_multi_demo.sla`.
 - [x] Add verified multi-channel message metadata example: `examples/message_derive_multi_demo.sla`.
