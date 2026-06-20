@@ -1,0 +1,7243 @@
+@import "sa_std/vec.sa"
+@import "sa_std/vec.sa"
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@import "sa_std/vec.sa"
+@const SLA_FNPTR_VT_entity_new = vtable { call = @sla__entity_new }
+@const SLA_FNPTR_VT_entity_placeholder = vtable { call = @sla__entity_placeholder }
+@const SLA_FNPTR_VT_entity_index = vtable { call = @sla__entity_index }
+@const SLA_FNPTR_VT_entity_generation = vtable { call = @sla__entity_generation }
+@const SLA_FNPTR_VT_entity_eq = vtable { call = @sla__entity_eq }
+@const SLA_FNPTR_VT_entity_to_bits = vtable { call = @sla__entity_to_bits }
+@const SLA_FNPTR_VT_entity_from_bits = vtable { call = @sla__entity_from_bits }
+@const SLA_FNPTR_VT_allocator_new = vtable { call = @sla__allocator_new }
+@const SLA_FNPTR_VT_alloc_entity = vtable { call = @sla__alloc_entity }
+@const SLA_FNPTR_VT_allocator_id_is_free = vtable { call = @sla__allocator_id_is_free }
+@const SLA_FNPTR_VT_is_alive = vtable { call = @sla__is_alive }
+@const SLA_FNPTR_VT_free_entity = vtable { call = @sla__free_entity }
+@const SLA_FNPTR_VT_dyn_allocator_new = vtable { call = @sla__dyn_allocator_new }
+@const SLA_FNPTR_VT_dyn_alloc_entity = vtable { call = @sla__dyn_alloc_entity }
+@const SLA_FNPTR_VT_dyn_is_alive = vtable { call = @sla__dyn_is_alive }
+@const SLA_FNPTR_VT_dyn_free_entity = vtable { call = @sla__dyn_free_entity }
+@const SLA_FNPTR_VT_relationship_entity_query_new = vtable { call = @sla__relationship_entity_query_new }
+@const SLA_FNPTR_VT_relationship_entity_query_len = vtable { call = @sla__relationship_entity_query_len }
+@const SLA_FNPTR_VT_relationship_entity_query_at = vtable { call = @sla__relationship_entity_query_at }
+@const SLA_FNPTR_VT_relationship_entity_query_contains = vtable { call = @sla__relationship_entity_query_contains }
+@const SLA_FNPTR_VT_relationship_entity_parts_eq = vtable { call = @sla__relationship_entity_parts_eq }
+@const SLA_FNPTR_VT_relationship_world_new = vtable { call = @sla__relationship_world_new }
+@const SLA_FNPTR_VT_relationship_kind_many = vtable { call = @sla__relationship_kind_many }
+@const SLA_FNPTR_VT_relationship_kind_one = vtable { call = @sla__relationship_kind_one }
+@const SLA_FNPTR_VT_relationship_world_register_many = vtable { call = @sla__relationship_world_register_many }
+@const SLA_FNPTR_VT_relationship_world_register_one = vtable { call = @sla__relationship_world_register_one }
+@const SLA_FNPTR_VT_relationship_world_spawn = vtable { call = @sla__relationship_world_spawn }
+@const SLA_FNPTR_VT_relationship_world_is_alive = vtable { call = @sla__relationship_world_is_alive }
+@const SLA_FNPTR_VT_relationship_world_kind_slot = vtable { call = @sla__relationship_world_kind_slot }
+@const SLA_FNPTR_VT_relationship_world_kind = vtable { call = @sla__relationship_world_kind }
+@const SLA_FNPTR_VT_relationship_world_source_slot = vtable { call = @sla__relationship_world_source_slot }
+@const SLA_FNPTR_VT_relationship_world_target_slot = vtable { call = @sla__relationship_world_target_slot }
+@const SLA_FNPTR_VT_relationship_world_source_slot_in_target = vtable { call = @sla__relationship_world_source_slot_in_target }
+@const SLA_FNPTR_VT_relationship_entity_vec_insert_swap = vtable { call = @sla__relationship_entity_vec_insert_swap }
+@const SLA_FNPTR_VT_relationship_entity_vec_remove_stable = vtable { call = @sla__relationship_entity_vec_remove_stable }
+@const SLA_FNPTR_VT_relationship_entity_vec_contains = vtable { call = @sla__relationship_entity_vec_contains }
+@const SLA_FNPTR_VT_relationship_entity_vec_has_duplicates = vtable { call = @sla__relationship_entity_vec_has_duplicates }
+@const SLA_FNPTR_VT_relationship_entity_vec_disjoint = vtable { call = @sla__relationship_entity_vec_disjoint }
+@const SLA_FNPTR_VT_relationship_entity_vec_subset = vtable { call = @sla__relationship_entity_vec_subset }
+@const SLA_FNPTR_VT_relationship_world_remove_target_entry_at = vtable { call = @sla__relationship_world_remove_target_entry_at }
+@const SLA_FNPTR_VT_relationship_world_remove_source_entry_at = vtable { call = @sla__relationship_world_remove_source_entry_at }
+@const SLA_FNPTR_VT_relationship_world_remove_empty_target = vtable { call = @sla__relationship_world_remove_empty_target }
+@const SLA_FNPTR_VT_relationship_world_ensure_target = vtable { call = @sla__relationship_world_ensure_target }
+@const SLA_FNPTR_VT_relationship_world_remove_source_from_target = vtable { call = @sla__relationship_world_remove_source_from_target }
+@const SLA_FNPTR_VT_relationship_world_add_source_to_target = vtable { call = @sla__relationship_world_add_source_to_target }
+@const SLA_FNPTR_VT_relationship_world_remove_related = vtable { call = @sla__relationship_world_remove_related }
+@const SLA_FNPTR_VT_relationship_world_set_related_at = vtable { call = @sla__relationship_world_set_related_at }
+@const SLA_FNPTR_VT_relationship_world_set_related = vtable { call = @sla__relationship_world_set_related }
+@const SLA_FNPTR_VT_relationship_world_spawn_related = vtable { call = @sla__relationship_world_spawn_related }
+@const SLA_FNPTR_VT_relationship_world_has_related = vtable { call = @sla__relationship_world_has_related }
+@const SLA_FNPTR_VT_relationship_world_related = vtable { call = @sla__relationship_world_related }
+@const SLA_FNPTR_VT_relationship_world_sources = vtable { call = @sla__relationship_world_sources }
+@const SLA_FNPTR_VT_relationship_world_source_count = vtable { call = @sla__relationship_world_source_count }
+@const SLA_FNPTR_VT_relationship_world_source_at = vtable { call = @sla__relationship_world_source_at }
+@const SLA_FNPTR_VT_relationship_world_ancestors = vtable { call = @sla__relationship_world_ancestors }
+@const SLA_FNPTR_VT_relationship_world_root_ancestor = vtable { call = @sla__relationship_world_root_ancestor }
+@const SLA_FNPTR_VT_relationship_world_descendants = vtable { call = @sla__relationship_world_descendants }
+@const SLA_FNPTR_VT_relationship_world_descendants_depth_first_append = vtable { call = @sla__relationship_world_descendants_depth_first_append }
+@const SLA_FNPTR_VT_relationship_world_descendants_depth_first = vtable { call = @sla__relationship_world_descendants_depth_first }
+@const SLA_FNPTR_VT_relationship_world_siblings = vtable { call = @sla__relationship_world_siblings }
+@const SLA_FNPTR_VT_relationship_world_leaves = vtable { call = @sla__relationship_world_leaves }
+@const SLA_FNPTR_VT_relationship_world_detach_all_related = vtable { call = @sla__relationship_world_detach_all_related }
+@const SLA_FNPTR_VT_relationship_world_replace_related = vtable { call = @sla__relationship_world_replace_related }
+@const SLA_FNPTR_VT_relationship_world_replace_related_with_difference = vtable { call = @sla__relationship_world_replace_related_with_difference }
+@const SLA_FNPTR_VT_relationship_world_despawn_related = vtable { call = @sla__relationship_world_despawn_related }
+@const SLA_FNPTR_VT_relationship_world_despawn = vtable { call = @sla__relationship_world_despawn }
+@const SLA_FNPTR_VT_generic_exclusive_of_new = vtable { call = @sla__generic_exclusive_of_new }
+@const SLA_FNPTR_VT_generic_exclusive_of_target = vtable { call = @sla__generic_exclusive_of_target }
+@const SLA_FNPTR_VT_generic_exclusive_target_new = vtable { call = @sla__generic_exclusive_target_new }
+@const SLA_FNPTR_VT_generic_exclusive_target_source = vtable { call = @sla__generic_exclusive_target_source }
+@const SLA_FNPTR_VT_generic_exclusive_world_new = vtable { call = @sla__generic_exclusive_world_new }
+@const SLA_FNPTR_VT_generic_exclusive_world_spawn = vtable { call = @sla__generic_exclusive_world_spawn }
+@const SLA_FNPTR_VT_generic_exclusive_world_is_alive = vtable { call = @sla__generic_exclusive_world_is_alive }
+@const SLA_FNPTR_VT_generic_exclusive_world_set = vtable { call = @sla__generic_exclusive_world_set }
+@const SLA_FNPTR_VT_generic_exclusive_world_remove = vtable { call = @sla__generic_exclusive_world_remove }
+@const SLA_FNPTR_VT_generic_exclusive_world_has_target = vtable { call = @sla__generic_exclusive_world_has_target }
+@const SLA_FNPTR_VT_generic_exclusive_world_target = vtable { call = @sla__generic_exclusive_world_target }
+@const SLA_FNPTR_VT_generic_exclusive_world_has_source = vtable { call = @sla__generic_exclusive_world_has_source }
+@const SLA_FNPTR_VT_generic_exclusive_world_source = vtable { call = @sla__generic_exclusive_world_source }
+@const SLA_FNPTR_VT_generic_exclusive_world_despawn = vtable { call = @sla__generic_exclusive_world_despawn }
+@const SLA_FNPTR_VT_relationship_one_to_one_demo = vtable { call = @sla__relationship_one_to_one_demo }
+@const SLA_FNPTR_VT_main = vtable { call = @main }
+@sla__entity_new(id: i32, gen: i32) -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 8
+    store tmp_0+0, id as i32
+    store tmp_0+4, gen as i32
+    return tmp_0
+
+@sla__entity_placeholder() -> ptr:
+L_ENTRY:
+    tmp_1 = alloc 8
+    tmp_2 = 0
+    store tmp_1+0, tmp_2 as i32
+    !tmp_2
+    tmp_3 = 0
+    tmp_4 = 1
+    tmp_5 = sub tmp_3, tmp_4
+    !tmp_3
+    !tmp_4
+    store tmp_1+4, tmp_5 as i32
+    !tmp_5
+    return tmp_1
+
+@sla__entity_index(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_6 = load entity+0 as i32
+    !entity
+    return tmp_6
+
+@sla__entity_generation(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_7 = load entity+4 as i32
+    !entity
+    return tmp_7
+
+@sla__entity_eq(a: ptr, b: ptr) -> u8:
+L_ENTRY:
+    tmp_8 = load a+0 as i32
+    tmp_9 = load b+0 as i32
+    tmp_10 = ne tmp_8, tmp_9
+    !tmp_8
+    !tmp_9
+    br tmp_10 -> L_THEN_0, L_ELSE_1
+
+L_THEN_0:
+    !tmp_10
+    tmp_11 = 0
+    !b
+    !a
+    return tmp_11
+
+L_ELSE_1:
+    !tmp_10
+    jmp L_MERGE_2
+
+L_MERGE_2:
+    tmp_13 = load a+4 as i32
+    tmp_14 = load b+4 as i32
+    tmp_15 = eq tmp_13, tmp_14
+    !tmp_13
+    !tmp_14
+    !b
+    !a
+    return tmp_15
+
+@sla__entity_to_bits(entity: ptr) -> i64:
+L_ENTRY:
+    tmp_16 = load entity+4 as i32
+    tmp_17 = tmp_16 as i64
+    gen_part = tmp_17
+    tmp_18 = load entity+0 as i32
+    tmp_19 = tmp_18 as i64
+    id_part = tmp_19
+    tmp_20 = 4294967296
+    tmp_21 = mul gen_part, tmp_20
+    !tmp_20
+    tmp_22 = add tmp_21, id_part
+    !tmp_21
+    !entity
+    return tmp_22
+
+@sla__entity_from_bits(bits: i64) -> ptr:
+L_ENTRY:
+    tmp_23 = 4294967296
+    tmp_24 = div bits, tmp_23
+    !tmp_23
+    gen64 = tmp_24
+    tmp_25 = 4294967296
+    tmp_26 = mul gen64, tmp_25
+    !tmp_25
+    tmp_27 = sub bits, tmp_26
+    !tmp_26
+    id64 = tmp_27
+    tmp_28 = alloc 8
+    tmp_29 = id64 as i32
+    store tmp_28+0, tmp_29 as i32
+    !tmp_29
+    tmp_30 = gen64 as i32
+    store tmp_28+4, tmp_30 as i32
+    !tmp_30
+    !bits
+    return tmp_28
+
+@sla__allocator_new() -> ptr:
+L_ENTRY:
+    tmp_31 = alloc 24
+    tmp_32 = 1
+    store tmp_31+0, tmp_32 as i32
+    !tmp_32
+    tmp_33 = 0
+    store tmp_31+4, tmp_33 as i32
+    !tmp_33
+    tmp_34 = alloc 64
+    tmp_35 = 0
+    store tmp_34+0, tmp_35 as i32
+    store tmp_34+4, tmp_35 as i32
+    store tmp_34+8, tmp_35 as i32
+    store tmp_34+12, tmp_35 as i32
+    store tmp_34+16, tmp_35 as i32
+    store tmp_34+20, tmp_35 as i32
+    store tmp_34+24, tmp_35 as i32
+    store tmp_34+28, tmp_35 as i32
+    store tmp_34+32, tmp_35 as i32
+    store tmp_34+36, tmp_35 as i32
+    store tmp_34+40, tmp_35 as i32
+    store tmp_34+44, tmp_35 as i32
+    store tmp_34+48, tmp_35 as i32
+    store tmp_34+52, tmp_35 as i32
+    store tmp_34+56, tmp_35 as i32
+    store tmp_34+60, tmp_35 as i32
+    !tmp_35
+    store tmp_31+8, tmp_34 as ptr
+    !tmp_34
+    tmp_36 = alloc 64
+    tmp_37 = 0
+    store tmp_36+0, tmp_37 as i32
+    store tmp_36+4, tmp_37 as i32
+    store tmp_36+8, tmp_37 as i32
+    store tmp_36+12, tmp_37 as i32
+    store tmp_36+16, tmp_37 as i32
+    store tmp_36+20, tmp_37 as i32
+    store tmp_36+24, tmp_37 as i32
+    store tmp_36+28, tmp_37 as i32
+    store tmp_36+32, tmp_37 as i32
+    store tmp_36+36, tmp_37 as i32
+    store tmp_36+40, tmp_37 as i32
+    store tmp_36+44, tmp_37 as i32
+    store tmp_36+48, tmp_37 as i32
+    store tmp_36+52, tmp_37 as i32
+    store tmp_36+56, tmp_37 as i32
+    store tmp_36+60, tmp_37 as i32
+    !tmp_37
+    store tmp_31+16, tmp_36 as ptr
+    !tmp_36
+    return tmp_31
+
+@sla__alloc_entity(a: ptr) -> ptr:
+L_ENTRY:
+    tmp_38 = load a+4 as i32
+    tmp_39 = 0
+    tmp_40 = sgt tmp_38, tmp_39
+    !tmp_38
+    !tmp_39
+    br tmp_40 -> L_THEN_3, L_ELSE_4
+
+L_THEN_3:
+    !tmp_40
+    tmp_41 = load a+4 as i32
+    tmp_42 = 1
+    tmp_43 = sub tmp_41, tmp_42
+    !tmp_41
+    !tmp_42
+    next_free_count = tmp_43
+    tmp_44 = load a+16 as ptr
+    tmp_45 = mul next_free_count, 4
+    tmp_46 = ptr_add tmp_44, tmp_45
+    !tmp_45
+    tmp_47 = load tmp_46+0 as i32
+    !tmp_46
+    !tmp_44
+    id = tmp_47
+    store a+4, next_free_count as i32
+    tmp_48 = load a+16 as ptr
+    tmp_49 = mul next_free_count, 4
+    tmp_50 = ptr_add tmp_48, tmp_49
+    !tmp_49
+    tmp_51 = 0
+    store tmp_50+0, tmp_51 as i32
+    !tmp_50
+    !tmp_48
+    !tmp_51
+    tmp_52 = alloc 16
+    store tmp_52+0, a as ptr
+    tmp_53 = load a+8 as ptr
+    tmp_54 = mul id, 4
+    tmp_55 = ptr_add tmp_53, tmp_54
+    !tmp_54
+    tmp_56 = load tmp_55+0 as i32
+    !tmp_55
+    !tmp_53
+    tmp_57 = call @sla__entity_new(id, tmp_56)
+    !tmp_56
+    store tmp_52+8, tmp_57 as ptr
+    !next_free_count
+    return tmp_52
+
+L_ELSE_4:
+    !tmp_40
+    jmp L_MERGE_5
+
+L_MERGE_5:
+    tmp_59 = load a+0 as i32
+    tmp_60 = 16
+    tmp_61 = sge tmp_59, tmp_60
+    !tmp_59
+    !tmp_60
+    br tmp_61 -> L_THEN_6, L_ELSE_7
+
+L_THEN_6:
+    !tmp_61
+    panic(2001)
+
+L_ELSE_7:
+    !tmp_61
+    jmp L_MERGE_8
+
+L_MERGE_8:
+    tmp_64 = load a+0 as i32
+    id = tmp_64
+    tmp_65 = 1
+    tmp_66 = add id, tmp_65
+    !tmp_65
+    store a+0, tmp_66 as i32
+    !tmp_66
+    tmp_67 = alloc 16
+    store tmp_67+0, a as ptr
+    tmp_68 = load a+8 as ptr
+    tmp_69 = mul id, 4
+    tmp_70 = ptr_add tmp_68, tmp_69
+    !tmp_69
+    tmp_71 = load tmp_70+0 as i32
+    !tmp_70
+    !tmp_68
+    tmp_72 = call @sla__entity_new(id, tmp_71)
+    !tmp_71
+    store tmp_67+8, tmp_72 as ptr
+    return tmp_67
+
+@sla__allocator_id_is_free(a: ptr, id: i32) -> u8:
+L_ENTRY:
+    tmp_73 = 0
+    i = tmp_73
+    jmp L_WHILE_HEAD_9
+
+L_WHILE_HEAD_9:
+    tmp_74 = load a+4 as i32
+    tmp_75 = slt i, tmp_74
+    !tmp_74
+    br tmp_75 -> L_WHILE_BODY_10, L_WHILE_COND_FALSE_11
+
+L_WHILE_BODY_10:
+    !tmp_75
+    tmp_76 = load a+16 as ptr
+    tmp_77 = mul i, 4
+    tmp_78 = ptr_add tmp_76, tmp_77
+    !tmp_77
+    tmp_79 = load tmp_78+0 as i32
+    !tmp_78
+    !tmp_76
+    tmp_80 = eq tmp_79, id
+    !tmp_79
+    br tmp_80 -> L_THEN_13, L_ELSE_14
+
+L_THEN_13:
+    !tmp_80
+    tmp_81 = 1
+    !i
+    !a
+    !id
+    return tmp_81
+
+L_ELSE_14:
+    !tmp_80
+    jmp L_MERGE_15
+
+L_MERGE_15:
+    tmp_83 = 1
+    tmp_84 = add i, tmp_83
+    !tmp_83
+    !i
+    i = tmp_84
+    jmp L_WHILE_HEAD_9
+
+L_WHILE_COND_FALSE_11:
+    !tmp_75
+    jmp L_WHILE_EXIT_12
+
+L_WHILE_EXIT_12:
+    tmp_85 = 0
+    !i
+    !a
+    !id
+    return tmp_85
+
+@sla__is_alive(a: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_86 = load entity+0 as i32
+    tmp_87 = 0
+    tmp_88 = sle tmp_86, tmp_87
+    !tmp_86
+    !tmp_87
+    br tmp_88 -> L_THEN_16, L_ELSE_17
+
+L_THEN_16:
+    !tmp_88
+    tmp_89 = 0
+    !entity
+    !a
+    return tmp_89
+
+L_ELSE_17:
+    !tmp_88
+    jmp L_MERGE_18
+
+L_MERGE_18:
+    tmp_91 = load entity+0 as i32
+    tmp_92 = 16
+    tmp_93 = sge tmp_91, tmp_92
+    !tmp_91
+    !tmp_92
+    br tmp_93 -> L_THEN_19, L_ELSE_20
+
+L_THEN_19:
+    !tmp_93
+    tmp_94 = 0
+    !entity
+    !a
+    return tmp_94
+
+L_ELSE_20:
+    !tmp_93
+    jmp L_MERGE_21
+
+L_MERGE_21:
+    tmp_96 = load entity+0 as i32
+    tmp_97 = load a+0 as i32
+    tmp_98 = sge tmp_96, tmp_97
+    !tmp_96
+    !tmp_97
+    br tmp_98 -> L_THEN_22, L_ELSE_23
+
+L_THEN_22:
+    !tmp_98
+    tmp_99 = 0
+    !entity
+    !a
+    return tmp_99
+
+L_ELSE_23:
+    !tmp_98
+    jmp L_MERGE_24
+
+L_MERGE_24:
+    tmp_101 = load entity+0 as i32
+    tmp_102 = call @sla__allocator_id_is_free(a, tmp_101)
+    !tmp_101
+    br tmp_102 -> L_THEN_25, L_ELSE_26
+
+L_THEN_25:
+    !tmp_102
+    tmp_103 = 0
+    !entity
+    !a
+    return tmp_103
+
+L_ELSE_26:
+    !tmp_102
+    jmp L_MERGE_27
+
+L_MERGE_27:
+    tmp_105 = load a+8 as ptr
+    tmp_106 = load entity+0 as i32
+    tmp_107 = mul tmp_106, 4
+    tmp_108 = ptr_add tmp_105, tmp_107
+    !tmp_107
+    !tmp_106
+    tmp_109 = load tmp_108+0 as i32
+    !tmp_108
+    !tmp_105
+    tmp_110 = load entity+4 as i32
+    tmp_111 = eq tmp_109, tmp_110
+    !tmp_109
+    !tmp_110
+    !entity
+    !a
+    return tmp_111
+
+@sla__free_entity(a: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_112 = call @sla__is_alive(a, entity)
+    tmp_113 = 1
+    tmp_114 = ne tmp_112, tmp_113
+    !tmp_112
+    !tmp_113
+    br tmp_114 -> L_THEN_28, L_ELSE_29
+
+L_THEN_28:
+    !tmp_114
+    !entity
+    return a
+
+L_ELSE_29:
+    !tmp_114
+    jmp L_MERGE_30
+
+L_MERGE_30:
+    tmp_116 = load a+8 as ptr
+    tmp_117 = load entity+0 as i32
+    tmp_118 = mul tmp_117, 4
+    tmp_119 = ptr_add tmp_116, tmp_118
+    !tmp_118
+    !tmp_117
+    tmp_120 = load a+8 as ptr
+    tmp_121 = load entity+0 as i32
+    tmp_122 = mul tmp_121, 4
+    tmp_123 = ptr_add tmp_120, tmp_122
+    !tmp_122
+    !tmp_121
+    tmp_124 = load tmp_123+0 as i32
+    !tmp_123
+    !tmp_120
+    tmp_125 = 1
+    tmp_126 = add tmp_124, tmp_125
+    !tmp_124
+    !tmp_125
+    store tmp_119+0, tmp_126 as i32
+    !tmp_119
+    !tmp_116
+    !tmp_126
+    tmp_127 = load a+16 as ptr
+    tmp_128 = load a+4 as i32
+    tmp_129 = mul tmp_128, 4
+    tmp_130 = ptr_add tmp_127, tmp_129
+    !tmp_129
+    !tmp_128
+    tmp_131 = load entity+0 as i32
+    store tmp_130+0, tmp_131 as i32
+    !tmp_130
+    !tmp_127
+    !tmp_131
+    tmp_132 = load a+4 as i32
+    tmp_133 = 1
+    tmp_134 = add tmp_132, tmp_133
+    !tmp_132
+    !tmp_133
+    store a+4, tmp_134 as i32
+    !tmp_134
+    !entity
+    return a
+
+@sla__dyn_allocator_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_135
+    free_ids = tmp_135
+    EXPAND VEC_NEW tmp_136
+    generations = tmp_136
+    EXPAND VEC_NEW tmp_137
+    occupied = tmp_137
+    tmp_138 = 0
+    EXPAND VEC_PUSH generations, tmp_138, 8
+    !tmp_138
+    tmp_139 = 0
+    EXPAND VEC_PUSH occupied, tmp_139, 8
+    !tmp_139
+    tmp_140 = alloc 24
+    store tmp_140+0, free_ids as ptr
+    store tmp_140+8, generations as ptr
+    store tmp_140+16, occupied as ptr
+    return tmp_140
+
+@sla__dyn_alloc_entity(a: ptr) -> ptr:
+L_ENTRY:
+    tmp_141 = load a+0 as ptr
+    EXPAND VEC_LEN tmp_142, tmp_141
+    !tmp_141
+    tmp_143 = tmp_142 as i64
+    free_len = tmp_143
+    tmp_144 = 0
+    tmp_145 = sgt free_len, tmp_144
+    !tmp_144
+    br tmp_145 -> L_THEN_31, L_ELSE_32
+
+L_THEN_31:
+    !tmp_145
+    tmp_146 = 1
+    tmp_147 = sub free_len, tmp_146
+    !tmp_146
+    slot = tmp_147
+    tmp_148 = load a+0 as ptr
+    EXPAND VEC_REMOVE tmp_149, tmp_150, tmp_148, slot, 8
+    br tmp_149 -> L_VEC_REMOVE_OK_34, L_VEC_REMOVE_OOB_35
+
+L_VEC_REMOVE_OOB_35:
+    panic(86)
+
+L_VEC_REMOVE_OK_34:
+    !tmp_149
+    tmp_151 = tmp_150 as i32
+    id = tmp_151
+    tmp_152 = load a+16 as ptr
+    tmp_153 = 1
+    tmp_154 = &tmp_152
+    tmp_155 = load tmp_154+Vec_len as u64
+    tmp_156 = ult id, tmp_155
+    br tmp_156 -> L_VEC_INDEX_ASSIGN_OK_36, L_VEC_INDEX_ASSIGN_OOB_37
+
+L_VEC_INDEX_ASSIGN_OOB_37:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_36:
+    !tmp_156
+    tmp_157 = load tmp_154+Vec_ptr as ptr
+    tmp_158 = mul id, 8
+    tmp_159 = ptr_add tmp_157, tmp_158
+    store tmp_159+0, tmp_153 as u64
+    !tmp_159
+    !tmp_158
+    !tmp_157
+    !tmp_155
+    !tmp_154
+    !tmp_153
+    !tmp_152
+    tmp_160 = alloc 16
+    store tmp_160+0, a as ptr
+    tmp_161 = load a+8 as ptr
+    EXPAND VEC_GET tmp_162, tmp_161, id
+    !tmp_161
+    tmp_163 = tmp_162 as i32
+    tmp_164 = call @sla__entity_new(id, tmp_163)
+    !tmp_163
+    store tmp_160+8, tmp_164 as ptr
+    !slot
+    !free_len
+    return tmp_160
+
+L_ELSE_32:
+    !tmp_145
+    jmp L_MERGE_33
+
+L_MERGE_33:
+    tmp_166 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_167, tmp_166
+    !tmp_166
+    tmp_168 = tmp_167 as i32
+    id = tmp_168
+    tmp_169 = load a+8 as ptr
+    tmp_170 = 0
+    EXPAND VEC_PUSH tmp_169, tmp_170, 8
+    !tmp_170
+    !tmp_169
+    tmp_171 = load a+16 as ptr
+    tmp_172 = 1
+    EXPAND VEC_PUSH tmp_171, tmp_172, 8
+    !tmp_172
+    !tmp_171
+    tmp_173 = alloc 16
+    store tmp_173+0, a as ptr
+    tmp_174 = 0
+    tmp_175 = call @sla__entity_new(id, tmp_174)
+    !tmp_174
+    store tmp_173+8, tmp_175 as ptr
+    !free_len
+    return tmp_173
+
+@sla__dyn_is_alive(a: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_176 = load entity+0 as i32
+    tmp_177 = 0
+    tmp_178 = sle tmp_176, tmp_177
+    !tmp_176
+    !tmp_177
+    br tmp_178 -> L_THEN_38, L_ELSE_39
+
+L_THEN_38:
+    !tmp_178
+    tmp_179 = 0
+    !entity
+    !a
+    return tmp_179
+
+L_ELSE_39:
+    !tmp_178
+    jmp L_MERGE_40
+
+L_MERGE_40:
+    tmp_181 = load entity+0 as i32
+    tmp_182 = tmp_181 as i64
+    idx = tmp_182
+    tmp_183 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_184, tmp_183
+    !tmp_183
+    tmp_185 = tmp_184 as i64
+    tmp_186 = sge idx, tmp_185
+    !tmp_185
+    br tmp_186 -> L_THEN_41, L_ELSE_42
+
+L_THEN_41:
+    !tmp_186
+    tmp_187 = 0
+    !idx
+    !entity
+    !a
+    return tmp_187
+
+L_ELSE_42:
+    !tmp_186
+    jmp L_MERGE_43
+
+L_MERGE_43:
+    tmp_189 = load a+16 as ptr
+    EXPAND VEC_GET tmp_190, tmp_189, idx
+    !tmp_189
+    tmp_191 = tmp_190 as u8
+    tmp_192 = 1
+    tmp_193 = ne tmp_191, tmp_192
+    !tmp_191
+    !tmp_192
+    br tmp_193 -> L_THEN_44, L_ELSE_45
+
+L_THEN_44:
+    !tmp_193
+    tmp_194 = 0
+    !idx
+    !entity
+    !a
+    return tmp_194
+
+L_ELSE_45:
+    !tmp_193
+    jmp L_MERGE_46
+
+L_MERGE_46:
+    tmp_196 = load a+8 as ptr
+    EXPAND VEC_GET tmp_197, tmp_196, idx
+    !tmp_196
+    tmp_198 = tmp_197 as i32
+    tmp_199 = load entity+4 as i32
+    tmp_200 = eq tmp_198, tmp_199
+    !tmp_198
+    !tmp_199
+    !entity
+    !a
+    return tmp_200
+
+@sla__dyn_free_entity(a: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_201 = call @sla__dyn_is_alive(a, entity)
+    tmp_202 = 1
+    tmp_203 = ne tmp_201, tmp_202
+    !tmp_201
+    !tmp_202
+    br tmp_203 -> L_THEN_47, L_ELSE_48
+
+L_THEN_47:
+    !tmp_203
+    !entity
+    return a
+
+L_ELSE_48:
+    !tmp_203
+    jmp L_MERGE_49
+
+L_MERGE_49:
+    tmp_205 = load entity+0 as i32
+    tmp_206 = tmp_205 as i64
+    idx = tmp_206
+    tmp_207 = load a+8 as ptr
+    EXPAND VEC_GET tmp_208, tmp_207, idx
+    !tmp_207
+    tmp_209 = tmp_208 as i32
+    tmp_210 = 1
+    tmp_211 = add tmp_209, tmp_210
+    !tmp_209
+    !tmp_210
+    next_gen = tmp_211
+    tmp_212 = load a+8 as ptr
+    tmp_213 = &tmp_212
+    tmp_214 = load tmp_213+Vec_len as u64
+    tmp_215 = ult idx, tmp_214
+    br tmp_215 -> L_VEC_INDEX_ASSIGN_OK_50, L_VEC_INDEX_ASSIGN_OOB_51
+
+L_VEC_INDEX_ASSIGN_OOB_51:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_50:
+    !tmp_215
+    tmp_216 = load tmp_213+Vec_ptr as ptr
+    tmp_217 = mul idx, 8
+    tmp_218 = ptr_add tmp_216, tmp_217
+    store tmp_218+0, next_gen as u64
+    !tmp_218
+    !tmp_217
+    !tmp_216
+    !tmp_214
+    !tmp_213
+    !tmp_212
+    tmp_219 = load a+16 as ptr
+    tmp_220 = 0
+    tmp_221 = &tmp_219
+    tmp_222 = load tmp_221+Vec_len as u64
+    tmp_223 = ult idx, tmp_222
+    br tmp_223 -> L_VEC_INDEX_ASSIGN_OK_52, L_VEC_INDEX_ASSIGN_OOB_53
+
+L_VEC_INDEX_ASSIGN_OOB_53:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_52:
+    !tmp_223
+    tmp_224 = load tmp_221+Vec_ptr as ptr
+    tmp_225 = mul idx, 8
+    tmp_226 = ptr_add tmp_224, tmp_225
+    store tmp_226+0, tmp_220 as u64
+    !tmp_226
+    !tmp_225
+    !tmp_224
+    !tmp_222
+    !tmp_221
+    !tmp_220
+    !tmp_219
+    tmp_227 = load a+0 as ptr
+    tmp_228 = load entity+0 as i32
+    EXPAND VEC_PUSH tmp_227, tmp_228, 8
+    !tmp_228
+    !tmp_227
+    !idx
+    !next_gen
+    !entity
+    return a
+
+@sla__RelationshipEntityQuery_iter_len(&self: ptr) -> i64:
+L_ENTRY:
+    tmp_229 = load self+0 as ptr
+    EXPAND VEC_LEN tmp_230, tmp_229
+    !tmp_229
+    tmp_231 = tmp_230 as i64
+    return tmp_231
+
+@sla__RelationshipEntityQuery_iter_at(&self: ptr, index: i64) -> ptr:
+L_ENTRY:
+    tmp_232 = load self+0 as ptr
+    EXPAND VEC_GET tmp_233, tmp_232, index
+    !tmp_232
+    tmp_234 = tmp_233 as ptr
+    return tmp_234
+
+@sla__relationship_entity_query_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_235
+    items = tmp_235
+    tmp_236 = alloc 8
+    store tmp_236+0, items as ptr
+    return tmp_236
+
+@sla__relationship_entity_query_len(query: ptr) -> i64:
+L_ENTRY:
+    tmp_237 = load query+0 as ptr
+    EXPAND VEC_LEN tmp_238, tmp_237
+    !tmp_237
+    tmp_239 = tmp_238 as i64
+    !query
+    return tmp_239
+
+@sla__relationship_entity_query_at(query: ptr, index: i64) -> ptr:
+L_ENTRY:
+    tmp_240 = 0
+    tmp_241 = slt index, tmp_240
+    !tmp_240
+    br tmp_241 -> L_THEN_54, L_ELSE_55
+
+L_THEN_54:
+    !tmp_241
+    tmp_242 = call @sla__entity_placeholder()
+    !query
+    !index
+    return tmp_242
+
+L_ELSE_55:
+    !tmp_241
+    jmp L_MERGE_56
+
+L_MERGE_56:
+    tmp_244 = load query+0 as ptr
+    EXPAND VEC_LEN tmp_245, tmp_244
+    !tmp_244
+    tmp_246 = tmp_245 as i64
+    tmp_247 = sge index, tmp_246
+    !tmp_246
+    br tmp_247 -> L_THEN_57, L_ELSE_58
+
+L_THEN_57:
+    !tmp_247
+    tmp_248 = call @sla__entity_placeholder()
+    !query
+    !index
+    return tmp_248
+
+L_ELSE_58:
+    !tmp_247
+    jmp L_MERGE_59
+
+L_MERGE_59:
+    tmp_250 = load query+0 as ptr
+    EXPAND VEC_GET tmp_251, tmp_250, index
+    !tmp_250
+    tmp_252 = tmp_251 as ptr
+    !query
+    return tmp_252
+
+@sla__relationship_entity_query_contains(query: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_253 = load query+0 as ptr
+    tmp_254 = call @sla__relationship_entity_vec_contains(tmp_253, entity)
+    !tmp_253
+    !query
+    return tmp_254
+
+@sla__relationship_entity_parts_eq(left_id: i32, left_gen: i32, right_id: i32, right_gen: i32) -> u8:
+L_ENTRY:
+    tmp_255 = ne left_id, right_id
+    br tmp_255 -> L_THEN_60, L_ELSE_61
+
+L_THEN_60:
+    !tmp_255
+    tmp_256 = 0
+    !left_id
+    !left_gen
+    !right_gen
+    !right_id
+    return tmp_256
+
+L_ELSE_61:
+    !tmp_255
+    jmp L_MERGE_62
+
+L_MERGE_62:
+    tmp_258 = eq left_gen, right_gen
+    !left_id
+    !right_id
+    return tmp_258
+
+@sla__relationship_world_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_259
+    kinds = tmp_259
+    EXPAND VEC_NEW tmp_260
+    sources = tmp_260
+    EXPAND VEC_NEW tmp_261
+    targets = tmp_261
+    tmp_262 = alloc 40
+    tmp_263 = call @sla__dyn_allocator_new()
+    store tmp_262+0, tmp_263 as ptr
+    !tmp_263
+    tmp_264 = 1
+    store tmp_262+8, tmp_264 as i32
+    !tmp_264
+    store tmp_262+16, kinds as ptr
+    store tmp_262+24, sources as ptr
+    store tmp_262+32, targets as ptr
+    return tmp_262
+
+@sla__relationship_kind_many(id: i32, linked_spawn: u8, allow_self: u8) -> ptr:
+L_ENTRY:
+    tmp_265 = alloc 10
+    store tmp_265+0, id as i32
+    tmp_266 = 0
+    store tmp_265+4, tmp_266 as i32
+    store tmp_265+8, linked_spawn as u8
+    store tmp_265+9, allow_self as u8
+    return tmp_265
+
+@sla__relationship_kind_one(id: i32, linked_spawn: u8, allow_self: u8) -> ptr:
+L_ENTRY:
+    tmp_267 = alloc 10
+    store tmp_267+0, id as i32
+    tmp_268 = 1
+    store tmp_267+4, tmp_268 as i32
+    store tmp_267+8, linked_spawn as u8
+    store tmp_267+9, allow_self as u8
+    return tmp_267
+
+@sla__relationship_world_register_many(world: ptr, linked_spawn: u8, allow_self: u8) -> ptr:
+L_ENTRY:
+    tmp_269 = load world+8 as i32
+    id = tmp_269
+    tmp_270 = 1
+    tmp_271 = add id, tmp_270
+    !tmp_270
+    store world+8, tmp_271 as i32
+    !tmp_271
+    tmp_272 = call @sla__relationship_kind_many(id, linked_spawn, allow_self)
+    kind = tmp_272
+    tmp_273 = load world+16 as ptr
+    EXPAND VEC_PUSH tmp_273, kind, 8
+    !tmp_273
+    tmp_274 = alloc 16
+    store tmp_274+0, world as ptr
+    tmp_275 = call @sla__relationship_kind_many(id, linked_spawn, allow_self)
+    store tmp_274+8, tmp_275 as ptr
+    !kind
+    return tmp_274
+
+@sla__relationship_world_register_one(world: ptr, linked_spawn: u8, allow_self: u8) -> ptr:
+L_ENTRY:
+    tmp_276 = load world+8 as i32
+    id = tmp_276
+    tmp_277 = 1
+    tmp_278 = add id, tmp_277
+    !tmp_277
+    store world+8, tmp_278 as i32
+    !tmp_278
+    tmp_279 = call @sla__relationship_kind_one(id, linked_spawn, allow_self)
+    kind = tmp_279
+    tmp_280 = load world+16 as ptr
+    EXPAND VEC_PUSH tmp_280, kind, 8
+    !tmp_280
+    tmp_281 = alloc 16
+    store tmp_281+0, world as ptr
+    tmp_282 = call @sla__relationship_kind_one(id, linked_spawn, allow_self)
+    store tmp_281+8, tmp_282 as ptr
+    !kind
+    return tmp_281
+
+@sla__relationship_world_spawn(world: ptr) -> ptr:
+L_ENTRY:
+    tmp_283 = load world+0 as ptr
+    tmp_284 = call @sla__dyn_alloc_entity(tmp_283)
+    !tmp_283
+    allocator = load tmp_284+0 as ptr
+    entity = load tmp_284+8 as ptr
+    !tmp_284
+    store world+0, allocator as ptr
+    !allocator
+    tmp_285 = alloc 16
+    store tmp_285+0, world as ptr
+    store tmp_285+8, entity as ptr
+    return tmp_285
+
+@sla__relationship_world_is_alive(world: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_286 = load world+0 as ptr
+    tmp_287 = call @sla__dyn_is_alive(tmp_286, entity)
+    !tmp_286
+    !world
+    return tmp_287
+
+@sla__relationship_world_kind_slot(world: ptr, kind_id: i32) -> i64:
+L_ENTRY:
+    tmp_288 = 0
+    i = tmp_288
+    tmp_289 = load world+16 as ptr
+    EXPAND VEC_LEN tmp_290, tmp_289
+    !tmp_289
+    tmp_291 = tmp_290 as i64
+    cnt = tmp_291
+    jmp L_WHILE_HEAD_63
+
+L_WHILE_HEAD_63:
+    tmp_292 = slt i, cnt
+    br tmp_292 -> L_WHILE_BODY_64, L_WHILE_COND_FALSE_65
+
+L_WHILE_BODY_64:
+    !tmp_292
+    tmp_293 = load world+16 as ptr
+    EXPAND VEC_GET tmp_294, tmp_293, i
+    !tmp_293
+    tmp_295 = tmp_294 as ptr
+    tmp_296 = load tmp_295+0 as i32
+    !tmp_295
+    tmp_297 = eq tmp_296, kind_id
+    !tmp_296
+    br tmp_297 -> L_THEN_67, L_ELSE_68
+
+L_THEN_67:
+    !tmp_297
+    !cnt
+    !kind_id
+    !world
+    return i
+
+L_ELSE_68:
+    !tmp_297
+    jmp L_MERGE_69
+
+L_MERGE_69:
+    tmp_299 = 1
+    tmp_300 = add i, tmp_299
+    !tmp_299
+    !i
+    i = tmp_300
+    jmp L_WHILE_HEAD_63
+
+L_WHILE_COND_FALSE_65:
+    !tmp_292
+    jmp L_WHILE_EXIT_66
+
+L_WHILE_EXIT_66:
+    tmp_301 = 0
+    tmp_302 = 1
+    tmp_303 = sub tmp_301, tmp_302
+    !tmp_301
+    !tmp_302
+    !cnt
+    !i
+    !kind_id
+    !world
+    return tmp_303
+
+@sla__relationship_world_kind(world: ptr, kind_id: i32) -> ptr:
+L_ENTRY:
+    tmp_304 = call @sla__relationship_world_kind_slot(world, kind_id)
+    slot = tmp_304
+    tmp_305 = 0
+    tmp_306 = slt slot, tmp_305
+    !tmp_305
+    br tmp_306 -> L_THEN_70, L_ELSE_71
+
+L_THEN_70:
+    !tmp_306
+    panic(9501)
+
+L_ELSE_71:
+    !tmp_306
+    jmp L_MERGE_72
+
+L_MERGE_72:
+    tmp_309 = load world+16 as ptr
+    EXPAND VEC_GET tmp_310, tmp_309, slot
+    !tmp_309
+    tmp_311 = tmp_310 as ptr
+    !kind_id
+    !world
+    return tmp_311
+
+@sla__relationship_world_source_slot(world: ptr, kind_id: i32, source: ptr) -> i64:
+L_ENTRY:
+    tmp_312 = load source+0 as i32
+    source_id = tmp_312
+    tmp_313 = load source+4 as i32
+    source_gen = tmp_313
+    tmp_314 = 0
+    i = tmp_314
+    tmp_315 = load world+24 as ptr
+    EXPAND VEC_LEN tmp_316, tmp_315
+    !tmp_315
+    tmp_317 = tmp_316 as i64
+    cnt = tmp_317
+    jmp L_WHILE_HEAD_73
+
+L_WHILE_HEAD_73:
+    tmp_318 = slt i, cnt
+    br tmp_318 -> L_WHILE_BODY_74, L_WHILE_COND_FALSE_75
+
+L_WHILE_BODY_74:
+    !tmp_318
+    tmp_319 = load world+24 as ptr
+    EXPAND VEC_GET tmp_320, tmp_319, i
+    !tmp_319
+    tmp_321 = tmp_320 as ptr
+    tmp_322 = load tmp_321+0 as i32
+    !tmp_321
+    tmp_323 = eq tmp_322, kind_id
+    !tmp_322
+    br tmp_323 -> L_THEN_77, L_ELSE_78
+
+L_THEN_77:
+    !tmp_323
+    tmp_324 = load world+24 as ptr
+    EXPAND VEC_GET tmp_325, tmp_324, i
+    !tmp_324
+    tmp_326 = tmp_325 as ptr
+    tmp_327 = load tmp_326+8 as ptr
+    !tmp_326
+    tmp_328 = load tmp_327+0 as i32
+    !tmp_327
+    tmp_329 = load world+24 as ptr
+    EXPAND VEC_GET tmp_330, tmp_329, i
+    !tmp_329
+    tmp_331 = tmp_330 as ptr
+    tmp_332 = load tmp_331+8 as ptr
+    !tmp_331
+    tmp_333 = load tmp_332+4 as i32
+    !tmp_332
+    tmp_334 = call @sla__relationship_entity_parts_eq(tmp_328, tmp_333, source_id, source_gen)
+    !tmp_328
+    !tmp_333
+    br tmp_334 -> L_THEN_80, L_ELSE_81
+
+L_THEN_80:
+    !tmp_334
+    !source_id
+    !cnt
+    !source_gen
+    !source
+    !kind_id
+    !world
+    return i
+
+L_ELSE_81:
+    !tmp_334
+    jmp L_MERGE_82
+
+L_MERGE_82:
+    jmp L_MERGE_79
+
+L_ELSE_78:
+    !tmp_323
+    jmp L_MERGE_79
+
+L_MERGE_79:
+    tmp_337 = 1
+    tmp_338 = add i, tmp_337
+    !tmp_337
+    !i
+    i = tmp_338
+    jmp L_WHILE_HEAD_73
+
+L_WHILE_COND_FALSE_75:
+    !tmp_318
+    jmp L_WHILE_EXIT_76
+
+L_WHILE_EXIT_76:
+    tmp_339 = 0
+    tmp_340 = 1
+    tmp_341 = sub tmp_339, tmp_340
+    !tmp_339
+    !tmp_340
+    !source_id
+    !cnt
+    !i
+    !source_gen
+    !source
+    !kind_id
+    !world
+    return tmp_341
+
+@sla__relationship_world_target_slot(world: ptr, kind_id: i32, target: ptr) -> i64:
+L_ENTRY:
+    tmp_342 = load target+0 as i32
+    target_id = tmp_342
+    tmp_343 = load target+4 as i32
+    target_gen = tmp_343
+    tmp_344 = 0
+    i = tmp_344
+    tmp_345 = load world+32 as ptr
+    EXPAND VEC_LEN tmp_346, tmp_345
+    !tmp_345
+    tmp_347 = tmp_346 as i64
+    cnt = tmp_347
+    jmp L_WHILE_HEAD_83
+
+L_WHILE_HEAD_83:
+    tmp_348 = slt i, cnt
+    br tmp_348 -> L_WHILE_BODY_84, L_WHILE_COND_FALSE_85
+
+L_WHILE_BODY_84:
+    !tmp_348
+    tmp_349 = load world+32 as ptr
+    EXPAND VEC_GET tmp_350, tmp_349, i
+    !tmp_349
+    tmp_351 = tmp_350 as ptr
+    tmp_352 = load tmp_351+0 as i32
+    !tmp_351
+    tmp_353 = eq tmp_352, kind_id
+    !tmp_352
+    br tmp_353 -> L_THEN_87, L_ELSE_88
+
+L_THEN_87:
+    !tmp_353
+    tmp_354 = load world+32 as ptr
+    EXPAND VEC_GET tmp_355, tmp_354, i
+    !tmp_354
+    tmp_356 = tmp_355 as ptr
+    tmp_357 = load tmp_356+8 as ptr
+    !tmp_356
+    tmp_358 = load tmp_357+0 as i32
+    !tmp_357
+    tmp_359 = load world+32 as ptr
+    EXPAND VEC_GET tmp_360, tmp_359, i
+    !tmp_359
+    tmp_361 = tmp_360 as ptr
+    tmp_362 = load tmp_361+8 as ptr
+    !tmp_361
+    tmp_363 = load tmp_362+4 as i32
+    !tmp_362
+    tmp_364 = call @sla__relationship_entity_parts_eq(tmp_358, tmp_363, target_id, target_gen)
+    !tmp_358
+    !tmp_363
+    br tmp_364 -> L_THEN_90, L_ELSE_91
+
+L_THEN_90:
+    !tmp_364
+    !cnt
+    !target_gen
+    !target_id
+    !kind_id
+    !target
+    !world
+    return i
+
+L_ELSE_91:
+    !tmp_364
+    jmp L_MERGE_92
+
+L_MERGE_92:
+    jmp L_MERGE_89
+
+L_ELSE_88:
+    !tmp_353
+    jmp L_MERGE_89
+
+L_MERGE_89:
+    tmp_367 = 1
+    tmp_368 = add i, tmp_367
+    !tmp_367
+    !i
+    i = tmp_368
+    jmp L_WHILE_HEAD_83
+
+L_WHILE_COND_FALSE_85:
+    !tmp_348
+    jmp L_WHILE_EXIT_86
+
+L_WHILE_EXIT_86:
+    tmp_369 = 0
+    tmp_370 = 1
+    tmp_371 = sub tmp_369, tmp_370
+    !tmp_369
+    !tmp_370
+    !cnt
+    !target_gen
+    !i
+    !target_id
+    !kind_id
+    !target
+    !world
+    return tmp_371
+
+@sla__relationship_world_source_slot_in_target(world: ptr, target_slot: i64, source: ptr) -> i64:
+L_ENTRY:
+    tmp_372 = 0
+    tmp_373 = slt target_slot, tmp_372
+    !tmp_372
+    br tmp_373 -> L_THEN_93, L_ELSE_94
+
+L_THEN_93:
+    !tmp_373
+    tmp_374 = 0
+    tmp_375 = 1
+    tmp_376 = sub tmp_374, tmp_375
+    !tmp_374
+    !tmp_375
+    !target_slot
+    !source
+    !world
+    return tmp_376
+
+L_ELSE_94:
+    !tmp_373
+    jmp L_MERGE_95
+
+L_MERGE_95:
+    tmp_378 = load source+0 as i32
+    source_id = tmp_378
+    tmp_379 = load source+4 as i32
+    source_gen = tmp_379
+    tmp_380 = 0
+    i = tmp_380
+    tmp_381 = load world+32 as ptr
+    EXPAND VEC_GET tmp_382, tmp_381, target_slot
+    !tmp_381
+    tmp_383 = tmp_382 as ptr
+    tmp_384 = load tmp_383+16 as ptr
+    !tmp_383
+    EXPAND VEC_LEN tmp_385, tmp_384
+    !tmp_384
+    tmp_386 = tmp_385 as i64
+    cnt = tmp_386
+    jmp L_WHILE_HEAD_96
+
+L_WHILE_HEAD_96:
+    tmp_387 = slt i, cnt
+    br tmp_387 -> L_WHILE_BODY_97, L_WHILE_COND_FALSE_98
+
+L_WHILE_BODY_97:
+    !tmp_387
+    tmp_388 = load world+32 as ptr
+    EXPAND VEC_GET tmp_389, tmp_388, target_slot
+    !tmp_388
+    tmp_390 = tmp_389 as ptr
+    tmp_391 = load tmp_390+16 as ptr
+    !tmp_390
+    EXPAND VEC_GET tmp_392, tmp_391, i
+    !tmp_391
+    tmp_393 = tmp_392 as ptr
+    tmp_394 = load tmp_393+0 as i32
+    !tmp_393
+    tmp_395 = load world+32 as ptr
+    EXPAND VEC_GET tmp_396, tmp_395, target_slot
+    !tmp_395
+    tmp_397 = tmp_396 as ptr
+    tmp_398 = load tmp_397+16 as ptr
+    !tmp_397
+    EXPAND VEC_GET tmp_399, tmp_398, i
+    !tmp_398
+    tmp_400 = tmp_399 as ptr
+    tmp_401 = load tmp_400+4 as i32
+    !tmp_400
+    tmp_402 = call @sla__relationship_entity_parts_eq(tmp_394, tmp_401, source_id, source_gen)
+    !tmp_394
+    !tmp_401
+    br tmp_402 -> L_THEN_100, L_ELSE_101
+
+L_THEN_100:
+    !tmp_402
+    !source_id
+    !cnt
+    !source_gen
+    !target_slot
+    !source
+    !world
+    return i
+
+L_ELSE_101:
+    !tmp_402
+    jmp L_MERGE_102
+
+L_MERGE_102:
+    tmp_404 = 1
+    tmp_405 = add i, tmp_404
+    !tmp_404
+    !i
+    i = tmp_405
+    jmp L_WHILE_HEAD_96
+
+L_WHILE_COND_FALSE_98:
+    !tmp_387
+    jmp L_WHILE_EXIT_99
+
+L_WHILE_EXIT_99:
+    tmp_406 = 0
+    tmp_407 = 1
+    tmp_408 = sub tmp_406, tmp_407
+    !tmp_406
+    !tmp_407
+    !source_id
+    !cnt
+    !i
+    !source_gen
+    !target_slot
+    !source
+    !world
+    return tmp_408
+
+@sla__relationship_entity_vec_insert_swap(values: ptr, index: i64, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_409 = load entity+0 as i32
+    entity_id = tmp_409
+    tmp_410 = load entity+4 as i32
+    entity_gen = tmp_410
+    tmp_411 = 0
+    tmp_412 = add index, tmp_411
+    !tmp_411
+    target = tmp_412
+    tmp_413 = 0
+    tmp_414 = slt target, tmp_413
+    !tmp_413
+    br tmp_414 -> L_THEN_103, L_ELSE_104
+
+L_THEN_103:
+    !tmp_414
+    tmp_415 = 0
+    !target
+    target = tmp_415
+    jmp L_MERGE_105
+
+L_ELSE_104:
+    !tmp_414
+    jmp L_MERGE_105
+
+L_MERGE_105:
+    EXPAND VEC_LEN tmp_417, values
+    tmp_418 = sgt target, tmp_417
+    !tmp_417
+    br tmp_418 -> L_THEN_106, L_ELSE_107
+
+L_THEN_106:
+    !tmp_418
+    EXPAND VEC_LEN tmp_419, values
+    !target
+    target = tmp_419
+    jmp L_MERGE_108
+
+L_ELSE_107:
+    !tmp_418
+    jmp L_MERGE_108
+
+L_MERGE_108:
+    tmp_421 = call @sla__entity_new(entity_id, entity_gen)
+    EXPAND VEC_PUSH values, tmp_421, 8
+    !tmp_421
+    EXPAND VEC_LEN tmp_422, values
+    tmp_423 = tmp_422 as i64
+    tmp_424 = 1
+    tmp_425 = sub tmp_423, tmp_424
+    !tmp_423
+    !tmp_424
+    last = tmp_425
+    EXPAND VEC_GET tmp_426, values, target
+    tmp_427 = tmp_426 as ptr
+    displaced = tmp_427
+    tmp_428 = load displaced+0 as i32
+    displaced_id = tmp_428
+    tmp_429 = load displaced+4 as i32
+    displaced_gen = tmp_429
+    tmp_430 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_431 = &values
+    tmp_432 = load tmp_431+Vec_len as u64
+    tmp_433 = ult target, tmp_432
+    br tmp_433 -> L_VEC_INDEX_ASSIGN_OK_109, L_VEC_INDEX_ASSIGN_OOB_110
+
+L_VEC_INDEX_ASSIGN_OOB_110:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_109:
+    !tmp_433
+    tmp_434 = load tmp_431+Vec_ptr as ptr
+    tmp_435 = mul target, 8
+    tmp_436 = ptr_add tmp_434, tmp_435
+    store tmp_436+0, tmp_430 as u64
+    !tmp_436
+    !tmp_435
+    !tmp_434
+    !tmp_432
+    !tmp_431
+    !tmp_430
+    tmp_437 = call @sla__entity_new(displaced_id, displaced_gen)
+    tmp_438 = &values
+    tmp_439 = load tmp_438+Vec_len as u64
+    tmp_440 = ult last, tmp_439
+    br tmp_440 -> L_VEC_INDEX_ASSIGN_OK_111, L_VEC_INDEX_ASSIGN_OOB_112
+
+L_VEC_INDEX_ASSIGN_OOB_112:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_111:
+    !tmp_440
+    tmp_441 = load tmp_438+Vec_ptr as ptr
+    tmp_442 = mul last, 8
+    tmp_443 = ptr_add tmp_441, tmp_442
+    store tmp_443+0, tmp_437 as u64
+    !tmp_443
+    !tmp_442
+    !tmp_441
+    !tmp_439
+    !tmp_438
+    !tmp_437
+    !entity_gen
+    !displaced
+    !displaced_gen
+    !entity_id
+    !target
+    !displaced_id
+    !last
+    !entity
+    !index
+    return values
+
+@sla__relationship_entity_vec_remove_stable(values: ptr, index: i64) -> ptr:
+L_ENTRY:
+    EXPAND VEC_LEN tmp_444, values
+    tmp_445 = tmp_444 as i64
+    count = tmp_445
+    tmp_446 = 0
+    tmp_447 = slt index, tmp_446
+    !tmp_446
+    br tmp_447 -> L_THEN_113, L_ELSE_114
+
+L_THEN_113:
+    !tmp_447
+    !count
+    !index
+    return values
+
+L_ELSE_114:
+    !tmp_447
+    jmp L_MERGE_115
+
+L_MERGE_115:
+    tmp_449 = sge index, count
+    br tmp_449 -> L_THEN_116, L_ELSE_117
+
+L_THEN_116:
+    !tmp_449
+    !count
+    !index
+    return values
+
+L_ELSE_117:
+    !tmp_449
+    jmp L_MERGE_118
+
+L_MERGE_118:
+    tmp_451 = 1
+    tmp_452 = sub count, tmp_451
+    !tmp_451
+    last = tmp_452
+    tmp_453 = 0
+    tmp_454 = add index, tmp_453
+    !tmp_453
+    i = tmp_454
+    jmp L_WHILE_HEAD_119
+
+L_WHILE_HEAD_119:
+    tmp_455 = slt i, last
+    br tmp_455 -> L_WHILE_BODY_120, L_WHILE_COND_FALSE_121
+
+L_WHILE_BODY_120:
+    !tmp_455
+    tmp_456 = 1
+    tmp_457 = add i, tmp_456
+    !tmp_456
+    EXPAND VEC_GET tmp_458, values, tmp_457
+    !tmp_457
+    tmp_459 = tmp_458 as ptr
+    tmp_460 = &values
+    tmp_461 = load tmp_460+Vec_len as u64
+    tmp_462 = ult i, tmp_461
+    br tmp_462 -> L_VEC_INDEX_ASSIGN_OK_123, L_VEC_INDEX_ASSIGN_OOB_124
+
+L_VEC_INDEX_ASSIGN_OOB_124:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_123:
+    !tmp_462
+    tmp_463 = load tmp_460+Vec_ptr as ptr
+    tmp_464 = mul i, 8
+    tmp_465 = ptr_add tmp_463, tmp_464
+    store tmp_465+0, tmp_459 as u64
+    !tmp_465
+    !tmp_464
+    !tmp_463
+    !tmp_461
+    !tmp_460
+    !tmp_459
+    tmp_466 = 1
+    tmp_467 = add i, tmp_466
+    !tmp_466
+    !i
+    i = tmp_467
+    jmp L_WHILE_HEAD_119
+
+L_WHILE_COND_FALSE_121:
+    !tmp_455
+    jmp L_WHILE_EXIT_122
+
+L_WHILE_EXIT_122:
+    EXPAND VEC_REMOVE tmp_468, tmp_469, values, last, 8
+    br tmp_468 -> L_VEC_REMOVE_OK_125, L_VEC_REMOVE_OOB_126
+
+L_VEC_REMOVE_OOB_126:
+    panic(86)
+
+L_VEC_REMOVE_OK_125:
+    !tmp_468
+    tmp_470 = tmp_469 as ptr
+    removed = tmp_470
+    !i
+    !removed
+    !last
+    !count
+    !index
+    return values
+
+@sla__relationship_entity_vec_contains(values: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_471 = load entity+0 as i32
+    entity_id = tmp_471
+    tmp_472 = load entity+4 as i32
+    entity_gen = tmp_472
+    tmp_473 = 0
+    i = tmp_473
+    EXPAND VEC_LEN tmp_474, values
+    tmp_475 = tmp_474 as i64
+    cnt = tmp_475
+    jmp L_WHILE_HEAD_127
+
+L_WHILE_HEAD_127:
+    tmp_476 = slt i, cnt
+    br tmp_476 -> L_WHILE_BODY_128, L_WHILE_COND_FALSE_129
+
+L_WHILE_BODY_128:
+    !tmp_476
+    EXPAND VEC_GET tmp_477, values, i
+    tmp_478 = tmp_477 as ptr
+    tmp_479 = load tmp_478+0 as i32
+    !tmp_478
+    EXPAND VEC_GET tmp_480, values, i
+    tmp_481 = tmp_480 as ptr
+    tmp_482 = load tmp_481+4 as i32
+    !tmp_481
+    tmp_483 = call @sla__relationship_entity_parts_eq(tmp_479, tmp_482, entity_id, entity_gen)
+    !tmp_479
+    !tmp_482
+    br tmp_483 -> L_THEN_131, L_ELSE_132
+
+L_THEN_131:
+    !tmp_483
+    tmp_484 = 1
+    !cnt
+    !entity_gen
+    !i
+    !entity_id
+    !entity
+    !values
+    return tmp_484
+
+L_ELSE_132:
+    !tmp_483
+    jmp L_MERGE_133
+
+L_MERGE_133:
+    tmp_486 = 1
+    tmp_487 = add i, tmp_486
+    !tmp_486
+    !i
+    i = tmp_487
+    jmp L_WHILE_HEAD_127
+
+L_WHILE_COND_FALSE_129:
+    !tmp_476
+    jmp L_WHILE_EXIT_130
+
+L_WHILE_EXIT_130:
+    tmp_488 = 0
+    !cnt
+    !entity_gen
+    !i
+    !entity_id
+    !entity
+    !values
+    return tmp_488
+
+@sla__relationship_entity_vec_has_duplicates(values: ptr) -> u8:
+L_ENTRY:
+    tmp_489 = 0
+    i = tmp_489
+    EXPAND VEC_LEN tmp_490, values
+    tmp_491 = tmp_490 as i64
+    cnt = tmp_491
+    jmp L_WHILE_HEAD_134
+
+L_WHILE_HEAD_134:
+    tmp_492 = slt i, cnt
+    br tmp_492 -> L_WHILE_BODY_135, L_WHILE_COND_FALSE_136
+
+L_WHILE_BODY_135:
+    !tmp_492
+    tmp_493 = 1
+    tmp_494 = add i, tmp_493
+    !tmp_493
+    j = tmp_494
+    jmp L_WHILE_HEAD_138
+
+L_WHILE_HEAD_138:
+    tmp_495 = slt j, cnt
+    br tmp_495 -> L_WHILE_BODY_139, L_WHILE_COND_FALSE_140
+
+L_WHILE_BODY_139:
+    !tmp_495
+    EXPAND VEC_GET tmp_496, values, i
+    tmp_497 = tmp_496 as ptr
+    tmp_498 = load tmp_497+0 as i32
+    !tmp_497
+    EXPAND VEC_GET tmp_499, values, i
+    tmp_500 = tmp_499 as ptr
+    tmp_501 = load tmp_500+4 as i32
+    !tmp_500
+    EXPAND VEC_GET tmp_502, values, j
+    tmp_503 = tmp_502 as ptr
+    tmp_504 = load tmp_503+0 as i32
+    !tmp_503
+    EXPAND VEC_GET tmp_505, values, j
+    tmp_506 = tmp_505 as ptr
+    tmp_507 = load tmp_506+4 as i32
+    !tmp_506
+    tmp_508 = call @sla__relationship_entity_parts_eq(tmp_498, tmp_501, tmp_504, tmp_507)
+    !tmp_498
+    !tmp_501
+    !tmp_504
+    !tmp_507
+    br tmp_508 -> L_THEN_142, L_ELSE_143
+
+L_THEN_142:
+    !tmp_508
+    tmp_509 = 1
+    !j
+    !cnt
+    !i
+    !values
+    return tmp_509
+
+L_ELSE_143:
+    !tmp_508
+    jmp L_MERGE_144
+
+L_MERGE_144:
+    tmp_511 = 1
+    tmp_512 = add j, tmp_511
+    !tmp_511
+    !j
+    j = tmp_512
+    jmp L_WHILE_HEAD_138
+
+L_WHILE_COND_FALSE_140:
+    !tmp_495
+    jmp L_WHILE_EXIT_141
+
+L_WHILE_EXIT_141:
+    tmp_513 = 1
+    tmp_514 = add i, tmp_513
+    !tmp_513
+    !i
+    i = tmp_514
+    !j
+    jmp L_WHILE_HEAD_134
+
+L_WHILE_COND_FALSE_136:
+    !tmp_492
+    jmp L_WHILE_EXIT_137
+
+L_WHILE_EXIT_137:
+    tmp_515 = 0
+    !cnt
+    !i
+    !values
+    return tmp_515
+
+@sla__relationship_entity_vec_disjoint(left: ptr, right: ptr) -> u8:
+L_ENTRY:
+    tmp_516 = 0
+    i = tmp_516
+    EXPAND VEC_LEN tmp_517, left
+    tmp_518 = tmp_517 as i64
+    cnt = tmp_518
+    jmp L_WHILE_HEAD_145
+
+L_WHILE_HEAD_145:
+    tmp_519 = slt i, cnt
+    br tmp_519 -> L_WHILE_BODY_146, L_WHILE_COND_FALSE_147
+
+L_WHILE_BODY_146:
+    !tmp_519
+    EXPAND VEC_GET tmp_520, left, i
+    tmp_521 = tmp_520 as ptr
+    tmp_522 = call @sla__relationship_entity_vec_contains(right, tmp_521)
+    !tmp_521
+    br tmp_522 -> L_THEN_149, L_ELSE_150
+
+L_THEN_149:
+    !tmp_522
+    tmp_523 = 0
+    !cnt
+    !i
+    !right
+    !left
+    return tmp_523
+
+L_ELSE_150:
+    !tmp_522
+    jmp L_MERGE_151
+
+L_MERGE_151:
+    tmp_525 = 1
+    tmp_526 = add i, tmp_525
+    !tmp_525
+    !i
+    i = tmp_526
+    jmp L_WHILE_HEAD_145
+
+L_WHILE_COND_FALSE_147:
+    !tmp_519
+    jmp L_WHILE_EXIT_148
+
+L_WHILE_EXIT_148:
+    tmp_527 = 1
+    !cnt
+    !i
+    !right
+    !left
+    return tmp_527
+
+@sla__relationship_entity_vec_subset(left: ptr, right: ptr) -> u8:
+L_ENTRY:
+    tmp_528 = 0
+    i = tmp_528
+    EXPAND VEC_LEN tmp_529, left
+    tmp_530 = tmp_529 as i64
+    cnt = tmp_530
+    jmp L_WHILE_HEAD_152
+
+L_WHILE_HEAD_152:
+    tmp_531 = slt i, cnt
+    br tmp_531 -> L_WHILE_BODY_153, L_WHILE_COND_FALSE_154
+
+L_WHILE_BODY_153:
+    !tmp_531
+    EXPAND VEC_GET tmp_532, left, i
+    tmp_533 = tmp_532 as ptr
+    tmp_534 = call @sla__relationship_entity_vec_contains(right, tmp_533)
+    !tmp_533
+    tmp_535 = 1
+    tmp_536 = ne tmp_534, tmp_535
+    !tmp_534
+    !tmp_535
+    br tmp_536 -> L_THEN_156, L_ELSE_157
+
+L_THEN_156:
+    !tmp_536
+    tmp_537 = 0
+    !cnt
+    !i
+    !right
+    !left
+    return tmp_537
+
+L_ELSE_157:
+    !tmp_536
+    jmp L_MERGE_158
+
+L_MERGE_158:
+    tmp_539 = 1
+    tmp_540 = add i, tmp_539
+    !tmp_539
+    !i
+    i = tmp_540
+    jmp L_WHILE_HEAD_152
+
+L_WHILE_COND_FALSE_154:
+    !tmp_531
+    jmp L_WHILE_EXIT_155
+
+L_WHILE_EXIT_155:
+    tmp_541 = 1
+    !cnt
+    !i
+    !right
+    !left
+    return tmp_541
+
+@sla__relationship_world_remove_target_entry_at(world: ptr, slot: i64) -> ptr:
+L_ENTRY:
+    tmp_542 = load world+32 as ptr
+    EXPAND VEC_LEN tmp_543, tmp_542
+    !tmp_542
+    tmp_544 = tmp_543 as i64
+    count = tmp_544
+    tmp_545 = 0
+    tmp_546 = slt slot, tmp_545
+    !tmp_545
+    br tmp_546 -> L_THEN_159, L_ELSE_160
+
+L_THEN_159:
+    !tmp_546
+    !count
+    !slot
+    return world
+
+L_ELSE_160:
+    !tmp_546
+    jmp L_MERGE_161
+
+L_MERGE_161:
+    tmp_548 = sge slot, count
+    br tmp_548 -> L_THEN_162, L_ELSE_163
+
+L_THEN_162:
+    !tmp_548
+    !count
+    !slot
+    return world
+
+L_ELSE_163:
+    !tmp_548
+    jmp L_MERGE_164
+
+L_MERGE_164:
+    tmp_550 = 1
+    tmp_551 = sub count, tmp_550
+    !tmp_550
+    last = tmp_551
+    tmp_552 = ne slot, last
+    br tmp_552 -> L_THEN_165, L_ELSE_166
+
+L_THEN_165:
+    !tmp_552
+    tmp_553 = load world+32 as ptr
+    tmp_554 = load world+32 as ptr
+    EXPAND VEC_GET tmp_555, tmp_554, last
+    !tmp_554
+    tmp_556 = tmp_555 as ptr
+    tmp_557 = &tmp_553
+    tmp_558 = load tmp_557+Vec_len as u64
+    tmp_559 = ult slot, tmp_558
+    br tmp_559 -> L_VEC_INDEX_ASSIGN_OK_168, L_VEC_INDEX_ASSIGN_OOB_169
+
+L_VEC_INDEX_ASSIGN_OOB_169:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_168:
+    !tmp_559
+    tmp_560 = load tmp_557+Vec_ptr as ptr
+    tmp_561 = mul slot, 8
+    tmp_562 = ptr_add tmp_560, tmp_561
+    store tmp_562+0, tmp_556 as u64
+    !tmp_562
+    !tmp_561
+    !tmp_560
+    !tmp_558
+    !tmp_557
+    !tmp_556
+    !tmp_553
+    jmp L_MERGE_167
+
+L_ELSE_166:
+    !tmp_552
+    jmp L_MERGE_167
+
+L_MERGE_167:
+    tmp_564 = load world+32 as ptr
+    EXPAND VEC_REMOVE tmp_565, tmp_566, tmp_564, last, 8
+    br tmp_565 -> L_VEC_REMOVE_OK_170, L_VEC_REMOVE_OOB_171
+
+L_VEC_REMOVE_OOB_171:
+    panic(86)
+
+L_VEC_REMOVE_OK_170:
+    !tmp_565
+    tmp_567 = tmp_566 as ptr
+    removed = tmp_567
+    !removed
+    !last
+    !count
+    !slot
+    return world
+
+@sla__relationship_world_remove_source_entry_at(world: ptr, slot: i64) -> ptr:
+L_ENTRY:
+    tmp_568 = load world+24 as ptr
+    EXPAND VEC_LEN tmp_569, tmp_568
+    !tmp_568
+    tmp_570 = tmp_569 as i64
+    count = tmp_570
+    tmp_571 = 0
+    tmp_572 = slt slot, tmp_571
+    !tmp_571
+    br tmp_572 -> L_THEN_172, L_ELSE_173
+
+L_THEN_172:
+    !tmp_572
+    !count
+    !slot
+    return world
+
+L_ELSE_173:
+    !tmp_572
+    jmp L_MERGE_174
+
+L_MERGE_174:
+    tmp_574 = sge slot, count
+    br tmp_574 -> L_THEN_175, L_ELSE_176
+
+L_THEN_175:
+    !tmp_574
+    !count
+    !slot
+    return world
+
+L_ELSE_176:
+    !tmp_574
+    jmp L_MERGE_177
+
+L_MERGE_177:
+    tmp_576 = 1
+    tmp_577 = sub count, tmp_576
+    !tmp_576
+    last = tmp_577
+    tmp_578 = ne slot, last
+    br tmp_578 -> L_THEN_178, L_ELSE_179
+
+L_THEN_178:
+    !tmp_578
+    tmp_579 = load world+24 as ptr
+    tmp_580 = load world+24 as ptr
+    EXPAND VEC_GET tmp_581, tmp_580, last
+    !tmp_580
+    tmp_582 = tmp_581 as ptr
+    tmp_583 = &tmp_579
+    tmp_584 = load tmp_583+Vec_len as u64
+    tmp_585 = ult slot, tmp_584
+    br tmp_585 -> L_VEC_INDEX_ASSIGN_OK_181, L_VEC_INDEX_ASSIGN_OOB_182
+
+L_VEC_INDEX_ASSIGN_OOB_182:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_181:
+    !tmp_585
+    tmp_586 = load tmp_583+Vec_ptr as ptr
+    tmp_587 = mul slot, 8
+    tmp_588 = ptr_add tmp_586, tmp_587
+    store tmp_588+0, tmp_582 as u64
+    !tmp_588
+    !tmp_587
+    !tmp_586
+    !tmp_584
+    !tmp_583
+    !tmp_582
+    !tmp_579
+    jmp L_MERGE_180
+
+L_ELSE_179:
+    !tmp_578
+    jmp L_MERGE_180
+
+L_MERGE_180:
+    tmp_590 = load world+24 as ptr
+    EXPAND VEC_REMOVE tmp_591, tmp_592, tmp_590, last, 8
+    br tmp_591 -> L_VEC_REMOVE_OK_183, L_VEC_REMOVE_OOB_184
+
+L_VEC_REMOVE_OOB_184:
+    panic(86)
+
+L_VEC_REMOVE_OK_183:
+    !tmp_591
+    tmp_593 = tmp_592 as ptr
+    removed = tmp_593
+    !removed
+    !last
+    !count
+    !slot
+    return world
+
+@sla__relationship_world_remove_empty_target(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_594 = call @sla__relationship_world_target_slot(world, kind_id, target)
+    target_slot = tmp_594
+    tmp_595 = 0
+    tmp_596 = slt target_slot, tmp_595
+    !tmp_595
+    br tmp_596 -> L_THEN_185, L_ELSE_186
+
+L_THEN_185:
+    !tmp_596
+    !target_slot
+    !kind_id
+    !target
+    return world
+
+L_ELSE_186:
+    !tmp_596
+    jmp L_MERGE_187
+
+L_MERGE_187:
+    tmp_598 = load world+32 as ptr
+    EXPAND VEC_GET tmp_599, tmp_598, target_slot
+    !tmp_598
+    tmp_600 = tmp_599 as ptr
+    tmp_601 = load tmp_600+16 as ptr
+    !tmp_600
+    EXPAND VEC_LEN tmp_602, tmp_601
+    !tmp_601
+    tmp_603 = 0
+    tmp_604 = sgt tmp_602, tmp_603
+    !tmp_602
+    !tmp_603
+    br tmp_604 -> L_THEN_188, L_ELSE_189
+
+L_THEN_188:
+    !tmp_604
+    !target_slot
+    !kind_id
+    !target
+    return world
+
+L_ELSE_189:
+    !tmp_604
+    jmp L_MERGE_190
+
+L_MERGE_190:
+    tmp_606 = call @sla__relationship_world_remove_target_entry_at(world, target_slot)
+    !kind_id
+    !target
+    return tmp_606
+
+@sla__relationship_world_ensure_target(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_607 = load target+0 as i32
+    target_id = tmp_607
+    tmp_608 = load target+4 as i32
+    target_gen = tmp_608
+    tmp_609 = call @sla__entity_new(target_id, target_gen)
+    tmp_610 = call @sla__relationship_world_target_slot(world, kind_id, tmp_609)
+    !tmp_609
+    target_slot = tmp_610
+    tmp_611 = 0
+    tmp_612 = sge target_slot, tmp_611
+    !tmp_611
+    br tmp_612 -> L_THEN_191, L_ELSE_192
+
+L_THEN_191:
+    !tmp_612
+    tmp_613 = alloc 16
+    store tmp_613+0, world as ptr
+    store tmp_613+8, target_slot as i64
+    !target_gen
+    !target_id
+    !kind_id
+    !target
+    return tmp_613
+
+L_ELSE_192:
+    !tmp_612
+    jmp L_MERGE_193
+
+L_MERGE_193:
+    EXPAND VEC_NEW tmp_615
+    sources = tmp_615
+    tmp_616 = load world+32 as ptr
+    tmp_617 = alloc 24
+    store tmp_617+0, kind_id as i32
+    tmp_618 = call @sla__entity_new(target_id, target_gen)
+    store tmp_617+8, tmp_618 as ptr
+    !tmp_618
+    store tmp_617+16, sources as ptr
+    EXPAND VEC_PUSH tmp_616, tmp_617, 8
+    !tmp_617
+    !tmp_616
+    tmp_619 = alloc 16
+    store tmp_619+0, world as ptr
+    tmp_620 = load world+32 as ptr
+    EXPAND VEC_LEN tmp_621, tmp_620
+    !tmp_620
+    tmp_622 = tmp_621 as i64
+    tmp_623 = 1
+    tmp_624 = sub tmp_622, tmp_623
+    !tmp_622
+    !tmp_623
+    store tmp_619+8, tmp_624 as i64
+    !sources
+    !target_gen
+    !target_id
+    !target_slot
+    !kind_id
+    !target
+    return tmp_619
+
+@sla__relationship_world_remove_source_from_target(world: ptr, kind_id: i32, target: ptr, source: ptr) -> ptr:
+L_ENTRY:
+    tmp_625 = load target+0 as i32
+    target_id = tmp_625
+    tmp_626 = load target+4 as i32
+    target_gen = tmp_626
+    tmp_627 = load source+0 as i32
+    source_id = tmp_627
+    tmp_628 = load source+4 as i32
+    source_gen = tmp_628
+    tmp_629 = call @sla__entity_new(target_id, target_gen)
+    tmp_630 = call @sla__relationship_world_target_slot(world, kind_id, tmp_629)
+    !tmp_629
+    target_slot = tmp_630
+    tmp_631 = 0
+    tmp_632 = slt target_slot, tmp_631
+    !tmp_631
+    br tmp_632 -> L_THEN_194, L_ELSE_195
+
+L_THEN_194:
+    !tmp_632
+    !source_id
+    !target_gen
+    !source_gen
+    !target_id
+    !target_slot
+    !source
+    !kind_id
+    !target
+    return world
+
+L_ELSE_195:
+    !tmp_632
+    jmp L_MERGE_196
+
+L_MERGE_196:
+    tmp_634 = call @sla__entity_new(source_id, source_gen)
+    tmp_635 = call @sla__relationship_world_source_slot_in_target(world, target_slot, tmp_634)
+    !tmp_634
+    source_slot = tmp_635
+    tmp_636 = 0
+    tmp_637 = slt source_slot, tmp_636
+    !tmp_636
+    br tmp_637 -> L_THEN_197, L_ELSE_198
+
+L_THEN_197:
+    !tmp_637
+    !source_id
+    !target_gen
+    !source_slot
+    !source_gen
+    !target_id
+    !target_slot
+    !source
+    !kind_id
+    !target
+    return world
+
+L_ELSE_198:
+    !tmp_637
+    jmp L_MERGE_199
+
+L_MERGE_199:
+    tmp_639 = load world+32 as ptr
+    EXPAND VEC_GET tmp_640, tmp_639, target_slot
+    !tmp_639
+    tmp_641 = tmp_640 as ptr
+    tmp_642 = load world+32 as ptr
+    EXPAND VEC_GET tmp_643, tmp_642, target_slot
+    !tmp_642
+    tmp_644 = tmp_643 as ptr
+    tmp_645 = load tmp_644+16 as ptr
+    !tmp_644
+    tmp_646 = call @sla__relationship_entity_vec_remove_stable(tmp_645, source_slot)
+    !tmp_645
+    store tmp_641+16, tmp_646 as ptr
+    !tmp_641
+    !tmp_646
+    tmp_647 = call @sla__entity_new(target_id, target_gen)
+    tmp_648 = call @sla__relationship_world_remove_empty_target(world, kind_id, tmp_647)
+    !tmp_647
+    !source_id
+    !source_slot
+    !source_gen
+    !target_slot
+    !source
+    !target
+    return tmp_648
+
+@sla__relationship_world_add_source_to_target(world: ptr, kind: ptr, target: ptr, source: ptr, index: i64) -> ptr:
+L_ENTRY:
+    tmp_649 = load target+0 as i32
+    target_id = tmp_649
+    tmp_650 = load target+4 as i32
+    target_gen = tmp_650
+    tmp_651 = load source+0 as i32
+    source_id = tmp_651
+    tmp_652 = load source+4 as i32
+    source_gen = tmp_652
+    tmp_653 = load kind+0 as i32
+    tmp_654 = call @sla__entity_new(target_id, target_gen)
+    tmp_655 = call @sla__relationship_world_ensure_target(world, tmp_653, tmp_654)
+    !tmp_653
+    !tmp_654
+    next_world = load tmp_655+0 as ptr
+    target_slot = load tmp_655+8 as i64
+    !tmp_655
+    !world
+    world = next_world
+    tmp_656 = call @sla__entity_new(source_id, source_gen)
+    tmp_657 = call @sla__relationship_world_source_slot_in_target(world, target_slot, tmp_656)
+    !tmp_656
+    existing = tmp_657
+    tmp_658 = 0
+    tmp_659 = sge existing, tmp_658
+    !tmp_658
+    br tmp_659 -> L_THEN_200, L_ELSE_201
+
+L_THEN_200:
+    !tmp_659
+    tmp_660 = load world+32 as ptr
+    EXPAND VEC_GET tmp_661, tmp_660, target_slot
+    !tmp_660
+    tmp_662 = tmp_661 as ptr
+    tmp_663 = load world+32 as ptr
+    EXPAND VEC_GET tmp_664, tmp_663, target_slot
+    !tmp_663
+    tmp_665 = tmp_664 as ptr
+    tmp_666 = load tmp_665+16 as ptr
+    !tmp_665
+    tmp_667 = call @sla__relationship_entity_vec_remove_stable(tmp_666, existing)
+    !tmp_666
+    store tmp_662+16, tmp_667 as ptr
+    !tmp_662
+    !tmp_667
+    jmp L_MERGE_202
+
+L_ELSE_201:
+    !tmp_659
+    jmp L_MERGE_202
+
+L_MERGE_202:
+    tmp_669 = load kind+4 as i32
+    tmp_670 = 1
+    tmp_671 = eq tmp_669, tmp_670
+    !tmp_669
+    br tmp_671 -> L_THEN_203, L_ELSE_204
+
+L_THEN_203:
+    !tmp_671
+    EXPAND VEC_NEW tmp_672
+    empty = tmp_672
+    tmp_673 = load world+32 as ptr
+    EXPAND VEC_GET tmp_674, tmp_673, target_slot
+    !tmp_673
+    tmp_675 = tmp_674 as ptr
+    store tmp_675+16, empty as ptr
+    !tmp_675
+    !empty
+    tmp_676 = load world+32 as ptr
+    EXPAND VEC_GET tmp_677, tmp_676, target_slot
+    !tmp_676
+    tmp_678 = tmp_677 as ptr
+    tmp_679 = load tmp_678+16 as ptr
+    !tmp_678
+    tmp_680 = call @sla__entity_new(source_id, source_gen)
+    EXPAND VEC_PUSH tmp_679, tmp_680, 8
+    !tmp_680
+    !tmp_679
+    !target_gen
+    !existing
+    !target_id
+    !source_id
+    !source_gen
+    !target_slot
+    !kind
+    !source
+    !index
+    !target
+    return world
+
+L_ELSE_204:
+    !tmp_671
+    jmp L_MERGE_205
+
+L_MERGE_205:
+    tmp_682 = load world+32 as ptr
+    EXPAND VEC_GET tmp_683, tmp_682, target_slot
+    !tmp_682
+    tmp_684 = tmp_683 as ptr
+    tmp_685 = load world+32 as ptr
+    EXPAND VEC_GET tmp_686, tmp_685, target_slot
+    !tmp_685
+    tmp_687 = tmp_686 as ptr
+    tmp_688 = load tmp_687+16 as ptr
+    !tmp_687
+    tmp_689 = call @sla__entity_new(source_id, source_gen)
+    tmp_690 = call @sla__relationship_entity_vec_insert_swap(tmp_688, index, tmp_689)
+    !tmp_688
+    !tmp_689
+    store tmp_684+16, tmp_690 as ptr
+    !tmp_684
+    !tmp_690
+    !target_gen
+    !existing
+    !target_id
+    !source_id
+    !source_gen
+    !target_slot
+    !kind
+    !source
+    !index
+    !target
+    return world
+
+@sla__relationship_world_remove_related(world: ptr, kind_id: i32, source: ptr) -> ptr:
+L_ENTRY:
+    tmp_691 = load source+0 as i32
+    source_id = tmp_691
+    tmp_692 = load source+4 as i32
+    source_gen = tmp_692
+    tmp_693 = call @sla__entity_new(source_id, source_gen)
+    tmp_694 = call @sla__relationship_world_source_slot(world, kind_id, tmp_693)
+    !tmp_693
+    source_slot = tmp_694
+    tmp_695 = 0
+    tmp_696 = slt source_slot, tmp_695
+    !tmp_695
+    br tmp_696 -> L_THEN_206, L_ELSE_207
+
+L_THEN_206:
+    !tmp_696
+    !source_id
+    !source_gen
+    !source_slot
+    !source
+    !kind_id
+    return world
+
+L_ELSE_207:
+    !tmp_696
+    jmp L_MERGE_208
+
+L_MERGE_208:
+    tmp_698 = load world+24 as ptr
+    EXPAND VEC_GET tmp_699, tmp_698, source_slot
+    !tmp_698
+    tmp_700 = tmp_699 as ptr
+    tmp_701 = load tmp_700+16 as ptr
+    !tmp_700
+    target = tmp_701
+    tmp_702 = load target+0 as i32
+    target_id = tmp_702
+    tmp_703 = load target+4 as i32
+    target_gen = tmp_703
+    tmp_704 = call @sla__entity_new(target_id, target_gen)
+    tmp_705 = call @sla__entity_new(source_id, source_gen)
+    tmp_706 = call @sla__relationship_world_remove_source_from_target(world, kind_id, tmp_704, tmp_705)
+    !tmp_704
+    !tmp_705
+    !world
+    world = tmp_706
+    tmp_707 = call @sla__entity_new(source_id, source_gen)
+    tmp_708 = call @sla__relationship_world_source_slot(world, kind_id, tmp_707)
+    !tmp_707
+    updated_slot = tmp_708
+    tmp_709 = call @sla__relationship_world_remove_source_entry_at(world, updated_slot)
+    !target_gen
+    !target
+    !target_id
+    !source_slot
+    !source_id
+    !source_gen
+    !source
+    !kind_id
+    return tmp_709
+
+@sla__relationship_world_set_related_at(world: ptr, kind_id: i32, source: ptr, target: ptr, index: i64) -> ptr:
+L_ENTRY:
+    tmp_710 = load source+0 as i32
+    source_id = tmp_710
+    tmp_711 = load source+4 as i32
+    source_gen = tmp_711
+    tmp_712 = load target+0 as i32
+    target_id = tmp_712
+    tmp_713 = load target+4 as i32
+    target_gen = tmp_713
+    tmp_714 = call @sla__relationship_world_kind(world, kind_id)
+    kind = tmp_714
+    tmp_715 = call @sla__entity_new(source_id, source_gen)
+    tmp_716 = call @sla__relationship_world_is_alive(world, tmp_715)
+    !tmp_715
+    tmp_717 = 1
+    tmp_718 = ne tmp_716, tmp_717
+    !tmp_716
+    !tmp_717
+    br tmp_718 -> L_THEN_209, L_ELSE_210
+
+L_THEN_209:
+    !tmp_718
+    panic(9502)
+
+L_ELSE_210:
+    !tmp_718
+    jmp L_MERGE_211
+
+L_MERGE_211:
+    tmp_721 = call @sla__entity_new(target_id, target_gen)
+    tmp_722 = call @sla__relationship_world_is_alive(world, tmp_721)
+    !tmp_721
+    tmp_723 = 1
+    tmp_724 = ne tmp_722, tmp_723
+    !tmp_722
+    !tmp_723
+    br tmp_724 -> L_THEN_212, L_ELSE_213
+
+L_THEN_212:
+    !tmp_724
+    tmp_725 = call @sla__entity_new(source_id, source_gen)
+    tmp_726 = call @sla__relationship_world_remove_related(world, kind_id, tmp_725)
+    !tmp_725
+    !target_gen
+    !target_id
+    !kind
+    !source
+    !index
+    !target
+    return tmp_726
+
+L_ELSE_213:
+    !tmp_724
+    jmp L_MERGE_214
+
+L_MERGE_214:
+    tmp_728 = load kind+9 as u8
+    tmp_729 = 1
+    tmp_730 = ne tmp_728, tmp_729
+    !tmp_728
+    !tmp_729
+    br tmp_730 -> L_THEN_215, L_ELSE_216
+
+L_THEN_215:
+    !tmp_730
+    tmp_731 = call @sla__relationship_entity_parts_eq(source_id, source_gen, target_id, target_gen)
+    br tmp_731 -> L_THEN_218, L_ELSE_219
+
+L_THEN_218:
+    !tmp_731
+    tmp_732 = call @sla__entity_new(source_id, source_gen)
+    tmp_733 = call @sla__relationship_world_remove_related(world, kind_id, tmp_732)
+    !tmp_732
+    !target_gen
+    !target_id
+    !kind
+    !source
+    !index
+    !target
+    return tmp_733
+
+L_ELSE_219:
+    !tmp_731
+    jmp L_MERGE_220
+
+L_MERGE_220:
+    jmp L_MERGE_217
+
+L_ELSE_216:
+    !tmp_730
+    jmp L_MERGE_217
+
+L_MERGE_217:
+    tmp_736 = load kind+4 as i32
+    tmp_737 = 1
+    tmp_738 = eq tmp_736, tmp_737
+    !tmp_736
+    br tmp_738 -> L_THEN_221, L_ELSE_222
+
+L_THEN_221:
+    !tmp_738
+    tmp_739 = call @sla__entity_new(target_id, target_gen)
+    tmp_740 = call @sla__relationship_world_sources(world, kind_id, tmp_739)
+    !tmp_739
+    existing_sources = tmp_740
+    tmp_741 = 0
+    i = tmp_741
+    tmp_742 = load existing_sources+0 as ptr
+    EXPAND VEC_LEN tmp_743, tmp_742
+    !tmp_742
+    tmp_744 = tmp_743 as i64
+    cnt = tmp_744
+    jmp L_WHILE_HEAD_224
+
+L_WHILE_HEAD_224:
+    tmp_745 = slt i, cnt
+    br tmp_745 -> L_WHILE_BODY_225, L_WHILE_COND_FALSE_226
+
+L_WHILE_BODY_225:
+    !tmp_745
+    tmp_746 = load existing_sources+0 as ptr
+    EXPAND VEC_GET tmp_747, tmp_746, i
+    !tmp_746
+    tmp_748 = tmp_747 as ptr
+    old = tmp_748
+    tmp_749 = load old+0 as i32
+    tmp_750 = load old+4 as i32
+    tmp_751 = call @sla__relationship_entity_parts_eq(tmp_749, tmp_750, source_id, source_gen)
+    !tmp_749
+    !tmp_750
+    tmp_752 = 1
+    tmp_753 = ne tmp_751, tmp_752
+    !tmp_751
+    !tmp_752
+    br tmp_753 -> L_THEN_228, L_ELSE_229
+
+L_THEN_228:
+    !tmp_753
+    tmp_754 = load old+0 as i32
+    tmp_755 = load old+4 as i32
+    tmp_756 = call @sla__entity_new(tmp_754, tmp_755)
+    !tmp_754
+    !tmp_755
+    tmp_757 = call @sla__relationship_world_remove_related(world, kind_id, tmp_756)
+    !tmp_756
+    !world
+    world = tmp_757
+    jmp L_MERGE_230
+
+L_ELSE_229:
+    !tmp_753
+    jmp L_MERGE_230
+
+L_MERGE_230:
+    tmp_759 = 1
+    tmp_760 = add i, tmp_759
+    !tmp_759
+    !i
+    i = tmp_760
+    !old
+    jmp L_WHILE_HEAD_224
+
+L_WHILE_COND_FALSE_226:
+    !tmp_745
+    jmp L_WHILE_EXIT_227
+
+L_WHILE_EXIT_227:
+    !cnt
+    !i
+    !existing_sources
+    jmp L_MERGE_223
+
+L_ELSE_222:
+    !tmp_738
+    jmp L_MERGE_223
+
+L_MERGE_223:
+    tmp_762 = call @sla__entity_new(source_id, source_gen)
+    tmp_763 = call @sla__relationship_world_source_slot(world, kind_id, tmp_762)
+    !tmp_762
+    source_slot = tmp_763
+    tmp_764 = 0
+    tmp_765 = sge source_slot, tmp_764
+    !tmp_764
+    br tmp_765 -> L_THEN_231, L_ELSE_232
+
+L_THEN_231:
+    !tmp_765
+    tmp_766 = load world+24 as ptr
+    EXPAND VEC_GET tmp_767, tmp_766, source_slot
+    !tmp_766
+    tmp_768 = tmp_767 as ptr
+    tmp_769 = load tmp_768+16 as ptr
+    !tmp_768
+    old_target = tmp_769
+    tmp_770 = load old_target+0 as i32
+    old_target_id = tmp_770
+    tmp_771 = load old_target+4 as i32
+    old_target_gen = tmp_771
+    tmp_772 = call @sla__entity_new(old_target_id, old_target_gen)
+    tmp_773 = call @sla__entity_new(source_id, source_gen)
+    tmp_774 = call @sla__relationship_world_remove_source_from_target(world, kind_id, tmp_772, tmp_773)
+    !tmp_772
+    !tmp_773
+    !world
+    world = tmp_774
+    tmp_775 = call @sla__entity_new(source_id, source_gen)
+    tmp_776 = call @sla__relationship_world_source_slot(world, kind_id, tmp_775)
+    !tmp_775
+    updated_slot = tmp_776
+    tmp_777 = load world+24 as ptr
+    EXPAND VEC_GET tmp_778, tmp_777, updated_slot
+    !tmp_777
+    tmp_779 = tmp_778 as ptr
+    tmp_780 = call @sla__entity_new(target_id, target_gen)
+    store tmp_779+16, tmp_780 as ptr
+    !tmp_779
+    !tmp_780
+    !updated_slot
+    !old_target
+    !old_target_gen
+    !old_target_id
+    jmp L_MERGE_233
+
+L_ELSE_232:
+    !tmp_765
+    tmp_781 = load world+24 as ptr
+    tmp_782 = alloc 24
+    store tmp_782+0, kind_id as i32
+    tmp_783 = call @sla__entity_new(source_id, source_gen)
+    store tmp_782+8, tmp_783 as ptr
+    !tmp_783
+    tmp_784 = call @sla__entity_new(target_id, target_gen)
+    store tmp_782+16, tmp_784 as ptr
+    !tmp_784
+    EXPAND VEC_PUSH tmp_781, tmp_782, 8
+    !tmp_782
+    !tmp_781
+    jmp L_MERGE_233
+
+L_MERGE_233:
+    tmp_786 = call @sla__entity_new(target_id, target_gen)
+    tmp_787 = call @sla__entity_new(source_id, source_gen)
+    tmp_788 = call @sla__relationship_world_add_source_to_target(world, kind, tmp_786, tmp_787, index)
+    !tmp_786
+    !tmp_787
+    !world
+    world = tmp_788
+    !source_id
+    !target_gen
+    !source_slot
+    !source_gen
+    !target_id
+    !kind
+    !source
+    !kind_id
+    !index
+    !target
+    return world
+
+@sla__relationship_world_set_related(world: ptr, kind_id: i32, source: ptr, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_789 = 2147483647
+    tmp_790 = tmp_789 as i64
+    tmp_791 = call @sla__relationship_world_set_related_at(world, kind_id, source, target, tmp_790)
+    !tmp_790
+    return tmp_791
+
+@sla__relationship_world_spawn_related(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_792 = load target+0 as i32
+    target_id = tmp_792
+    tmp_793 = load target+4 as i32
+    target_gen = tmp_793
+    tmp_794 = call @sla__relationship_world_spawn(world)
+    next_world = load tmp_794+0 as ptr
+    source = load tmp_794+8 as ptr
+    !tmp_794
+    tmp_795 = load source+0 as i32
+    tmp_796 = load source+4 as i32
+    tmp_797 = call @sla__entity_new(tmp_795, tmp_796)
+    !tmp_795
+    !tmp_796
+    tmp_798 = call @sla__entity_new(target_id, target_gen)
+    tmp_799 = call @sla__relationship_world_set_related(next_world, kind_id, tmp_797, tmp_798)
+    !tmp_797
+    !tmp_798
+    !world
+    world = tmp_799
+    tmp_800 = alloc 16
+    store tmp_800+0, world as ptr
+    store tmp_800+8, source as ptr
+    !target_gen
+    !target_id
+    !next_world
+    !kind_id
+    !target
+    return tmp_800
+
+@sla__relationship_world_has_related(world: ptr, kind_id: i32, source: ptr) -> u8:
+L_ENTRY:
+    tmp_801 = call @sla__relationship_world_is_alive(world, source)
+    tmp_802 = 1
+    tmp_803 = ne tmp_801, tmp_802
+    !tmp_801
+    !tmp_802
+    br tmp_803 -> L_THEN_234, L_ELSE_235
+
+L_THEN_234:
+    !tmp_803
+    tmp_804 = 0
+    !source
+    !kind_id
+    !world
+    return tmp_804
+
+L_ELSE_235:
+    !tmp_803
+    jmp L_MERGE_236
+
+L_MERGE_236:
+    tmp_806 = call @sla__relationship_world_source_slot(world, kind_id, source)
+    tmp_807 = 0
+    tmp_808 = sge tmp_806, tmp_807
+    !tmp_806
+    !tmp_807
+    return tmp_808
+
+@sla__relationship_world_related(world: ptr, kind_id: i32, source: ptr) -> ptr:
+L_ENTRY:
+    tmp_809 = call @sla__relationship_world_source_slot(world, kind_id, source)
+    source_slot = tmp_809
+    tmp_810 = 0
+    tmp_811 = slt source_slot, tmp_810
+    !tmp_810
+    br tmp_811 -> L_THEN_237, L_ELSE_238
+
+L_THEN_237:
+    !tmp_811
+    tmp_812 = call @sla__entity_placeholder()
+    !source_slot
+    !source
+    !kind_id
+    !world
+    return tmp_812
+
+L_ELSE_238:
+    !tmp_811
+    jmp L_MERGE_239
+
+L_MERGE_239:
+    tmp_814 = load world+24 as ptr
+    EXPAND VEC_GET tmp_815, tmp_814, source_slot
+    !tmp_814
+    tmp_816 = tmp_815 as ptr
+    tmp_817 = load tmp_816+16 as ptr
+    !tmp_816
+    !source_slot
+    !source
+    !kind_id
+    !world
+    return tmp_817
+
+@sla__relationship_world_sources(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_818 = call @sla__relationship_entity_query_new()
+    query = tmp_818
+    tmp_819 = call @sla__relationship_world_target_slot(world, kind_id, target)
+    target_slot = tmp_819
+    tmp_820 = 0
+    tmp_821 = slt target_slot, tmp_820
+    !tmp_820
+    br tmp_821 -> L_THEN_240, L_ELSE_241
+
+L_THEN_240:
+    !tmp_821
+    !target_slot
+    !kind_id
+    !target
+    !world
+    return query
+
+L_ELSE_241:
+    !tmp_821
+    jmp L_MERGE_242
+
+L_MERGE_242:
+    tmp_823 = 0
+    i = tmp_823
+    tmp_824 = load world+32 as ptr
+    EXPAND VEC_GET tmp_825, tmp_824, target_slot
+    !tmp_824
+    tmp_826 = tmp_825 as ptr
+    tmp_827 = load tmp_826+16 as ptr
+    !tmp_826
+    EXPAND VEC_LEN tmp_828, tmp_827
+    !tmp_827
+    tmp_829 = tmp_828 as i64
+    cnt = tmp_829
+    jmp L_WHILE_HEAD_243
+
+L_WHILE_HEAD_243:
+    tmp_830 = slt i, cnt
+    br tmp_830 -> L_WHILE_BODY_244, L_WHILE_COND_FALSE_245
+
+L_WHILE_BODY_244:
+    !tmp_830
+    tmp_831 = load world+32 as ptr
+    EXPAND VEC_GET tmp_832, tmp_831, target_slot
+    !tmp_831
+    tmp_833 = tmp_832 as ptr
+    tmp_834 = load tmp_833+16 as ptr
+    !tmp_833
+    EXPAND VEC_GET tmp_835, tmp_834, i
+    !tmp_834
+    tmp_836 = tmp_835 as ptr
+    source = tmp_836
+    tmp_837 = load source+0 as i32
+    source_id = tmp_837
+    tmp_838 = load source+4 as i32
+    source_gen = tmp_838
+    tmp_839 = call @sla__entity_new(source_id, source_gen)
+    tmp_840 = call @sla__relationship_world_is_alive(world, tmp_839)
+    !tmp_839
+    br tmp_840 -> L_THEN_247, L_ELSE_248
+
+L_THEN_247:
+    !tmp_840
+    tmp_841 = load query+0 as ptr
+    tmp_842 = call @sla__entity_new(source_id, source_gen)
+    EXPAND VEC_PUSH tmp_841, tmp_842, 8
+    !tmp_842
+    !tmp_841
+    jmp L_MERGE_249
+
+L_ELSE_248:
+    !tmp_840
+    jmp L_MERGE_249
+
+L_MERGE_249:
+    tmp_844 = 1
+    tmp_845 = add i, tmp_844
+    !tmp_844
+    !i
+    i = tmp_845
+    !source
+    !source_id
+    !source_gen
+    jmp L_WHILE_HEAD_243
+
+L_WHILE_COND_FALSE_245:
+    !tmp_830
+    jmp L_WHILE_EXIT_246
+
+L_WHILE_EXIT_246:
+    !cnt
+    !i
+    !target_slot
+    !kind_id
+    !target
+    !world
+    return query
+
+@sla__relationship_world_source_count(world: ptr, kind_id: i32, target: ptr) -> i64:
+L_ENTRY:
+    tmp_846 = call @sla__relationship_world_sources(world, kind_id, target)
+    tmp_847 = load tmp_846+0 as ptr
+    !tmp_846
+    EXPAND VEC_LEN tmp_848, tmp_847
+    !tmp_847
+    tmp_849 = tmp_848 as i64
+    !kind_id
+    !target
+    !world
+    return tmp_849
+
+@sla__relationship_world_source_at(world: ptr, kind_id: i32, target: ptr, index: i64) -> ptr:
+L_ENTRY:
+    tmp_850 = call @sla__relationship_world_sources(world, kind_id, target)
+    sources = tmp_850
+    tmp_851 = 0
+    tmp_852 = slt index, tmp_851
+    !tmp_851
+    br tmp_852 -> L_THEN_250, L_ELSE_251
+
+L_THEN_250:
+    !tmp_852
+    tmp_853 = call @sla__entity_placeholder()
+    !sources
+    !index
+    !kind_id
+    !target
+    !world
+    return tmp_853
+
+L_ELSE_251:
+    !tmp_852
+    jmp L_MERGE_252
+
+L_MERGE_252:
+    tmp_855 = load sources+0 as ptr
+    EXPAND VEC_LEN tmp_856, tmp_855
+    !tmp_855
+    tmp_857 = tmp_856 as i64
+    tmp_858 = sge index, tmp_857
+    !tmp_857
+    br tmp_858 -> L_THEN_253, L_ELSE_254
+
+L_THEN_253:
+    !tmp_858
+    tmp_859 = call @sla__entity_placeholder()
+    !sources
+    !index
+    !kind_id
+    !target
+    !world
+    return tmp_859
+
+L_ELSE_254:
+    !tmp_858
+    jmp L_MERGE_255
+
+L_MERGE_255:
+    tmp_861 = load sources+0 as ptr
+    EXPAND VEC_GET tmp_862, tmp_861, index
+    !tmp_861
+    tmp_863 = tmp_862 as ptr
+    !sources
+    !kind_id
+    !target
+    !world
+    return tmp_863
+
+@sla__relationship_world_ancestors(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_864 = call @sla__relationship_entity_query_new()
+    result = tmp_864
+    tmp_865 = load entity+0 as i32
+    tmp_866 = load entity+4 as i32
+    tmp_867 = call @sla__entity_new(tmp_865, tmp_866)
+    !tmp_865
+    !tmp_866
+    current = tmp_867
+    tmp_868 = 1
+    following = tmp_868
+    jmp L_WHILE_HEAD_256
+
+L_WHILE_HEAD_256:
+    tmp_869 = 1
+    tmp_870 = eq following, tmp_869
+    !tmp_869
+    br tmp_870 -> L_WHILE_BODY_257, L_WHILE_COND_FALSE_258
+
+L_WHILE_BODY_257:
+    !tmp_870
+    tmp_871 = call @sla__relationship_world_has_related(world, kind_id, current)
+    tmp_872 = 1
+    tmp_873 = ne tmp_871, tmp_872
+    !tmp_871
+    !tmp_872
+    br tmp_873 -> L_THEN_260, L_ELSE_261
+
+L_THEN_260:
+    !tmp_873
+    tmp_874 = 0
+    !following
+    following = tmp_874
+    jmp L_MERGE_262
+
+L_ELSE_261:
+    !tmp_873
+    tmp_875 = call @sla__relationship_world_related(world, kind_id, current)
+    parent = tmp_875
+    tmp_876 = call @sla__relationship_entity_query_contains(result, parent)
+    br tmp_876 -> L_THEN_263, L_ELSE_264
+
+L_THEN_263:
+    !tmp_876
+    tmp_877 = 0
+    !following
+    following = tmp_877
+    jmp L_MERGE_265
+
+L_ELSE_264:
+    !tmp_876
+    tmp_878 = load result+0 as ptr
+    tmp_879 = load parent+0 as i32
+    tmp_880 = load parent+4 as i32
+    tmp_881 = call @sla__entity_new(tmp_879, tmp_880)
+    !tmp_879
+    !tmp_880
+    EXPAND VEC_PUSH tmp_878, tmp_881, 8
+    !tmp_881
+    !tmp_878
+    tmp_882 = load parent+0 as i32
+    tmp_883 = load parent+4 as i32
+    tmp_884 = call @sla__entity_new(tmp_882, tmp_883)
+    !tmp_882
+    !tmp_883
+    !current
+    current = tmp_884
+    jmp L_MERGE_265
+
+L_MERGE_265:
+    !parent
+    jmp L_MERGE_262
+
+L_MERGE_262:
+    jmp L_WHILE_HEAD_256
+
+L_WHILE_COND_FALSE_258:
+    !tmp_870
+    jmp L_WHILE_EXIT_259
+
+L_WHILE_EXIT_259:
+    !following
+    !current
+    !entity
+    !kind_id
+    !world
+    return result
+
+@sla__relationship_world_root_ancestor(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_887 = load entity+0 as i32
+    tmp_888 = load entity+4 as i32
+    tmp_889 = call @sla__entity_new(tmp_887, tmp_888)
+    !tmp_887
+    !tmp_888
+    root = tmp_889
+    tmp_890 = load entity+0 as i32
+    tmp_891 = load entity+4 as i32
+    tmp_892 = call @sla__entity_new(tmp_890, tmp_891)
+    !tmp_890
+    !tmp_891
+    tmp_893 = call @sla__relationship_world_ancestors(world, kind_id, tmp_892)
+    !tmp_892
+    ancestors = tmp_893
+    tmp_894 = 0
+    i = tmp_894
+    tmp_895 = load ancestors+0 as ptr
+    EXPAND VEC_LEN tmp_896, tmp_895
+    !tmp_895
+    tmp_897 = tmp_896 as i64
+    cnt = tmp_897
+    jmp L_WHILE_HEAD_266
+
+L_WHILE_HEAD_266:
+    tmp_898 = slt i, cnt
+    br tmp_898 -> L_WHILE_BODY_267, L_WHILE_COND_FALSE_268
+
+L_WHILE_BODY_267:
+    !tmp_898
+    tmp_899 = load ancestors+0 as ptr
+    EXPAND VEC_GET tmp_900, tmp_899, i
+    !tmp_899
+    tmp_901 = tmp_900 as ptr
+    !root
+    root = tmp_901
+    tmp_902 = 1
+    tmp_903 = add i, tmp_902
+    !tmp_902
+    !i
+    i = tmp_903
+    jmp L_WHILE_HEAD_266
+
+L_WHILE_COND_FALSE_268:
+    !tmp_898
+    jmp L_WHILE_EXIT_269
+
+L_WHILE_EXIT_269:
+    !cnt
+    !i
+    !ancestors
+    !entity
+    !kind_id
+    !world
+    return root
+
+@sla__relationship_world_descendants(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_904 = call @sla__relationship_entity_query_new()
+    result = tmp_904
+    EXPAND VEC_NEW tmp_905
+    queue = tmp_905
+    tmp_906 = call @sla__relationship_world_sources(world, kind_id, entity)
+    children = tmp_906
+    tmp_907 = 0
+    seed = tmp_907
+    tmp_908 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_909, tmp_908
+    !tmp_908
+    tmp_910 = tmp_909 as i64
+    seed_count = tmp_910
+    jmp L_WHILE_HEAD_270
+
+L_WHILE_HEAD_270:
+    tmp_911 = slt seed, seed_count
+    br tmp_911 -> L_WHILE_BODY_271, L_WHILE_COND_FALSE_272
+
+L_WHILE_BODY_271:
+    !tmp_911
+    tmp_912 = load children+0 as ptr
+    EXPAND VEC_GET tmp_913, tmp_912, seed
+    !tmp_912
+    tmp_914 = tmp_913 as ptr
+    tmp_915 = load tmp_914+0 as i32
+    !tmp_914
+    tmp_916 = load children+0 as ptr
+    EXPAND VEC_GET tmp_917, tmp_916, seed
+    !tmp_916
+    tmp_918 = tmp_917 as ptr
+    tmp_919 = load tmp_918+4 as i32
+    !tmp_918
+    tmp_920 = call @sla__entity_new(tmp_915, tmp_919)
+    !tmp_915
+    !tmp_919
+    EXPAND VEC_PUSH queue, tmp_920, 8
+    !tmp_920
+    tmp_921 = 1
+    tmp_922 = add seed, tmp_921
+    !tmp_921
+    !seed
+    seed = tmp_922
+    jmp L_WHILE_HEAD_270
+
+L_WHILE_COND_FALSE_272:
+    !tmp_911
+    jmp L_WHILE_EXIT_273
+
+L_WHILE_EXIT_273:
+    tmp_923 = 0
+    cursor = tmp_923
+    jmp L_WHILE_HEAD_274
+
+L_WHILE_HEAD_274:
+    EXPAND VEC_LEN tmp_924, queue
+    tmp_925 = tmp_924 as i64
+    tmp_926 = slt cursor, tmp_925
+    !tmp_925
+    br tmp_926 -> L_WHILE_BODY_275, L_WHILE_COND_FALSE_276
+
+L_WHILE_BODY_275:
+    !tmp_926
+    EXPAND VEC_GET tmp_927, queue, cursor
+    tmp_928 = tmp_927 as ptr
+    current = tmp_928
+    tmp_929 = load result+0 as ptr
+    tmp_930 = load current+0 as i32
+    tmp_931 = load current+4 as i32
+    tmp_932 = call @sla__entity_new(tmp_930, tmp_931)
+    !tmp_930
+    !tmp_931
+    EXPAND VEC_PUSH tmp_929, tmp_932, 8
+    !tmp_932
+    !tmp_929
+    tmp_933 = call @sla__relationship_world_sources(world, kind_id, current)
+    next = tmp_933
+    tmp_934 = 0
+    i = tmp_934
+    tmp_935 = load next+0 as ptr
+    EXPAND VEC_LEN tmp_936, tmp_935
+    !tmp_935
+    tmp_937 = tmp_936 as i64
+    cnt = tmp_937
+    jmp L_WHILE_HEAD_278
+
+L_WHILE_HEAD_278:
+    tmp_938 = slt i, cnt
+    br tmp_938 -> L_WHILE_BODY_279, L_WHILE_COND_FALSE_280
+
+L_WHILE_BODY_279:
+    !tmp_938
+    tmp_939 = load next+0 as ptr
+    EXPAND VEC_GET tmp_940, tmp_939, i
+    !tmp_939
+    tmp_941 = tmp_940 as ptr
+    tmp_942 = load tmp_941+0 as i32
+    !tmp_941
+    tmp_943 = load next+0 as ptr
+    EXPAND VEC_GET tmp_944, tmp_943, i
+    !tmp_943
+    tmp_945 = tmp_944 as ptr
+    tmp_946 = load tmp_945+4 as i32
+    !tmp_945
+    tmp_947 = call @sla__entity_new(tmp_942, tmp_946)
+    !tmp_942
+    !tmp_946
+    EXPAND VEC_PUSH queue, tmp_947, 8
+    !tmp_947
+    tmp_948 = 1
+    tmp_949 = add i, tmp_948
+    !tmp_948
+    !i
+    i = tmp_949
+    jmp L_WHILE_HEAD_278
+
+L_WHILE_COND_FALSE_280:
+    !tmp_938
+    jmp L_WHILE_EXIT_281
+
+L_WHILE_EXIT_281:
+    tmp_950 = 1
+    tmp_951 = add cursor, tmp_950
+    !tmp_950
+    !cursor
+    cursor = tmp_951
+    !cnt
+    !i
+    !current
+    !next
+    jmp L_WHILE_HEAD_274
+
+L_WHILE_COND_FALSE_276:
+    !tmp_926
+    jmp L_WHILE_EXIT_277
+
+L_WHILE_EXIT_277:
+    !seed_count
+    !queue
+    !cursor
+    !seed
+    !children
+    !entity
+    !kind_id
+    !world
+    return result
+
+@sla__relationship_world_descendants_depth_first_append(world: ptr, kind_id: i32, entity: ptr, result: ptr) -> ptr:
+L_ENTRY:
+    tmp_952 = call @sla__relationship_world_sources(world, kind_id, entity)
+    children = tmp_952
+    tmp_953 = 0
+    i = tmp_953
+    tmp_954 = load children+0 as ptr
+    EXPAND VEC_LEN tmp_955, tmp_954
+    !tmp_954
+    tmp_956 = tmp_955 as i64
+    cnt = tmp_956
+    jmp L_WHILE_HEAD_282
+
+L_WHILE_HEAD_282:
+    tmp_957 = slt i, cnt
+    br tmp_957 -> L_WHILE_BODY_283, L_WHILE_COND_FALSE_284
+
+L_WHILE_BODY_283:
+    !tmp_957
+    tmp_958 = load children+0 as ptr
+    EXPAND VEC_GET tmp_959, tmp_958, i
+    !tmp_958
+    tmp_960 = tmp_959 as ptr
+    child = tmp_960
+    tmp_961 = load result+0 as ptr
+    tmp_962 = load child+0 as i32
+    tmp_963 = load child+4 as i32
+    tmp_964 = call @sla__entity_new(tmp_962, tmp_963)
+    !tmp_962
+    !tmp_963
+    EXPAND VEC_PUSH tmp_961, tmp_964, 8
+    !tmp_964
+    !tmp_961
+    tmp_965 = load child+0 as i32
+    tmp_966 = load child+4 as i32
+    tmp_967 = call @sla__entity_new(tmp_965, tmp_966)
+    !tmp_965
+    !tmp_966
+    tmp_968 = call @sla__relationship_world_descendants_depth_first_append(world, kind_id, tmp_967, result)
+    !tmp_967
+    !result
+    result = tmp_968
+    tmp_969 = 1
+    tmp_970 = add i, tmp_969
+    !tmp_969
+    !i
+    i = tmp_970
+    !child
+    jmp L_WHILE_HEAD_282
+
+L_WHILE_COND_FALSE_284:
+    !tmp_957
+    jmp L_WHILE_EXIT_285
+
+L_WHILE_EXIT_285:
+    !cnt
+    !i
+    !children
+    !entity
+    !kind_id
+    !world
+    return result
+
+@sla__relationship_world_descendants_depth_first(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_971 = call @sla__relationship_entity_query_new()
+    result = tmp_971
+    tmp_972 = call @sla__relationship_world_descendants_depth_first_append(world, kind_id, entity, result)
+    return tmp_972
+
+@sla__relationship_world_siblings(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_973 = call @sla__relationship_entity_query_new()
+    result = tmp_973
+    tmp_974 = call @sla__relationship_world_has_related(world, kind_id, entity)
+    tmp_975 = 1
+    tmp_976 = ne tmp_974, tmp_975
+    !tmp_974
+    !tmp_975
+    br tmp_976 -> L_THEN_286, L_ELSE_287
+
+L_THEN_286:
+    !tmp_976
+    !entity
+    !kind_id
+    !world
+    return result
+
+L_ELSE_287:
+    !tmp_976
+    jmp L_MERGE_288
+
+L_MERGE_288:
+    tmp_978 = call @sla__relationship_world_related(world, kind_id, entity)
+    parent = tmp_978
+    tmp_979 = call @sla__relationship_world_sources(world, kind_id, parent)
+    all = tmp_979
+    tmp_980 = 0
+    i = tmp_980
+    tmp_981 = load all+0 as ptr
+    EXPAND VEC_LEN tmp_982, tmp_981
+    !tmp_981
+    tmp_983 = tmp_982 as i64
+    cnt = tmp_983
+    jmp L_WHILE_HEAD_289
+
+L_WHILE_HEAD_289:
+    tmp_984 = slt i, cnt
+    br tmp_984 -> L_WHILE_BODY_290, L_WHILE_COND_FALSE_291
+
+L_WHILE_BODY_290:
+    !tmp_984
+    tmp_985 = load all+0 as ptr
+    EXPAND VEC_GET tmp_986, tmp_985, i
+    !tmp_985
+    tmp_987 = tmp_986 as ptr
+    tmp_988 = load tmp_987+0 as i32
+    !tmp_987
+    tmp_989 = load all+0 as ptr
+    EXPAND VEC_GET tmp_990, tmp_989, i
+    !tmp_989
+    tmp_991 = tmp_990 as ptr
+    tmp_992 = load tmp_991+4 as i32
+    !tmp_991
+    tmp_993 = load entity+0 as i32
+    tmp_994 = load entity+4 as i32
+    tmp_995 = call @sla__relationship_entity_parts_eq(tmp_988, tmp_992, tmp_993, tmp_994)
+    !tmp_988
+    !tmp_992
+    !tmp_993
+    !tmp_994
+    tmp_996 = 1
+    tmp_997 = ne tmp_995, tmp_996
+    !tmp_995
+    !tmp_996
+    br tmp_997 -> L_THEN_293, L_ELSE_294
+
+L_THEN_293:
+    !tmp_997
+    tmp_998 = load result+0 as ptr
+    tmp_999 = load all+0 as ptr
+    EXPAND VEC_GET tmp_1000, tmp_999, i
+    !tmp_999
+    tmp_1001 = tmp_1000 as ptr
+    tmp_1002 = load tmp_1001+0 as i32
+    !tmp_1001
+    tmp_1003 = load all+0 as ptr
+    EXPAND VEC_GET tmp_1004, tmp_1003, i
+    !tmp_1003
+    tmp_1005 = tmp_1004 as ptr
+    tmp_1006 = load tmp_1005+4 as i32
+    !tmp_1005
+    tmp_1007 = call @sla__entity_new(tmp_1002, tmp_1006)
+    !tmp_1002
+    !tmp_1006
+    EXPAND VEC_PUSH tmp_998, tmp_1007, 8
+    !tmp_1007
+    !tmp_998
+    jmp L_MERGE_295
+
+L_ELSE_294:
+    !tmp_997
+    jmp L_MERGE_295
+
+L_MERGE_295:
+    tmp_1009 = 1
+    tmp_1010 = add i, tmp_1009
+    !tmp_1009
+    !i
+    i = tmp_1010
+    jmp L_WHILE_HEAD_289
+
+L_WHILE_COND_FALSE_291:
+    !tmp_984
+    jmp L_WHILE_EXIT_292
+
+L_WHILE_EXIT_292:
+    !cnt
+    !i
+    !parent
+    !all
+    !entity
+    !kind_id
+    !world
+    return result
+
+@sla__relationship_world_leaves(world: ptr, kind_id: i32, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_1011 = call @sla__relationship_entity_query_new()
+    result = tmp_1011
+    tmp_1012 = call @sla__relationship_world_descendants_depth_first(world, kind_id, entity)
+    descendants = tmp_1012
+    tmp_1013 = 0
+    i = tmp_1013
+    tmp_1014 = load descendants+0 as ptr
+    EXPAND VEC_LEN tmp_1015, tmp_1014
+    !tmp_1014
+    tmp_1016 = tmp_1015 as i64
+    cnt = tmp_1016
+    jmp L_WHILE_HEAD_296
+
+L_WHILE_HEAD_296:
+    tmp_1017 = slt i, cnt
+    br tmp_1017 -> L_WHILE_BODY_297, L_WHILE_COND_FALSE_298
+
+L_WHILE_BODY_297:
+    !tmp_1017
+    tmp_1018 = load descendants+0 as ptr
+    EXPAND VEC_GET tmp_1019, tmp_1018, i
+    !tmp_1018
+    tmp_1020 = tmp_1019 as ptr
+    leaf = tmp_1020
+    tmp_1021 = call @sla__relationship_world_source_count(world, kind_id, leaf)
+    tmp_1022 = 0
+    tmp_1023 = eq tmp_1021, tmp_1022
+    !tmp_1021
+    !tmp_1022
+    br tmp_1023 -> L_THEN_300, L_ELSE_301
+
+L_THEN_300:
+    !tmp_1023
+    tmp_1024 = load result+0 as ptr
+    tmp_1025 = load leaf+0 as i32
+    tmp_1026 = load leaf+4 as i32
+    tmp_1027 = call @sla__entity_new(tmp_1025, tmp_1026)
+    !tmp_1025
+    !tmp_1026
+    EXPAND VEC_PUSH tmp_1024, tmp_1027, 8
+    !tmp_1027
+    !tmp_1024
+    jmp L_MERGE_302
+
+L_ELSE_301:
+    !tmp_1023
+    jmp L_MERGE_302
+
+L_MERGE_302:
+    tmp_1029 = 1
+    tmp_1030 = add i, tmp_1029
+    !tmp_1029
+    !i
+    i = tmp_1030
+    !leaf
+    jmp L_WHILE_HEAD_296
+
+L_WHILE_COND_FALSE_298:
+    !tmp_1017
+    jmp L_WHILE_EXIT_299
+
+L_WHILE_EXIT_299:
+    !cnt
+    !descendants
+    !i
+    !entity
+    !kind_id
+    !world
+    return result
+
+@sla__relationship_world_detach_all_related(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1031 = call @sla__relationship_world_sources(world, kind_id, target)
+    sources = tmp_1031
+    tmp_1032 = 0
+    i = tmp_1032
+    tmp_1033 = load sources+0 as ptr
+    EXPAND VEC_LEN tmp_1034, tmp_1033
+    !tmp_1033
+    tmp_1035 = tmp_1034 as i64
+    cnt = tmp_1035
+    jmp L_WHILE_HEAD_303
+
+L_WHILE_HEAD_303:
+    tmp_1036 = slt i, cnt
+    br tmp_1036 -> L_WHILE_BODY_304, L_WHILE_COND_FALSE_305
+
+L_WHILE_BODY_304:
+    !tmp_1036
+    tmp_1037 = load sources+0 as ptr
+    EXPAND VEC_GET tmp_1038, tmp_1037, i
+    !tmp_1037
+    tmp_1039 = tmp_1038 as ptr
+    tmp_1040 = load tmp_1039+0 as i32
+    !tmp_1039
+    tmp_1041 = load sources+0 as ptr
+    EXPAND VEC_GET tmp_1042, tmp_1041, i
+    !tmp_1041
+    tmp_1043 = tmp_1042 as ptr
+    tmp_1044 = load tmp_1043+4 as i32
+    !tmp_1043
+    tmp_1045 = call @sla__entity_new(tmp_1040, tmp_1044)
+    !tmp_1040
+    !tmp_1044
+    tmp_1046 = call @sla__relationship_world_remove_related(world, kind_id, tmp_1045)
+    !tmp_1045
+    !world
+    world = tmp_1046
+    tmp_1047 = 1
+    tmp_1048 = add i, tmp_1047
+    !tmp_1047
+    !i
+    i = tmp_1048
+    jmp L_WHILE_HEAD_303
+
+L_WHILE_COND_FALSE_305:
+    !tmp_1036
+    jmp L_WHILE_EXIT_306
+
+L_WHILE_EXIT_306:
+    !cnt
+    !i
+    !sources
+    !kind_id
+    !target
+    return world
+
+@sla__relationship_world_replace_related(world: ptr, kind_id: i32, target: ptr, related: ptr) -> ptr:
+L_ENTRY:
+    tmp_1049 = load target+0 as i32
+    target_id = tmp_1049
+    tmp_1050 = load target+4 as i32
+    target_gen = tmp_1050
+    tmp_1051 = call @sla__entity_new(target_id, target_gen)
+    tmp_1052 = call @sla__relationship_world_is_alive(world, tmp_1051)
+    !tmp_1051
+    tmp_1053 = 1
+    tmp_1054 = ne tmp_1052, tmp_1053
+    !tmp_1052
+    !tmp_1053
+    br tmp_1054 -> L_THEN_307, L_ELSE_308
+
+L_THEN_307:
+    !tmp_1054
+    panic(9503)
+
+L_ELSE_308:
+    !tmp_1054
+    jmp L_MERGE_309
+
+L_MERGE_309:
+    tmp_1057 = call @sla__entity_new(target_id, target_gen)
+    tmp_1058 = call @sla__relationship_world_sources(world, kind_id, tmp_1057)
+    !tmp_1057
+    existing = tmp_1058
+    tmp_1059 = 0
+    i = tmp_1059
+    tmp_1060 = load existing+0 as ptr
+    EXPAND VEC_LEN tmp_1061, tmp_1060
+    !tmp_1060
+    tmp_1062 = tmp_1061 as i64
+    existing_count = tmp_1062
+    jmp L_WHILE_HEAD_310
+
+L_WHILE_HEAD_310:
+    tmp_1063 = slt i, existing_count
+    br tmp_1063 -> L_WHILE_BODY_311, L_WHILE_COND_FALSE_312
+
+L_WHILE_BODY_311:
+    !tmp_1063
+    tmp_1064 = load existing+0 as ptr
+    EXPAND VEC_GET tmp_1065, tmp_1064, i
+    !tmp_1064
+    tmp_1066 = tmp_1065 as ptr
+    old = tmp_1066
+    tmp_1067 = 0
+    keep = tmp_1067
+    tmp_1068 = 0
+    j = tmp_1068
+    EXPAND VEC_LEN tmp_1069, related
+    tmp_1070 = tmp_1069 as i64
+    new_count = tmp_1070
+    jmp L_WHILE_HEAD_314
+
+L_WHILE_HEAD_314:
+    tmp_1071 = slt j, new_count
+    br tmp_1071 -> L_WHILE_BODY_315, L_WHILE_COND_FALSE_316
+
+L_WHILE_BODY_315:
+    !tmp_1071
+    EXPAND VEC_GET tmp_1072, related, j
+    tmp_1073 = tmp_1072 as ptr
+    tmp_1074 = load tmp_1073+0 as i32
+    !tmp_1073
+    EXPAND VEC_GET tmp_1075, related, j
+    tmp_1076 = tmp_1075 as ptr
+    tmp_1077 = load tmp_1076+4 as i32
+    !tmp_1076
+    tmp_1078 = load old+0 as i32
+    tmp_1079 = load old+4 as i32
+    tmp_1080 = call @sla__relationship_entity_parts_eq(tmp_1074, tmp_1077, tmp_1078, tmp_1079)
+    !tmp_1074
+    !tmp_1077
+    !tmp_1078
+    !tmp_1079
+    br tmp_1080 -> L_THEN_318, L_ELSE_319
+
+L_THEN_318:
+    !tmp_1080
+    tmp_1081 = 1
+    !keep
+    keep = tmp_1081
+    jmp L_MERGE_320
+
+L_ELSE_319:
+    !tmp_1080
+    jmp L_MERGE_320
+
+L_MERGE_320:
+    tmp_1083 = 1
+    tmp_1084 = add j, tmp_1083
+    !tmp_1083
+    !j
+    j = tmp_1084
+    jmp L_WHILE_HEAD_314
+
+L_WHILE_COND_FALSE_316:
+    !tmp_1071
+    jmp L_WHILE_EXIT_317
+
+L_WHILE_EXIT_317:
+    tmp_1085 = 1
+    tmp_1086 = ne keep, tmp_1085
+    !tmp_1085
+    br tmp_1086 -> L_THEN_321, L_ELSE_322
+
+L_THEN_321:
+    !tmp_1086
+    tmp_1087 = load old+0 as i32
+    tmp_1088 = load old+4 as i32
+    tmp_1089 = call @sla__entity_new(tmp_1087, tmp_1088)
+    !tmp_1087
+    !tmp_1088
+    tmp_1090 = call @sla__relationship_world_remove_related(world, kind_id, tmp_1089)
+    !tmp_1089
+    !world
+    world = tmp_1090
+    jmp L_MERGE_323
+
+L_ELSE_322:
+    !tmp_1086
+    jmp L_MERGE_323
+
+L_MERGE_323:
+    tmp_1092 = 1
+    tmp_1093 = add i, tmp_1092
+    !tmp_1092
+    !i
+    i = tmp_1093
+    !old
+    !new_count
+    !keep
+    !j
+    jmp L_WHILE_HEAD_310
+
+L_WHILE_COND_FALSE_312:
+    !tmp_1063
+    jmp L_WHILE_EXIT_313
+
+L_WHILE_EXIT_313:
+    tmp_1094 = call @sla__entity_new(target_id, target_gen)
+    tmp_1095 = call @sla__relationship_world_target_slot(world, kind_id, tmp_1094)
+    !tmp_1094
+    target_slot = tmp_1095
+    tmp_1096 = 0
+    tmp_1097 = sge target_slot, tmp_1096
+    !tmp_1096
+    br tmp_1097 -> L_THEN_324, L_ELSE_325
+
+L_THEN_324:
+    !tmp_1097
+    EXPAND VEC_NEW tmp_1098
+    empty = tmp_1098
+    tmp_1099 = load world+32 as ptr
+    EXPAND VEC_GET tmp_1100, tmp_1099, target_slot
+    !tmp_1099
+    tmp_1101 = tmp_1100 as ptr
+    store tmp_1101+16, empty as ptr
+    !tmp_1101
+    !empty
+    jmp L_MERGE_326
+
+L_ELSE_325:
+    !tmp_1097
+    jmp L_MERGE_326
+
+L_MERGE_326:
+    tmp_1103 = 0
+    k = tmp_1103
+    EXPAND VEC_LEN tmp_1104, related
+    tmp_1105 = tmp_1104 as i64
+    count = tmp_1105
+    jmp L_WHILE_HEAD_327
+
+L_WHILE_HEAD_327:
+    tmp_1106 = slt k, count
+    br tmp_1106 -> L_WHILE_BODY_328, L_WHILE_COND_FALSE_329
+
+L_WHILE_BODY_328:
+    !tmp_1106
+    EXPAND VEC_GET tmp_1107, related, k
+    tmp_1108 = tmp_1107 as ptr
+    tmp_1109 = load tmp_1108+0 as i32
+    !tmp_1108
+    EXPAND VEC_GET tmp_1110, related, k
+    tmp_1111 = tmp_1110 as ptr
+    tmp_1112 = load tmp_1111+4 as i32
+    !tmp_1111
+    tmp_1113 = call @sla__entity_new(tmp_1109, tmp_1112)
+    !tmp_1109
+    !tmp_1112
+    tmp_1114 = call @sla__entity_new(target_id, target_gen)
+    tmp_1115 = call @sla__relationship_world_set_related_at(world, kind_id, tmp_1113, tmp_1114, k)
+    !tmp_1113
+    !tmp_1114
+    !world
+    world = tmp_1115
+    tmp_1116 = 1
+    tmp_1117 = add k, tmp_1116
+    !tmp_1116
+    !k
+    k = tmp_1117
+    jmp L_WHILE_HEAD_327
+
+L_WHILE_COND_FALSE_329:
+    !tmp_1106
+    jmp L_WHILE_EXIT_330
+
+L_WHILE_EXIT_330:
+    tmp_1118 = 0
+    tmp_1119 = eq count, tmp_1118
+    !tmp_1118
+    br tmp_1119 -> L_THEN_331, L_ELSE_332
+
+L_THEN_331:
+    !tmp_1119
+    tmp_1120 = call @sla__entity_new(target_id, target_gen)
+    tmp_1121 = call @sla__relationship_world_remove_empty_target(world, kind_id, tmp_1120)
+    !tmp_1120
+    !world
+    world = tmp_1121
+    jmp L_MERGE_333
+
+L_ELSE_332:
+    !tmp_1119
+    jmp L_MERGE_333
+
+L_MERGE_333:
+    !target_gen
+    !existing
+    !target_id
+    !count
+    !i
+    !existing_count
+    !k
+    !target_slot
+    !related
+    !kind_id
+    !target
+    return world
+
+@sla__relationship_world_replace_related_with_difference(world: ptr, kind_id: i32, target: ptr, entities_to_unrelate: ptr, entities_to_relate: ptr, newly_related_entities: ptr) -> ptr:
+L_ENTRY:
+    tmp_1123 = load target+0 as i32
+    target_id = tmp_1123
+    tmp_1124 = load target+4 as i32
+    target_gen = tmp_1124
+    tmp_1125 = call @sla__entity_new(target_id, target_gen)
+    tmp_1126 = call @sla__relationship_world_is_alive(world, tmp_1125)
+    !tmp_1125
+    tmp_1127 = 1
+    tmp_1128 = ne tmp_1126, tmp_1127
+    !tmp_1126
+    !tmp_1127
+    br tmp_1128 -> L_THEN_334, L_ELSE_335
+
+L_THEN_334:
+    !tmp_1128
+    panic(9504)
+
+L_ELSE_335:
+    !tmp_1128
+    jmp L_MERGE_336
+
+L_MERGE_336:
+    tmp_1131 = call @sla__relationship_entity_vec_has_duplicates(entities_to_unrelate)
+    br tmp_1131 -> L_THEN_337, L_ELSE_338
+
+L_THEN_337:
+    !tmp_1131
+    panic(9505)
+
+L_ELSE_338:
+    !tmp_1131
+    jmp L_MERGE_339
+
+L_MERGE_339:
+    tmp_1134 = call @sla__relationship_entity_vec_has_duplicates(entities_to_relate)
+    br tmp_1134 -> L_THEN_340, L_ELSE_341
+
+L_THEN_340:
+    !tmp_1134
+    panic(9506)
+
+L_ELSE_341:
+    !tmp_1134
+    jmp L_MERGE_342
+
+L_MERGE_342:
+    tmp_1137 = call @sla__relationship_entity_vec_has_duplicates(newly_related_entities)
+    br tmp_1137 -> L_THEN_343, L_ELSE_344
+
+L_THEN_343:
+    !tmp_1137
+    panic(9507)
+
+L_ELSE_344:
+    !tmp_1137
+    jmp L_MERGE_345
+
+L_MERGE_345:
+    tmp_1140 = call @sla__relationship_entity_vec_disjoint(entities_to_relate, entities_to_unrelate)
+    tmp_1141 = 1
+    tmp_1142 = ne tmp_1140, tmp_1141
+    !tmp_1140
+    !tmp_1141
+    br tmp_1142 -> L_THEN_346, L_ELSE_347
+
+L_THEN_346:
+    !tmp_1142
+    panic(9508)
+
+L_ELSE_347:
+    !tmp_1142
+    jmp L_MERGE_348
+
+L_MERGE_348:
+    tmp_1145 = call @sla__relationship_entity_vec_disjoint(newly_related_entities, entities_to_unrelate)
+    tmp_1146 = 1
+    tmp_1147 = ne tmp_1145, tmp_1146
+    !tmp_1145
+    !tmp_1146
+    br tmp_1147 -> L_THEN_349, L_ELSE_350
+
+L_THEN_349:
+    !tmp_1147
+    panic(9509)
+
+L_ELSE_350:
+    !tmp_1147
+    jmp L_MERGE_351
+
+L_MERGE_351:
+    tmp_1150 = call @sla__relationship_entity_vec_subset(newly_related_entities, entities_to_relate)
+    tmp_1151 = 1
+    tmp_1152 = ne tmp_1150, tmp_1151
+    !tmp_1150
+    !tmp_1151
+    br tmp_1152 -> L_THEN_352, L_ELSE_353
+
+L_THEN_352:
+    !tmp_1152
+    panic(9515)
+
+L_ELSE_353:
+    !tmp_1152
+    jmp L_MERGE_354
+
+L_MERGE_354:
+    tmp_1155 = call @sla__relationship_world_kind(world, kind_id)
+    kind = tmp_1155
+    tmp_1156 = load kind+4 as i32
+    tmp_1157 = 1
+    tmp_1158 = eq tmp_1156, tmp_1157
+    !tmp_1156
+    br tmp_1158 -> L_THEN_355, L_ELSE_356
+
+L_THEN_355:
+    !tmp_1158
+    EXPAND VEC_LEN tmp_1159, entities_to_relate
+    tmp_1160 = 1
+    tmp_1161 = sgt tmp_1159, tmp_1160
+    !tmp_1159
+    !tmp_1160
+    br tmp_1161 -> L_THEN_358, L_ELSE_359
+
+L_THEN_358:
+    !tmp_1161
+    panic(9516)
+
+L_ELSE_359:
+    !tmp_1161
+    jmp L_MERGE_360
+
+L_MERGE_360:
+    jmp L_MERGE_357
+
+L_ELSE_356:
+    !tmp_1158
+    jmp L_MERGE_357
+
+L_MERGE_357:
+    tmp_1165 = call @sla__entity_new(target_id, target_gen)
+    tmp_1166 = call @sla__relationship_world_sources(world, kind_id, tmp_1165)
+    !tmp_1165
+    existing = tmp_1166
+    EXPAND VEC_NEW tmp_1167
+    expected = tmp_1167
+    tmp_1168 = 0
+    newly_copy_i = tmp_1168
+    EXPAND VEC_LEN tmp_1169, newly_related_entities
+    tmp_1170 = tmp_1169 as i64
+    newly_copy_count = tmp_1170
+    jmp L_WHILE_HEAD_361
+
+L_WHILE_HEAD_361:
+    tmp_1171 = slt newly_copy_i, newly_copy_count
+    br tmp_1171 -> L_WHILE_BODY_362, L_WHILE_COND_FALSE_363
+
+L_WHILE_BODY_362:
+    !tmp_1171
+    EXPAND VEC_GET tmp_1172, newly_related_entities, newly_copy_i
+    tmp_1173 = tmp_1172 as ptr
+    tmp_1174 = load tmp_1173+0 as i32
+    !tmp_1173
+    EXPAND VEC_GET tmp_1175, newly_related_entities, newly_copy_i
+    tmp_1176 = tmp_1175 as ptr
+    tmp_1177 = load tmp_1176+4 as i32
+    !tmp_1176
+    tmp_1178 = call @sla__entity_new(tmp_1174, tmp_1177)
+    !tmp_1174
+    !tmp_1177
+    EXPAND VEC_PUSH expected, tmp_1178, 8
+    !tmp_1178
+    tmp_1179 = 1
+    tmp_1180 = add newly_copy_i, tmp_1179
+    !tmp_1179
+    !newly_copy_i
+    newly_copy_i = tmp_1180
+    jmp L_WHILE_HEAD_361
+
+L_WHILE_COND_FALSE_363:
+    !tmp_1171
+    jmp L_WHILE_EXIT_364
+
+L_WHILE_EXIT_364:
+    tmp_1181 = 0
+    existing_i = tmp_1181
+    tmp_1182 = load existing+0 as ptr
+    EXPAND VEC_LEN tmp_1183, tmp_1182
+    !tmp_1182
+    tmp_1184 = tmp_1183 as i64
+    existing_count = tmp_1184
+    jmp L_WHILE_HEAD_365
+
+L_WHILE_HEAD_365:
+    tmp_1185 = slt existing_i, existing_count
+    br tmp_1185 -> L_WHILE_BODY_366, L_WHILE_COND_FALSE_367
+
+L_WHILE_BODY_366:
+    !tmp_1185
+    tmp_1186 = load existing+0 as ptr
+    EXPAND VEC_GET tmp_1187, tmp_1186, existing_i
+    !tmp_1186
+    tmp_1188 = tmp_1187 as ptr
+    old = tmp_1188
+    tmp_1189 = call @sla__relationship_entity_vec_contains(entities_to_unrelate, old)
+    tmp_1190 = 1
+    tmp_1191 = ne tmp_1189, tmp_1190
+    !tmp_1189
+    !tmp_1190
+    br tmp_1191 -> L_THEN_369, L_ELSE_370
+
+L_THEN_369:
+    !tmp_1191
+    tmp_1192 = load old+0 as i32
+    tmp_1193 = load old+4 as i32
+    tmp_1194 = call @sla__entity_new(tmp_1192, tmp_1193)
+    !tmp_1192
+    !tmp_1193
+    EXPAND VEC_PUSH expected, tmp_1194, 8
+    !tmp_1194
+    jmp L_MERGE_371
+
+L_ELSE_370:
+    !tmp_1191
+    jmp L_MERGE_371
+
+L_MERGE_371:
+    tmp_1196 = 1
+    tmp_1197 = add existing_i, tmp_1196
+    !tmp_1196
+    !existing_i
+    existing_i = tmp_1197
+    !old
+    jmp L_WHILE_HEAD_365
+
+L_WHILE_COND_FALSE_367:
+    !tmp_1185
+    jmp L_WHILE_EXIT_368
+
+L_WHILE_EXIT_368:
+    tmp_1198 = call @sla__relationship_entity_vec_has_duplicates(expected)
+    br tmp_1198 -> L_THEN_372, L_ELSE_373
+
+L_THEN_372:
+    !tmp_1198
+    panic(9517)
+
+L_ELSE_373:
+    !tmp_1198
+    jmp L_MERGE_374
+
+L_MERGE_374:
+    tmp_1201 = call @sla__relationship_entity_vec_subset(expected, entities_to_relate)
+    tmp_1202 = 1
+    tmp_1203 = ne tmp_1201, tmp_1202
+    !tmp_1201
+    !tmp_1202
+    br tmp_1203 -> L_THEN_375, L_ELSE_376
+
+L_THEN_375:
+    !tmp_1203
+    panic(9518)
+
+L_ELSE_376:
+    !tmp_1203
+    jmp L_MERGE_377
+
+L_MERGE_377:
+    tmp_1206 = call @sla__relationship_entity_vec_subset(entities_to_relate, expected)
+    tmp_1207 = 1
+    tmp_1208 = ne tmp_1206, tmp_1207
+    !tmp_1206
+    !tmp_1207
+    br tmp_1208 -> L_THEN_378, L_ELSE_379
+
+L_THEN_378:
+    !tmp_1208
+    panic(9519)
+
+L_ELSE_379:
+    !tmp_1208
+    jmp L_MERGE_380
+
+L_MERGE_380:
+    tmp_1211 = call @sla__entity_new(target_id, target_gen)
+    tmp_1212 = call @sla__relationship_world_target_slot(world, kind_id, tmp_1211)
+    !tmp_1211
+    target_slot = tmp_1212
+    tmp_1213 = 0
+    tmp_1214 = slt target_slot, tmp_1213
+    !tmp_1213
+    br tmp_1214 -> L_THEN_381, L_ELSE_382
+
+L_THEN_381:
+    !tmp_1214
+    tmp_1215 = 0
+    add_i = tmp_1215
+    EXPAND VEC_LEN tmp_1216, entities_to_relate
+    tmp_1217 = tmp_1216 as i64
+    add_count = tmp_1217
+    jmp L_WHILE_HEAD_384
+
+L_WHILE_HEAD_384:
+    tmp_1218 = slt add_i, add_count
+    br tmp_1218 -> L_WHILE_BODY_385, L_WHILE_COND_FALSE_386
+
+L_WHILE_BODY_385:
+    !tmp_1218
+    EXPAND VEC_GET tmp_1219, entities_to_relate, add_i
+    tmp_1220 = tmp_1219 as ptr
+    tmp_1221 = load tmp_1220+0 as i32
+    !tmp_1220
+    EXPAND VEC_GET tmp_1222, entities_to_relate, add_i
+    tmp_1223 = tmp_1222 as ptr
+    tmp_1224 = load tmp_1223+4 as i32
+    !tmp_1223
+    tmp_1225 = call @sla__entity_new(tmp_1221, tmp_1224)
+    !tmp_1221
+    !tmp_1224
+    tmp_1226 = call @sla__entity_new(target_id, target_gen)
+    tmp_1227 = call @sla__relationship_world_set_related_at(world, kind_id, tmp_1225, tmp_1226, add_i)
+    !tmp_1225
+    !tmp_1226
+    !world
+    world = tmp_1227
+    tmp_1228 = 1
+    tmp_1229 = add add_i, tmp_1228
+    !tmp_1228
+    !add_i
+    add_i = tmp_1229
+    jmp L_WHILE_HEAD_384
+
+L_WHILE_COND_FALSE_386:
+    !tmp_1218
+    jmp L_WHILE_EXIT_387
+
+L_WHILE_EXIT_387:
+    !add_count
+    !add_i
+    !expected
+    !target_gen
+    !existing
+    !newly_copy_i
+    !target_id
+    !kind
+    !existing_i
+    !existing_count
+    !newly_copy_count
+    !target_slot
+    !entities_to_unrelate
+    !newly_related_entities
+    !entities_to_relate
+    !target
+    !kind_id
+    return world
+
+L_ELSE_382:
+    !tmp_1214
+    jmp L_MERGE_383
+
+L_MERGE_383:
+    EXPAND VEC_NEW tmp_1231
+    empty = tmp_1231
+    tmp_1232 = load world+32 as ptr
+    EXPAND VEC_GET tmp_1233, tmp_1232, target_slot
+    !tmp_1232
+    tmp_1234 = tmp_1233 as ptr
+    store tmp_1234+16, empty as ptr
+    !tmp_1234
+    !empty
+    tmp_1235 = 0
+    relate_i = tmp_1235
+    EXPAND VEC_LEN tmp_1236, entities_to_relate
+    tmp_1237 = tmp_1236 as i64
+    relate_count = tmp_1237
+    jmp L_WHILE_HEAD_388
+
+L_WHILE_HEAD_388:
+    tmp_1238 = slt relate_i, relate_count
+    br tmp_1238 -> L_WHILE_BODY_389, L_WHILE_COND_FALSE_390
+
+L_WHILE_BODY_389:
+    !tmp_1238
+    tmp_1239 = load world+32 as ptr
+    EXPAND VEC_GET tmp_1240, tmp_1239, target_slot
+    !tmp_1239
+    tmp_1241 = tmp_1240 as ptr
+    tmp_1242 = load tmp_1241+16 as ptr
+    !tmp_1241
+    EXPAND VEC_GET tmp_1243, entities_to_relate, relate_i
+    tmp_1244 = tmp_1243 as ptr
+    tmp_1245 = load tmp_1244+0 as i32
+    !tmp_1244
+    EXPAND VEC_GET tmp_1246, entities_to_relate, relate_i
+    tmp_1247 = tmp_1246 as ptr
+    tmp_1248 = load tmp_1247+4 as i32
+    !tmp_1247
+    tmp_1249 = call @sla__entity_new(tmp_1245, tmp_1248)
+    !tmp_1245
+    !tmp_1248
+    EXPAND VEC_PUSH tmp_1242, tmp_1249, 8
+    !tmp_1249
+    !tmp_1242
+    tmp_1250 = 1
+    tmp_1251 = add relate_i, tmp_1250
+    !tmp_1250
+    !relate_i
+    relate_i = tmp_1251
+    jmp L_WHILE_HEAD_388
+
+L_WHILE_COND_FALSE_390:
+    !tmp_1238
+    jmp L_WHILE_EXIT_391
+
+L_WHILE_EXIT_391:
+    tmp_1252 = 0
+    unrelate_i = tmp_1252
+    EXPAND VEC_LEN tmp_1253, entities_to_unrelate
+    tmp_1254 = tmp_1253 as i64
+    unrelate_count = tmp_1254
+    jmp L_WHILE_HEAD_392
+
+L_WHILE_HEAD_392:
+    tmp_1255 = slt unrelate_i, unrelate_count
+    br tmp_1255 -> L_WHILE_BODY_393, L_WHILE_COND_FALSE_394
+
+L_WHILE_BODY_393:
+    !tmp_1255
+    EXPAND VEC_GET tmp_1256, entities_to_unrelate, unrelate_i
+    tmp_1257 = tmp_1256 as ptr
+    tmp_1258 = load tmp_1257+0 as i32
+    !tmp_1257
+    EXPAND VEC_GET tmp_1259, entities_to_unrelate, unrelate_i
+    tmp_1260 = tmp_1259 as ptr
+    tmp_1261 = load tmp_1260+4 as i32
+    !tmp_1260
+    tmp_1262 = call @sla__entity_new(tmp_1258, tmp_1261)
+    !tmp_1258
+    !tmp_1261
+    tmp_1263 = call @sla__relationship_world_remove_related(world, kind_id, tmp_1262)
+    !tmp_1262
+    !world
+    world = tmp_1263
+    tmp_1264 = 1
+    tmp_1265 = add unrelate_i, tmp_1264
+    !tmp_1264
+    !unrelate_i
+    unrelate_i = tmp_1265
+    jmp L_WHILE_HEAD_392
+
+L_WHILE_COND_FALSE_394:
+    !tmp_1255
+    jmp L_WHILE_EXIT_395
+
+L_WHILE_EXIT_395:
+    tmp_1266 = 0
+    new_i = tmp_1266
+    EXPAND VEC_LEN tmp_1267, newly_related_entities
+    tmp_1268 = tmp_1267 as i64
+    new_count = tmp_1268
+    jmp L_WHILE_HEAD_396
+
+L_WHILE_HEAD_396:
+    tmp_1269 = slt new_i, new_count
+    br tmp_1269 -> L_WHILE_BODY_397, L_WHILE_COND_FALSE_398
+
+L_WHILE_BODY_397:
+    !tmp_1269
+    EXPAND VEC_GET tmp_1270, newly_related_entities, new_i
+    tmp_1271 = tmp_1270 as ptr
+    source = tmp_1271
+    tmp_1272 = load source+0 as i32
+    source_id = tmp_1272
+    tmp_1273 = load source+4 as i32
+    source_gen = tmp_1273
+    tmp_1274 = call @sla__entity_new(source_id, source_gen)
+    tmp_1275 = call @sla__relationship_world_source_slot(world, kind_id, tmp_1274)
+    !tmp_1274
+    existing_source_slot = tmp_1275
+    tmp_1276 = 0
+    tmp_1277 = sge existing_source_slot, tmp_1276
+    !tmp_1276
+    br tmp_1277 -> L_THEN_400, L_ELSE_401
+
+L_THEN_400:
+    !tmp_1277
+    tmp_1278 = load world+24 as ptr
+    EXPAND VEC_GET tmp_1279, tmp_1278, existing_source_slot
+    !tmp_1278
+    tmp_1280 = tmp_1279 as ptr
+    tmp_1281 = load tmp_1280+16 as ptr
+    !tmp_1280
+    old_target = tmp_1281
+    tmp_1282 = load old_target+0 as i32
+    tmp_1283 = load old_target+4 as i32
+    tmp_1284 = call @sla__relationship_entity_parts_eq(tmp_1282, tmp_1283, target_id, target_gen)
+    !tmp_1282
+    !tmp_1283
+    tmp_1285 = 1
+    tmp_1286 = ne tmp_1284, tmp_1285
+    !tmp_1284
+    !tmp_1285
+    br tmp_1286 -> L_THEN_403, L_ELSE_404
+
+L_THEN_403:
+    !tmp_1286
+    tmp_1287 = load old_target+0 as i32
+    tmp_1288 = load old_target+4 as i32
+    tmp_1289 = call @sla__entity_new(tmp_1287, tmp_1288)
+    !tmp_1287
+    !tmp_1288
+    tmp_1290 = call @sla__entity_new(source_id, source_gen)
+    tmp_1291 = call @sla__relationship_world_remove_source_from_target(world, kind_id, tmp_1289, tmp_1290)
+    !tmp_1289
+    !tmp_1290
+    !world
+    world = tmp_1291
+    jmp L_MERGE_405
+
+L_ELSE_404:
+    !tmp_1286
+    jmp L_MERGE_405
+
+L_MERGE_405:
+    tmp_1293 = call @sla__entity_new(source_id, source_gen)
+    tmp_1294 = call @sla__relationship_world_source_slot(world, kind_id, tmp_1293)
+    !tmp_1293
+    updated_source_slot = tmp_1294
+    tmp_1295 = load world+24 as ptr
+    EXPAND VEC_GET tmp_1296, tmp_1295, updated_source_slot
+    !tmp_1295
+    tmp_1297 = tmp_1296 as ptr
+    tmp_1298 = call @sla__entity_new(target_id, target_gen)
+    store tmp_1297+16, tmp_1298 as ptr
+    !tmp_1297
+    !tmp_1298
+    !old_target
+    !updated_source_slot
+    jmp L_MERGE_402
+
+L_ELSE_401:
+    !tmp_1277
+    tmp_1299 = load world+24 as ptr
+    tmp_1300 = alloc 24
+    store tmp_1300+0, kind_id as i32
+    tmp_1301 = call @sla__entity_new(source_id, source_gen)
+    store tmp_1300+8, tmp_1301 as ptr
+    !tmp_1301
+    tmp_1302 = call @sla__entity_new(target_id, target_gen)
+    store tmp_1300+16, tmp_1302 as ptr
+    !tmp_1302
+    EXPAND VEC_PUSH tmp_1299, tmp_1300, 8
+    !tmp_1300
+    !tmp_1299
+    jmp L_MERGE_402
+
+L_MERGE_402:
+    tmp_1304 = 1
+    tmp_1305 = add new_i, tmp_1304
+    !tmp_1304
+    !new_i
+    new_i = tmp_1305
+    !source
+    !source_id
+    !existing_source_slot
+    !source_gen
+    jmp L_WHILE_HEAD_396
+
+L_WHILE_COND_FALSE_398:
+    !tmp_1269
+    jmp L_WHILE_EXIT_399
+
+L_WHILE_EXIT_399:
+    tmp_1306 = 0
+    tmp_1307 = eq relate_count, tmp_1306
+    !tmp_1306
+    br tmp_1307 -> L_THEN_406, L_ELSE_407
+
+L_THEN_406:
+    !tmp_1307
+    tmp_1308 = call @sla__entity_new(target_id, target_gen)
+    tmp_1309 = call @sla__relationship_world_remove_empty_target(world, kind_id, tmp_1308)
+    !tmp_1308
+    !world
+    world = tmp_1309
+    jmp L_MERGE_408
+
+L_ELSE_407:
+    !tmp_1307
+    jmp L_MERGE_408
+
+L_MERGE_408:
+    !expected
+    !target_gen
+    !relate_count
+    !new_count
+    !relate_i
+    !unrelate_count
+    !newly_copy_i
+    !kind
+    !existing_i
+    !existing_count
+    !newly_copy_count
+    !new_i
+    !unrelate_i
+    !existing
+    !target_id
+    !target_slot
+    !entities_to_unrelate
+    !newly_related_entities
+    !entities_to_relate
+    !target
+    !kind_id
+    return world
+
+@sla__relationship_world_despawn_related(world: ptr, kind_id: i32, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1311 = call @sla__relationship_world_sources(world, kind_id, target)
+    sources = tmp_1311
+    tmp_1312 = 0
+    i = tmp_1312
+    tmp_1313 = load sources+0 as ptr
+    EXPAND VEC_LEN tmp_1314, tmp_1313
+    !tmp_1313
+    tmp_1315 = tmp_1314 as i64
+    cnt = tmp_1315
+    jmp L_WHILE_HEAD_409
+
+L_WHILE_HEAD_409:
+    tmp_1316 = slt i, cnt
+    br tmp_1316 -> L_WHILE_BODY_410, L_WHILE_COND_FALSE_411
+
+L_WHILE_BODY_410:
+    !tmp_1316
+    tmp_1317 = load sources+0 as ptr
+    EXPAND VEC_GET tmp_1318, tmp_1317, i
+    !tmp_1317
+    tmp_1319 = tmp_1318 as ptr
+    tmp_1320 = load tmp_1319+0 as i32
+    !tmp_1319
+    tmp_1321 = load sources+0 as ptr
+    EXPAND VEC_GET tmp_1322, tmp_1321, i
+    !tmp_1321
+    tmp_1323 = tmp_1322 as ptr
+    tmp_1324 = load tmp_1323+4 as i32
+    !tmp_1323
+    tmp_1325 = call @sla__entity_new(tmp_1320, tmp_1324)
+    !tmp_1320
+    !tmp_1324
+    tmp_1326 = call @sla__relationship_world_despawn(world, tmp_1325)
+    !tmp_1325
+    !world
+    world = tmp_1326
+    tmp_1327 = 1
+    tmp_1328 = add i, tmp_1327
+    !tmp_1327
+    !i
+    i = tmp_1328
+    jmp L_WHILE_HEAD_409
+
+L_WHILE_COND_FALSE_411:
+    !tmp_1316
+    jmp L_WHILE_EXIT_412
+
+L_WHILE_EXIT_412:
+    !cnt
+    !i
+    !sources
+    !kind_id
+    !target
+    return world
+
+@sla__relationship_world_despawn(world: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_1329 = load entity+0 as i32
+    entity_id = tmp_1329
+    tmp_1330 = load entity+4 as i32
+    entity_gen = tmp_1330
+    tmp_1331 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_1332 = call @sla__relationship_world_is_alive(world, tmp_1331)
+    !tmp_1331
+    tmp_1333 = 1
+    tmp_1334 = ne tmp_1332, tmp_1333
+    !tmp_1332
+    !tmp_1333
+    br tmp_1334 -> L_THEN_413, L_ELSE_414
+
+L_THEN_413:
+    !tmp_1334
+    !entity_gen
+    !entity_id
+    !entity
+    return world
+
+L_ELSE_414:
+    !tmp_1334
+    jmp L_MERGE_415
+
+L_MERGE_415:
+    tmp_1336 = 0
+    i = tmp_1336
+    tmp_1337 = load world+16 as ptr
+    EXPAND VEC_LEN tmp_1338, tmp_1337
+    !tmp_1337
+    tmp_1339 = tmp_1338 as i64
+    kind_count = tmp_1339
+    jmp L_WHILE_HEAD_416
+
+L_WHILE_HEAD_416:
+    tmp_1340 = slt i, kind_count
+    br tmp_1340 -> L_WHILE_BODY_417, L_WHILE_COND_FALSE_418
+
+L_WHILE_BODY_417:
+    !tmp_1340
+    tmp_1341 = load world+16 as ptr
+    EXPAND VEC_GET tmp_1342, tmp_1341, i
+    !tmp_1341
+    tmp_1343 = tmp_1342 as ptr
+    kind = tmp_1343
+    tmp_1344 = load kind+8 as u8
+    br tmp_1344 -> L_THEN_420, L_ELSE_421
+
+L_THEN_420:
+    !tmp_1344
+    tmp_1345 = load kind+0 as i32
+    tmp_1346 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_1347 = call @sla__relationship_world_despawn_related(world, tmp_1345, tmp_1346)
+    !tmp_1345
+    !tmp_1346
+    !world
+    world = tmp_1347
+    jmp L_MERGE_422
+
+L_ELSE_421:
+    !tmp_1344
+    tmp_1348 = load kind+0 as i32
+    tmp_1349 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_1350 = call @sla__relationship_world_detach_all_related(world, tmp_1348, tmp_1349)
+    !tmp_1348
+    !tmp_1349
+    !world
+    world = tmp_1350
+    jmp L_MERGE_422
+
+L_MERGE_422:
+    tmp_1352 = 1
+    tmp_1353 = add i, tmp_1352
+    !tmp_1352
+    !i
+    i = tmp_1353
+    !kind
+    jmp L_WHILE_HEAD_416
+
+L_WHILE_COND_FALSE_418:
+    !tmp_1340
+    jmp L_WHILE_EXIT_419
+
+L_WHILE_EXIT_419:
+    tmp_1354 = 1
+    keep_removing = tmp_1354
+    jmp L_WHILE_HEAD_423
+
+L_WHILE_HEAD_423:
+    tmp_1355 = 1
+    tmp_1356 = eq keep_removing, tmp_1355
+    !tmp_1355
+    br tmp_1356 -> L_WHILE_BODY_424, L_WHILE_COND_FALSE_425
+
+L_WHILE_BODY_424:
+    !tmp_1356
+    tmp_1357 = 0
+    !keep_removing
+    keep_removing = tmp_1357
+    tmp_1358 = 0
+    j = tmp_1358
+    jmp L_WHILE_HEAD_427
+
+L_WHILE_HEAD_427:
+    tmp_1359 = load world+24 as ptr
+    EXPAND VEC_LEN tmp_1360, tmp_1359
+    !tmp_1359
+    tmp_1361 = tmp_1360 as i64
+    tmp_1362 = slt j, tmp_1361
+    !tmp_1361
+    br tmp_1362 -> L_WHILE_BODY_428, L_WHILE_COND_FALSE_429
+
+L_WHILE_BODY_428:
+    !tmp_1362
+    tmp_1363 = load world+24 as ptr
+    EXPAND VEC_GET tmp_1364, tmp_1363, j
+    !tmp_1363
+    tmp_1365 = tmp_1364 as ptr
+    tmp_1366 = load tmp_1365+8 as ptr
+    !tmp_1365
+    tmp_1367 = load tmp_1366+0 as i32
+    !tmp_1366
+    tmp_1368 = load world+24 as ptr
+    EXPAND VEC_GET tmp_1369, tmp_1368, j
+    !tmp_1368
+    tmp_1370 = tmp_1369 as ptr
+    tmp_1371 = load tmp_1370+8 as ptr
+    !tmp_1370
+    tmp_1372 = load tmp_1371+4 as i32
+    !tmp_1371
+    tmp_1373 = call @sla__relationship_entity_parts_eq(tmp_1367, tmp_1372, entity_id, entity_gen)
+    !tmp_1367
+    !tmp_1372
+    br tmp_1373 -> L_THEN_431, L_ELSE_432
+
+L_THEN_431:
+    !tmp_1373
+    tmp_1374 = load world+24 as ptr
+    EXPAND VEC_GET tmp_1375, tmp_1374, j
+    !tmp_1374
+    tmp_1376 = tmp_1375 as ptr
+    tmp_1377 = load tmp_1376+0 as i32
+    !tmp_1376
+    tmp_1378 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_1379 = call @sla__relationship_world_remove_related(world, tmp_1377, tmp_1378)
+    !tmp_1377
+    !tmp_1378
+    !world
+    world = tmp_1379
+    tmp_1380 = 1
+    !keep_removing
+    keep_removing = tmp_1380
+    tmp_1381 = load world+24 as ptr
+    EXPAND VEC_LEN tmp_1382, tmp_1381
+    !tmp_1381
+    !j
+    j = tmp_1382
+    jmp L_MERGE_433
+
+L_ELSE_432:
+    !tmp_1373
+    tmp_1383 = 1
+    tmp_1384 = add j, tmp_1383
+    !tmp_1383
+    !j
+    j = tmp_1384
+    jmp L_MERGE_433
+
+L_MERGE_433:
+    jmp L_WHILE_HEAD_427
+
+L_WHILE_COND_FALSE_429:
+    !tmp_1362
+    jmp L_WHILE_EXIT_430
+
+L_WHILE_EXIT_430:
+    !j
+    jmp L_WHILE_HEAD_423
+
+L_WHILE_COND_FALSE_425:
+    !tmp_1356
+    jmp L_WHILE_EXIT_426
+
+L_WHILE_EXIT_426:
+    tmp_1386 = load world+0 as ptr
+    tmp_1387 = call @sla__entity_new(entity_id, entity_gen)
+    tmp_1388 = call @sla__dyn_free_entity(tmp_1386, tmp_1387)
+    !tmp_1386
+    !tmp_1387
+    store world+0, tmp_1388 as ptr
+    !tmp_1388
+    !keep_removing
+    !entity_gen
+    !i
+    !entity_id
+    !kind_count
+    !entity
+    return world
+
+@sla__generic_exclusive_of_new(target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1389 = alloc 8
+    store tmp_1389+0, target as ptr
+    return tmp_1389
+
+@sla__generic_exclusive_of_target(relation: ptr) -> ptr:
+L_ENTRY:
+    tmp_1390 = load relation+0 as ptr
+    !relation
+    return tmp_1390
+
+@sla__generic_exclusive_target_new(source: ptr) -> ptr:
+L_ENTRY:
+    tmp_1391 = alloc 8
+    store tmp_1391+0, source as ptr
+    return tmp_1391
+
+@sla__generic_exclusive_target_source(target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1392 = load target+0 as ptr
+    !target
+    return tmp_1392
+
+@sla__generic_exclusive_world_new(linked_spawn: u8, allow_self: u8) -> ptr:
+L_ENTRY:
+    tmp_1393 = call @sla__relationship_world_new()
+    base = tmp_1393
+    tmp_1394 = call @sla__relationship_world_register_one(base, linked_spawn, allow_self)
+    relationships = load tmp_1394+0 as ptr
+    exclusive_kind = load tmp_1394+8 as ptr
+    !tmp_1394
+    tmp_1395 = alloc 16
+    store tmp_1395+0, relationships as ptr
+    store tmp_1395+8, exclusive_kind as ptr
+    !base
+    !linked_spawn
+    !allow_self
+    return tmp_1395
+
+@sla__generic_exclusive_world_spawn(world: ptr) -> ptr:
+L_ENTRY:
+    tmp_1396 = load world+0 as ptr
+    tmp_1397 = call @sla__relationship_world_spawn(tmp_1396)
+    !tmp_1396
+    relationships = load tmp_1397+0 as ptr
+    entity = load tmp_1397+8 as ptr
+    !tmp_1397
+    store world+0, relationships as ptr
+    !relationships
+    tmp_1398 = alloc 16
+    store tmp_1398+0, world as ptr
+    store tmp_1398+8, entity as ptr
+    return tmp_1398
+
+@sla__generic_exclusive_world_is_alive(world: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_1399 = load world+0 as ptr
+    tmp_1400 = call @sla__relationship_world_is_alive(tmp_1399, entity)
+    !tmp_1399
+    !world
+    return tmp_1400
+
+@sla__generic_exclusive_world_set(world: ptr, source: ptr, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1401 = load world+0 as ptr
+    tmp_1402 = load world+8 as ptr
+    tmp_1403 = load tmp_1402+0 as i32
+    !tmp_1402
+    tmp_1404 = call @sla__relationship_world_set_related(tmp_1401, tmp_1403, source, target)
+    !tmp_1401
+    !tmp_1403
+    store world+0, tmp_1404 as ptr
+    !tmp_1404
+    !source
+    !target
+    return world
+
+@sla__generic_exclusive_world_remove(world: ptr, source: ptr) -> ptr:
+L_ENTRY:
+    tmp_1405 = load world+0 as ptr
+    tmp_1406 = load world+8 as ptr
+    tmp_1407 = load tmp_1406+0 as i32
+    !tmp_1406
+    tmp_1408 = call @sla__relationship_world_remove_related(tmp_1405, tmp_1407, source)
+    !tmp_1405
+    !tmp_1407
+    store world+0, tmp_1408 as ptr
+    !tmp_1408
+    !source
+    return world
+
+@sla__generic_exclusive_world_has_target(world: ptr, source: ptr) -> u8:
+L_ENTRY:
+    tmp_1409 = load world+0 as ptr
+    tmp_1410 = load world+8 as ptr
+    tmp_1411 = load tmp_1410+0 as i32
+    !tmp_1410
+    tmp_1412 = call @sla__relationship_world_has_related(tmp_1409, tmp_1411, source)
+    !tmp_1409
+    !tmp_1411
+    !world
+    return tmp_1412
+
+@sla__generic_exclusive_world_target(world: ptr, source: ptr) -> ptr:
+L_ENTRY:
+    tmp_1413 = load world+0 as ptr
+    tmp_1414 = load world+8 as ptr
+    tmp_1415 = load tmp_1414+0 as i32
+    !tmp_1414
+    tmp_1416 = call @sla__relationship_world_related(tmp_1413, tmp_1415, source)
+    !tmp_1413
+    !tmp_1415
+    !world
+    return tmp_1416
+
+@sla__generic_exclusive_world_has_source(world: ptr, target: ptr) -> u8:
+L_ENTRY:
+    tmp_1417 = load world+0 as ptr
+    tmp_1418 = load world+8 as ptr
+    tmp_1419 = load tmp_1418+0 as i32
+    !tmp_1418
+    tmp_1420 = call @sla__relationship_world_source_count(tmp_1417, tmp_1419, target)
+    !tmp_1417
+    !tmp_1419
+    tmp_1421 = 0
+    tmp_1422 = sgt tmp_1420, tmp_1421
+    !tmp_1420
+    !tmp_1421
+    !world
+    return tmp_1422
+
+@sla__generic_exclusive_world_source(world: ptr, target: ptr) -> ptr:
+L_ENTRY:
+    tmp_1423 = load world+0 as ptr
+    tmp_1424 = load world+8 as ptr
+    tmp_1425 = load tmp_1424+0 as i32
+    !tmp_1424
+    tmp_1426 = 0
+    tmp_1427 = call @sla__relationship_world_source_at(tmp_1423, tmp_1425, target, tmp_1426)
+    !tmp_1423
+    !tmp_1425
+    !tmp_1426
+    !world
+    return tmp_1427
+
+@sla__generic_exclusive_world_despawn(world: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_1428 = load world+0 as ptr
+    tmp_1429 = call @sla__relationship_world_despawn(tmp_1428, entity)
+    !tmp_1428
+    store world+0, tmp_1429 as ptr
+    !tmp_1429
+    !entity
+    return world
+
+@sla__relationship_one_to_one_demo() -> i32:
+L_ENTRY:
+    tmp_1430 = 0
+    tmp_1431 = 0
+    tmp_1432 = call @sla__generic_exclusive_world_new(tmp_1430, tmp_1431)
+    !tmp_1430
+    !tmp_1431
+    w0 = tmp_1432
+    tmp_1433 = call @sla__generic_exclusive_world_spawn(w0)
+    w1 = load tmp_1433+0 as ptr
+    target = load tmp_1433+8 as ptr
+    !tmp_1433
+    tmp_1434 = call @sla__generic_exclusive_world_spawn(w1)
+    w2 = load tmp_1434+0 as ptr
+    first = load tmp_1434+8 as ptr
+    !tmp_1434
+    tmp_1435 = call @sla__generic_exclusive_world_spawn(w2)
+    w3 = load tmp_1435+0 as ptr
+    second = load tmp_1435+8 as ptr
+    !tmp_1435
+    tmp_1436 = call @sla__generic_exclusive_world_set(w3, first, target)
+    w4 = tmp_1436
+    tmp_1437 = call @sla__generic_exclusive_world_set(w4, second, target)
+    w5 = tmp_1437
+    tmp_1438 = call @sla__generic_exclusive_world_has_target(w5, first)
+    tmp_1439 = 0
+    tmp_1440 = ne tmp_1438, tmp_1439
+    !tmp_1438
+    !tmp_1439
+    br tmp_1440 -> L_THEN_434, L_ELSE_435
+
+L_THEN_434:
+    !tmp_1440
+    panic(9800)
+
+L_ELSE_435:
+    !tmp_1440
+    jmp L_MERGE_436
+
+L_MERGE_436:
+    tmp_1443 = call @sla__generic_exclusive_world_source(w5, target)
+    tmp_1444 = call @sla__entity_eq(tmp_1443, second)
+    !tmp_1443
+    tmp_1445 = 1
+    tmp_1446 = ne tmp_1444, tmp_1445
+    !tmp_1444
+    !tmp_1445
+    br tmp_1446 -> L_THEN_437, L_ELSE_438
+
+L_THEN_437:
+    !tmp_1446
+    panic(9801)
+
+L_ELSE_438:
+    !tmp_1446
+    jmp L_MERGE_439
+
+L_MERGE_439:
+    tmp_1449 = call @sla__generic_exclusive_world_target(w5, second)
+    tmp_1450 = call @sla__entity_eq(tmp_1449, target)
+    !tmp_1449
+    tmp_1451 = 1
+    tmp_1452 = ne tmp_1450, tmp_1451
+    !tmp_1450
+    !tmp_1451
+    br tmp_1452 -> L_THEN_440, L_ELSE_441
+
+L_THEN_440:
+    !tmp_1452
+    panic(9802)
+
+L_ELSE_441:
+    !tmp_1452
+    jmp L_MERGE_442
+
+L_MERGE_442:
+    tmp_1455 = 1
+    !w0
+    !w4
+    !target
+    !second
+    !w5
+    !first
+    !w1
+    !w2
+    !w3
+    return tmp_1455
+
+@main() -> i32:
+L_ENTRY:
+    tmp_1456 = call @sla__relationship_one_to_one_demo()
+    return tmp_1456
+
+@test "entity placeholder is never allocated"():
+L_TEST_ENTRY_443:
+    tmp_1457 = call @sla__entity_placeholder()
+    placeholder = tmp_1457
+    tmp_1458 = call @sla__allocator_new()
+    a = tmp_1458
+    tmp_1459 = call @sla__alloc_entity(a)
+    a1 = load tmp_1459+0 as ptr
+    e1 = load tmp_1459+8 as ptr
+    !tmp_1459
+    tmp_1460 = load placeholder+0 as i32
+    tmp_1461 = load e1+0 as i32
+    tmp_1462 = eq tmp_1460, tmp_1461
+    !tmp_1460
+    !tmp_1461
+    br tmp_1462 -> L_THEN_444, L_ELSE_445
+
+L_THEN_444:
+    !tmp_1462
+    panic(2100)
+
+L_ELSE_445:
+    !tmp_1462
+    jmp L_MERGE_446
+
+L_MERGE_446:
+    tmp_1465 = call @sla__is_alive(a1, placeholder)
+    tmp_1466 = 0
+    tmp_1467 = ne tmp_1465, tmp_1466
+    !tmp_1465
+    !tmp_1466
+    br tmp_1467 -> L_THEN_447, L_ELSE_448
+
+L_THEN_447:
+    !tmp_1467
+    panic(2101)
+
+L_ELSE_448:
+    !tmp_1467
+    jmp L_MERGE_449
+
+L_MERGE_449:
+    !a
+    !placeholder
+    !e1
+    !a1
+    return
+
+@test "entity bit roundtrip"():
+L_TEST_ENTRY_450:
+    tmp_1470 = 42
+    tmp_1471 = 7
+    tmp_1472 = call @sla__entity_new(tmp_1470, tmp_1471)
+    !tmp_1470
+    !tmp_1471
+    e = tmp_1472
+    tmp_1473 = call @sla__entity_to_bits(e)
+    bits = tmp_1473
+    tmp_1474 = call @sla__entity_from_bits(bits)
+    out = tmp_1474
+    tmp_1475 = call @sla__entity_eq(e, out)
+    tmp_1476 = 1
+    tmp_1477 = ne tmp_1475, tmp_1476
+    !tmp_1475
+    !tmp_1476
+    br tmp_1477 -> L_THEN_451, L_ELSE_452
+
+L_THEN_451:
+    !tmp_1477
+    panic(2110)
+
+L_ELSE_452:
+    !tmp_1477
+    jmp L_MERGE_453
+
+L_MERGE_453:
+    !out
+    !bits
+    !e
+    return
+
+@test "allocator rejects stale generation"():
+L_TEST_ENTRY_454:
+    tmp_1480 = call @sla__allocator_new()
+    a0 = tmp_1480
+    tmp_1481 = call @sla__alloc_entity(a0)
+    a1 = load tmp_1481+0 as ptr
+    e1 = load tmp_1481+8 as ptr
+    !tmp_1481
+    tmp_1482 = call @sla__free_entity(a1, e1)
+    a2 = tmp_1482
+    tmp_1483 = load e1+0 as i32
+    tmp_1484 = load e1+4 as i32
+    tmp_1485 = call @sla__entity_new(tmp_1483, tmp_1484)
+    !tmp_1483
+    !tmp_1484
+    stale = tmp_1485
+    tmp_1486 = load e1+0 as i32
+    tmp_1487 = load e1+4 as i32
+    tmp_1488 = 1
+    tmp_1489 = add tmp_1487, tmp_1488
+    !tmp_1487
+    !tmp_1488
+    tmp_1490 = call @sla__entity_new(tmp_1486, tmp_1489)
+    !tmp_1486
+    !tmp_1489
+    fabricated = tmp_1490
+    tmp_1491 = call @sla__is_alive(a2, stale)
+    tmp_1492 = 0
+    tmp_1493 = ne tmp_1491, tmp_1492
+    !tmp_1491
+    !tmp_1492
+    br tmp_1493 -> L_THEN_455, L_ELSE_456
+
+L_THEN_455:
+    !tmp_1493
+    panic(2120)
+
+L_ELSE_456:
+    !tmp_1493
+    jmp L_MERGE_457
+
+L_MERGE_457:
+    tmp_1496 = call @sla__is_alive(a2, fabricated)
+    tmp_1497 = 0
+    tmp_1498 = ne tmp_1496, tmp_1497
+    !tmp_1496
+    !tmp_1497
+    br tmp_1498 -> L_THEN_458, L_ELSE_459
+
+L_THEN_458:
+    !tmp_1498
+    panic(2121)
+
+L_ELSE_459:
+    !tmp_1498
+    jmp L_MERGE_460
+
+L_MERGE_460:
+    tmp_1501 = call @sla__alloc_entity(a2)
+    a3 = load tmp_1501+0 as ptr
+    e2 = load tmp_1501+8 as ptr
+    !tmp_1501
+    tmp_1502 = call @sla__entity_eq(e2, fabricated)
+    tmp_1503 = 1
+    tmp_1504 = ne tmp_1502, tmp_1503
+    !tmp_1502
+    !tmp_1503
+    br tmp_1504 -> L_THEN_461, L_ELSE_462
+
+L_THEN_461:
+    !tmp_1504
+    panic(2122)
+
+L_ELSE_462:
+    !tmp_1504
+    jmp L_MERGE_463
+
+L_MERGE_463:
+    tmp_1507 = call @sla__is_alive(a3, e2)
+    tmp_1508 = 1
+    tmp_1509 = ne tmp_1507, tmp_1508
+    !tmp_1507
+    !tmp_1508
+    br tmp_1509 -> L_THEN_464, L_ELSE_465
+
+L_THEN_464:
+    !tmp_1509
+    panic(2123)
+
+L_ELSE_465:
+    !tmp_1509
+    jmp L_MERGE_466
+
+L_MERGE_466:
+    !e2
+    !a0
+    !a2
+    !fabricated
+    !stale
+    !e1
+    !a3
+    !a1
+    return
+
+@test "entity index generation accessors"():
+L_TEST_ENTRY_467:
+    tmp_1512 = 5
+    tmp_1513 = 3
+    tmp_1514 = call @sla__entity_new(tmp_1512, tmp_1513)
+    !tmp_1512
+    !tmp_1513
+    e = tmp_1514
+    tmp_1515 = call @sla__entity_index(e)
+    tmp_1516 = 5
+    tmp_1517 = ne tmp_1515, tmp_1516
+    !tmp_1515
+    !tmp_1516
+    br tmp_1517 -> L_THEN_468, L_ELSE_469
+
+L_THEN_468:
+    !tmp_1517
+    panic(2130)
+
+L_ELSE_469:
+    !tmp_1517
+    jmp L_MERGE_470
+
+L_MERGE_470:
+    tmp_1520 = call @sla__entity_generation(e)
+    tmp_1521 = 3
+    tmp_1522 = ne tmp_1520, tmp_1521
+    !tmp_1520
+    !tmp_1521
+    br tmp_1522 -> L_THEN_471, L_ELSE_472
+
+L_THEN_471:
+    !tmp_1522
+    panic(2131)
+
+L_ELSE_472:
+    !tmp_1522
+    jmp L_MERGE_473
+
+L_MERGE_473:
+    !e
+    return
+
+@test "dynamic allocator grows beyond fixed capacity"():
+L_TEST_ENTRY_474:
+    tmp_1525 = call @sla__dyn_allocator_new()
+    a = tmp_1525
+    tmp_1526 = 0
+    i = tmp_1526
+    jmp L_WHILE_HEAD_475
+
+L_WHILE_HEAD_475:
+    tmp_1527 = 20
+    tmp_1528 = slt i, tmp_1527
+    !tmp_1527
+    br tmp_1528 -> L_WHILE_BODY_476, L_WHILE_COND_FALSE_477
+
+L_WHILE_BODY_476:
+    !tmp_1528
+    tmp_1529 = call @sla__dyn_alloc_entity(a)
+    next_a = load tmp_1529+0 as ptr
+    entity = load tmp_1529+8 as ptr
+    !tmp_1529
+    !a
+    a = next_a
+    tmp_1530 = load entity+0 as i32
+    tmp_1531 = 1
+    tmp_1532 = add i, tmp_1531
+    !tmp_1531
+    tmp_1533 = ne tmp_1530, tmp_1532
+    !tmp_1530
+    !tmp_1532
+    br tmp_1533 -> L_THEN_479, L_ELSE_480
+
+L_THEN_479:
+    !tmp_1533
+    panic(2150)
+
+L_ELSE_480:
+    !tmp_1533
+    jmp L_MERGE_481
+
+L_MERGE_481:
+    tmp_1536 = call @sla__dyn_is_alive(a, entity)
+    tmp_1537 = 1
+    tmp_1538 = ne tmp_1536, tmp_1537
+    !tmp_1536
+    !tmp_1537
+    br tmp_1538 -> L_THEN_482, L_ELSE_483
+
+L_THEN_482:
+    !tmp_1538
+    panic(2151)
+
+L_ELSE_483:
+    !tmp_1538
+    jmp L_MERGE_484
+
+L_MERGE_484:
+    tmp_1541 = 1
+    tmp_1542 = add i, tmp_1541
+    !tmp_1541
+    !i
+    i = tmp_1542
+    !entity
+    jmp L_WHILE_HEAD_475
+
+L_WHILE_COND_FALSE_477:
+    !tmp_1528
+    jmp L_WHILE_EXIT_478
+
+L_WHILE_EXIT_478:
+    tmp_1543 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_1544, tmp_1543
+    !tmp_1543
+    tmp_1545 = 21
+    tmp_1546 = ne tmp_1544, tmp_1545
+    !tmp_1544
+    !tmp_1545
+    br tmp_1546 -> L_THEN_485, L_ELSE_486
+
+L_THEN_485:
+    !tmp_1546
+    panic(2152)
+
+L_ELSE_486:
+    !tmp_1546
+    jmp L_MERGE_487
+
+L_MERGE_487:
+    !a
+    !i
+    return
+
+@test "dynamic allocator rejects fabricated next generation before reuse"():
+L_TEST_ENTRY_488:
+    tmp_1549 = call @sla__dyn_allocator_new()
+    a0 = tmp_1549
+    tmp_1550 = call @sla__dyn_alloc_entity(a0)
+    a1 = load tmp_1550+0 as ptr
+    e1 = load tmp_1550+8 as ptr
+    !tmp_1550
+    tmp_1551 = call @sla__dyn_free_entity(a1, e1)
+    a2 = tmp_1551
+    tmp_1552 = load e1+0 as i32
+    tmp_1553 = load e1+4 as i32
+    tmp_1554 = 1
+    tmp_1555 = add tmp_1553, tmp_1554
+    !tmp_1553
+    !tmp_1554
+    tmp_1556 = call @sla__entity_new(tmp_1552, tmp_1555)
+    !tmp_1552
+    !tmp_1555
+    fake = tmp_1556
+    tmp_1557 = call @sla__dyn_is_alive(a2, e1)
+    tmp_1558 = 0
+    tmp_1559 = ne tmp_1557, tmp_1558
+    !tmp_1557
+    !tmp_1558
+    br tmp_1559 -> L_THEN_489, L_ELSE_490
+
+L_THEN_489:
+    !tmp_1559
+    panic(2160)
+
+L_ELSE_490:
+    !tmp_1559
+    jmp L_MERGE_491
+
+L_MERGE_491:
+    tmp_1562 = call @sla__dyn_is_alive(a2, fake)
+    tmp_1563 = 0
+    tmp_1564 = ne tmp_1562, tmp_1563
+    !tmp_1562
+    !tmp_1563
+    br tmp_1564 -> L_THEN_492, L_ELSE_493
+
+L_THEN_492:
+    !tmp_1564
+    panic(2161)
+
+L_ELSE_493:
+    !tmp_1564
+    jmp L_MERGE_494
+
+L_MERGE_494:
+    tmp_1567 = call @sla__dyn_alloc_entity(a2)
+    a3 = load tmp_1567+0 as ptr
+    e2 = load tmp_1567+8 as ptr
+    !tmp_1567
+    tmp_1568 = call @sla__entity_eq(e2, fake)
+    tmp_1569 = 1
+    tmp_1570 = ne tmp_1568, tmp_1569
+    !tmp_1568
+    !tmp_1569
+    br tmp_1570 -> L_THEN_495, L_ELSE_496
+
+L_THEN_495:
+    !tmp_1570
+    panic(2162)
+
+L_ELSE_496:
+    !tmp_1570
+    jmp L_MERGE_497
+
+L_MERGE_497:
+    tmp_1573 = call @sla__dyn_is_alive(a3, e2)
+    tmp_1574 = 1
+    tmp_1575 = ne tmp_1573, tmp_1574
+    !tmp_1573
+    !tmp_1574
+    br tmp_1575 -> L_THEN_498, L_ELSE_499
+
+L_THEN_498:
+    !tmp_1575
+    panic(2163)
+
+L_ELSE_499:
+    !tmp_1575
+    jmp L_MERGE_500
+
+L_MERGE_500:
+    !e2
+    !a0
+    !fake
+    !a2
+    !e1
+    !a3
+    !a1
+    return
+
+@test "relationship many target syncs source and target"():
+L_TEST_ENTRY_501:
+    tmp_1578 = call @sla__relationship_world_new()
+    w0 = tmp_1578
+    tmp_1579 = 0
+    tmp_1580 = 0
+    tmp_1581 = call @sla__relationship_world_register_many(w0, tmp_1579, tmp_1580)
+    !tmp_1579
+    !tmp_1580
+    w1 = load tmp_1581+0 as ptr
+    kind = load tmp_1581+8 as ptr
+    !tmp_1581
+    tmp_1582 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_1582+0 as ptr
+    target = load tmp_1582+8 as ptr
+    !tmp_1582
+    tmp_1583 = call @sla__relationship_world_spawn(w2)
+    w3 = load tmp_1583+0 as ptr
+    first = load tmp_1583+8 as ptr
+    !tmp_1583
+    tmp_1584 = call @sla__relationship_world_spawn(w3)
+    w4 = load tmp_1584+0 as ptr
+    second = load tmp_1584+8 as ptr
+    !tmp_1584
+    tmp_1585 = load kind+0 as i32
+    tmp_1586 = call @sla__relationship_world_set_related(w4, tmp_1585, first, target)
+    !tmp_1585
+    w5 = tmp_1586
+    tmp_1587 = load kind+0 as i32
+    tmp_1588 = call @sla__relationship_world_set_related(w5, tmp_1587, second, target)
+    !tmp_1587
+    w6 = tmp_1588
+    tmp_1589 = load kind+0 as i32
+    tmp_1590 = call @sla__relationship_world_source_count(w6, tmp_1589, target)
+    !tmp_1589
+    tmp_1591 = 2
+    tmp_1592 = ne tmp_1590, tmp_1591
+    !tmp_1590
+    !tmp_1591
+    br tmp_1592 -> L_THEN_502, L_ELSE_503
+
+L_THEN_502:
+    !tmp_1592
+    panic(9510)
+
+L_ELSE_503:
+    !tmp_1592
+    jmp L_MERGE_504
+
+L_MERGE_504:
+    tmp_1595 = load kind+0 as i32
+    tmp_1596 = call @sla__relationship_world_related(w6, tmp_1595, first)
+    !tmp_1595
+    tmp_1597 = call @sla__entity_eq(tmp_1596, target)
+    !tmp_1596
+    tmp_1598 = 1
+    tmp_1599 = ne tmp_1597, tmp_1598
+    !tmp_1597
+    !tmp_1598
+    br tmp_1599 -> L_THEN_505, L_ELSE_506
+
+L_THEN_505:
+    !tmp_1599
+    panic(9511)
+
+L_ELSE_506:
+    !tmp_1599
+    jmp L_MERGE_507
+
+L_MERGE_507:
+    tmp_1602 = load kind+0 as i32
+    tmp_1603 = call @sla__relationship_world_remove_related(w6, tmp_1602, first)
+    !tmp_1602
+    w7 = tmp_1603
+    tmp_1604 = load kind+0 as i32
+    tmp_1605 = call @sla__relationship_world_has_related(w7, tmp_1604, first)
+    !tmp_1604
+    tmp_1606 = 0
+    tmp_1607 = ne tmp_1605, tmp_1606
+    !tmp_1605
+    !tmp_1606
+    br tmp_1607 -> L_THEN_508, L_ELSE_509
+
+L_THEN_508:
+    !tmp_1607
+    panic(9512)
+
+L_ELSE_509:
+    !tmp_1607
+    jmp L_MERGE_510
+
+L_MERGE_510:
+    tmp_1610 = load kind+0 as i32
+    tmp_1611 = call @sla__relationship_world_source_count(w7, tmp_1610, target)
+    !tmp_1610
+    tmp_1612 = 1
+    tmp_1613 = ne tmp_1611, tmp_1612
+    !tmp_1611
+    !tmp_1612
+    br tmp_1613 -> L_THEN_511, L_ELSE_512
+
+L_THEN_511:
+    !tmp_1613
+    panic(9513)
+
+L_ELSE_512:
+    !tmp_1613
+    jmp L_MERGE_513
+
+L_MERGE_513:
+    tmp_1616 = load kind+0 as i32
+    tmp_1617 = call @sla__relationship_world_remove_related(w7, tmp_1616, second)
+    !tmp_1616
+    w8 = tmp_1617
+    tmp_1618 = load kind+0 as i32
+    tmp_1619 = call @sla__relationship_world_source_count(w8, tmp_1618, target)
+    !tmp_1618
+    tmp_1620 = 0
+    tmp_1621 = ne tmp_1619, tmp_1620
+    !tmp_1619
+    !tmp_1620
+    br tmp_1621 -> L_THEN_514, L_ELSE_515
+
+L_THEN_514:
+    !tmp_1621
+    panic(9514)
+
+L_ELSE_515:
+    !tmp_1621
+    jmp L_MERGE_516
+
+L_MERGE_516:
+    !target
+    !kind
+    !first
+    !w3
+    !w8
+    !w6
+    !w7
+    !w0
+    !w4
+    !second
+    !w5
+    !w1
+    !w2
+    return
+
+@test "relationship ordered insert and replace use Bevy Vec collection semantics"():
+L_TEST_ENTRY_517:
+    tmp_1624 = call @sla__relationship_world_new()
+    w0 = tmp_1624
+    tmp_1625 = 0
+    tmp_1626 = 0
+    tmp_1627 = call @sla__relationship_world_register_many(w0, tmp_1625, tmp_1626)
+    !tmp_1625
+    !tmp_1626
+    w1 = load tmp_1627+0 as ptr
+    kind = load tmp_1627+8 as ptr
+    !tmp_1627
+    tmp_1628 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_1628+0 as ptr
+    target = load tmp_1628+8 as ptr
+    !tmp_1628
+    tmp_1629 = call @sla__relationship_world_spawn(w2)
+    w3 = load tmp_1629+0 as ptr
+    e0 = load tmp_1629+8 as ptr
+    !tmp_1629
+    tmp_1630 = call @sla__relationship_world_spawn(w3)
+    w4 = load tmp_1630+0 as ptr
+    e1 = load tmp_1630+8 as ptr
+    !tmp_1630
+    tmp_1631 = call @sla__relationship_world_spawn(w4)
+    w5 = load tmp_1631+0 as ptr
+    e2 = load tmp_1631+8 as ptr
+    !tmp_1631
+    tmp_1632 = call @sla__relationship_world_spawn(w5)
+    w6 = load tmp_1632+0 as ptr
+    e3 = load tmp_1632+8 as ptr
+    !tmp_1632
+    tmp_1633 = load kind+0 as i32
+    tmp_1634 = call @sla__relationship_world_set_related(w6, tmp_1633, e0, target)
+    !tmp_1633
+    w7 = tmp_1634
+    tmp_1635 = load kind+0 as i32
+    tmp_1636 = call @sla__relationship_world_set_related(w7, tmp_1635, e1, target)
+    !tmp_1635
+    w8 = tmp_1636
+    tmp_1637 = load kind+0 as i32
+    tmp_1638 = call @sla__relationship_world_set_related(w8, tmp_1637, e2, target)
+    !tmp_1637
+    w9 = tmp_1638
+    tmp_1639 = load kind+0 as i32
+    tmp_1640 = 1
+    tmp_1641 = call @sla__relationship_world_set_related_at(w9, tmp_1639, e3, target, tmp_1640)
+    !tmp_1639
+    !tmp_1640
+    w10 = tmp_1641
+    tmp_1642 = load kind+0 as i32
+    tmp_1643 = 0
+    tmp_1644 = call @sla__relationship_world_source_at(w10, tmp_1642, target, tmp_1643)
+    !tmp_1642
+    !tmp_1643
+    tmp_1645 = call @sla__entity_eq(tmp_1644, e0)
+    !tmp_1644
+    tmp_1646 = 1
+    tmp_1647 = ne tmp_1645, tmp_1646
+    !tmp_1645
+    !tmp_1646
+    br tmp_1647 -> L_THEN_518, L_ELSE_519
+
+L_THEN_518:
+    !tmp_1647
+    panic(9520)
+
+L_ELSE_519:
+    !tmp_1647
+    jmp L_MERGE_520
+
+L_MERGE_520:
+    tmp_1650 = load kind+0 as i32
+    tmp_1651 = 1
+    tmp_1652 = call @sla__relationship_world_source_at(w10, tmp_1650, target, tmp_1651)
+    !tmp_1650
+    !tmp_1651
+    tmp_1653 = call @sla__entity_eq(tmp_1652, e3)
+    !tmp_1652
+    tmp_1654 = 1
+    tmp_1655 = ne tmp_1653, tmp_1654
+    !tmp_1653
+    !tmp_1654
+    br tmp_1655 -> L_THEN_521, L_ELSE_522
+
+L_THEN_521:
+    !tmp_1655
+    panic(9521)
+
+L_ELSE_522:
+    !tmp_1655
+    jmp L_MERGE_523
+
+L_MERGE_523:
+    tmp_1658 = load kind+0 as i32
+    tmp_1659 = 2
+    tmp_1660 = call @sla__relationship_world_source_at(w10, tmp_1658, target, tmp_1659)
+    !tmp_1658
+    !tmp_1659
+    tmp_1661 = call @sla__entity_eq(tmp_1660, e2)
+    !tmp_1660
+    tmp_1662 = 1
+    tmp_1663 = ne tmp_1661, tmp_1662
+    !tmp_1661
+    !tmp_1662
+    br tmp_1663 -> L_THEN_524, L_ELSE_525
+
+L_THEN_524:
+    !tmp_1663
+    panic(9522)
+
+L_ELSE_525:
+    !tmp_1663
+    jmp L_MERGE_526
+
+L_MERGE_526:
+    tmp_1666 = load kind+0 as i32
+    tmp_1667 = 3
+    tmp_1668 = call @sla__relationship_world_source_at(w10, tmp_1666, target, tmp_1667)
+    !tmp_1666
+    !tmp_1667
+    tmp_1669 = call @sla__entity_eq(tmp_1668, e1)
+    !tmp_1668
+    tmp_1670 = 1
+    tmp_1671 = ne tmp_1669, tmp_1670
+    !tmp_1669
+    !tmp_1670
+    br tmp_1671 -> L_THEN_527, L_ELSE_528
+
+L_THEN_527:
+    !tmp_1671
+    panic(9523)
+
+L_ELSE_528:
+    !tmp_1671
+    jmp L_MERGE_529
+
+L_MERGE_529:
+    EXPAND VEC_NEW tmp_1674
+    replacement = tmp_1674
+    EXPAND VEC_PUSH replacement, e2, 8
+    EXPAND VEC_PUSH replacement, e0, 8
+    tmp_1675 = load kind+0 as i32
+    tmp_1676 = call @sla__relationship_world_replace_related(w10, tmp_1675, target, replacement)
+    !tmp_1675
+    w11 = tmp_1676
+    tmp_1677 = load kind+0 as i32
+    tmp_1678 = call @sla__relationship_world_source_count(w11, tmp_1677, target)
+    !tmp_1677
+    tmp_1679 = 2
+    tmp_1680 = ne tmp_1678, tmp_1679
+    !tmp_1678
+    !tmp_1679
+    br tmp_1680 -> L_THEN_530, L_ELSE_531
+
+L_THEN_530:
+    !tmp_1680
+    panic(9524)
+
+L_ELSE_531:
+    !tmp_1680
+    jmp L_MERGE_532
+
+L_MERGE_532:
+    tmp_1683 = load kind+0 as i32
+    tmp_1684 = 0
+    tmp_1685 = call @sla__relationship_world_source_at(w11, tmp_1683, target, tmp_1684)
+    !tmp_1683
+    !tmp_1684
+    tmp_1686 = call @sla__entity_eq(tmp_1685, e2)
+    !tmp_1685
+    tmp_1687 = 1
+    tmp_1688 = ne tmp_1686, tmp_1687
+    !tmp_1686
+    !tmp_1687
+    br tmp_1688 -> L_THEN_533, L_ELSE_534
+
+L_THEN_533:
+    !tmp_1688
+    panic(9525)
+
+L_ELSE_534:
+    !tmp_1688
+    jmp L_MERGE_535
+
+L_MERGE_535:
+    tmp_1691 = load kind+0 as i32
+    tmp_1692 = 1
+    tmp_1693 = call @sla__relationship_world_source_at(w11, tmp_1691, target, tmp_1692)
+    !tmp_1691
+    !tmp_1692
+    tmp_1694 = call @sla__entity_eq(tmp_1693, e0)
+    !tmp_1693
+    tmp_1695 = 1
+    tmp_1696 = ne tmp_1694, tmp_1695
+    !tmp_1694
+    !tmp_1695
+    br tmp_1696 -> L_THEN_536, L_ELSE_537
+
+L_THEN_536:
+    !tmp_1696
+    panic(9526)
+
+L_ELSE_537:
+    !tmp_1696
+    jmp L_MERGE_538
+
+L_MERGE_538:
+    tmp_1699 = load kind+0 as i32
+    tmp_1700 = call @sla__relationship_world_has_related(w11, tmp_1699, e1)
+    !tmp_1699
+    tmp_1701 = 0
+    tmp_1702 = ne tmp_1700, tmp_1701
+    !tmp_1700
+    !tmp_1701
+    br tmp_1702 -> L_THEN_539, L_ELSE_540
+
+L_THEN_539:
+    !tmp_1702
+    panic(9527)
+
+L_ELSE_540:
+    !tmp_1702
+    jmp L_MERGE_541
+
+L_MERGE_541:
+    tmp_1705 = load kind+0 as i32
+    tmp_1706 = call @sla__relationship_world_has_related(w11, tmp_1705, e3)
+    !tmp_1705
+    tmp_1707 = 0
+    tmp_1708 = ne tmp_1706, tmp_1707
+    !tmp_1706
+    !tmp_1707
+    br tmp_1708 -> L_THEN_542, L_ELSE_543
+
+L_THEN_542:
+    !tmp_1708
+    panic(9528)
+
+L_ELSE_543:
+    !tmp_1708
+    jmp L_MERGE_544
+
+L_MERGE_544:
+    !e2
+    !replacement
+    !target
+    !w10
+    !kind
+    !e1
+    !w3
+    !w8
+    !w6
+    !w7
+    !w0
+    !w4
+    !e3
+    !w5
+    !w11
+    !e0
+    !w9
+    !w1
+    !w2
+    return
+
+@test "relationship replace with difference preserves final collection"():
+L_TEST_ENTRY_545:
+    tmp_1711 = call @sla__relationship_world_new()
+    w0 = tmp_1711
+    tmp_1712 = 0
+    tmp_1713 = 0
+    tmp_1714 = call @sla__relationship_world_register_many(w0, tmp_1712, tmp_1713)
+    !tmp_1712
+    !tmp_1713
+    w1 = load tmp_1714+0 as ptr
+    kind = load tmp_1714+8 as ptr
+    !tmp_1714
+    tmp_1715 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_1715+0 as ptr
+    target = load tmp_1715+8 as ptr
+    !tmp_1715
+    tmp_1716 = call @sla__relationship_world_spawn(w2)
+    w3 = load tmp_1716+0 as ptr
+    e0 = load tmp_1716+8 as ptr
+    !tmp_1716
+    tmp_1717 = call @sla__relationship_world_spawn(w3)
+    w4 = load tmp_1717+0 as ptr
+    e1 = load tmp_1717+8 as ptr
+    !tmp_1717
+    tmp_1718 = call @sla__relationship_world_spawn(w4)
+    w5 = load tmp_1718+0 as ptr
+    e2 = load tmp_1718+8 as ptr
+    !tmp_1718
+    tmp_1719 = call @sla__relationship_world_spawn(w5)
+    w6 = load tmp_1719+0 as ptr
+    e3 = load tmp_1719+8 as ptr
+    !tmp_1719
+    tmp_1720 = load kind+0 as i32
+    tmp_1721 = call @sla__relationship_world_set_related(w6, tmp_1720, e0, target)
+    !tmp_1720
+    w7 = tmp_1721
+    tmp_1722 = load kind+0 as i32
+    tmp_1723 = call @sla__relationship_world_set_related(w7, tmp_1722, e1, target)
+    !tmp_1722
+    w8 = tmp_1723
+    tmp_1724 = load kind+0 as i32
+    tmp_1725 = call @sla__relationship_world_set_related(w8, tmp_1724, e2, target)
+    !tmp_1724
+    w9 = tmp_1725
+    EXPAND VEC_NEW tmp_1726
+    unrelate = tmp_1726
+    EXPAND VEC_PUSH unrelate, e1, 8
+    EXPAND VEC_NEW tmp_1727
+    relate = tmp_1727
+    EXPAND VEC_PUSH relate, e2, 8
+    EXPAND VEC_PUSH relate, e0, 8
+    EXPAND VEC_PUSH relate, e3, 8
+    EXPAND VEC_NEW tmp_1728
+    newly = tmp_1728
+    EXPAND VEC_PUSH newly, e3, 8
+    tmp_1729 = load kind+0 as i32
+    tmp_1730 = call @sla__relationship_world_replace_related_with_difference(w9, tmp_1729, target, unrelate, relate, newly)
+    !tmp_1729
+    w10 = tmp_1730
+    tmp_1731 = load kind+0 as i32
+    tmp_1732 = call @sla__relationship_world_source_count(w10, tmp_1731, target)
+    !tmp_1731
+    tmp_1733 = 3
+    tmp_1734 = ne tmp_1732, tmp_1733
+    !tmp_1732
+    !tmp_1733
+    br tmp_1734 -> L_THEN_546, L_ELSE_547
+
+L_THEN_546:
+    !tmp_1734
+    panic(9580)
+
+L_ELSE_547:
+    !tmp_1734
+    jmp L_MERGE_548
+
+L_MERGE_548:
+    tmp_1737 = load kind+0 as i32
+    tmp_1738 = 0
+    tmp_1739 = call @sla__relationship_world_source_at(w10, tmp_1737, target, tmp_1738)
+    !tmp_1737
+    !tmp_1738
+    tmp_1740 = call @sla__entity_eq(tmp_1739, e2)
+    !tmp_1739
+    tmp_1741 = 1
+    tmp_1742 = ne tmp_1740, tmp_1741
+    !tmp_1740
+    !tmp_1741
+    br tmp_1742 -> L_THEN_549, L_ELSE_550
+
+L_THEN_549:
+    !tmp_1742
+    panic(9581)
+
+L_ELSE_550:
+    !tmp_1742
+    jmp L_MERGE_551
+
+L_MERGE_551:
+    tmp_1745 = load kind+0 as i32
+    tmp_1746 = 1
+    tmp_1747 = call @sla__relationship_world_source_at(w10, tmp_1745, target, tmp_1746)
+    !tmp_1745
+    !tmp_1746
+    tmp_1748 = call @sla__entity_eq(tmp_1747, e0)
+    !tmp_1747
+    tmp_1749 = 1
+    tmp_1750 = ne tmp_1748, tmp_1749
+    !tmp_1748
+    !tmp_1749
+    br tmp_1750 -> L_THEN_552, L_ELSE_553
+
+L_THEN_552:
+    !tmp_1750
+    panic(9582)
+
+L_ELSE_553:
+    !tmp_1750
+    jmp L_MERGE_554
+
+L_MERGE_554:
+    tmp_1753 = load kind+0 as i32
+    tmp_1754 = 2
+    tmp_1755 = call @sla__relationship_world_source_at(w10, tmp_1753, target, tmp_1754)
+    !tmp_1753
+    !tmp_1754
+    tmp_1756 = call @sla__entity_eq(tmp_1755, e3)
+    !tmp_1755
+    tmp_1757 = 1
+    tmp_1758 = ne tmp_1756, tmp_1757
+    !tmp_1756
+    !tmp_1757
+    br tmp_1758 -> L_THEN_555, L_ELSE_556
+
+L_THEN_555:
+    !tmp_1758
+    panic(9583)
+
+L_ELSE_556:
+    !tmp_1758
+    jmp L_MERGE_557
+
+L_MERGE_557:
+    tmp_1761 = load kind+0 as i32
+    tmp_1762 = call @sla__relationship_world_has_related(w10, tmp_1761, e1)
+    !tmp_1761
+    tmp_1763 = 0
+    tmp_1764 = ne tmp_1762, tmp_1763
+    !tmp_1762
+    !tmp_1763
+    br tmp_1764 -> L_THEN_558, L_ELSE_559
+
+L_THEN_558:
+    !tmp_1764
+    panic(9584)
+
+L_ELSE_559:
+    !tmp_1764
+    jmp L_MERGE_560
+
+L_MERGE_560:
+    tmp_1767 = load kind+0 as i32
+    tmp_1768 = call @sla__relationship_world_related(w10, tmp_1767, e3)
+    !tmp_1767
+    tmp_1769 = call @sla__entity_eq(tmp_1768, target)
+    !tmp_1768
+    tmp_1770 = 1
+    tmp_1771 = ne tmp_1769, tmp_1770
+    !tmp_1769
+    !tmp_1770
+    br tmp_1771 -> L_THEN_561, L_ELSE_562
+
+L_THEN_561:
+    !tmp_1771
+    panic(9585)
+
+L_ELSE_562:
+    !tmp_1771
+    jmp L_MERGE_563
+
+L_MERGE_563:
+    !e2
+    !target
+    !w10
+    !kind
+    !newly
+    !e1
+    !w3
+    !w8
+    !w6
+    !relate
+    !w7
+    !w0
+    !w4
+    !e3
+    !w5
+    !unrelate
+    !e0
+    !w9
+    !w1
+    !w2
+    return
+
+@test "relationship reparent invalid target and self policies"():
+L_TEST_ENTRY_564:
+    tmp_1774 = call @sla__relationship_world_new()
+    w0 = tmp_1774
+    tmp_1775 = 0
+    tmp_1776 = 0
+    tmp_1777 = call @sla__relationship_world_register_many(w0, tmp_1775, tmp_1776)
+    !tmp_1775
+    !tmp_1776
+    w1 = load tmp_1777+0 as ptr
+    no_self = load tmp_1777+8 as ptr
+    !tmp_1777
+    tmp_1778 = 0
+    tmp_1779 = 1
+    tmp_1780 = call @sla__relationship_world_register_many(w1, tmp_1778, tmp_1779)
+    !tmp_1778
+    !tmp_1779
+    w2 = load tmp_1780+0 as ptr
+    allow_self = load tmp_1780+8 as ptr
+    !tmp_1780
+    tmp_1781 = call @sla__relationship_world_spawn(w2)
+    w3 = load tmp_1781+0 as ptr
+    target_a = load tmp_1781+8 as ptr
+    !tmp_1781
+    tmp_1782 = call @sla__relationship_world_spawn(w3)
+    w4 = load tmp_1782+0 as ptr
+    target_b = load tmp_1782+8 as ptr
+    !tmp_1782
+    tmp_1783 = call @sla__relationship_world_spawn(w4)
+    w5 = load tmp_1783+0 as ptr
+    source = load tmp_1783+8 as ptr
+    !tmp_1783
+    tmp_1784 = load no_self+0 as i32
+    tmp_1785 = call @sla__relationship_world_set_related(w5, tmp_1784, source, target_a)
+    !tmp_1784
+    w6 = tmp_1785
+    tmp_1786 = load no_self+0 as i32
+    tmp_1787 = call @sla__relationship_world_set_related(w6, tmp_1786, source, target_b)
+    !tmp_1786
+    w7 = tmp_1787
+    tmp_1788 = load no_self+0 as i32
+    tmp_1789 = call @sla__relationship_world_source_count(w7, tmp_1788, target_a)
+    !tmp_1788
+    tmp_1790 = 0
+    tmp_1791 = ne tmp_1789, tmp_1790
+    !tmp_1789
+    !tmp_1790
+    br tmp_1791 -> L_THEN_565, L_ELSE_566
+
+L_THEN_565:
+    !tmp_1791
+    panic(9530)
+
+L_ELSE_566:
+    !tmp_1791
+    jmp L_MERGE_567
+
+L_MERGE_567:
+    tmp_1794 = load no_self+0 as i32
+    tmp_1795 = call @sla__relationship_world_source_count(w7, tmp_1794, target_b)
+    !tmp_1794
+    tmp_1796 = 1
+    tmp_1797 = ne tmp_1795, tmp_1796
+    !tmp_1795
+    !tmp_1796
+    br tmp_1797 -> L_THEN_568, L_ELSE_569
+
+L_THEN_568:
+    !tmp_1797
+    panic(9531)
+
+L_ELSE_569:
+    !tmp_1797
+    jmp L_MERGE_570
+
+L_MERGE_570:
+    tmp_1800 = 404
+    tmp_1801 = 0
+    tmp_1802 = call @sla__entity_new(tmp_1800, tmp_1801)
+    !tmp_1800
+    !tmp_1801
+    missing = tmp_1802
+    tmp_1803 = load no_self+0 as i32
+    tmp_1804 = call @sla__relationship_world_set_related(w7, tmp_1803, source, missing)
+    !tmp_1803
+    w8 = tmp_1804
+    tmp_1805 = load no_self+0 as i32
+    tmp_1806 = call @sla__relationship_world_has_related(w8, tmp_1805, source)
+    !tmp_1805
+    tmp_1807 = 0
+    tmp_1808 = ne tmp_1806, tmp_1807
+    !tmp_1806
+    !tmp_1807
+    br tmp_1808 -> L_THEN_571, L_ELSE_572
+
+L_THEN_571:
+    !tmp_1808
+    panic(9532)
+
+L_ELSE_572:
+    !tmp_1808
+    jmp L_MERGE_573
+
+L_MERGE_573:
+    tmp_1811 = load no_self+0 as i32
+    tmp_1812 = call @sla__relationship_world_set_related(w8, tmp_1811, source, source)
+    !tmp_1811
+    w9 = tmp_1812
+    tmp_1813 = load no_self+0 as i32
+    tmp_1814 = call @sla__relationship_world_has_related(w9, tmp_1813, source)
+    !tmp_1813
+    tmp_1815 = 0
+    tmp_1816 = ne tmp_1814, tmp_1815
+    !tmp_1814
+    !tmp_1815
+    br tmp_1816 -> L_THEN_574, L_ELSE_575
+
+L_THEN_574:
+    !tmp_1816
+    panic(9533)
+
+L_ELSE_575:
+    !tmp_1816
+    jmp L_MERGE_576
+
+L_MERGE_576:
+    tmp_1819 = load allow_self+0 as i32
+    tmp_1820 = call @sla__relationship_world_set_related(w9, tmp_1819, source, source)
+    !tmp_1819
+    w10 = tmp_1820
+    tmp_1821 = load allow_self+0 as i32
+    tmp_1822 = call @sla__relationship_world_has_related(w10, tmp_1821, source)
+    !tmp_1821
+    tmp_1823 = 1
+    tmp_1824 = ne tmp_1822, tmp_1823
+    !tmp_1822
+    !tmp_1823
+    br tmp_1824 -> L_THEN_577, L_ELSE_578
+
+L_THEN_577:
+    !tmp_1824
+    panic(9534)
+
+L_ELSE_578:
+    !tmp_1824
+    jmp L_MERGE_579
+
+L_MERGE_579:
+    !allow_self
+    !w10
+    !w3
+    !w8
+    !w6
+    !target_b
+    !w7
+    !w0
+    !w4
+    !w5
+    !missing
+    !source
+    !no_self
+    !target_a
+    !w9
+    !w1
+    !w2
+    return
+
+@test "relationship one to one target replaces previous source"():
+L_TEST_ENTRY_580:
+    tmp_1827 = call @sla__relationship_world_new()
+    w0 = tmp_1827
+    tmp_1828 = 0
+    tmp_1829 = 0
+    tmp_1830 = call @sla__relationship_world_register_one(w0, tmp_1828, tmp_1829)
+    !tmp_1828
+    !tmp_1829
+    w1 = load tmp_1830+0 as ptr
+    kind = load tmp_1830+8 as ptr
+    !tmp_1830
+    tmp_1831 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_1831+0 as ptr
+    target = load tmp_1831+8 as ptr
+    !tmp_1831
+    tmp_1832 = call @sla__relationship_world_spawn(w2)
+    w3 = load tmp_1832+0 as ptr
+    first = load tmp_1832+8 as ptr
+    !tmp_1832
+    tmp_1833 = call @sla__relationship_world_spawn(w3)
+    w4 = load tmp_1833+0 as ptr
+    second = load tmp_1833+8 as ptr
+    !tmp_1833
+    tmp_1834 = load kind+0 as i32
+    tmp_1835 = call @sla__relationship_world_set_related(w4, tmp_1834, first, target)
+    !tmp_1834
+    w5 = tmp_1835
+    tmp_1836 = load kind+0 as i32
+    tmp_1837 = call @sla__relationship_world_set_related(w5, tmp_1836, second, target)
+    !tmp_1836
+    w6 = tmp_1837
+    tmp_1838 = load kind+0 as i32
+    tmp_1839 = call @sla__relationship_world_has_related(w6, tmp_1838, first)
+    !tmp_1838
+    tmp_1840 = 0
+    tmp_1841 = ne tmp_1839, tmp_1840
+    !tmp_1839
+    !tmp_1840
+    br tmp_1841 -> L_THEN_581, L_ELSE_582
+
+L_THEN_581:
+    !tmp_1841
+    panic(9540)
+
+L_ELSE_582:
+    !tmp_1841
+    jmp L_MERGE_583
+
+L_MERGE_583:
+    tmp_1844 = load kind+0 as i32
+    tmp_1845 = call @sla__relationship_world_has_related(w6, tmp_1844, second)
+    !tmp_1844
+    tmp_1846 = 1
+    tmp_1847 = ne tmp_1845, tmp_1846
+    !tmp_1845
+    !tmp_1846
+    br tmp_1847 -> L_THEN_584, L_ELSE_585
+
+L_THEN_584:
+    !tmp_1847
+    panic(9541)
+
+L_ELSE_585:
+    !tmp_1847
+    jmp L_MERGE_586
+
+L_MERGE_586:
+    tmp_1850 = load kind+0 as i32
+    tmp_1851 = call @sla__relationship_world_source_count(w6, tmp_1850, target)
+    !tmp_1850
+    tmp_1852 = 1
+    tmp_1853 = ne tmp_1851, tmp_1852
+    !tmp_1851
+    !tmp_1852
+    br tmp_1853 -> L_THEN_587, L_ELSE_588
+
+L_THEN_587:
+    !tmp_1853
+    panic(9542)
+
+L_ELSE_588:
+    !tmp_1853
+    jmp L_MERGE_589
+
+L_MERGE_589:
+    tmp_1856 = load kind+0 as i32
+    tmp_1857 = 0
+    tmp_1858 = call @sla__relationship_world_source_at(w6, tmp_1856, target, tmp_1857)
+    !tmp_1856
+    !tmp_1857
+    tmp_1859 = call @sla__entity_eq(tmp_1858, second)
+    !tmp_1858
+    tmp_1860 = 1
+    tmp_1861 = ne tmp_1859, tmp_1860
+    !tmp_1859
+    !tmp_1860
+    br tmp_1861 -> L_THEN_590, L_ELSE_591
+
+L_THEN_590:
+    !tmp_1861
+    panic(9543)
+
+L_ELSE_591:
+    !tmp_1861
+    jmp L_MERGE_592
+
+L_MERGE_592:
+    !w0
+    !w4
+    !target
+    !second
+    !kind
+    !w5
+    !first
+    !w3
+    !w1
+    !w2
+    !w6
+    return
+
+@test "relationship traversal query helpers match hierarchy order"():
+L_TEST_ENTRY_593:
+    tmp_1864 = call @sla__relationship_world_new()
+    w0 = tmp_1864
+    tmp_1865 = 1
+    tmp_1866 = 0
+    tmp_1867 = call @sla__relationship_world_register_many(w0, tmp_1865, tmp_1866)
+    !tmp_1865
+    !tmp_1866
+    w1 = load tmp_1867+0 as ptr
+    kind = load tmp_1867+8 as ptr
+    !tmp_1867
+    tmp_1868 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_1868+0 as ptr
+    root = load tmp_1868+8 as ptr
+    !tmp_1868
+    tmp_1869 = load kind+0 as i32
+    tmp_1870 = call @sla__relationship_world_spawn_related(w2, tmp_1869, root)
+    !tmp_1869
+    w3 = load tmp_1870+0 as ptr
+    c1 = load tmp_1870+8 as ptr
+    !tmp_1870
+    tmp_1871 = load kind+0 as i32
+    tmp_1872 = call @sla__relationship_world_spawn_related(w3, tmp_1871, root)
+    !tmp_1871
+    w4 = load tmp_1872+0 as ptr
+    c2 = load tmp_1872+8 as ptr
+    !tmp_1872
+    tmp_1873 = load kind+0 as i32
+    tmp_1874 = call @sla__relationship_world_spawn_related(w4, tmp_1873, c1)
+    !tmp_1873
+    w5 = load tmp_1874+0 as ptr
+    g1 = load tmp_1874+8 as ptr
+    !tmp_1874
+    tmp_1875 = load kind+0 as i32
+    tmp_1876 = call @sla__relationship_world_spawn_related(w5, tmp_1875, c1)
+    !tmp_1875
+    w6 = load tmp_1876+0 as ptr
+    g2 = load tmp_1876+8 as ptr
+    !tmp_1876
+    tmp_1877 = load kind+0 as i32
+    tmp_1878 = call @sla__relationship_world_spawn_related(w6, tmp_1877, c2)
+    !tmp_1877
+    w7 = load tmp_1878+0 as ptr
+    g3 = load tmp_1878+8 as ptr
+    !tmp_1878
+    tmp_1879 = load kind+0 as i32
+    tmp_1880 = call @sla__relationship_world_ancestors(w7, tmp_1879, g2)
+    !tmp_1879
+    ancestors = tmp_1880
+    tmp_1881 = call @sla__relationship_entity_query_len(ancestors)
+    tmp_1882 = 2
+    tmp_1883 = ne tmp_1881, tmp_1882
+    !tmp_1881
+    !tmp_1882
+    br tmp_1883 -> L_THEN_594, L_ELSE_595
+
+L_THEN_594:
+    !tmp_1883
+    panic(9560)
+
+L_ELSE_595:
+    !tmp_1883
+    jmp L_MERGE_596
+
+L_MERGE_596:
+    tmp_1886 = 0
+    tmp_1887 = call @sla__relationship_entity_query_at(ancestors, tmp_1886)
+    !tmp_1886
+    tmp_1888 = call @sla__entity_eq(tmp_1887, c1)
+    !tmp_1887
+    tmp_1889 = 1
+    tmp_1890 = ne tmp_1888, tmp_1889
+    !tmp_1888
+    !tmp_1889
+    br tmp_1890 -> L_THEN_597, L_ELSE_598
+
+L_THEN_597:
+    !tmp_1890
+    panic(9561)
+
+L_ELSE_598:
+    !tmp_1890
+    jmp L_MERGE_599
+
+L_MERGE_599:
+    tmp_1893 = 1
+    tmp_1894 = call @sla__relationship_entity_query_at(ancestors, tmp_1893)
+    !tmp_1893
+    tmp_1895 = call @sla__entity_eq(tmp_1894, root)
+    !tmp_1894
+    tmp_1896 = 1
+    tmp_1897 = ne tmp_1895, tmp_1896
+    !tmp_1895
+    !tmp_1896
+    br tmp_1897 -> L_THEN_600, L_ELSE_601
+
+L_THEN_600:
+    !tmp_1897
+    panic(9562)
+
+L_ELSE_601:
+    !tmp_1897
+    jmp L_MERGE_602
+
+L_MERGE_602:
+    tmp_1900 = load kind+0 as i32
+    tmp_1901 = call @sla__relationship_world_root_ancestor(w7, tmp_1900, g2)
+    !tmp_1900
+    tmp_1902 = call @sla__entity_eq(tmp_1901, root)
+    !tmp_1901
+    tmp_1903 = 1
+    tmp_1904 = ne tmp_1902, tmp_1903
+    !tmp_1902
+    !tmp_1903
+    br tmp_1904 -> L_THEN_603, L_ELSE_604
+
+L_THEN_603:
+    !tmp_1904
+    panic(9563)
+
+L_ELSE_604:
+    !tmp_1904
+    jmp L_MERGE_605
+
+L_MERGE_605:
+    tmp_1907 = load kind+0 as i32
+    tmp_1908 = call @sla__relationship_world_descendants(w7, tmp_1907, root)
+    !tmp_1907
+    bfs = tmp_1908
+    tmp_1909 = call @sla__relationship_entity_query_len(bfs)
+    tmp_1910 = 5
+    tmp_1911 = ne tmp_1909, tmp_1910
+    !tmp_1909
+    !tmp_1910
+    br tmp_1911 -> L_THEN_606, L_ELSE_607
+
+L_THEN_606:
+    !tmp_1911
+    panic(9564)
+
+L_ELSE_607:
+    !tmp_1911
+    jmp L_MERGE_608
+
+L_MERGE_608:
+    tmp_1914 = 0
+    tmp_1915 = call @sla__relationship_entity_query_at(bfs, tmp_1914)
+    !tmp_1914
+    tmp_1916 = call @sla__entity_eq(tmp_1915, c1)
+    !tmp_1915
+    tmp_1917 = 1
+    tmp_1918 = ne tmp_1916, tmp_1917
+    !tmp_1916
+    !tmp_1917
+    br tmp_1918 -> L_THEN_609, L_ELSE_610
+
+L_THEN_609:
+    !tmp_1918
+    panic(9565)
+
+L_ELSE_610:
+    !tmp_1918
+    jmp L_MERGE_611
+
+L_MERGE_611:
+    tmp_1921 = 1
+    tmp_1922 = call @sla__relationship_entity_query_at(bfs, tmp_1921)
+    !tmp_1921
+    tmp_1923 = call @sla__entity_eq(tmp_1922, c2)
+    !tmp_1922
+    tmp_1924 = 1
+    tmp_1925 = ne tmp_1923, tmp_1924
+    !tmp_1923
+    !tmp_1924
+    br tmp_1925 -> L_THEN_612, L_ELSE_613
+
+L_THEN_612:
+    !tmp_1925
+    panic(9566)
+
+L_ELSE_613:
+    !tmp_1925
+    jmp L_MERGE_614
+
+L_MERGE_614:
+    tmp_1928 = 2
+    tmp_1929 = call @sla__relationship_entity_query_at(bfs, tmp_1928)
+    !tmp_1928
+    tmp_1930 = call @sla__entity_eq(tmp_1929, g1)
+    !tmp_1929
+    tmp_1931 = 1
+    tmp_1932 = ne tmp_1930, tmp_1931
+    !tmp_1930
+    !tmp_1931
+    br tmp_1932 -> L_THEN_615, L_ELSE_616
+
+L_THEN_615:
+    !tmp_1932
+    panic(9567)
+
+L_ELSE_616:
+    !tmp_1932
+    jmp L_MERGE_617
+
+L_MERGE_617:
+    tmp_1935 = 3
+    tmp_1936 = call @sla__relationship_entity_query_at(bfs, tmp_1935)
+    !tmp_1935
+    tmp_1937 = call @sla__entity_eq(tmp_1936, g2)
+    !tmp_1936
+    tmp_1938 = 1
+    tmp_1939 = ne tmp_1937, tmp_1938
+    !tmp_1937
+    !tmp_1938
+    br tmp_1939 -> L_THEN_618, L_ELSE_619
+
+L_THEN_618:
+    !tmp_1939
+    panic(9568)
+
+L_ELSE_619:
+    !tmp_1939
+    jmp L_MERGE_620
+
+L_MERGE_620:
+    tmp_1942 = 4
+    tmp_1943 = call @sla__relationship_entity_query_at(bfs, tmp_1942)
+    !tmp_1942
+    tmp_1944 = call @sla__entity_eq(tmp_1943, g3)
+    !tmp_1943
+    tmp_1945 = 1
+    tmp_1946 = ne tmp_1944, tmp_1945
+    !tmp_1944
+    !tmp_1945
+    br tmp_1946 -> L_THEN_621, L_ELSE_622
+
+L_THEN_621:
+    !tmp_1946
+    panic(9569)
+
+L_ELSE_622:
+    !tmp_1946
+    jmp L_MERGE_623
+
+L_MERGE_623:
+    tmp_1949 = load kind+0 as i32
+    tmp_1950 = call @sla__relationship_world_descendants_depth_first(w7, tmp_1949, root)
+    !tmp_1949
+    dfs = tmp_1950
+    tmp_1951 = call @sla__relationship_entity_query_len(dfs)
+    tmp_1952 = 5
+    tmp_1953 = ne tmp_1951, tmp_1952
+    !tmp_1951
+    !tmp_1952
+    br tmp_1953 -> L_THEN_624, L_ELSE_625
+
+L_THEN_624:
+    !tmp_1953
+    panic(9570)
+
+L_ELSE_625:
+    !tmp_1953
+    jmp L_MERGE_626
+
+L_MERGE_626:
+    tmp_1956 = 0
+    tmp_1957 = call @sla__relationship_entity_query_at(dfs, tmp_1956)
+    !tmp_1956
+    tmp_1958 = call @sla__entity_eq(tmp_1957, c1)
+    !tmp_1957
+    tmp_1959 = 1
+    tmp_1960 = ne tmp_1958, tmp_1959
+    !tmp_1958
+    !tmp_1959
+    br tmp_1960 -> L_THEN_627, L_ELSE_628
+
+L_THEN_627:
+    !tmp_1960
+    panic(9571)
+
+L_ELSE_628:
+    !tmp_1960
+    jmp L_MERGE_629
+
+L_MERGE_629:
+    tmp_1963 = 1
+    tmp_1964 = call @sla__relationship_entity_query_at(dfs, tmp_1963)
+    !tmp_1963
+    tmp_1965 = call @sla__entity_eq(tmp_1964, g1)
+    !tmp_1964
+    tmp_1966 = 1
+    tmp_1967 = ne tmp_1965, tmp_1966
+    !tmp_1965
+    !tmp_1966
+    br tmp_1967 -> L_THEN_630, L_ELSE_631
+
+L_THEN_630:
+    !tmp_1967
+    panic(9572)
+
+L_ELSE_631:
+    !tmp_1967
+    jmp L_MERGE_632
+
+L_MERGE_632:
+    tmp_1970 = 2
+    tmp_1971 = call @sla__relationship_entity_query_at(dfs, tmp_1970)
+    !tmp_1970
+    tmp_1972 = call @sla__entity_eq(tmp_1971, g2)
+    !tmp_1971
+    tmp_1973 = 1
+    tmp_1974 = ne tmp_1972, tmp_1973
+    !tmp_1972
+    !tmp_1973
+    br tmp_1974 -> L_THEN_633, L_ELSE_634
+
+L_THEN_633:
+    !tmp_1974
+    panic(9573)
+
+L_ELSE_634:
+    !tmp_1974
+    jmp L_MERGE_635
+
+L_MERGE_635:
+    tmp_1977 = 3
+    tmp_1978 = call @sla__relationship_entity_query_at(dfs, tmp_1977)
+    !tmp_1977
+    tmp_1979 = call @sla__entity_eq(tmp_1978, c2)
+    !tmp_1978
+    tmp_1980 = 1
+    tmp_1981 = ne tmp_1979, tmp_1980
+    !tmp_1979
+    !tmp_1980
+    br tmp_1981 -> L_THEN_636, L_ELSE_637
+
+L_THEN_636:
+    !tmp_1981
+    panic(9574)
+
+L_ELSE_637:
+    !tmp_1981
+    jmp L_MERGE_638
+
+L_MERGE_638:
+    tmp_1984 = 4
+    tmp_1985 = call @sla__relationship_entity_query_at(dfs, tmp_1984)
+    !tmp_1984
+    tmp_1986 = call @sla__entity_eq(tmp_1985, g3)
+    !tmp_1985
+    tmp_1987 = 1
+    tmp_1988 = ne tmp_1986, tmp_1987
+    !tmp_1986
+    !tmp_1987
+    br tmp_1988 -> L_THEN_639, L_ELSE_640
+
+L_THEN_639:
+    !tmp_1988
+    panic(9575)
+
+L_ELSE_640:
+    !tmp_1988
+    jmp L_MERGE_641
+
+L_MERGE_641:
+    tmp_1991 = load kind+0 as i32
+    tmp_1992 = call @sla__relationship_world_siblings(w7, tmp_1991, c1)
+    !tmp_1991
+    siblings = tmp_1992
+    tmp_1993 = call @sla__relationship_entity_query_len(siblings)
+    tmp_1994 = 1
+    tmp_1995 = ne tmp_1993, tmp_1994
+    !tmp_1993
+    !tmp_1994
+    br tmp_1995 -> L_THEN_642, L_ELSE_643
+
+L_THEN_642:
+    !tmp_1995
+    panic(9576)
+
+L_ELSE_643:
+    !tmp_1995
+    jmp L_MERGE_644
+
+L_MERGE_644:
+    tmp_1998 = 0
+    tmp_1999 = call @sla__relationship_entity_query_at(siblings, tmp_1998)
+    !tmp_1998
+    tmp_2000 = call @sla__entity_eq(tmp_1999, c2)
+    !tmp_1999
+    tmp_2001 = 1
+    tmp_2002 = ne tmp_2000, tmp_2001
+    !tmp_2000
+    !tmp_2001
+    br tmp_2002 -> L_THEN_645, L_ELSE_646
+
+L_THEN_645:
+    !tmp_2002
+    panic(9577)
+
+L_ELSE_646:
+    !tmp_2002
+    jmp L_MERGE_647
+
+L_MERGE_647:
+    tmp_2005 = load kind+0 as i32
+    tmp_2006 = call @sla__relationship_world_leaves(w7, tmp_2005, root)
+    !tmp_2005
+    leaves = tmp_2006
+    tmp_2007 = call @sla__relationship_entity_query_len(leaves)
+    tmp_2008 = 3
+    tmp_2009 = ne tmp_2007, tmp_2008
+    !tmp_2007
+    !tmp_2008
+    br tmp_2009 -> L_THEN_648, L_ELSE_649
+
+L_THEN_648:
+    !tmp_2009
+    panic(9578)
+
+L_ELSE_649:
+    !tmp_2009
+    jmp L_MERGE_650
+
+L_MERGE_650:
+    tmp_2012 = 0
+    tmp_2013 = call @sla__relationship_entity_query_at(leaves, tmp_2012)
+    !tmp_2012
+    tmp_2014 = call @sla__entity_eq(tmp_2013, g1)
+    !tmp_2013
+    tmp_2015 = 1
+    tmp_2016 = ne tmp_2014, tmp_2015
+    !tmp_2014
+    !tmp_2015
+    br tmp_2016 -> L_THEN_651, L_ELSE_652
+
+L_THEN_651:
+    !tmp_2016
+    panic(9579)
+
+L_ELSE_652:
+    !tmp_2016
+    jmp L_MERGE_653
+
+L_MERGE_653:
+    tmp_2019 = 1
+    tmp_2020 = call @sla__relationship_entity_query_at(leaves, tmp_2019)
+    !tmp_2019
+    tmp_2021 = call @sla__entity_eq(tmp_2020, g2)
+    !tmp_2020
+    tmp_2022 = 1
+    tmp_2023 = ne tmp_2021, tmp_2022
+    !tmp_2021
+    !tmp_2022
+    br tmp_2023 -> L_THEN_654, L_ELSE_655
+
+L_THEN_654:
+    !tmp_2023
+    panic(9598)
+
+L_ELSE_655:
+    !tmp_2023
+    jmp L_MERGE_656
+
+L_MERGE_656:
+    tmp_2026 = 2
+    tmp_2027 = call @sla__relationship_entity_query_at(leaves, tmp_2026)
+    !tmp_2026
+    tmp_2028 = call @sla__entity_eq(tmp_2027, g3)
+    !tmp_2027
+    tmp_2029 = 1
+    tmp_2030 = ne tmp_2028, tmp_2029
+    !tmp_2028
+    !tmp_2029
+    br tmp_2030 -> L_THEN_657, L_ELSE_658
+
+L_THEN_657:
+    !tmp_2030
+    panic(9599)
+
+L_ELSE_658:
+    !tmp_2030
+    jmp L_MERGE_659
+
+L_MERGE_659:
+    !siblings
+    !c2
+    !g1
+    !g2
+    !kind
+    !ancestors
+    !leaves
+    !w3
+    !g3
+    !w6
+    !dfs
+    !w7
+    !w0
+    !w4
+    !bfs
+    !w5
+    !root
+    !w1
+    !w2
+    !c1
+    return
+
+@test "relationship linked despawn follows target collection"():
+L_TEST_ENTRY_660:
+    tmp_2033 = call @sla__relationship_world_new()
+    w0 = tmp_2033
+    tmp_2034 = 1
+    tmp_2035 = 0
+    tmp_2036 = call @sla__relationship_world_register_many(w0, tmp_2034, tmp_2035)
+    !tmp_2034
+    !tmp_2035
+    w1 = load tmp_2036+0 as ptr
+    linked = load tmp_2036+8 as ptr
+    !tmp_2036
+    tmp_2037 = call @sla__relationship_world_spawn(w1)
+    w2 = load tmp_2037+0 as ptr
+    root = load tmp_2037+8 as ptr
+    !tmp_2037
+    tmp_2038 = load linked+0 as i32
+    tmp_2039 = call @sla__relationship_world_spawn_related(w2, tmp_2038, root)
+    !tmp_2038
+    w3 = load tmp_2039+0 as ptr
+    child = load tmp_2039+8 as ptr
+    !tmp_2039
+    tmp_2040 = load linked+0 as i32
+    tmp_2041 = call @sla__relationship_world_spawn_related(w3, tmp_2040, child)
+    !tmp_2040
+    w4 = load tmp_2041+0 as ptr
+    grandchild = load tmp_2041+8 as ptr
+    !tmp_2041
+    tmp_2042 = call @sla__relationship_world_despawn(w4, root)
+    w5 = tmp_2042
+    tmp_2043 = call @sla__relationship_world_is_alive(w5, root)
+    tmp_2044 = 0
+    tmp_2045 = ne tmp_2043, tmp_2044
+    !tmp_2043
+    !tmp_2044
+    br tmp_2045 -> L_THEN_661, L_ELSE_662
+
+L_THEN_661:
+    !tmp_2045
+    panic(9550)
+
+L_ELSE_662:
+    !tmp_2045
+    jmp L_MERGE_663
+
+L_MERGE_663:
+    tmp_2048 = call @sla__relationship_world_is_alive(w5, child)
+    tmp_2049 = 0
+    tmp_2050 = ne tmp_2048, tmp_2049
+    !tmp_2048
+    !tmp_2049
+    br tmp_2050 -> L_THEN_664, L_ELSE_665
+
+L_THEN_664:
+    !tmp_2050
+    panic(9551)
+
+L_ELSE_665:
+    !tmp_2050
+    jmp L_MERGE_666
+
+L_MERGE_666:
+    tmp_2053 = call @sla__relationship_world_is_alive(w5, grandchild)
+    tmp_2054 = 0
+    tmp_2055 = ne tmp_2053, tmp_2054
+    !tmp_2053
+    !tmp_2054
+    br tmp_2055 -> L_THEN_667, L_ELSE_668
+
+L_THEN_667:
+    !tmp_2055
+    panic(9552)
+
+L_ELSE_668:
+    !tmp_2055
+    jmp L_MERGE_669
+
+L_MERGE_669:
+    !w0
+    !linked
+    !w4
+    !grandchild
+    !w5
+    !root
+    !w1
+    !w2
+    !w3
+    !child
+    return
+
+@test "generic exclusive relationship replaces previous source"():
+L_TEST_ENTRY_670:
+    tmp_2058 = 0
+    tmp_2059 = 0
+    tmp_2060 = call @sla__generic_exclusive_world_new(tmp_2058, tmp_2059)
+    !tmp_2058
+    !tmp_2059
+    w0 = tmp_2060
+    tmp_2061 = call @sla__generic_exclusive_world_spawn(w0)
+    w1 = load tmp_2061+0 as ptr
+    target = load tmp_2061+8 as ptr
+    !tmp_2061
+    tmp_2062 = call @sla__generic_exclusive_world_spawn(w1)
+    w2 = load tmp_2062+0 as ptr
+    first = load tmp_2062+8 as ptr
+    !tmp_2062
+    tmp_2063 = call @sla__generic_exclusive_world_spawn(w2)
+    w3 = load tmp_2063+0 as ptr
+    second = load tmp_2063+8 as ptr
+    !tmp_2063
+    tmp_2064 = call @sla__generic_exclusive_world_set(w3, first, target)
+    w4 = tmp_2064
+    tmp_2065 = call @sla__generic_exclusive_world_has_source(w4, target)
+    tmp_2066 = 1
+    tmp_2067 = ne tmp_2065, tmp_2066
+    !tmp_2065
+    !tmp_2066
+    br tmp_2067 -> L_THEN_671, L_ELSE_672
+
+L_THEN_671:
+    !tmp_2067
+    panic(9780)
+
+L_ELSE_672:
+    !tmp_2067
+    jmp L_MERGE_673
+
+L_MERGE_673:
+    tmp_2070 = call @sla__generic_exclusive_world_source(w4, target)
+    tmp_2071 = call @sla__entity_eq(tmp_2070, first)
+    !tmp_2070
+    tmp_2072 = 1
+    tmp_2073 = ne tmp_2071, tmp_2072
+    !tmp_2071
+    !tmp_2072
+    br tmp_2073 -> L_THEN_674, L_ELSE_675
+
+L_THEN_674:
+    !tmp_2073
+    panic(9781)
+
+L_ELSE_675:
+    !tmp_2073
+    jmp L_MERGE_676
+
+L_MERGE_676:
+    tmp_2076 = call @sla__generic_exclusive_world_set(w4, second, target)
+    w5 = tmp_2076
+    tmp_2077 = call @sla__generic_exclusive_world_has_target(w5, first)
+    tmp_2078 = 0
+    tmp_2079 = ne tmp_2077, tmp_2078
+    !tmp_2077
+    !tmp_2078
+    br tmp_2079 -> L_THEN_677, L_ELSE_678
+
+L_THEN_677:
+    !tmp_2079
+    panic(9782)
+
+L_ELSE_678:
+    !tmp_2079
+    jmp L_MERGE_679
+
+L_MERGE_679:
+    tmp_2082 = call @sla__generic_exclusive_world_has_target(w5, second)
+    tmp_2083 = 1
+    tmp_2084 = ne tmp_2082, tmp_2083
+    !tmp_2082
+    !tmp_2083
+    br tmp_2084 -> L_THEN_680, L_ELSE_681
+
+L_THEN_680:
+    !tmp_2084
+    panic(9783)
+
+L_ELSE_681:
+    !tmp_2084
+    jmp L_MERGE_682
+
+L_MERGE_682:
+    tmp_2087 = call @sla__generic_exclusive_world_source(w5, target)
+    tmp_2088 = call @sla__entity_eq(tmp_2087, second)
+    !tmp_2087
+    tmp_2089 = 1
+    tmp_2090 = ne tmp_2088, tmp_2089
+    !tmp_2088
+    !tmp_2089
+    br tmp_2090 -> L_THEN_683, L_ELSE_684
+
+L_THEN_683:
+    !tmp_2090
+    panic(9784)
+
+L_ELSE_684:
+    !tmp_2090
+    jmp L_MERGE_685
+
+L_MERGE_685:
+    !w0
+    !w4
+    !target
+    !second
+    !w5
+    !first
+    !w1
+    !w2
+    !w3
+    return
+
+@test "generic exclusive relationship retarget remove and linked despawn"():
+L_TEST_ENTRY_686:
+    tmp_2093 = 1
+    tmp_2094 = 0
+    tmp_2095 = call @sla__generic_exclusive_world_new(tmp_2093, tmp_2094)
+    !tmp_2093
+    !tmp_2094
+    w0 = tmp_2095
+    tmp_2096 = call @sla__generic_exclusive_world_spawn(w0)
+    w1 = load tmp_2096+0 as ptr
+    target1 = load tmp_2096+8 as ptr
+    !tmp_2096
+    tmp_2097 = call @sla__generic_exclusive_world_spawn(w1)
+    w2 = load tmp_2097+0 as ptr
+    target2 = load tmp_2097+8 as ptr
+    !tmp_2097
+    tmp_2098 = call @sla__generic_exclusive_world_spawn(w2)
+    w3 = load tmp_2098+0 as ptr
+    source = load tmp_2098+8 as ptr
+    !tmp_2098
+    tmp_2099 = call @sla__generic_exclusive_world_set(w3, source, target1)
+    w4 = tmp_2099
+    tmp_2100 = call @sla__generic_exclusive_world_set(w4, source, target2)
+    w5 = tmp_2100
+    tmp_2101 = call @sla__generic_exclusive_world_has_source(w5, target1)
+    tmp_2102 = 0
+    tmp_2103 = ne tmp_2101, tmp_2102
+    !tmp_2101
+    !tmp_2102
+    br tmp_2103 -> L_THEN_687, L_ELSE_688
+
+L_THEN_687:
+    !tmp_2103
+    panic(9790)
+
+L_ELSE_688:
+    !tmp_2103
+    jmp L_MERGE_689
+
+L_MERGE_689:
+    tmp_2106 = call @sla__generic_exclusive_world_target(w5, source)
+    tmp_2107 = call @sla__entity_eq(tmp_2106, target2)
+    !tmp_2106
+    tmp_2108 = 1
+    tmp_2109 = ne tmp_2107, tmp_2108
+    !tmp_2107
+    !tmp_2108
+    br tmp_2109 -> L_THEN_690, L_ELSE_691
+
+L_THEN_690:
+    !tmp_2109
+    panic(9791)
+
+L_ELSE_691:
+    !tmp_2109
+    jmp L_MERGE_692
+
+L_MERGE_692:
+    tmp_2112 = call @sla__generic_exclusive_world_remove(w5, source)
+    w6 = tmp_2112
+    tmp_2113 = call @sla__generic_exclusive_world_has_target(w6, source)
+    tmp_2114 = 0
+    tmp_2115 = ne tmp_2113, tmp_2114
+    !tmp_2113
+    !tmp_2114
+    br tmp_2115 -> L_THEN_693, L_ELSE_694
+
+L_THEN_693:
+    !tmp_2115
+    panic(9792)
+
+L_ELSE_694:
+    !tmp_2115
+    jmp L_MERGE_695
+
+L_MERGE_695:
+    tmp_2118 = call @sla__generic_exclusive_world_set(w6, source, target2)
+    w7 = tmp_2118
+    tmp_2119 = call @sla__generic_exclusive_world_despawn(w7, target2)
+    w8 = tmp_2119
+    tmp_2120 = call @sla__generic_exclusive_world_is_alive(w8, target2)
+    tmp_2121 = 0
+    tmp_2122 = ne tmp_2120, tmp_2121
+    !tmp_2120
+    !tmp_2121
+    br tmp_2122 -> L_THEN_696, L_ELSE_697
+
+L_THEN_696:
+    !tmp_2122
+    panic(9793)
+
+L_ELSE_697:
+    !tmp_2122
+    jmp L_MERGE_698
+
+L_MERGE_698:
+    tmp_2125 = call @sla__generic_exclusive_world_is_alive(w8, source)
+    tmp_2126 = 0
+    tmp_2127 = ne tmp_2125, tmp_2126
+    !tmp_2125
+    !tmp_2126
+    br tmp_2127 -> L_THEN_699, L_ELSE_700
+
+L_THEN_699:
+    !tmp_2127
+    panic(9794)
+
+L_ELSE_700:
+    !tmp_2127
+    jmp L_MERGE_701
+
+L_MERGE_701:
+    tmp_2130 = call @sla__generic_exclusive_world_is_alive(w8, target1)
+    tmp_2131 = 1
+    tmp_2132 = ne tmp_2130, tmp_2131
+    !tmp_2130
+    !tmp_2131
+    br tmp_2132 -> L_THEN_702, L_ELSE_703
+
+L_THEN_702:
+    !tmp_2132
+    panic(9795)
+
+L_ELSE_703:
+    !tmp_2132
+    jmp L_MERGE_704
+
+L_MERGE_704:
+    !w8
+    !w7
+    !w0
+    !w4
+    !w5
+    !target1
+    !source
+    !target2
+    !w1
+    !w2
+    !w3
+    !w6
+    return
+
+@test "relationship one to one demo replaces previous source"():
+L_TEST_ENTRY_705:
+    tmp_2135 = call @sla__relationship_one_to_one_demo()
+    tmp_2136 = 1
+    tmp_2137 = ne tmp_2135, tmp_2136
+    !tmp_2135
+    !tmp_2136
+    br tmp_2137 -> L_THEN_706, L_ELSE_707
+
+L_THEN_706:
+    !tmp_2137
+    panic(9803)
+
+L_ELSE_707:
+    !tmp_2137
+    jmp L_MERGE_708
+
+L_MERGE_708:
+    return

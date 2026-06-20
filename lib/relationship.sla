@@ -48,6 +48,20 @@ fn relationship_entity_query_new() -> RelationshipEntityQuery {
     return RelationshipEntityQuery { items: items };
 }
 
+fn relationship_entity_query_len(query: RelationshipEntityQuery) -> i64 {
+    return len(query.items) as i64;
+}
+
+fn relationship_entity_query_at(query: RelationshipEntityQuery, index: i64) -> Entity {
+    if index < 0 { return entity_placeholder(); };
+    if index >= (len(query.items) as i64) { return entity_placeholder(); };
+    return query.items[index];
+}
+
+fn relationship_entity_query_contains(query: RelationshipEntityQuery, entity: Entity) -> bool {
+    return relationship_entity_vec_contains(query.items, entity);
+}
+
 fn relationship_entity_parts_eq(left_id: i32, left_gen: i32, right_id: i32, right_gen: i32) -> bool {
     if left_id != right_id { return false; };
     return left_gen == right_gen;
@@ -411,6 +425,113 @@ fn relationship_world_source_at(world: RelationshipWorld, kind_id: i32, target: 
     return sources.items[index];
 }
 
+fn relationship_world_ancestors(world: RelationshipWorld, kind_id: i32, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    let current = entity_new(entity.id, entity.gen);
+    let following = true;
+    while following == true {
+        if relationship_world_has_related(world, kind_id, current) != true {
+            following = false;
+        } else {
+            let parent = relationship_world_related(world, kind_id, current);
+            if relationship_entity_query_contains(result, parent) {
+                following = false;
+            } else {
+                result.items.push(entity_new(parent.id, parent.gen));
+                current = entity_new(parent.id, parent.gen);
+            };
+        };
+    }
+    return result;
+}
+
+fn relationship_world_root_ancestor(world: RelationshipWorld, kind_id: i32, entity: Entity) -> Entity {
+    let root = entity_new(entity.id, entity.gen);
+    let ancestors = relationship_world_ancestors(world, kind_id, entity_new(entity.id, entity.gen));
+    let i: i64 = 0;
+    let cnt = len(ancestors.items) as i64;
+    while i < cnt {
+        root = ancestors.items[i];
+        i = i + 1;
+    }
+    return root;
+}
+
+fn relationship_world_descendants(world: RelationshipWorld, kind_id: i32, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    let queue: Vec<Entity> = Vec::new();
+    let children = relationship_world_sources(world, kind_id, entity);
+    let seed: i64 = 0;
+    let seed_count = len(children.items) as i64;
+    while seed < seed_count {
+        queue.push(entity_new(children.items[seed].id, children.items[seed].gen));
+        seed = seed + 1;
+    }
+    let cursor: i64 = 0;
+    while cursor < (len(queue) as i64) {
+        let current = queue[cursor];
+        result.items.push(entity_new(current.id, current.gen));
+        let next = relationship_world_sources(world, kind_id, current);
+        let i: i64 = 0;
+        let cnt = len(next.items) as i64;
+        while i < cnt {
+            queue.push(entity_new(next.items[i].id, next.items[i].gen));
+            i = i + 1;
+        }
+        cursor = cursor + 1;
+    }
+    return result;
+}
+
+fn relationship_world_descendants_depth_first_append(world: RelationshipWorld, kind_id: i32, entity: Entity, result: RelationshipEntityQuery) -> RelationshipEntityQuery {
+    let children = relationship_world_sources(world, kind_id, entity);
+    let i: i64 = 0;
+    let cnt = len(children.items) as i64;
+    while i < cnt {
+        let child = children.items[i];
+        result.items.push(entity_new(child.id, child.gen));
+        result = relationship_world_descendants_depth_first_append(world, kind_id, entity_new(child.id, child.gen), result);
+        i = i + 1;
+    }
+    return result;
+}
+
+fn relationship_world_descendants_depth_first(world: RelationshipWorld, kind_id: i32, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    return relationship_world_descendants_depth_first_append(world, kind_id, entity, result);
+}
+
+fn relationship_world_siblings(world: RelationshipWorld, kind_id: i32, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    if relationship_world_has_related(world, kind_id, entity) != true { return result; };
+    let parent = relationship_world_related(world, kind_id, entity);
+    let all = relationship_world_sources(world, kind_id, parent);
+    let i: i64 = 0;
+    let cnt = len(all.items) as i64;
+    while i < cnt {
+        if relationship_entity_parts_eq(all.items[i].id, all.items[i].gen, entity.id, entity.gen) != true {
+            result.items.push(entity_new(all.items[i].id, all.items[i].gen));
+        };
+        i = i + 1;
+    }
+    return result;
+}
+
+fn relationship_world_leaves(world: RelationshipWorld, kind_id: i32, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    let descendants = relationship_world_descendants_depth_first(world, kind_id, entity);
+    let i: i64 = 0;
+    let cnt = len(descendants.items) as i64;
+    while i < cnt {
+        let leaf = descendants.items[i];
+        if relationship_world_source_count(world, kind_id, leaf) == 0 {
+            result.items.push(entity_new(leaf.id, leaf.gen));
+        };
+        i = i + 1;
+    }
+    return result;
+}
+
 fn relationship_world_detach_all_related(world: RelationshipWorld, kind_id: i32, target: Entity) -> RelationshipWorld {
     let sources = relationship_world_sources(world, kind_id, target);
     let i: i64 = 0;
@@ -689,6 +810,44 @@ fn relationship_world_despawn(world: RelationshipWorld, entity: Entity) -> Relat
     if relationship_world_has_related(w6, kind.id, second) != true { panic(9541); };
     if relationship_world_source_count(w6, kind.id, target) != 1 { panic(9542); };
     if entity_eq(relationship_world_source_at(w6, kind.id, target, 0), second) != true { panic(9543); };
+}
+
+@test "relationship traversal query helpers match hierarchy order"() {
+    let w0 = relationship_world_new();
+    let (w1, kind) = relationship_world_register_many(w0, true, false);
+    let (w2, root) = relationship_world_spawn(w1);
+    let (w3, c1) = relationship_world_spawn_related(w2, kind.id, root);
+    let (w4, c2) = relationship_world_spawn_related(w3, kind.id, root);
+    let (w5, g1) = relationship_world_spawn_related(w4, kind.id, c1);
+    let (w6, g2) = relationship_world_spawn_related(w5, kind.id, c1);
+    let (w7, g3) = relationship_world_spawn_related(w6, kind.id, c2);
+    let ancestors = relationship_world_ancestors(w7, kind.id, g2);
+    if relationship_entity_query_len(ancestors) != 2 { panic(9560); };
+    if entity_eq(relationship_entity_query_at(ancestors, 0), c1) != true { panic(9561); };
+    if entity_eq(relationship_entity_query_at(ancestors, 1), root) != true { panic(9562); };
+    if entity_eq(relationship_world_root_ancestor(w7, kind.id, g2), root) != true { panic(9563); };
+    let bfs = relationship_world_descendants(w7, kind.id, root);
+    if relationship_entity_query_len(bfs) != 5 { panic(9564); };
+    if entity_eq(relationship_entity_query_at(bfs, 0), c1) != true { panic(9565); };
+    if entity_eq(relationship_entity_query_at(bfs, 1), c2) != true { panic(9566); };
+    if entity_eq(relationship_entity_query_at(bfs, 2), g1) != true { panic(9567); };
+    if entity_eq(relationship_entity_query_at(bfs, 3), g2) != true { panic(9568); };
+    if entity_eq(relationship_entity_query_at(bfs, 4), g3) != true { panic(9569); };
+    let dfs = relationship_world_descendants_depth_first(w7, kind.id, root);
+    if relationship_entity_query_len(dfs) != 5 { panic(9570); };
+    if entity_eq(relationship_entity_query_at(dfs, 0), c1) != true { panic(9571); };
+    if entity_eq(relationship_entity_query_at(dfs, 1), g1) != true { panic(9572); };
+    if entity_eq(relationship_entity_query_at(dfs, 2), g2) != true { panic(9573); };
+    if entity_eq(relationship_entity_query_at(dfs, 3), c2) != true { panic(9574); };
+    if entity_eq(relationship_entity_query_at(dfs, 4), g3) != true { panic(9575); };
+    let siblings = relationship_world_siblings(w7, kind.id, c1);
+    if relationship_entity_query_len(siblings) != 1 { panic(9576); };
+    if entity_eq(relationship_entity_query_at(siblings, 0), c2) != true { panic(9577); };
+    let leaves = relationship_world_leaves(w7, kind.id, root);
+    if relationship_entity_query_len(leaves) != 3 { panic(9578); };
+    if entity_eq(relationship_entity_query_at(leaves, 0), g1) != true { panic(9579); };
+    if entity_eq(relationship_entity_query_at(leaves, 1), g2) != true { panic(9598); };
+    if entity_eq(relationship_entity_query_at(leaves, 2), g3) != true { panic(9599); };
 }
 
 @test "relationship linked despawn follows target collection"() {

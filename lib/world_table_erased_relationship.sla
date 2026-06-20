@@ -1,0 +1,168 @@
+// TableErasedWorld plus generic RelationshipWorld with synchronized entity ids.
+@import "world_table_erased.sla"
+@import "relationship.sla"
+
+struct TableErasedRelationshipWorld<R, M> {
+    table: TableErasedWorld<R, M>,
+    relationships: RelationshipWorld,
+}
+
+fn table_erased_relationship_world_new<R, M>(default_r: R, default_m: M) -> TableErasedRelationshipWorld<R, M> {
+    return TableErasedRelationshipWorld<R, M> { table: table_erased_world_new<R, M>(default_r, default_m), relationships: relationship_world_new() };
+}
+
+fn table_erased_relationship_world_register_table<R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedRelationshipWorld<R, M>, ComponentInfo) {
+    let (table, info) = table_erased_world_register_table<R, M>(world.table, type_id, drop_fn);
+    world.table = table;
+    return (world, info);
+}
+
+fn table_erased_relationship_world_register_sparse_set<R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedRelationshipWorld<R, M>, ComponentInfo) {
+    let (table, info) = table_erased_world_register_sparse_set<R, M>(world.table, type_id, drop_fn);
+    world.table = table;
+    return (world, info);
+}
+
+fn table_erased_relationship_world_register_many<R, M>(world: TableErasedRelationshipWorld<R, M>, linked_spawn: bool, allow_self: bool) -> (TableErasedRelationshipWorld<R, M>, RelationshipKind) {
+    let (relationships, kind) = relationship_world_register_many(world.relationships, linked_spawn, allow_self);
+    world.relationships = relationships;
+    return (world, kind);
+}
+
+fn table_erased_relationship_world_register_one<R, M>(world: TableErasedRelationshipWorld<R, M>, linked_spawn: bool, allow_self: bool) -> (TableErasedRelationshipWorld<R, M>, RelationshipKind) {
+    let (relationships, kind) = relationship_world_register_one(world.relationships, linked_spawn, allow_self);
+    world.relationships = relationships;
+    return (world, kind);
+}
+
+fn table_erased_relationship_world_spawn<R, M>(world: TableErasedRelationshipWorld<R, M>) -> (TableErasedRelationshipWorld<R, M>, Entity) {
+    let (table, table_entity) = table_erased_world_spawn<R, M>(world.table);
+    let (relationships, relationship_entity) = relationship_world_spawn(world.relationships);
+    if entity_eq(table_entity, relationship_entity) != true { panic(12200); };
+    world.table = table;
+    world.relationships = relationships;
+    return (world, table_entity);
+}
+
+fn table_erased_relationship_world_is_alive<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity) -> bool {
+    if table_erased_world_is_alive<R, M>(world.table, entity) != true { return false; };
+    return relationship_world_is_alive(world.relationships, entity);
+}
+
+fn table_erased_relationship_world_insert<T, R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedRelationshipWorld<R, M> {
+    world.table = table_erased_world_insert<T, R, M>(world.table, entity, component_id, type_id, value);
+    return world;
+}
+
+fn table_erased_relationship_world_get<T, R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity, component_id: i32, type_id: i32) -> T {
+    return table_erased_world_get<T, R, M>(world.table, entity, component_id, type_id);
+}
+
+fn table_erased_relationship_world_has<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity, component_id: i32) -> bool {
+    return table_erased_world_has<R, M>(world.table, entity, component_id);
+}
+
+fn table_erased_relationship_world_set_related<R, M>(world: TableErasedRelationshipWorld<R, M>, kind_id: i32, source: Entity, target: Entity) -> TableErasedRelationshipWorld<R, M> {
+    world.relationships = relationship_world_set_related(world.relationships, kind_id, source, target);
+    return world;
+}
+
+fn table_erased_relationship_world_set_related_at<R, M>(world: TableErasedRelationshipWorld<R, M>, kind_id: i32, source: Entity, target: Entity, index: i64) -> TableErasedRelationshipWorld<R, M> {
+    world.relationships = relationship_world_set_related_at(world.relationships, kind_id, source, target, index);
+    return world;
+}
+
+fn table_erased_relationship_world_source_count<R, M>(world: TableErasedRelationshipWorld<R, M>, kind_id: i32, target: Entity) -> i64 {
+    return relationship_world_source_count(world.relationships, kind_id, target);
+}
+
+fn table_erased_relationship_world_source_at<R, M>(world: TableErasedRelationshipWorld<R, M>, kind_id: i32, target: Entity, index: i64) -> Entity {
+    return relationship_world_source_at(world.relationships, kind_id, target, index);
+}
+
+fn table_erased_relationship_world_related<R, M>(world: TableErasedRelationshipWorld<R, M>, kind_id: i32, source: Entity) -> Entity {
+    return relationship_world_related(world.relationships, kind_id, source);
+}
+
+fn table_erased_relationship_world_linked_despawn_order_append<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity, result: RelationshipEntityQuery) -> RelationshipEntityQuery {
+    let k: i64 = 0;
+    let kind_count = len(world.relationships.kinds) as i64;
+    while k < kind_count {
+        let kind = world.relationships.kinds[k];
+        if kind.linked_spawn {
+            let sources = relationship_world_sources(world.relationships, kind.id, entity);
+            let i: i64 = 0;
+            let cnt = len(sources.items) as i64;
+            while i < cnt {
+                result = table_erased_relationship_world_linked_despawn_order_append<R, M>(world, sources.items[i], result);
+                i = i + 1;
+            }
+        };
+        k = k + 1;
+    }
+    if relationship_entity_query_contains(result, entity) != true {
+        result.items.push(entity_new(entity.id, entity.gen));
+    };
+    return result;
+}
+
+fn table_erased_relationship_world_linked_despawn_order<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity) -> RelationshipEntityQuery {
+    let result = relationship_entity_query_new();
+    return table_erased_relationship_world_linked_despawn_order_append<R, M>(world, entity, result);
+}
+
+fn table_erased_relationship_world_despawn<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity) -> TableErasedRelationshipWorld<R, M> {
+    if table_erased_relationship_world_is_alive<R, M>(world, entity) != true { return world; };
+    let order = table_erased_relationship_world_linked_despawn_order<R, M>(world, entity);
+    let i: i64 = 0;
+    let cnt = len(order.items) as i64;
+    while i < cnt {
+        world.table = table_erased_world_despawn<R, M>(world.table, order.items[i]);
+        i = i + 1;
+    }
+    world.relationships = relationship_world_despawn(world.relationships, entity);
+    return world;
+}
+
+fn table_erased_relationship_test_world_new() -> TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> {
+    return table_erased_relationship_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default());
+}
+
+@test "table erased relationship world syncs entity allocation and components"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let (w3, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let (w4, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let w5 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, root, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 3, y: 0 });
+    let w6 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
+    let w7 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w6, kind.id, child, root);
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w7, kind.id, root) != 1 { panic(12210); };
+    if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, child, position.id, TABLE_ERASED_POS_TYPE).x != 5 { panic(12211); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(w7, kind.id, child), root) != true { panic(12212); };
+}
+
+@test "table erased relationship world linked despawn keeps allocators synchronized"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let (w3, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let (w4, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let (w5, grandchild) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let w6 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 8, y: 0 });
+    let w7 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w6, kind.id, child, root);
+    let w8 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w7, kind.id, grandchild, child);
+    let order = table_erased_relationship_world_linked_despawn_order<TableErasedTime, TableErasedEvent>(w8, root);
+    if relationship_entity_query_len(order) != 3 { panic(12220); };
+    if entity_eq(relationship_entity_query_at(order, 0), grandchild) != true { panic(12221); };
+    if entity_eq(relationship_entity_query_at(order, 1), child) != true { panic(12222); };
+    if entity_eq(relationship_entity_query_at(order, 2), root) != true { panic(12223); };
+    let w9 = table_erased_relationship_world_despawn<TableErasedTime, TableErasedEvent>(w8, root);
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, root) != false { panic(12224); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, child) != false { panic(12225); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, grandchild) != false { panic(12226); };
+    if table_erased_relationship_world_has<TableErasedTime, TableErasedEvent>(w9, child, position.id) != false { panic(12227); };
+    let (w10, reused) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w9);
+    if reused.id != root.id { panic(12228); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w10, reused) != true { panic(12229); };
+}

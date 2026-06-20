@@ -1,0 +1,225 @@
+// TableErasedWorld integrated with erased observers.
+// Observer/event semantics live in sla_ecs data, not in the Sla compiler.
+@import "world_table_erased.sla"
+@import "event_observer_erased.sla"
+
+const TABLE_ERASED_LIFECYCLE_EVENT_TYPE: i32 = 141001;
+const TABLE_ERASED_LIFECYCLE_ADD: i32 = 1;
+const TABLE_ERASED_LIFECYCLE_INSERT: i32 = 2;
+const TABLE_ERASED_LIFECYCLE_REPLACE: i32 = 3;
+const TABLE_ERASED_LIFECYCLE_REMOVE: i32 = 4;
+const TABLE_ERASED_LIFECYCLE_DESPAWN: i32 = 5;
+
+struct TableErasedObserverWorld<R, M> {
+    table: TableErasedWorld<R, M>,
+    observers: ErasedObservers,
+}
+
+@derive(Event)
+struct TableErasedLifecycleEvent {
+    kind: i32,
+    entity_id: i32,
+    component_id: i32,
+    type_id: i32,
+}
+
+impl TableErasedLifecycleEvent {
+    fn event_type_id() -> i32 { return TABLE_ERASED_LIFECYCLE_EVENT_TYPE; }
+}
+
+fn table_erased_lifecycle_event_drop(raw: *u8) -> void { let typed = raw as *TableErasedLifecycleEvent; let boxed = unsafe { Box::from_raw(typed) }; }
+
+fn table_erased_observer_world_new<R, M>(default_r: R, default_m: M) -> TableErasedObserverWorld<R, M> {
+    return TableErasedObserverWorld<R, M> { table: table_erased_world_new<R, M>(default_r, default_m), observers: erased_observers_new() };
+}
+
+fn table_erased_observer_world_add_observer<R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, run: fn(ErasedEventValue, i32) -> i32) -> TableErasedObserverWorld<R, M> {
+    world.observers = erased_observers_add(world.observers, erased_observer_new(type_id, run));
+    return world;
+}
+
+fn table_erased_observer_world_register_table<R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedObserverWorld<R, M>, ComponentInfo) {
+    let (table, info) = table_erased_world_register_table<R, M>(world.table, type_id, drop_fn);
+    world.table = table;
+    return (world, info);
+}
+
+fn table_erased_observer_world_register_sparse_set<R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void) -> (TableErasedObserverWorld<R, M>, ComponentInfo) {
+    let (table, info) = table_erased_world_register_sparse_set<R, M>(world.table, type_id, drop_fn);
+    world.table = table;
+    return (world, info);
+}
+
+fn table_erased_observer_world_spawn<R, M>(world: TableErasedObserverWorld<R, M>) -> (TableErasedObserverWorld<R, M>, Entity) {
+    let (table, entity) = table_erased_world_spawn<R, M>(world.table);
+    world.table = table;
+    return (world, entity);
+}
+
+fn table_erased_observer_world_trigger_lifecycle<R, M>(world: TableErasedObserverWorld<R, M>, kind: i32, entity: Entity, component_id: i32, type_id: i32) -> TableErasedObserverWorld<R, M> {
+    let event = TableErasedLifecycleEvent { kind: kind, entity_id: entity.id, component_id: component_id, type_id: type_id };
+    world.observers = erased_observers_trigger_entity<TableErasedLifecycleEvent>(world.observers, entity, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_event_drop, event);
+    return world;
+}
+
+fn table_erased_observer_world_trigger<T, R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> TableErasedObserverWorld<R, M> {
+    world.observers = erased_observers_trigger<T>(world.observers, type_id, drop_fn, value);
+    return world;
+}
+
+fn table_erased_observer_world_trigger_entity<T, R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> TableErasedObserverWorld<R, M> {
+    world.observers = erased_observers_trigger_entity<T>(world.observers, entity, type_id, drop_fn, value);
+    return world;
+}
+
+fn table_erased_observer_world_insert<T, R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedObserverWorld<R, M> {
+    let had_component = table_erased_world_has<R, M>(world.table, entity, component_id);
+    if had_component {
+        world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_REPLACE, entity, component_id, type_id);
+        world.table = table_erased_world_insert<T, R, M>(world.table, entity, component_id, type_id, value);
+        return table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_INSERT, entity, component_id, type_id);
+    };
+    world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_ADD, entity, component_id, type_id);
+    world.table = table_erased_world_insert<T, R, M>(world.table, entity, component_id, type_id, value);
+    return table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_INSERT, entity, component_id, type_id);
+}
+
+fn table_erased_observer_world_insert_erased<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, component_id: i32, value: ErasedComponentValue) -> TableErasedObserverWorld<R, M> {
+    let type_id = value.type_id;
+    let had_component = table_erased_world_has<R, M>(world.table, entity, component_id);
+    if had_component {
+        world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_REPLACE, entity, component_id, type_id);
+        world.table = table_erased_world_insert_erased<R, M>(world.table, entity, component_id, value);
+        return table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_INSERT, entity, component_id, type_id);
+    };
+    world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_ADD, entity, component_id, type_id);
+    world.table = table_erased_world_insert_erased<R, M>(world.table, entity, component_id, value);
+    return table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_INSERT, entity, component_id, type_id);
+}
+
+fn table_erased_observer_world_insert_auto<T, R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, type_id: i32, value: T) -> TableErasedObserverWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    return table_erased_observer_world_insert<T, R, M>(world, entity, component_id, type_id, value);
+}
+
+fn table_erased_observer_world_remove<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, component_id: i32) -> TableErasedObserverWorld<R, M> {
+    if table_erased_world_has<R, M>(world.table, entity, component_id) != true { return world; };
+    let type_id = table_erased_observer_world_type_id_for_component<R, M>(world, component_id);
+    world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_REMOVE, entity, component_id, type_id);
+    world.table = table_erased_world_remove<R, M>(world.table, entity, component_id);
+    return world;
+}
+
+fn table_erased_observer_world_type_id_for_component<R, M>(world: TableErasedObserverWorld<R, M>, component_id: i32) -> i32 {
+    let i: i64 = 0;
+    let cnt = len(world.table.component_defs) as i64;
+    while i < cnt {
+        if world.table.component_defs[i].component_id == component_id { return world.table.component_defs[i].type_id; };
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn table_erased_observer_world_trigger_remove_if_has<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, component_id: i32) -> TableErasedObserverWorld<R, M> {
+    if table_erased_world_has<R, M>(world.table, entity, component_id) != true { return world; };
+    let type_id = table_erased_observer_world_type_id_for_component<R, M>(world, component_id);
+    return table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_REMOVE, entity, component_id, type_id);
+}
+
+fn table_erased_observer_world_remove_auto<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, type_id: i32) -> TableErasedObserverWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    return table_erased_observer_world_remove<R, M>(world, entity, component_id);
+}
+
+fn table_erased_observer_world_trigger_remove_for_entity<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity) -> TableErasedObserverWorld<R, M> {
+    let i: i64 = 0;
+    let cnt = len(world.table.registry.columns) as i64;
+    while i < cnt {
+        let component_id = world.table.registry.columns[i].info.id;
+        world = table_erased_observer_world_trigger_remove_if_has<R, M>(world, entity, component_id);
+        i = i + 1;
+    }
+    return world;
+}
+
+fn table_erased_observer_world_despawn<R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity) -> TableErasedObserverWorld<R, M> {
+    if table_erased_world_is_alive<R, M>(world.table, entity) != true { return world; };
+    world = table_erased_observer_world_trigger_remove_for_entity<R, M>(world, entity);
+    world = table_erased_observer_world_trigger_lifecycle<R, M>(world, TABLE_ERASED_LIFECYCLE_DESPAWN, entity, 0, 0);
+    world.table = table_erased_world_despawn<R, M>(world.table, entity);
+    return world;
+}
+
+fn table_erased_observer_world_get<T, R, M>(world: TableErasedObserverWorld<R, M>, entity: Entity, component_id: i32, type_id: i32) -> T {
+    return table_erased_world_get<T, R, M>(world.table, entity, component_id, type_id);
+}
+
+fn table_erased_lifecycle_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
+    let event = erased_event_value_read<TableErasedLifecycleEvent>(value, TableErasedLifecycleEvent::event_type_id());
+    return event.kind + event.component_id + target_entity_id;
+}
+
+fn table_erased_observer_test_world_new() -> TableErasedObserverWorld<TableErasedTime, TableErasedEvent> {
+    return table_erased_observer_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default());
+}
+
+@derive(Event)
+struct TableErasedObserverPing { amount: i32 }
+
+impl TableErasedObserverPing {
+    fn event_type_id() -> i32 { return 141101; }
+}
+
+fn table_erased_observer_ping_drop(raw: *u8) -> void { let typed = raw as *TableErasedObserverPing; let boxed = unsafe { Box::from_raw(typed) }; }
+
+fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
+    let event = erased_event_value_read<TableErasedObserverPing>(value, TableErasedObserverPing::event_type_id());
+    if target_entity_id >= 0 { return event.amount + target_entity_id; };
+    return event.amount;
+}
+
+@test "table erased observer world triggers add insert replace remove despawn"() {
+    let w0 = table_erased_observer_test_world_new();
+    let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w3, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let w4 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 3, y: 0 });
+    if w4.observers.trigger_count != 2 { panic(14110); };
+    if w4.observers.last_entity_id != entity.id { panic(14111); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE).x != 3 { panic(14112); };
+    let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 8, y: 0 });
+    if w5.observers.trigger_count != 4 { panic(14113); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, entity, position.id, TABLE_ERASED_POS_TYPE).x != 8 { panic(14114); };
+    let w6 = table_erased_observer_world_remove<TableErasedTime, TableErasedEvent>(w5, entity, position.id);
+    if w6.observers.trigger_count != 5 { panic(14115); };
+    if table_erased_world_has<TableErasedTime, TableErasedEvent>(w6.table, entity, position.id) != false { panic(14116); };
+    let w7 = table_erased_observer_world_despawn<TableErasedTime, TableErasedEvent>(w6, entity);
+    if w7.observers.trigger_count != 6 { panic(14117); };
+    if table_erased_world_is_alive<TableErasedTime, TableErasedEvent>(w7.table, entity) != false { panic(14118); };
+}
+
+@test "table erased observer world triggers component removes before despawn"() {
+    let w0 = table_erased_observer_test_world_new();
+    let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w4, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, entity, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 5, y: 0 });
+    let before = w6.observers.trigger_count;
+    let w7 = table_erased_observer_world_despawn<TableErasedTime, TableErasedEvent>(w6, entity);
+    if w7.observers.trigger_count != before + 3 { panic(14120); };
+    if w7.observers.last_entity_id != entity.id { panic(14121); };
+    if table_erased_world_has<TableErasedTime, TableErasedEvent>(w7.table, entity, position.id) != false { panic(14122); };
+    if table_erased_world_has<TableErasedTime, TableErasedEvent>(w7.table, entity, velocity.id) != false { panic(14123); };
+}
+
+@test "table erased observer world supports explicit targeted events"() {
+    let w0 = table_erased_observer_test_world_new();
+    let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
+    let (w2, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w1);
+    let w3 = table_erased_observer_world_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(w2, entity, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 4 });
+    if w3.observers.trigger_count != 1 { panic(14130); };
+    if w3.observers.last_entity_id != entity.id { panic(14131); };
+    if w3.observers.result_sum != entity.id + 4 { panic(14132); };
+}

@@ -1,0 +1,166 @@
+// Ordered deferred commands for TableErasedRelationshipWorld<R, M>.
+@import "world_table_erased_relationship.sla"
+
+const TABLE_ERASED_REL_COMMAND_INSERT_COMPONENT: i32 = 1;
+const TABLE_ERASED_REL_COMMAND_SET_RELATED: i32 = 2;
+const TABLE_ERASED_REL_COMMAND_DESPAWN: i32 = 3;
+const TABLE_ERASED_REL_COMMAND_INSERT_RESOURCE: i32 = 4;
+const TABLE_ERASED_REL_COMMAND_WRITE_MESSAGE: i32 = 5;
+
+struct TableErasedRelationshipCommand {
+    kind: i32,
+    entity: Entity,
+    relationship_kind_id: i32,
+    target: Entity,
+    component_id: i32,
+    value_index: i64,
+}
+
+struct TableErasedRelationshipCommands<R, M> {
+    items: Vec<TableErasedRelationshipCommand>,
+    component_values: Vec<ErasedComponentValue>,
+    resource_values: Vec<R>,
+    message_values: Vec<M>,
+}
+
+fn table_erased_relationship_command_new(kind: i32, entity: Entity, relationship_kind_id: i32, target: Entity, component_id: i32, value_index: i64) -> TableErasedRelationshipCommand {
+    return TableErasedRelationshipCommand { kind: kind, entity: entity, relationship_kind_id: relationship_kind_id, target: target, component_id: component_id, value_index: value_index };
+}
+
+fn table_erased_relationship_commands_new<R, M>() -> TableErasedRelationshipCommands<R, M> {
+    let items: Vec<TableErasedRelationshipCommand> = Vec::new();
+    let component_values: Vec<ErasedComponentValue> = Vec::new();
+    let resource_values: Vec<R> = Vec::new();
+    let message_values: Vec<M> = Vec::new();
+    return TableErasedRelationshipCommands<R, M> { items: items, component_values: component_values, resource_values: resource_values, message_values: message_values };
+}
+
+fn table_erased_relationship_commands_len<R, M>(commands: TableErasedRelationshipCommands<R, M>) -> i64 {
+    return len(commands.items) as i64;
+}
+
+fn table_erased_relationship_commands_reserve_entity<R, M>(world: TableErasedRelationshipWorld<R, M>, commands: TableErasedRelationshipCommands<R, M>) -> (TableErasedRelationshipWorld<R, M>, TableErasedRelationshipCommands<R, M>, Entity) {
+    let (next_world, entity) = table_erased_relationship_world_spawn<R, M>(world);
+    return (next_world, commands, entity);
+}
+
+fn table_erased_relationship_commands_spawn_related<R, M>(world: TableErasedRelationshipWorld<R, M>, commands: TableErasedRelationshipCommands<R, M>, relationship_kind_id: i32, target: Entity) -> (TableErasedRelationshipWorld<R, M>, TableErasedRelationshipCommands<R, M>, Entity) {
+    let (next_world, next_commands, entity) = table_erased_relationship_commands_reserve_entity<R, M>(world, commands);
+    let related_commands = table_erased_relationship_commands_set_related<R, M>(next_commands, relationship_kind_id, entity, target);
+    return (next_world, related_commands, entity);
+}
+
+fn table_erased_relationship_commands_insert<T, R, M>(commands: TableErasedRelationshipCommands<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedRelationshipCommands<R, M> {
+    commands.component_values.push(registry_erased_value_new<T>(type_id, value));
+    let idx = (len(commands.component_values) as i64) - 1;
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_INSERT_COMPONENT, entity, 0, entity_placeholder(), component_id, idx));
+    return commands;
+}
+
+fn table_erased_relationship_commands_set_related<R, M>(commands: TableErasedRelationshipCommands<R, M>, relationship_kind_id: i32, source: Entity, target: Entity) -> TableErasedRelationshipCommands<R, M> {
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_SET_RELATED, source, relationship_kind_id, target, 0, -1));
+    return commands;
+}
+
+fn table_erased_relationship_commands_despawn<R, M>(commands: TableErasedRelationshipCommands<R, M>, entity: Entity) -> TableErasedRelationshipCommands<R, M> {
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_DESPAWN, entity, 0, entity_placeholder(), 0, -1));
+    return commands;
+}
+
+fn table_erased_relationship_commands_insert_resource<R, M>(commands: TableErasedRelationshipCommands<R, M>, value: R) -> TableErasedRelationshipCommands<R, M> {
+    commands.resource_values.push(value);
+    let idx = (len(commands.resource_values) as i64) - 1;
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_INSERT_RESOURCE, entity_placeholder(), 0, entity_placeholder(), 0, idx));
+    return commands;
+}
+
+fn table_erased_relationship_commands_write_message<R, M>(commands: TableErasedRelationshipCommands<R, M>, value: M) -> TableErasedRelationshipCommands<R, M> {
+    commands.message_values.push(value);
+    let idx = (len(commands.message_values) as i64) - 1;
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_WRITE_MESSAGE, entity_placeholder(), 0, entity_placeholder(), 0, idx));
+    return commands;
+}
+
+fn table_erased_relationship_commands_apply_one<R, M>(world: TableErasedRelationshipWorld<R, M>, commands: TableErasedRelationshipCommands<R, M>, command: TableErasedRelationshipCommand) -> TableErasedRelationshipWorld<R, M> {
+    if command.kind == TABLE_ERASED_REL_COMMAND_INSERT_COMPONENT {
+        world.table = table_erased_world_insert_erased<R, M>(world.table, command.entity, command.component_id, commands.component_values[command.value_index]);
+        return world;
+    };
+    if command.kind == TABLE_ERASED_REL_COMMAND_SET_RELATED {
+        world.relationships = relationship_world_set_related(world.relationships, command.relationship_kind_id, command.entity, command.target);
+        return world;
+    };
+    if command.kind == TABLE_ERASED_REL_COMMAND_DESPAWN {
+        return table_erased_relationship_world_despawn<R, M>(world, command.entity);
+    };
+    if command.kind == TABLE_ERASED_REL_COMMAND_INSERT_RESOURCE {
+        world.table = table_erased_world_insert_resource<R, M>(world.table, commands.resource_values[command.value_index]);
+        return world;
+    };
+    if command.kind == TABLE_ERASED_REL_COMMAND_WRITE_MESSAGE {
+        world.table = table_erased_world_write_message<R, M>(world.table, commands.message_values[command.value_index]);
+        return world;
+    };
+    return world;
+}
+
+fn table_erased_relationship_commands_apply<R, M>(world: TableErasedRelationshipWorld<R, M>, commands: TableErasedRelationshipCommands<R, M>) -> (TableErasedRelationshipWorld<R, M>, TableErasedRelationshipCommands<R, M>) {
+    let i: i64 = 0;
+    let cnt = table_erased_relationship_commands_len<R, M>(commands);
+    while i < cnt {
+        world = table_erased_relationship_commands_apply_one<R, M>(world, commands, commands.items[i]);
+        i = i + 1;
+    }
+    return (world, table_erased_relationship_commands_new<R, M>());
+}
+
+fn table_erased_relationship_commands_test_commands_new() -> TableErasedRelationshipCommands<TableErasedTime, TableErasedEvent> {
+    return table_erased_relationship_commands_new<TableErasedTime, TableErasedEvent>();
+}
+
+@test "table erased relationship commands apply ordered component and relation mutations"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let c0 = table_erased_relationship_commands_test_commands_new();
+    let (w3, c1, root) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w2, c0);
+    let (w4, c2, child) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(w3, c1, kind.id, root);
+    let c3 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 13, y: 0 });
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w4, kind.id, root) != 0 { panic(12300); };
+    if table_erased_relationship_world_has<TableErasedTime, TableErasedEvent>(w4, child, position.id) != false { panic(12301); };
+    let (w5, c4) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w4, c3);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c4) != 0 { panic(12302); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 1 { panic(12303); };
+    if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE).x != 13 { panic(12304); };
+}
+
+@test "table erased relationship commands despawn linked table rows in order"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let c0 = table_erased_relationship_commands_test_commands_new();
+    let (w3, c1, root) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w2, c0);
+    let (w4, c2, child) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(w3, c1, kind.id, root);
+    let c3 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 21, y: 0 });
+    let (w5, c4) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w4, c3);
+    let c5 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c4, root);
+    let (w6, c6) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c5);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c6) != 0 { panic(12310); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, root) != false { panic(12311); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, child) != false { panic(12312); };
+    let (w7, reused) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    if reused.id != root.id { panic(12313); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, reused) != true { panic(12314); };
+}
+
+@test "table erased relationship commands apply resource and messages in order"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let c0 = table_erased_relationship_commands_test_commands_new();
+    let c1 = table_erased_relationship_commands_insert_resource<TableErasedTime, TableErasedEvent>(c0, TableErasedTime { tick: 15 });
+    let c2 = table_erased_relationship_commands_write_message<TableErasedTime, TableErasedEvent>(c1, TableErasedEvent { amount: 6 });
+    let (w1, c3) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w0, c2);
+    let read = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w1.table, message_reader_new(), table_erased_event_default());
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c3) != 0 { panic(12320); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w1.table).tick != 15 { panic(12321); };
+    if read.value.amount != 6 { panic(12322); };
+}

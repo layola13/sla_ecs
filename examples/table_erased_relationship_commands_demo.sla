@@ -1,0 +1,27 @@
+@import "../lib/commands_table_erased_relationship.sla"
+
+fn table_erased_relationship_commands_demo() -> i32 {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let c0 = table_erased_relationship_commands_test_commands_new();
+    let (w3, c1, root) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w2, c0);
+    let (w4, c2, child) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(w3, c1, kind.id, root);
+    let c3 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 34, y: 0 });
+    let (w5, c4) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w4, c3);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c4) != 0 { panic(12330); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 1 { panic(12331); };
+    if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE).x != 34 { panic(12332); };
+    let c5 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c4, root);
+    let (w6, c6) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c5);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c6) != 0 { panic(12333); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, root) != false { panic(12334); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, child) != false { panic(12335); };
+    return 1;
+}
+
+fn main() -> i32 { return table_erased_relationship_commands_demo(); }
+
+@test "table erased relationship commands demo applies ordered ECS and relation mutations"() {
+    if table_erased_relationship_commands_demo() != 1 { panic(12336); };
+}

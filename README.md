@@ -69,18 +69,27 @@ lib/
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
 ├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup
+├── world_table_erased_relationship.sla — TableErasedWorld + RelationshipWorld wrapper with synchronized entity allocation and linked despawn
+├── world_table_erased_observer.sla — TableErasedWorld + erased observer wrapper with component lifecycle and targeted entity events
 ├── bundle_table_erased.sla — TableErasedWorld component bundle constructors plus spawn/insert helpers
 ├── commands_registry_erased.sla — RegistryErasedWorld deferred Commands carrying erased payloads
 ├── schedule_registry_erased.sla — RegistryErasedWorld sequential Schedule with component-id access tracking
 ├── commands_table_erased.sla — TableErasedWorld deferred Commands carrying erased payloads, including type-id insert helpers
+├── commands_table_erased_relationship.sla — Ordered table-erased component + relationship/resource/message commands
+├── commands_table_erased_observer.sla — Deferred table-erased observer commands with lifecycle/event triggering during apply
+├── schedule_table_erased_relationship.sla — TableErasedRelationshipWorld Schedule with component/relationship access tracking and batch planning
+├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/Commands/ResMut/message system-param adapters
 ├── schedule_table_erased.sla — TableErasedWorld Schedule with type-id access tracking and parallel batch planning
 ├── system_param_table_erased.sla — TableErasedWorld query/resource/Commands/ResMut/message system-param adapters, including type-id helpers
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T>, MessageWriter<T>, and reader cursor
 ├── messages_erased.sla — Type-erased multi-message channels keyed by `message_type_id()` impl metadata
 ├── event_observer_erased.sla — Type-erased Event observer registry with immediate trigger support
-├── relationship.sla — Generic Bevy-style relationship runtime with one-to-many, one-to-one, difference replacement, self-policy, and linked despawn
-├── hierarchy_relationship_adapter.sla — Typed ChildOf/Children-style facade backed by generic RelationshipWorld
+├── relationship.sla — Generic Bevy-style relationship runtime with one-to-many, one-to-one, traversal, difference replacement, self-policy, and linked despawn
+├── commands_relationship.sla — Deferred RelationshipWorld commands and related spawner helpers for spawn/add/insert/remove/replace/detach/despawn relation mutations
+├── hierarchy_relationship_adapter.sla — Typed ChildOf/Children-style facade backed by generic RelationshipWorld, including traversal helpers
+├── hierarchy_commands.sla — Deferred commands for the typed hierarchy facade
+├── relationship_one_adapter.sla — Typed one-to-one relationship facade backed by generic RelationshipWorld
 ├── hierarchy.sla    — Bevy-style ChildOf/Children relationship runtime with traversal, Children swap/sort helpers, and recursive despawn
 ├── world.sla         — Generic fixed-capacity World<A, B, R, M> owner + pair query/writeback
 ├── world_dynamic.sla — Vec-backed DynamicWorld<A, B, R, M> owner + pair query/writeback
@@ -101,12 +110,20 @@ examples/
 ├── table_erased_system_param_demo.sla — Type-erased table-row system-param demo
 ├── table_erased_auto_metadata_demo.sla — Type-id metadata lookup demo over the table-erased path
 ├── table_erased_bundle_demo.sla — Component bundle spawn/insert demo over the table-erased path
+├── table_erased_observer_demo.sla — Table-erased component lifecycle and targeted observer demo
+├── table_erased_relationship_demo.sla — Table-erased component storage plus generic relationship wrapper demo
+├── table_erased_relationship_commands_demo.sla — Ordered table-erased component + relationship commands demo
+├── table_erased_relationship_system_param_demo.sla — Table-erased relationship schedule/system-param demo
 ├── table_erased_derive_component_demo.sla — Project-level component marker + `impl` metadata demo
 ├── resource_derive_multi_demo.sla — Resource identity metadata demo
 ├── message_derive_multi_demo.sla — Multi-channel message metadata demo
 ├── event_observer_demo.sla       — Immediate observer trigger metadata demo
 ├── relationship_runtime_demo.sla — Generic relationship runtime demo for many/one-to-one/difference/self/linked semantics
+├── relationship_commands_demo.sla — Deferred generic relationship command queue demo
+├── relationship_one_to_one_demo.sla — Typed one-to-one relationship facade demo
+├── relationship_multi_kind_demo.sla — Multiple relationship kinds in one RelationshipWorld demo
 ├── hierarchy_generic_relationship_demo.sla — Typed hierarchy facade over the generic relationship runtime
+├── hierarchy_commands_demo.sla — Deferred typed hierarchy command facade demo
 ├── hierarchy_relationship_demo.sla — Parent/child relationship traversal, sorting, difference replacement, and recursive despawn demo
 ├── table_system_param_demo.sla      — Table-row schedule/system-param/Commands demo
 ├── world_movement_demo.sla        — Fixed World movement/resource/message demo
@@ -148,10 +165,16 @@ SA_PLUGIN_DEV=1 sa sla test lib/world_registry_typed.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_store.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_relationship.sla
+SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_observer.sla
 SA_PLUGIN_DEV=1 sa sla test lib/bundle_table_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/commands_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/schedule_registry_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/commands_table_erased.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_table_erased_relationship.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_table_erased_observer.sla
+SA_PLUGIN_DEV=1 sa sla test lib/schedule_table_erased_relationship.sla
+SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_relationship.sla
 SA_PLUGIN_DEV=1 sa sla test lib/schedule_table_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/resource.sla
@@ -159,7 +182,10 @@ SA_PLUGIN_DEV=1 sa sla test lib/messages.sla
 SA_PLUGIN_DEV=1 sa sla test lib/messages_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/event_observer_erased.sla
 SA_PLUGIN_DEV=1 sa sla test lib/relationship.sla
+SA_PLUGIN_DEV=1 sa sla test lib/commands_relationship.sla
 SA_PLUGIN_DEV=1 sa sla test lib/hierarchy_relationship_adapter.sla
+SA_PLUGIN_DEV=1 sa sla test lib/hierarchy_commands.sla
+SA_PLUGIN_DEV=1 sa sla test lib/relationship_one_adapter.sla
 SA_PLUGIN_DEV=1 sa sla test lib/hierarchy.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world.sla
 SA_PLUGIN_DEV=1 sa sla test lib/world_dynamic.sla
@@ -178,12 +204,20 @@ SA_PLUGIN_DEV=1 sa sla test examples/table_erased_schedule_commands_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_system_param_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_auto_metadata_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_bundle_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/table_erased_observer_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_commands_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_system_param_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_erased_derive_component_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/resource_derive_multi_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/message_derive_multi_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/event_observer_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/relationship_runtime_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/relationship_commands_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/relationship_one_to_one_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/relationship_multi_kind_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/hierarchy_generic_relationship_demo.sla
+SA_PLUGIN_DEV=1 sa sla test examples/hierarchy_commands_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/hierarchy_relationship_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/table_system_param_demo.sla
 SA_PLUGIN_DEV=1 sa sla test examples/bevy_readme_parity_demo.sla
@@ -234,9 +268,9 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 - `messages.sla` now includes `MessageWriter<T>` batching plus `MessageReader<T>`-style cursor reads. `world_registry.sla` verifies arbitrary component id registration, membership, With/Without filtering, change ticks, and despawn cleanup. `world_registry_typed.sla` binds typed A/B value stores to registry component ids and uses registry ticks as the source of truth. `world_registry_store.sla` owns any number of registry component columns for a homogeneous Sla value type `T`, including pair joins, pair `Without` filters, Added/Changed queries, and pair-mut writeback. `world_registry_erased.sla` stores heterogeneous component values behind erased boxed pointers with per-component drop functions. `world_table_erased.sla` stores those heterogeneous erased values directly in archetype table columns aligned by entity row, with add/remove/despawn migration, typed queries, pair-mut writeback, resources, messages, cleanup, and runtime type-id metadata lookup. `commands_registry_value.sla` / `schedule_registry_value.sla`, `commands_registry_erased.sla` / `schedule_registry_erased.sla`, and `commands_table_erased.sla` / `schedule_table_erased.sla` add deferred mutation and ordered system execution over registry-owned and table-row value paths.
 - `DynamicWorld<A, B, R, M>` and `DynamicWorld3<A, B, C, R, M>` remain verified typed-column compatibility steps while the registry-bound runtime matures.
 - The fixed `World` remains in the tree for regression coverage while dynamic APIs mature.
-- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous, type-erased, and archetype-backed value paths now also have component-id queries, commands, schedules, resources/messages, and demos. `archetype_registry.sla` verifies Bevy-style entity location migration between component-signature archetypes, `world_archetype_value.sla` connects those locations to real homogeneous component value columns and tracks resource added/changed ticks, `world_table_value.sla` stores homogeneous component values directly inside archetype table rows with row migration, and `world_table_erased.sla` extends that table-row path to heterogeneous boxed component values plus type-id lookup helpers. `commands_table_value.sla` / `schedule_table_value.sla` / `system_param_table_value.sla` run deferred commands, schedules, and injected params over the homogeneous table-row path; `commands_table_erased.sla` / `schedule_table_erased.sla` / `system_param_table_erased.sla` now cover deferred commands, schedules, injected params, type-id helper APIs, and no-conflict parallel batch planning for heterogeneous table rows. True multi-threaded World execution is not complete.
-- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The current path uses project-level derive markers plus ordinary `impl` methods for component/resource/message/event type identity and table/sparse-set storage kind; those methods feed the table-erased, resource-erased, message-erased, and event observer runtimes. `bundle_table_erased.sla` adds Bevy-style bundle spawn/insert helpers over the table-erased path. Automatic metadata generation through a generic language macro/derive facility, generated drop glue, and EntityEvent sugar are still pending.
-- `lib/relationship.sla` implements Bevy's generic relationship bookkeeping as data: relationship kind registration, one-to-many target collections, one-to-one target replacement, invalid/self relation policy, source/target synchronization, target source queries, replace/detach, `replace_related_with_difference`, and linked recursive despawn. Derive/macro sugar for declaring user relationship component pairs remains pending.
-- `lib/hierarchy_relationship_adapter.sla` proves typed relationship facades can be built over the generic relationship runtime in `sla_ecs`: `GenericChildOf` / `GenericChildren` wrappers expose add/insert/reparent/detach/replace-with-difference/despawn behavior without compiler engine keywords.
+- Bevy-style dynamic query wrappers, filters, `Res<T>` / `ResMut<T>`, resource change detection, system adapters, sequential schedules, and deferred `Commands` are implemented for the current A/B world shape; the registry-owned homogeneous, type-erased, and archetype-backed value paths now also have component-id queries, commands, schedules, resources/messages, and demos. `archetype_registry.sla` verifies Bevy-style entity location migration between component-signature archetypes, `world_archetype_value.sla` connects those locations to real homogeneous component value columns and tracks resource added/changed ticks, `world_table_value.sla` stores homogeneous component values directly inside archetype table rows with row migration, and `world_table_erased.sla` extends that table-row path to heterogeneous boxed component values plus type-id lookup helpers. `world_table_erased_relationship.sla` now wraps table-erased component storage with generic relationships while keeping entity allocation/free-list order synchronized, including linked despawn cleanup. `world_table_erased_observer.sla` wraps the same table-erased path with erased observers, targeted entity events, and component lifecycle events for add/insert/replace/remove/despawn. `commands_table_value.sla` / `schedule_table_value.sla` / `system_param_table_value.sla` run deferred commands, schedules, and injected params over the homogeneous table-row path; `commands_table_erased.sla` / `schedule_table_erased.sla` / `system_param_table_erased.sla` now cover deferred commands, schedules, injected params, type-id helper APIs, and no-conflict parallel batch planning for heterogeneous table rows. `commands_table_erased_relationship.sla` / `schedule_table_erased_relationship.sla` / `system_param_table_erased_relationship.sla` add ordered component/relationship/resource/message commands, component+relationship access tracking, batch planning, and query/relationship/Commands/ResMut/message params over the table-erased relationship world. `commands_table_erased_observer.sla` defers observer-world mutations while triggering lifecycle/events during apply. True multi-threaded World execution is not complete.
+- Component registration has runtime Sla metadata IDs plus verified type-id lookup helpers. The current path uses project-level derive markers plus ordinary `impl` methods for component/resource/message/event type identity and table/sparse-set storage kind; those methods feed the table-erased, resource-erased, message-erased, event observer, and table-erased observer runtimes. `bundle_table_erased.sla` adds Bevy-style bundle spawn/insert helpers over the table-erased path. Automatic metadata generation through a generic language macro/derive facility, generated drop glue, and broader namespace-stable type identity remain pending.
+- `lib/relationship.sla` implements Bevy's generic relationship bookkeeping as data: relationship kind registration, one-to-many target collections, one-to-one target replacement, invalid/self relation policy, source/target synchronization, target source queries, ancestors/root/descendants/siblings/leaves traversal, replace/detach, `replace_related_with_difference`, and linked recursive despawn. `commands_relationship.sla` adds deferred Bevy-style relationship commands plus related spawner helpers over that runtime for spawn-related, add, ordered insert, remove, replace, difference replacement, detach-all, despawn-related, one-to-one replacement, and linked despawn. Derive/macro sugar for declaring user relationship component pairs remains pending.
+- `lib/hierarchy_relationship_adapter.sla` proves typed relationship facades can be built over the generic relationship runtime in `sla_ecs`: `GenericChildOf` / `GenericChildren` wrappers expose add/insert/reparent/detach/replace-with-difference/despawn/traversal behavior without compiler engine keywords. `hierarchy_commands.sla` adds deferred child mutation commands over the typed facade, while `relationship_one_adapter.sla` verifies a typed one-to-one facade.
 - `lib/hierarchy.sla` now implements the canonical Bevy `ChildOf`/`Children` relationship shape in `sla_ecs`: source/target synchronization, reparenting, ordered insert/replace, `replace_children_with_difference`, `Children` swap and function-pointer sort helpers, detach, relationship source queries, ancestors, root ancestor, breadth-first descendants, depth-first descendants, siblings, leaves, and linked recursive child despawn. A generic user-defined relationship derive/macro layer is still pending.
 - The project follows the SA-native Bevy plan: use `Mut<T>` / `ResMut<T>` wrappers and Referee write inference instead of making Rust `mut` the core model.
