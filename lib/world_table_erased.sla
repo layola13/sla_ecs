@@ -66,10 +66,29 @@ struct TableErasedPairOptionalSecond<A, B> {
     second: TableErasedOptional<B>,
 }
 
+struct TableErasedPairOptionalFirst<A, B> {
+    entity: Entity,
+    first: TableErasedOptional<A>,
+    second: B,
+}
+
+struct TableErasedPairHasSecond<A, B> {
+    entity: Entity,
+    first: A,
+    second_has: bool,
+}
+
 struct TableErasedAnyOf2<A, B> {
     entity: Entity,
     first: TableErasedOptional<A>,
     second: TableErasedOptional<B>,
+}
+
+struct TableErasedAnyOf3<A, B, C> {
+    entity: Entity,
+    first: TableErasedOptional<A>,
+    second: TableErasedOptional<B>,
+    third: TableErasedOptional<C>,
 }
 
 struct TableErasedPairMut<A, B> {
@@ -937,6 +956,48 @@ fn table_erased_world_query_pair_optional_second_auto<A, B, R, M>(world: TableEr
     return table_erased_world_query_pair_optional_second<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_second);
 }
 
+fn table_erased_world_query_pair_optional_first<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_first: fn() -> A) -> Query<TableErasedPairOptionalFirst<A, B>> {
+    let query = query_new<TableErasedPairOptionalFirst<A, B>>();
+    let base = table_erased_world_query<B, R, M>(world, second_component_id, second_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        let first = table_erased_optional_none<A>(default_first);
+        if table_erased_world_has<R, M>(world, item.entity, first_component_id) {
+            first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, item.entity, first_component_id, first_type_id));
+        };
+        query.items.push(TableErasedPairOptionalFirst<A, B> { entity: item.entity, first: first, second: item.value });
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_pair_optional_first_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, default_first: fn() -> A) -> Query<TableErasedPairOptionalFirst<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_optional_first<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first);
+}
+
+fn table_erased_world_query_pair_has_second<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32) -> Query<TableErasedPairHasSecond<A, B>> {
+    let query = query_new<TableErasedPairHasSecond<A, B>>();
+    let base = table_erased_world_query<A, R, M>(world, first_component_id, first_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        query.items.push(TableErasedPairHasSecond<A, B> { entity: item.entity, first: item.value, second_has: table_erased_world_has<R, M>(world, item.entity, second_component_id) });
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_pair_has_second_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPairHasSecond<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_has_second<A, B, R, M>(world, first_component_id, first_type_id, second_component_id);
+}
+
 fn table_erased_world_query_any_of2<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B) -> Query<TableErasedAnyOf2<A, B>> {
     let query = query_new<TableErasedAnyOf2<A, B>>();
     let i: i64 = 0;
@@ -965,6 +1026,40 @@ fn table_erased_world_query_any_of2_auto<A, B, R, M>(world: TableErasedWorld<R, 
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
     return table_erased_world_query_any_of2<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second);
+}
+
+fn table_erased_world_query_any_of3<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C) -> Query<TableErasedAnyOf3<A, B, C>> {
+    let query = query_new<TableErasedAnyOf3<A, B, C>>();
+    let i: i64 = 0;
+    let cnt = len(world.locations) as i64;
+    while i < cnt {
+        let entity_id = world.locations[i].entity_id;
+        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
+        if table_erased_world_is_alive<R, M>(world, entity) {
+            let include = false;
+            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, third_component_id) { include = true; };
+            if include {
+                let first = table_erased_optional_none<A>(default_first);
+                let second = table_erased_optional_none<B>(default_second);
+                let third = table_erased_optional_none<C>(default_third);
+                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, third_component_id) { third = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, entity, third_component_id, third_type_id)); };
+                query.items.push(TableErasedAnyOf3<A, B, C> { entity: entity, first: first, second: second, third: third });
+            };
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_any_of3_auto<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C) -> Query<TableErasedAnyOf3<A, B, C>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
+    return table_erased_world_query_any_of3<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third);
 }
 
 fn table_erased_world_query_pair_with<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, with_component_id: i32) -> Query<TableErasedPair<A, B>> {
@@ -1571,6 +1666,30 @@ fn table_erased_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedM
     if any_marker_velocity.items[1].entity.id != e2.id { panic(11703); };
     if any_marker_velocity.items[1].first.has_value != true { panic(11704); };
     if any_marker_velocity.items[1].second.has_value != true { panic(11705); };
+    let optional_marker_first = table_erased_world_query_pair_optional_first_auto<TableErasedMarker, TableErasedVel, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_marker_default);
+    if len(optional_marker_first.items) != 2 { panic(11735); };
+    if optional_marker_first.items[0].entity.id != e1.id { panic(11736); };
+    if optional_marker_first.items[0].first.has_value != false { panic(11737); };
+    if optional_marker_first.items[0].second.x != 3 { panic(11738); };
+    if optional_marker_first.items[1].entity.id != e2.id { panic(11739); };
+    if optional_marker_first.items[1].first.has_value != true { panic(11740); };
+    if optional_marker_first.items[1].first.value.value != 1 { panic(11741); };
+    let pos_has_marker = table_erased_world_query_pair_has_second_auto<TableErasedPos, TableErasedMarker, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE);
+    if len(pos_has_marker.items) != 2 { panic(11742); };
+    if pos_has_marker.items[0].entity.id != e1.id { panic(11743); };
+    if pos_has_marker.items[0].second_has != false { panic(11744); };
+    if pos_has_marker.items[1].entity.id != e2.id { panic(11745); };
+    if pos_has_marker.items[1].second_has != true { panic(11746); };
+    let any_marker_velocity_pos = table_erased_world_query_any_of3_auto<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_pos_default);
+    if len(any_marker_velocity_pos.items) != 2 { panic(11747); };
+    if any_marker_velocity_pos.items[0].entity.id != e1.id { panic(11748); };
+    if any_marker_velocity_pos.items[0].first.has_value != false { panic(11749); };
+    if any_marker_velocity_pos.items[0].second.has_value != true { panic(11750); };
+    if any_marker_velocity_pos.items[0].third.has_value != true { panic(11751); };
+    if any_marker_velocity_pos.items[1].entity.id != e2.id { panic(11752); };
+    if any_marker_velocity_pos.items[1].first.has_value != true { panic(11753); };
+    if any_marker_velocity_pos.items[1].second.has_value != true { panic(11754); };
+    if any_marker_velocity_pos.items[1].third.has_value != true { panic(11755); };
     let all_entities = table_erased_world_query_entities<TableErasedTime, TableErasedEvent>(w10);
     if len(all_entities.items) != 2 { panic(11706); };
     if all_entities.items[0].id != e1.id { panic(11707); };
