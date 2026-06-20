@@ -187,6 +187,52 @@ fn relationship_entity_vec_remove_stable(values: Vec<Entity>, index: i64) -> Vec
     return values;
 }
 
+fn relationship_entity_vec_contains(values: Vec<Entity>, entity: Entity) -> bool {
+    let entity_id = entity.id;
+    let entity_gen = entity.gen;
+    let i: i64 = 0;
+    let cnt = len(values) as i64;
+    while i < cnt {
+        if relationship_entity_parts_eq(values[i].id, values[i].gen, entity_id, entity_gen) { return true; };
+        i = i + 1;
+    }
+    return false;
+}
+
+fn relationship_entity_vec_has_duplicates(values: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(values) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            if relationship_entity_parts_eq(values[i].id, values[i].gen, values[j].id, values[j].gen) { return true; };
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return false;
+}
+
+fn relationship_entity_vec_disjoint(left: Vec<Entity>, right: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(left) as i64;
+    while i < cnt {
+        if relationship_entity_vec_contains(right, left[i]) { return false; };
+        i = i + 1;
+    }
+    return true;
+}
+
+fn relationship_entity_vec_subset(left: Vec<Entity>, right: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(left) as i64;
+    while i < cnt {
+        if relationship_entity_vec_contains(right, left[i]) != true { return false; };
+        i = i + 1;
+    }
+    return true;
+}
+
 fn relationship_world_remove_target_entry_at(world: RelationshipWorld, slot: i64) -> RelationshipWorld {
     let count = len(world.targets) as i64;
     if slot < 0 { return world; };
@@ -410,6 +456,91 @@ fn relationship_world_replace_related(world: RelationshipWorld, kind_id: i32, ta
     return world;
 }
 
+fn relationship_world_replace_related_with_difference(world: RelationshipWorld, kind_id: i32, target: Entity, entities_to_unrelate: Vec<Entity>, entities_to_relate: Vec<Entity>, newly_related_entities: Vec<Entity>) -> RelationshipWorld {
+    let target_id = target.id;
+    let target_gen = target.gen;
+    if relationship_world_is_alive(world, entity_new(target_id, target_gen)) != true { panic(9504); };
+    if relationship_entity_vec_has_duplicates(entities_to_unrelate) { panic(9505); };
+    if relationship_entity_vec_has_duplicates(entities_to_relate) { panic(9506); };
+    if relationship_entity_vec_has_duplicates(newly_related_entities) { panic(9507); };
+    if relationship_entity_vec_disjoint(entities_to_relate, entities_to_unrelate) != true { panic(9508); };
+    if relationship_entity_vec_disjoint(newly_related_entities, entities_to_unrelate) != true { panic(9509); };
+    if relationship_entity_vec_subset(newly_related_entities, entities_to_relate) != true { panic(9515); };
+    let kind = relationship_world_kind(world, kind_id);
+    if kind.target_mode == RELATIONSHIP_TARGET_ONE {
+        if len(entities_to_relate) > 1 { panic(9516); };
+    };
+    let existing = relationship_world_sources(world, kind_id, entity_new(target_id, target_gen));
+    let expected: Vec<Entity> = Vec::new();
+    let newly_copy_i: i64 = 0;
+    let newly_copy_count = len(newly_related_entities) as i64;
+    while newly_copy_i < newly_copy_count {
+        expected.push(entity_new(newly_related_entities[newly_copy_i].id, newly_related_entities[newly_copy_i].gen));
+        newly_copy_i = newly_copy_i + 1;
+    }
+    let existing_i: i64 = 0;
+    let existing_count = len(existing.items) as i64;
+    while existing_i < existing_count {
+        let old = existing.items[existing_i];
+        if relationship_entity_vec_contains(entities_to_unrelate, old) != true {
+            expected.push(entity_new(old.id, old.gen));
+        };
+        existing_i = existing_i + 1;
+    }
+    if relationship_entity_vec_has_duplicates(expected) { panic(9517); };
+    if relationship_entity_vec_subset(expected, entities_to_relate) != true { panic(9518); };
+    if relationship_entity_vec_subset(entities_to_relate, expected) != true { panic(9519); };
+
+    let target_slot = relationship_world_target_slot(world, kind_id, entity_new(target_id, target_gen));
+    if target_slot < 0 {
+        let add_i: i64 = 0;
+        let add_count = len(entities_to_relate) as i64;
+        while add_i < add_count {
+            world = relationship_world_set_related_at(world, kind_id, entity_new(entities_to_relate[add_i].id, entities_to_relate[add_i].gen), entity_new(target_id, target_gen), add_i);
+            add_i = add_i + 1;
+        }
+        return world;
+    };
+
+    let empty: Vec<Entity> = Vec::new();
+    world.targets[target_slot].sources = empty;
+    let relate_i: i64 = 0;
+    let relate_count = len(entities_to_relate) as i64;
+    while relate_i < relate_count {
+        world.targets[target_slot].sources.push(entity_new(entities_to_relate[relate_i].id, entities_to_relate[relate_i].gen));
+        relate_i = relate_i + 1;
+    }
+    let unrelate_i: i64 = 0;
+    let unrelate_count = len(entities_to_unrelate) as i64;
+    while unrelate_i < unrelate_count {
+        world = relationship_world_remove_related(world, kind_id, entity_new(entities_to_unrelate[unrelate_i].id, entities_to_unrelate[unrelate_i].gen));
+        unrelate_i = unrelate_i + 1;
+    }
+    let new_i: i64 = 0;
+    let new_count = len(newly_related_entities) as i64;
+    while new_i < new_count {
+        let source = newly_related_entities[new_i];
+        let source_id = source.id;
+        let source_gen = source.gen;
+        let existing_source_slot = relationship_world_source_slot(world, kind_id, entity_new(source_id, source_gen));
+        if existing_source_slot >= 0 {
+            let old_target = world.sources[existing_source_slot].target;
+            if relationship_entity_parts_eq(old_target.id, old_target.gen, target_id, target_gen) != true {
+                world = relationship_world_remove_source_from_target(world, kind_id, entity_new(old_target.id, old_target.gen), entity_new(source_id, source_gen));
+            };
+            let updated_source_slot = relationship_world_source_slot(world, kind_id, entity_new(source_id, source_gen));
+            world.sources[updated_source_slot].target = entity_new(target_id, target_gen);
+        } else {
+            world.sources.push(RelationshipSourceEntry { kind_id: kind_id, source: entity_new(source_id, source_gen), target: entity_new(target_id, target_gen) });
+        };
+        new_i = new_i + 1;
+    }
+    if relate_count == 0 {
+        world = relationship_world_remove_empty_target(world, kind_id, entity_new(target_id, target_gen));
+    };
+    return world;
+}
+
 fn relationship_world_despawn_related(world: RelationshipWorld, kind_id: i32, target: Entity) -> RelationshipWorld {
     let sources = relationship_world_sources(world, kind_id, target);
     let i: i64 = 0;
@@ -496,6 +627,34 @@ fn relationship_world_despawn(world: RelationshipWorld, entity: Entity) -> Relat
     if entity_eq(relationship_world_source_at(w11, kind.id, target, 1), e0) != true { panic(9526); };
     if relationship_world_has_related(w11, kind.id, e1) != false { panic(9527); };
     if relationship_world_has_related(w11, kind.id, e3) != false { panic(9528); };
+}
+
+@test "relationship replace with difference preserves final collection"() {
+    let w0 = relationship_world_new();
+    let (w1, kind) = relationship_world_register_many(w0, false, false);
+    let (w2, target) = relationship_world_spawn(w1);
+    let (w3, e0) = relationship_world_spawn(w2);
+    let (w4, e1) = relationship_world_spawn(w3);
+    let (w5, e2) = relationship_world_spawn(w4);
+    let (w6, e3) = relationship_world_spawn(w5);
+    let w7 = relationship_world_set_related(w6, kind.id, e0, target);
+    let w8 = relationship_world_set_related(w7, kind.id, e1, target);
+    let w9 = relationship_world_set_related(w8, kind.id, e2, target);
+    let unrelate: Vec<Entity> = Vec::new();
+    unrelate.push(e1);
+    let relate: Vec<Entity> = Vec::new();
+    relate.push(e2);
+    relate.push(e0);
+    relate.push(e3);
+    let newly: Vec<Entity> = Vec::new();
+    newly.push(e3);
+    let w10 = relationship_world_replace_related_with_difference(w9, kind.id, target, unrelate, relate, newly);
+    if relationship_world_source_count(w10, kind.id, target) != 3 { panic(9580); };
+    if entity_eq(relationship_world_source_at(w10, kind.id, target, 0), e2) != true { panic(9581); };
+    if entity_eq(relationship_world_source_at(w10, kind.id, target, 1), e0) != true { panic(9582); };
+    if entity_eq(relationship_world_source_at(w10, kind.id, target, 2), e3) != true { panic(9583); };
+    if relationship_world_has_related(w10, kind.id, e1) != false { panic(9584); };
+    if entity_eq(relationship_world_related(w10, kind.id, e3), target) != true { panic(9585); };
 }
 
 @test "relationship reparent invalid target and self policies"() {

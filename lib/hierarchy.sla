@@ -74,6 +74,132 @@ fn children_at(children: Children, index: i64) -> Entity {
     return children.entities[index];
 }
 
+fn children_swap(children: Children, a_index: i64, b_index: i64) -> Children {
+    let count = len(children.entities) as i64;
+    if a_index < 0 { panic(9400); };
+    if b_index < 0 { panic(9401); };
+    if a_index >= count { panic(9402); };
+    if b_index >= count { panic(9403); };
+    if a_index == b_index { return children; };
+    let left = children.entities[a_index];
+    let right = children.entities[b_index];
+    children.entities[a_index] = entity_new(right.id, right.gen);
+    children.entities[b_index] = entity_new(left.id, left.gen);
+    return children;
+}
+
+fn children_sort_by(children: Children, compare: fn(Entity, Entity) -> i32) -> Children {
+    let count = len(children.entities) as i64;
+    let i: i64 = 1;
+    while i < count {
+        let key = children.entities[i];
+        let key_id = key.id;
+        let key_gen = key.gen;
+        let j = i - 1;
+        let insert_at = i + 0;
+        let moving = true;
+        while j >= 0 {
+            if moving != true {
+                j = -1;
+            } else {
+                let current = children.entities[j];
+                let order = compare(current, entity_new(key_id, key_gen));
+                if order <= 0 {
+                    moving = false;
+                    j = -1;
+                } else {
+                    children.entities[j + 1] = entity_new(current.id, current.gen);
+                    insert_at = j + 0;
+                    j = j - 1;
+                };
+            };
+        }
+        children.entities[insert_at] = entity_new(key_id, key_gen);
+        i = i + 1;
+    }
+    return children;
+}
+
+fn children_sort_by_key_i64(children: Children, key: fn(Entity) -> i64) -> Children {
+    let count = len(children.entities) as i64;
+    let i: i64 = 1;
+    while i < count {
+        let entity = children.entities[i];
+        let entity_id = entity.id;
+        let entity_gen = entity.gen;
+        let entity_key = key(entity_new(entity_id, entity_gen));
+        let j = i - 1;
+        let insert_at = i + 0;
+        let moving = true;
+        while j >= 0 {
+            if moving != true {
+                j = -1;
+            } else {
+                let current = children.entities[j];
+                if key(current) <= entity_key {
+                    moving = false;
+                    j = -1;
+                } else {
+                    children.entities[j + 1] = entity_new(current.id, current.gen);
+                    insert_at = j + 0;
+                    j = j - 1;
+                };
+            };
+        }
+        children.entities[insert_at] = entity_new(entity_id, entity_gen);
+        i = i + 1;
+    }
+    return children;
+}
+
+fn children_sort_by_cached_key_i64(children: Children, key: fn(Entity) -> i64) -> Children {
+    let keys: Vec<i64> = Vec::new();
+    let fill: i64 = 0;
+    let count = len(children.entities) as i64;
+    while fill < count {
+        keys.push(key(children.entities[fill]));
+        fill = fill + 1;
+    }
+    let i: i64 = 1;
+    while i < count {
+        let entity = children.entities[i];
+        let entity_id = entity.id;
+        let entity_gen = entity.gen;
+        let entity_key = keys[i];
+        let j = i - 1;
+        let insert_at = i + 0;
+        let moving = true;
+        while j >= 0 {
+            if moving != true {
+                j = -1;
+            } else {
+                if keys[j] <= entity_key {
+                    moving = false;
+                    j = -1;
+                } else {
+                    let current = children.entities[j];
+                    children.entities[j + 1] = entity_new(current.id, current.gen);
+                    keys[j + 1] = keys[j];
+                    insert_at = j + 0;
+                    j = j - 1;
+                };
+            };
+        }
+        children.entities[insert_at] = entity_new(entity_id, entity_gen);
+        keys[insert_at] = entity_key;
+        i = i + 1;
+    }
+    return children;
+}
+
+fn children_sort_unstable_by(children: Children, compare: fn(Entity, Entity) -> i32) -> Children {
+    return children_sort_by(children, compare);
+}
+
+fn children_sort_unstable_by_key_i64(children: Children, key: fn(Entity) -> i64) -> Children {
+    return children_sort_by_key_i64(children, key);
+}
+
 fn hierarchy_query_new() -> HierarchyEntityQuery {
     let items: Vec<Entity> = Vec::new();
     return HierarchyEntityQuery { items: items };
@@ -169,6 +295,52 @@ fn hierarchy_entity_vec_remove_at(values: Vec<Entity>, index: i64) -> Vec<Entity
     }
     let removed = values.remove(last);
     return values;
+}
+
+fn hierarchy_entity_vec_contains(values: Vec<Entity>, entity: Entity) -> bool {
+    let entity_id = entity.id;
+    let entity_gen = entity.gen;
+    let i: i64 = 0;
+    let cnt = len(values) as i64;
+    while i < cnt {
+        if hierarchy_entity_parts_eq(values[i].id, values[i].gen, entity_id, entity_gen) { return true; };
+        i = i + 1;
+    }
+    return false;
+}
+
+fn hierarchy_entity_vec_has_duplicates(values: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(values) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            if hierarchy_entity_parts_eq(values[i].id, values[i].gen, values[j].id, values[j].gen) { return true; };
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return false;
+}
+
+fn hierarchy_entity_vec_disjoint(left: Vec<Entity>, right: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(left) as i64;
+    while i < cnt {
+        if hierarchy_entity_vec_contains(right, left[i]) { return false; };
+        i = i + 1;
+    }
+    return true;
+}
+
+fn hierarchy_entity_vec_subset(left: Vec<Entity>, right: Vec<Entity>) -> bool {
+    let i: i64 = 0;
+    let cnt = len(left) as i64;
+    while i < cnt {
+        if hierarchy_entity_vec_contains(right, left[i]) != true { return false; };
+        i = i + 1;
+    }
+    return true;
 }
 
 fn hierarchy_world_remove_children_entry_at(world: HierarchyWorld, slot: i64) -> HierarchyWorld {
@@ -370,6 +542,48 @@ fn hierarchy_world_child_at(world: HierarchyWorld, parent: Entity, index: i64) -
     return children.entities[index];
 }
 
+fn hierarchy_world_swap_children(world: HierarchyWorld, parent: Entity, a_index: i64, b_index: i64) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { panic(9404); };
+    world.children[slot].children = children_swap(world.children[slot].children, a_index, b_index);
+    return world;
+}
+
+fn hierarchy_world_sort_children_by(world: HierarchyWorld, parent: Entity, compare: fn(Entity, Entity) -> i32) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { return world; };
+    world.children[slot].children = children_sort_by(world.children[slot].children, compare);
+    return world;
+}
+
+fn hierarchy_world_sort_children_by_key_i64(world: HierarchyWorld, parent: Entity, key: fn(Entity) -> i64) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { return world; };
+    world.children[slot].children = children_sort_by_key_i64(world.children[slot].children, key);
+    return world;
+}
+
+fn hierarchy_world_sort_children_by_cached_key_i64(world: HierarchyWorld, parent: Entity, key: fn(Entity) -> i64) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { return world; };
+    world.children[slot].children = children_sort_by_cached_key_i64(world.children[slot].children, key);
+    return world;
+}
+
+fn hierarchy_world_sort_children_unstable_by(world: HierarchyWorld, parent: Entity, compare: fn(Entity, Entity) -> i32) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { return world; };
+    world.children[slot].children = children_sort_unstable_by(world.children[slot].children, compare);
+    return world;
+}
+
+fn hierarchy_world_sort_children_unstable_by_key_i64(world: HierarchyWorld, parent: Entity, key: fn(Entity) -> i64) -> HierarchyWorld {
+    let slot = hierarchy_world_children_slot(world, parent);
+    if slot < 0 { return world; };
+    world.children[slot].children = children_sort_unstable_by_key_i64(world.children[slot].children, key);
+    return world;
+}
+
 fn hierarchy_world_detach_all_children(world: HierarchyWorld, parent: Entity) -> HierarchyWorld {
     let children = hierarchy_world_children(world, parent);
     let i: i64 = 0;
@@ -416,6 +630,87 @@ fn hierarchy_world_replace_children(world: HierarchyWorld, parent: Entity, child
         k = k + 1;
     }
     if count == 0 {
+        world = hierarchy_world_remove_empty_children_entry(world, entity_new(parent_id, parent_gen));
+    };
+    return world;
+}
+
+fn hierarchy_world_replace_children_with_difference(world: HierarchyWorld, parent: Entity, entities_to_unrelate: Vec<Entity>, entities_to_relate: Vec<Entity>, newly_related_entities: Vec<Entity>) -> HierarchyWorld {
+    let parent_id = parent.id;
+    let parent_gen = parent.gen;
+    if hierarchy_world_is_alive(world, entity_new(parent_id, parent_gen)) != true { panic(9405); };
+    if hierarchy_entity_vec_has_duplicates(entities_to_unrelate) { panic(9406); };
+    if hierarchy_entity_vec_has_duplicates(entities_to_relate) { panic(9407); };
+    if hierarchy_entity_vec_has_duplicates(newly_related_entities) { panic(9408); };
+    if hierarchy_entity_vec_disjoint(entities_to_relate, entities_to_unrelate) != true { panic(9409); };
+    if hierarchy_entity_vec_disjoint(newly_related_entities, entities_to_unrelate) != true { panic(9410); };
+    if hierarchy_entity_vec_subset(newly_related_entities, entities_to_relate) != true { panic(9411); };
+    let existing = hierarchy_world_children(world, entity_new(parent_id, parent_gen));
+    let expected: Vec<Entity> = Vec::new();
+    let newly_copy_i: i64 = 0;
+    let newly_copy_count = len(newly_related_entities) as i64;
+    while newly_copy_i < newly_copy_count {
+        expected.push(entity_new(newly_related_entities[newly_copy_i].id, newly_related_entities[newly_copy_i].gen));
+        newly_copy_i = newly_copy_i + 1;
+    }
+    let existing_i: i64 = 0;
+    let existing_count = len(existing.entities) as i64;
+    while existing_i < existing_count {
+        let old = existing.entities[existing_i];
+        if hierarchy_entity_vec_contains(entities_to_unrelate, old) != true {
+            expected.push(entity_new(old.id, old.gen));
+        };
+        existing_i = existing_i + 1;
+    }
+    if hierarchy_entity_vec_has_duplicates(expected) { panic(9412); };
+    if hierarchy_entity_vec_subset(expected, entities_to_relate) != true { panic(9413); };
+    if hierarchy_entity_vec_subset(entities_to_relate, expected) != true { panic(9414); };
+
+    let slot = hierarchy_world_children_slot(world, entity_new(parent_id, parent_gen));
+    if slot < 0 {
+        let add_i: i64 = 0;
+        let add_count = len(entities_to_relate) as i64;
+        while add_i < add_count {
+            world = hierarchy_world_set_parent_at(world, entity_new(entities_to_relate[add_i].id, entities_to_relate[add_i].gen), entity_new(parent_id, parent_gen), add_i);
+            add_i = add_i + 1;
+        }
+        return world;
+    };
+
+    let empty: Vec<Entity> = Vec::new();
+    world.children[slot].children.entities = empty;
+    let relate_i: i64 = 0;
+    let relate_count = len(entities_to_relate) as i64;
+    while relate_i < relate_count {
+        world.children[slot].children.entities.push(entity_new(entities_to_relate[relate_i].id, entities_to_relate[relate_i].gen));
+        relate_i = relate_i + 1;
+    }
+    let unrelate_i: i64 = 0;
+    let unrelate_count = len(entities_to_unrelate) as i64;
+    while unrelate_i < unrelate_count {
+        world = hierarchy_world_detach_child(world, entity_new(parent_id, parent_gen), entity_new(entities_to_unrelate[unrelate_i].id, entities_to_unrelate[unrelate_i].gen));
+        unrelate_i = unrelate_i + 1;
+    }
+    let new_i: i64 = 0;
+    let new_count = len(newly_related_entities) as i64;
+    while new_i < new_count {
+        let child = newly_related_entities[new_i];
+        let child_id = child.id;
+        let child_gen = child.gen;
+        let source_slot = hierarchy_world_child_of_slot(world, entity_new(child_id, child_gen));
+        if source_slot >= 0 {
+            let old_parent = world.child_of[source_slot].parent;
+            if hierarchy_entity_parts_eq(old_parent.id, old_parent.gen, parent_id, parent_gen) != true {
+                world = hierarchy_world_remove_child_from_parent(world, entity_new(old_parent.id, old_parent.gen), entity_new(child_id, child_gen));
+            };
+            let updated_slot = hierarchy_world_child_of_slot(world, entity_new(child_id, child_gen));
+            world.child_of[updated_slot].parent = entity_new(parent_id, parent_gen);
+        } else {
+            world.child_of.push(HierarchyChildOfEntry { child: entity_new(child_id, child_gen), parent: entity_new(parent_id, parent_gen) });
+        };
+        new_i = new_i + 1;
+    }
+    if relate_count == 0 {
         world = hierarchy_world_remove_empty_children_entry(world, entity_new(parent_id, parent_gen));
     };
     return world;
@@ -565,6 +860,27 @@ fn hierarchy_world_leaves(world: HierarchyWorld, entity: Entity) -> HierarchyEnt
     return query;
 }
 
+fn hierarchy_compare_entity_id_asc(left: Entity, right: Entity) -> i32 {
+    if left.id < right.id { return -1; };
+    if left.id > right.id { return 1; };
+    return 0;
+}
+
+fn hierarchy_compare_entity_id_desc(left: Entity, right: Entity) -> i32 {
+    if left.id > right.id { return -1; };
+    if left.id < right.id { return 1; };
+    return 0;
+}
+
+fn hierarchy_key_entity_id_desc(entity: Entity) -> i64 {
+    let id = entity.id as i64;
+    return 0 - id;
+}
+
+fn hierarchy_key_generation(entity: Entity) -> i64 {
+    return entity.gen as i64;
+}
+
 @test "hierarchy insert remove and recursive despawn"() {
     let w0 = hierarchy_world_new();
     let (w1, root) = hierarchy_world_spawn(w0);
@@ -636,6 +952,63 @@ fn hierarchy_world_leaves(world: HierarchyWorld, entity: Entity) -> HierarchyEnt
     if hierarchy_world_has_parent(w12, c1) != false { panic(9352); };
     if hierarchy_world_has_parent(w12, c3) != false { panic(9353); };
     if entity_eq(hierarchy_world_parent(w12, c4), parent) != true { panic(9354); };
+}
+
+@test "hierarchy children swap and sort helpers match collection behavior"() {
+    let w0 = hierarchy_world_new();
+    let (w1, parent) = hierarchy_world_spawn(w0);
+    let (w2, c0) = hierarchy_world_spawn(w1);
+    let (w3, c1) = hierarchy_world_spawn(w2);
+    let (w4, c2) = hierarchy_world_spawn(w3);
+    let w5 = hierarchy_world_add_child(w4, parent, c0);
+    let w6 = hierarchy_world_add_child(w5, parent, c1);
+    let w7 = hierarchy_world_add_child(w6, parent, c2);
+    let w8 = hierarchy_world_swap_children(w7, parent, 0, 2);
+    if entity_eq(hierarchy_world_child_at(w8, parent, 0), c2) != true { panic(9415); };
+    if entity_eq(hierarchy_world_child_at(w8, parent, 2), c0) != true { panic(9416); };
+    let w9 = hierarchy_world_sort_children_by_key_i64(w8, parent, hierarchy_key_generation);
+    if entity_eq(hierarchy_world_child_at(w9, parent, 0), c2) != true { panic(9417); };
+    if entity_eq(hierarchy_world_child_at(w9, parent, 1), c1) != true { panic(9418); };
+    if entity_eq(hierarchy_world_child_at(w9, parent, 2), c0) != true { panic(9419); };
+    let w10 = hierarchy_world_sort_children_by_cached_key_i64(w9, parent, hierarchy_key_entity_id_desc);
+    if entity_eq(hierarchy_world_child_at(w10, parent, 0), c2) != true { panic(9420); };
+    if entity_eq(hierarchy_world_child_at(w10, parent, 1), c1) != true { panic(9421); };
+    if entity_eq(hierarchy_world_child_at(w10, parent, 2), c0) != true { panic(9422); };
+    let w11 = hierarchy_world_sort_children_unstable_by(w10, parent, hierarchy_compare_entity_id_asc);
+    if entity_eq(hierarchy_world_child_at(w11, parent, 0), c0) != true { panic(9423); };
+    if entity_eq(hierarchy_world_child_at(w11, parent, 1), c1) != true { panic(9424); };
+    if entity_eq(hierarchy_world_child_at(w11, parent, 2), c2) != true { panic(9425); };
+    let w12 = hierarchy_world_sort_children_by(w11, parent, hierarchy_compare_entity_id_desc);
+    if entity_eq(hierarchy_world_child_at(w12, parent, 0), c2) != true { panic(9426); };
+    if entity_eq(hierarchy_world_child_at(w12, parent, 1), c1) != true { panic(9427); };
+    if entity_eq(hierarchy_world_child_at(w12, parent, 2), c0) != true { panic(9428); };
+}
+
+@test "hierarchy replace children with difference preserves source and order"() {
+    let w0 = hierarchy_world_new();
+    let (w1, parent) = hierarchy_world_spawn(w0);
+    let (w2, c0) = hierarchy_world_spawn(w1);
+    let (w3, c1) = hierarchy_world_spawn(w2);
+    let (w4, c2) = hierarchy_world_spawn(w3);
+    let (w5, c3) = hierarchy_world_spawn(w4);
+    let w6 = hierarchy_world_add_child(w5, parent, c0);
+    let w7 = hierarchy_world_add_child(w6, parent, c1);
+    let w8 = hierarchy_world_add_child(w7, parent, c2);
+    let unrelate: Vec<Entity> = Vec::new();
+    unrelate.push(c1);
+    let relate: Vec<Entity> = Vec::new();
+    relate.push(c2);
+    relate.push(c0);
+    relate.push(c3);
+    let newly: Vec<Entity> = Vec::new();
+    newly.push(c3);
+    let w9 = hierarchy_world_replace_children_with_difference(w8, parent, unrelate, relate, newly);
+    if hierarchy_world_child_count(w9, parent) != 3 { panic(9429); };
+    if entity_eq(hierarchy_world_child_at(w9, parent, 0), c2) != true { panic(9430); };
+    if entity_eq(hierarchy_world_child_at(w9, parent, 1), c0) != true { panic(9431); };
+    if entity_eq(hierarchy_world_child_at(w9, parent, 2), c3) != true { panic(9432); };
+    if hierarchy_world_has_parent(w9, c1) != false { panic(9433); };
+    if entity_eq(hierarchy_world_parent(w9, c3), parent) != true { panic(9434); };
 }
 
 @test "hierarchy traversal queries match Bevy order"() {
