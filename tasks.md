@@ -49,6 +49,9 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row homogeneous value world: component values stored inside archetype columns by entity row, row migration on add/remove/despawn, row-preserving writeback, queries, Added/Changed, resources, and messages.
 - [x] Add verified archetype table-row type-erased heterogeneous value world: boxed component payloads stored inside archetype columns by entity row, row migration on add/remove/despawn, typed get/query, pair-mut writeback, Added/Changed, resources, messages, and cleanup.
 - [x] Add verified table-row type-erased pair-mut `Without` query helper for `Query<(Mut<A>, B), Without<C>>`-style movement systems. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Add verified table-row type-erased `With<T>` and `Added<T>` value query helpers plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Add verified homogeneous table-row `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_value.sla`.
+- [x] Add verified archetype-backed homogeneous `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_archetype_value.sla`.
 - [x] Add verified table-row type-erased relationship wrapper in `lib/world_table_erased_relationship.sla`: synchronized `TableErasedWorld` + `RelationshipWorld` entity allocation, component storage, relation source/target queries, linked despawn cleanup, and allocator free-list order preservation. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_relationship.sla`.
 - [x] Add verified table-row Commands, Schedule, and system-param adapters over `TableValueWorld<T, R, M>`.
 - [x] Add verified table-row type-erased Commands and Schedule over `TableErasedWorld<R, M>`.
@@ -101,6 +104,10 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified archetype-backed system parameter adapters for injected pair-mut query params, resource params, message writer params, adapter writeback, and schedule execution.
 - [x] Extend verified archetype-backed system parameter adapters with `ResMut` injection plus `MessageReader` cursor advancement and writeback.
 - [x] Extend verified archetype-backed system parameter adapters with `Commands`, standalone `MessageWriter`, and filtered query resource params for `Without`, `Added`, and `Changed`.
+- [x] Extend verified archetype-backed system parameter adapters with `With<T>` filtered query resource params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_archetype_value.sla`.
+- [x] Extend verified homogeneous table-row system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_value.sla`.
+- [x] Extend verified table-row type-erased system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`.
+- [x] Extend verified table-row type-erased observer system parameter adapters with `With<T>`, `Added<T>`, and `Changed<T>` filtered query resource params plus auto type-id variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -125,6 +132,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified archetype table-row type-erased Commands/Schedule example: `examples/table_erased_schedule_commands_demo.sla`.
 - [x] Add verified archetype table-row type-erased system-param example: `examples/table_erased_system_param_demo.sla`.
 - [x] Add verified table-erased runtime type-id metadata example: `examples/table_erased_auto_metadata_demo.sla`.
+- [x] Extend verified table-erased runtime type-id metadata example with auto `With<T>` and `Added<T>` query/filter system-param paths. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_auto_metadata_demo.sla`.
 - [x] Add verified table-erased component bundle example: `examples/table_erased_bundle_demo.sla`.
 - [x] Add verified table-erased relationship wrapper example: `examples/table_erased_relationship_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_demo.sla`.
 - [x] Add verified ordered table-erased relationship command example: `examples/table_erased_relationship_commands_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_commands_demo.sla`.

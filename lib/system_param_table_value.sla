@@ -113,6 +113,27 @@ fn table_value_run_without_query_resource_system<T, R, M>(world: TableValueWorld
     return table_value_world_insert_resource<T, R, M>(world, param1.resource);
 }
 
+fn table_value_run_with_query_resource_system<T, R, M>(world: TableValueWorld<T, R, M>, component_id: i32, with_component_id: i32, run: fn(TableValueQueryResourceParam<T, R>) -> TableValueQueryResourceParam<T, R>) -> TableValueWorld<T, R, M> {
+    let query = table_value_world_query_with<T, R, M>(world, component_id, with_component_id);
+    let param0 = table_value_query_resource_param<T, R>(query, table_value_world_get_resource<T, R, M>(world));
+    let param1 = run(param0);
+    return table_value_world_insert_resource<T, R, M>(world, param1.resource);
+}
+
+fn table_value_run_added_query_resource_system<T, R, M>(world: TableValueWorld<T, R, M>, component_id: i32, since_tick: i32, run: fn(TableValueQueryResourceParam<T, R>) -> TableValueQueryResourceParam<T, R>) -> TableValueWorld<T, R, M> {
+    let query = table_value_world_query_added<T, R, M>(world, component_id, since_tick);
+    let param0 = table_value_query_resource_param<T, R>(query, table_value_world_get_resource<T, R, M>(world));
+    let param1 = run(param0);
+    return table_value_world_insert_resource<T, R, M>(world, param1.resource);
+}
+
+fn table_value_run_changed_query_resource_system<T, R, M>(world: TableValueWorld<T, R, M>, component_id: i32, since_tick: i32, run: fn(TableValueQueryResourceParam<T, R>) -> TableValueQueryResourceParam<T, R>) -> TableValueWorld<T, R, M> {
+    let query = table_value_world_query_changed<T, R, M>(world, component_id, since_tick);
+    let param0 = table_value_query_resource_param<T, R>(query, table_value_world_get_resource<T, R, M>(world));
+    let param1 = run(param0);
+    return table_value_world_insert_resource<T, R, M>(world, param1.resource);
+}
+
 struct TableParamData { amount: i32 }
 struct TableParamTime { tick: i32 }
 struct TableParamEvent { amount: i32 }
@@ -205,4 +226,28 @@ fn table_param_count_query_system(param: TableValueQueryResourceParam<TableParam
     if reader2.cursor != 2 { panic(11422); };
     let query = table_value_world_query<TableParamData, TableParamTime, TableParamEvent>(w6, health.id);
     if len(query.items) != 1 { panic(11423); };
+}
+
+@test "table value with added changed query resource params"() {
+    let w0 = table_param_world_new();
+    let (w1, health) = table_value_world_register_table<TableParamData, TableParamTime, TableParamEvent>(w0);
+    let (w2, selected) = table_value_world_register_table<TableParamData, TableParamTime, TableParamEvent>(w1);
+    let (w3, e1) = table_value_world_spawn<TableParamData, TableParamTime, TableParamEvent>(w2);
+    let (w4, e2) = table_value_world_spawn<TableParamData, TableParamTime, TableParamEvent>(w3);
+    let w5 = table_value_world_insert_resource<TableParamData, TableParamTime, TableParamEvent>(w4, TableParamTime { tick: 0 });
+    let before_add = w5.registry.change_tick;
+    let w6 = table_value_world_increment_tick<TableParamData, TableParamTime, TableParamEvent>(w5);
+    let w7 = table_value_world_insert<TableParamData, TableParamTime, TableParamEvent>(w6, e1, health.id, TableParamData { amount: 1 });
+    let w8 = table_value_world_insert<TableParamData, TableParamTime, TableParamEvent>(w7, e2, health.id, TableParamData { amount: 2 });
+    let w9 = table_value_world_insert<TableParamData, TableParamTime, TableParamEvent>(w8, e2, selected.id, TableParamData { amount: 1 });
+    let w10 = table_value_run_with_query_resource_system<TableParamData, TableParamTime, TableParamEvent>(w9, health.id, selected.id, table_param_count_query_system);
+    if table_value_world_get_resource<TableParamData, TableParamTime, TableParamEvent>(w10).tick != 1 { panic(11424); };
+    let w11 = table_value_run_added_query_resource_system<TableParamData, TableParamTime, TableParamEvent>(w10, health.id, before_add, table_param_count_query_system);
+    if table_value_world_get_resource<TableParamData, TableParamTime, TableParamEvent>(w11).tick != 2 { panic(11425); };
+    let before_change = w11.registry.change_tick;
+    let w12 = table_value_world_increment_tick<TableParamData, TableParamTime, TableParamEvent>(w11);
+    let item = table_value_world_query_mut<TableParamData, TableParamTime, TableParamEvent>(w12, health.id).items[0];
+    let w13 = table_value_world_write<TableParamData, TableParamTime, TableParamEvent>(w12, item, TableParamData { amount: 9 });
+    let w14 = table_value_run_changed_query_resource_system<TableParamData, TableParamTime, TableParamEvent>(w13, health.id, before_change, table_param_count_query_system);
+    if table_value_world_get_resource<TableParamData, TableParamTime, TableParamEvent>(w14).tick != 1 { panic(11426); };
 }

@@ -408,6 +408,19 @@ fn table_value_world_query_without<T, R, M>(world: TableValueWorld<T, R, M>, com
     return query;
 }
 
+fn table_value_world_query_with<T, R, M>(world: TableValueWorld<T, R, M>, component_id: i32, with_component_id: i32) -> Query<EntityItem<T>> {
+    let query = query_new<EntityItem<T>>();
+    let base = table_value_world_query<T, R, M>(world, component_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        if table_value_world_has<T, R, M>(world, item.entity, with_component_id) { query.items.push(item); };
+        i = i + 1;
+    }
+    return query;
+}
+
 fn table_value_world_query_added<T, R, M>(world: TableValueWorld<T, R, M>, component_id: i32, tick: i32) -> Query<EntityItem<T>> {
     let query = query_new<EntityItem<T>>();
     let base = table_value_world_query<T, R, M>(world, component_id);
@@ -611,6 +624,9 @@ fn table_value_test_world_new() -> TableValueWorld<TableValueData, TableValueTim
     let w5 = table_value_world_insert<TableValueData, TableValueTime, TableValueEvent>(w4, e1, health.id, TableValueData { amount: 5 });
     let w6 = table_value_world_insert<TableValueData, TableValueTime, TableValueEvent>(w5, e1, mana.id, TableValueData { amount: 3 });
     let w7 = table_value_world_insert<TableValueData, TableValueTime, TableValueEvent>(w6, e2, health.id, TableValueData { amount: 7 });
+    let has_mana = table_value_world_query_with<TableValueData, TableValueTime, TableValueEvent>(w7, health.id, mana.id);
+    if len(has_mana.items) != 1 { panic(11036); };
+    if has_mana.items[0].entity.id != e1.id { panic(11037); };
     let w8 = table_value_world_remove<TableValueData, TableValueTime, TableValueEvent>(w7, e1, mana.id);
     if table_value_world_has<TableValueData, TableValueTime, TableValueEvent>(w8, e1, mana.id) != false { panic(11030); };
     let health_only = table_value_world_query_without<TableValueData, TableValueTime, TableValueEvent>(w8, health.id, mana.id);

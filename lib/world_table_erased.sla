@@ -547,6 +547,43 @@ fn table_erased_world_query_without_auto<T, R, M>(world: TableErasedWorld<R, M>,
     return table_erased_world_query_without<T, R, M>(world, component_id, type_id, without_component_id);
 }
 
+fn table_erased_world_query_with<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, with_component_id: i32) -> Query<EntityItem<T>> {
+    let query = query_new<EntityItem<T>>();
+    let base = table_erased_world_query<T, R, M>(world, component_id, type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        if table_erased_world_has<R, M>(world, item.entity, with_component_id) { query.items.push(item); };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_with_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, with_type_id: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    let with_component_id = table_erased_world_component_id_for_type<R, M>(world, with_type_id);
+    return table_erased_world_query_with<T, R, M>(world, component_id, type_id, with_component_id);
+}
+
+fn table_erased_world_query_added<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, tick: i32) -> Query<EntityItem<T>> {
+    let query = query_new<EntityItem<T>>();
+    let base = table_erased_world_query<T, R, M>(world, component_id, type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        if table_erased_world_added_since<R, M>(world, item.entity, component_id, tick) { query.items.push(item); };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_added_auto<T, R, M>(world: TableErasedWorld<R, M>, type_id: i32, tick: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_query_added<T, R, M>(world, component_id, type_id, tick);
+}
+
 fn table_erased_world_query_changed<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32, tick: i32) -> Query<EntityItem<T>> {
     let query = query_new<EntityItem<T>>();
     let base = table_erased_world_query<T, R, M>(world, component_id, type_id);
@@ -805,9 +842,18 @@ fn table_erased_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedM
     let w10 = table_erased_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w9, e2, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
     let movers = table_erased_world_query_pair_mut_first_without<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w10, position.id, TABLE_ERASED_POS_TYPE, velocity.id, TABLE_ERASED_VEL_TYPE, marker.id);
     if len(movers.items) != 1 { panic(11639); };
+    let marked = table_erased_world_query_with<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, position.id, TABLE_ERASED_POS_TYPE, marker.id);
+    if len(marked.items) != 1 { panic(11643); };
+    if marked.items[0].entity.id != e2.id { panic(11644); };
+    let added = table_erased_world_query_added<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, position.id, TABLE_ERASED_POS_TYPE, 0);
+    if len(added.items) != 2 { panic(11645); };
     let item = movers.items[0];
     if item.first.entity.id != e1.id { panic(11640); };
     let w11 = table_erased_world_pair_write_first<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w10, item, TableErasedPos { x: item.first.value.x + item.second.x, y: 0 });
     if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e1, position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(11641); };
     if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e2, position.id, TABLE_ERASED_POS_TYPE).x != 40 { panic(11642); };
+    let marked_auto = table_erased_world_query_with_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE);
+    if len(marked_auto.items) != 1 { panic(11646); };
+    let added_auto = table_erased_world_query_added_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, TABLE_ERASED_POS_TYPE, 0);
+    if len(added_auto.items) != 2 { panic(11647); };
 }

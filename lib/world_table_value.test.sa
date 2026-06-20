@@ -229,6 +229,7 @@
 @const SLA_FNPTR_VT_query_new_EntityItem_TableValueData = vtable { call = @sla__query_new_EntityItem_TableValueData }
 @const SLA_FNPTR_VT_table_value_world_query_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent }
 @const SLA_FNPTR_VT_table_value_world_query_changed_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_query_changed_TableValueData_TableValueTime_TableValueEvent }
+@const SLA_FNPTR_VT_table_value_world_query_with_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_query_with_TableValueData_TableValueTime_TableValueEvent }
 @const SLA_FNPTR_VT_table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent }
 @const SLA_FNPTR_VT_table_value_world_remove_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_remove_TableValueData_TableValueTime_TableValueEvent }
 @const SLA_FNPTR_VT_table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent = vtable { call = @sla__table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent }
@@ -8843,41 +8844,105 @@ L_WHILE_EXIT_681:
     !world
     return query
 
-@sla__table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent(world: ptr, entity: ptr, component_ids: ptr) -> ptr:
+@sla__table_value_world_query_with_TableValueData_TableValueTime_TableValueEvent(world: ptr, component_id: i32, with_component_id: i32) -> ptr:
 L_ENTRY:
-    EXPAND VEC_NEW tmp_2518
-    values = tmp_2518
-    tmp_2519 = 0
-    i = tmp_2519
-    EXPAND VEC_LEN tmp_2520, component_ids
-    tmp_2521 = tmp_2520 as i64
-    cnt = tmp_2521
+    tmp_2518 = call @sla__query_new_EntityItem_TableValueData()
+    query = tmp_2518
+    tmp_2519 = call @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent(world, component_id)
+    base = tmp_2519
+    tmp_2520 = 0
+    i = tmp_2520
+    tmp_2521 = load base+0 as ptr
+    EXPAND VEC_LEN tmp_2522, tmp_2521
+    !tmp_2521
+    tmp_2523 = tmp_2522 as i64
+    cnt = tmp_2523
     jmp L_WHILE_HEAD_685
 
 L_WHILE_HEAD_685:
-    tmp_2522 = slt i, cnt
-    br tmp_2522 -> L_WHILE_BODY_686, L_WHILE_COND_FALSE_687
+    tmp_2524 = slt i, cnt
+    br tmp_2524 -> L_WHILE_BODY_686, L_WHILE_COND_FALSE_687
 
 L_WHILE_BODY_686:
-    !tmp_2522
-    EXPAND VEC_GET tmp_2523, component_ids, i
-    tmp_2524 = tmp_2523 as i32
-    tmp_2525 = call @sla__table_value_world_get_unchecked_TableValueData_TableValueTime_TableValueEvent(world, entity, tmp_2524)
     !tmp_2524
-    EXPAND VEC_PUSH values, tmp_2525, 8
+    tmp_2525 = load base+0 as ptr
+    EXPAND VEC_GET tmp_2526, tmp_2525, i
     !tmp_2525
-    tmp_2526 = 1
-    tmp_2527 = add i, tmp_2526
-    !tmp_2526
+    tmp_2527 = tmp_2526 as ptr
+    item = tmp_2527
+    tmp_2528 = load item+0 as ptr
+    tmp_2529 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(world, tmp_2528, with_component_id)
+    !tmp_2528
+    br tmp_2529 -> L_THEN_689, L_ELSE_690
+
+L_THEN_689:
+    !tmp_2529
+    tmp_2530 = load query+0 as ptr
+    EXPAND VEC_PUSH tmp_2530, item, 8
+    !tmp_2530
+    jmp L_MERGE_691
+
+L_ELSE_690:
+    !tmp_2529
+    jmp L_MERGE_691
+
+L_MERGE_691:
+    tmp_2532 = 1
+    tmp_2533 = add i, tmp_2532
+    !tmp_2532
     !i
-    i = tmp_2527
+    i = tmp_2533
+    !item
     jmp L_WHILE_HEAD_685
 
 L_WHILE_COND_FALSE_687:
-    !tmp_2522
+    !tmp_2524
     jmp L_WHILE_EXIT_688
 
 L_WHILE_EXIT_688:
+    !cnt
+    !i
+    !base
+    !component_id
+    !with_component_id
+    !world
+    return query
+
+@sla__table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent(world: ptr, entity: ptr, component_ids: ptr) -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_2534
+    values = tmp_2534
+    tmp_2535 = 0
+    i = tmp_2535
+    EXPAND VEC_LEN tmp_2536, component_ids
+    tmp_2537 = tmp_2536 as i64
+    cnt = tmp_2537
+    jmp L_WHILE_HEAD_692
+
+L_WHILE_HEAD_692:
+    tmp_2538 = slt i, cnt
+    br tmp_2538 -> L_WHILE_BODY_693, L_WHILE_COND_FALSE_694
+
+L_WHILE_BODY_693:
+    !tmp_2538
+    EXPAND VEC_GET tmp_2539, component_ids, i
+    tmp_2540 = tmp_2539 as i32
+    tmp_2541 = call @sla__table_value_world_get_unchecked_TableValueData_TableValueTime_TableValueEvent(world, entity, tmp_2540)
+    !tmp_2540
+    EXPAND VEC_PUSH values, tmp_2541, 8
+    !tmp_2541
+    tmp_2542 = 1
+    tmp_2543 = add i, tmp_2542
+    !tmp_2542
+    !i
+    i = tmp_2543
+    jmp L_WHILE_HEAD_692
+
+L_WHILE_COND_FALSE_694:
+    !tmp_2538
+    jmp L_WHILE_EXIT_695
+
+L_WHILE_EXIT_695:
     !cnt
     !i
     !entity
@@ -8887,100 +8952,100 @@ L_WHILE_EXIT_688:
 
 @sla__table_value_world_remove_TableValueData_TableValueTime_TableValueEvent(world: ptr, entity: ptr, component_id: i32) -> ptr:
 L_ENTRY:
-    tmp_2528 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(world, entity, component_id)
-    tmp_2529 = 1
-    tmp_2530 = ne tmp_2528, tmp_2529
-    !tmp_2528
-    !tmp_2529
-    br tmp_2530 -> L_THEN_689, L_ELSE_690
+    tmp_2544 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(world, entity, component_id)
+    tmp_2545 = 1
+    tmp_2546 = ne tmp_2544, tmp_2545
+    !tmp_2544
+    !tmp_2545
+    br tmp_2546 -> L_THEN_696, L_ELSE_697
 
-L_THEN_689:
-    !tmp_2530
+L_THEN_696:
+    !tmp_2546
     !entity
     !component_id
     return world
 
-L_ELSE_690:
-    !tmp_2530
-    jmp L_MERGE_691
-
-L_MERGE_691:
-    tmp_2532 = load world+0 as ptr
-    tmp_2533 = call @sla__registry_world_remove_component(tmp_2532, entity, component_id)
-    !tmp_2532
-    store world+0, tmp_2533 as ptr
-    !tmp_2533
-    tmp_2534 = call @sla__table_value_world_signature_for_entity_TableValueData_TableValueTime_TableValueEvent(world, entity)
-    signature = tmp_2534
-    tmp_2535 = call @sla__table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent(world, entity, signature)
-    values = tmp_2535
-    tmp_2536 = call @sla__table_value_world_detach_TableValueData_TableValueTime_TableValueEvent(world, entity)
-    !world
-    world = tmp_2536
-    tmp_2537 = call @sla__table_value_world_attach_with_values_TableValueData_TableValueTime_TableValueEvent(world, entity, signature, values)
-    !component_id
-    return tmp_2537
-
-@sla__table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent(world: ptr, component_id: i32, without_component_id: i32) -> ptr:
-L_ENTRY:
-    tmp_2538 = call @sla__query_new_EntityItem_TableValueData()
-    query = tmp_2538
-    tmp_2539 = call @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent(world, component_id)
-    base = tmp_2539
-    tmp_2540 = 0
-    i = tmp_2540
-    tmp_2541 = load base+0 as ptr
-    EXPAND VEC_LEN tmp_2542, tmp_2541
-    !tmp_2541
-    tmp_2543 = tmp_2542 as i64
-    cnt = tmp_2543
-    jmp L_WHILE_HEAD_692
-
-L_WHILE_HEAD_692:
-    tmp_2544 = slt i, cnt
-    br tmp_2544 -> L_WHILE_BODY_693, L_WHILE_COND_FALSE_694
-
-L_WHILE_BODY_693:
-    !tmp_2544
-    tmp_2545 = load base+0 as ptr
-    EXPAND VEC_GET tmp_2546, tmp_2545, i
-    !tmp_2545
-    tmp_2547 = tmp_2546 as ptr
-    item = tmp_2547
-    tmp_2548 = load item+0 as ptr
-    tmp_2549 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(world, tmp_2548, without_component_id)
-    !tmp_2548
-    tmp_2550 = 1
-    tmp_2551 = ne tmp_2549, tmp_2550
-    !tmp_2549
-    !tmp_2550
-    br tmp_2551 -> L_THEN_696, L_ELSE_697
-
-L_THEN_696:
-    !tmp_2551
-    tmp_2552 = load query+0 as ptr
-    EXPAND VEC_PUSH tmp_2552, item, 8
-    !tmp_2552
-    jmp L_MERGE_698
-
 L_ELSE_697:
-    !tmp_2551
+    !tmp_2546
     jmp L_MERGE_698
 
 L_MERGE_698:
-    tmp_2554 = 1
-    tmp_2555 = add i, tmp_2554
-    !tmp_2554
+    tmp_2548 = load world+0 as ptr
+    tmp_2549 = call @sla__registry_world_remove_component(tmp_2548, entity, component_id)
+    !tmp_2548
+    store world+0, tmp_2549 as ptr
+    !tmp_2549
+    tmp_2550 = call @sla__table_value_world_signature_for_entity_TableValueData_TableValueTime_TableValueEvent(world, entity)
+    signature = tmp_2550
+    tmp_2551 = call @sla__table_value_world_collect_existing_values_TableValueData_TableValueTime_TableValueEvent(world, entity, signature)
+    values = tmp_2551
+    tmp_2552 = call @sla__table_value_world_detach_TableValueData_TableValueTime_TableValueEvent(world, entity)
+    !world
+    world = tmp_2552
+    tmp_2553 = call @sla__table_value_world_attach_with_values_TableValueData_TableValueTime_TableValueEvent(world, entity, signature, values)
+    !component_id
+    return tmp_2553
+
+@sla__table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent(world: ptr, component_id: i32, without_component_id: i32) -> ptr:
+L_ENTRY:
+    tmp_2554 = call @sla__query_new_EntityItem_TableValueData()
+    query = tmp_2554
+    tmp_2555 = call @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent(world, component_id)
+    base = tmp_2555
+    tmp_2556 = 0
+    i = tmp_2556
+    tmp_2557 = load base+0 as ptr
+    EXPAND VEC_LEN tmp_2558, tmp_2557
+    !tmp_2557
+    tmp_2559 = tmp_2558 as i64
+    cnt = tmp_2559
+    jmp L_WHILE_HEAD_699
+
+L_WHILE_HEAD_699:
+    tmp_2560 = slt i, cnt
+    br tmp_2560 -> L_WHILE_BODY_700, L_WHILE_COND_FALSE_701
+
+L_WHILE_BODY_700:
+    !tmp_2560
+    tmp_2561 = load base+0 as ptr
+    EXPAND VEC_GET tmp_2562, tmp_2561, i
+    !tmp_2561
+    tmp_2563 = tmp_2562 as ptr
+    item = tmp_2563
+    tmp_2564 = load item+0 as ptr
+    tmp_2565 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(world, tmp_2564, without_component_id)
+    !tmp_2564
+    tmp_2566 = 1
+    tmp_2567 = ne tmp_2565, tmp_2566
+    !tmp_2565
+    !tmp_2566
+    br tmp_2567 -> L_THEN_703, L_ELSE_704
+
+L_THEN_703:
+    !tmp_2567
+    tmp_2568 = load query+0 as ptr
+    EXPAND VEC_PUSH tmp_2568, item, 8
+    !tmp_2568
+    jmp L_MERGE_705
+
+L_ELSE_704:
+    !tmp_2567
+    jmp L_MERGE_705
+
+L_MERGE_705:
+    tmp_2570 = 1
+    tmp_2571 = add i, tmp_2570
+    !tmp_2570
     !i
-    i = tmp_2555
+    i = tmp_2571
     !item
-    jmp L_WHILE_HEAD_692
+    jmp L_WHILE_HEAD_699
 
-L_WHILE_COND_FALSE_694:
-    !tmp_2544
-    jmp L_WHILE_EXIT_695
+L_WHILE_COND_FALSE_701:
+    !tmp_2560
+    jmp L_WHILE_EXIT_702
 
-L_WHILE_EXIT_695:
+L_WHILE_EXIT_702:
     !cnt
     !i
     !base
@@ -8991,336 +9056,336 @@ L_WHILE_EXIT_695:
 
 @sla__resource_has_TableValueTime(slot: ptr) -> u8:
 L_ENTRY:
-    tmp_2556 = load slot+0 as u8
+    tmp_2572 = load slot+0 as u8
     !slot
-    return tmp_2556
+    return tmp_2572
 
 @sla__resource_insert_TableValueTime(slot: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_2557 = 1
-    store slot+0, tmp_2557 as u8
-    !tmp_2557
+    tmp_2573 = 1
+    store slot+0, tmp_2573 as u8
+    !tmp_2573
     store slot+8, value as ptr
     !value
     return slot
 
 @sla__table_value_world_insert_resource_TableValueData_TableValueTime_TableValueEvent(world: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_2558 = load world+24 as ptr
-    tmp_2559 = call @sla__resource_has_TableValueTime(tmp_2558)
-    !tmp_2558
-    tmp_2560 = 1
-    tmp_2561 = ne tmp_2559, tmp_2560
-    !tmp_2559
-    !tmp_2560
-    br tmp_2561 -> L_THEN_699, L_ELSE_700
+    tmp_2574 = load world+24 as ptr
+    tmp_2575 = call @sla__resource_has_TableValueTime(tmp_2574)
+    !tmp_2574
+    tmp_2576 = 1
+    tmp_2577 = ne tmp_2575, tmp_2576
+    !tmp_2575
+    !tmp_2576
+    br tmp_2577 -> L_THEN_706, L_ELSE_707
 
-L_THEN_699:
-    !tmp_2561
-    tmp_2562 = load world+0 as ptr
-    tmp_2563 = load tmp_2562+24 as i32
-    !tmp_2562
-    store world+40, tmp_2563 as i32
-    !tmp_2563
-    jmp L_MERGE_701
+L_THEN_706:
+    !tmp_2577
+    tmp_2578 = load world+0 as ptr
+    tmp_2579 = load tmp_2578+24 as i32
+    !tmp_2578
+    store world+40, tmp_2579 as i32
+    !tmp_2579
+    jmp L_MERGE_708
 
-L_ELSE_700:
-    !tmp_2561
-    jmp L_MERGE_701
+L_ELSE_707:
+    !tmp_2577
+    jmp L_MERGE_708
 
-L_MERGE_701:
-    tmp_2565 = load world+24 as ptr
-    tmp_2566 = call @sla__resource_insert_TableValueTime(tmp_2565, value)
-    !tmp_2565
-    store world+24, tmp_2566 as ptr
-    !tmp_2566
-    tmp_2567 = load world+0 as ptr
-    tmp_2568 = load tmp_2567+24 as i32
-    !tmp_2567
-    store world+44, tmp_2568 as i32
-    !tmp_2568
+L_MERGE_708:
+    tmp_2581 = load world+24 as ptr
+    tmp_2582 = call @sla__resource_insert_TableValueTime(tmp_2581, value)
+    !tmp_2581
+    store world+24, tmp_2582 as ptr
+    !tmp_2582
+    tmp_2583 = load world+0 as ptr
+    tmp_2584 = load tmp_2583+24 as i32
+    !tmp_2583
+    store world+44, tmp_2584 as i32
+    !tmp_2584
     !value
     return world
 
 @sla__messages_write_TableValueEvent(messages: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_2569 = load messages+0 as i64
-    slot = tmp_2569
-    tmp_2570 = 16
-    tmp_2571 = sge slot, tmp_2570
-    !tmp_2570
-    br tmp_2571 -> L_THEN_702, L_ELSE_703
+    tmp_2585 = load messages+0 as i64
+    slot = tmp_2585
+    tmp_2586 = 16
+    tmp_2587 = sge slot, tmp_2586
+    !tmp_2586
+    br tmp_2587 -> L_THEN_709, L_ELSE_710
 
-L_THEN_702:
-    !tmp_2571
+L_THEN_709:
+    !tmp_2587
     panic(6001)
 
-L_ELSE_703:
-    !tmp_2571
-    jmp L_MERGE_704
+L_ELSE_710:
+    !tmp_2587
+    jmp L_MERGE_711
 
-L_MERGE_704:
-    tmp_2574 = load messages+8 as ptr
-    tmp_2575 = mul slot, 8
-    tmp_2576 = ptr_add tmp_2574, tmp_2575
-    !tmp_2575
-    store tmp_2576+0, value as ptr
-    !tmp_2576
-    !tmp_2574
+L_MERGE_711:
+    tmp_2590 = load messages+8 as ptr
+    tmp_2591 = mul slot, 8
+    tmp_2592 = ptr_add tmp_2590, tmp_2591
+    !tmp_2591
+    store tmp_2592+0, value as ptr
+    !tmp_2592
+    !tmp_2590
     !value
-    tmp_2577 = 1
-    tmp_2578 = add slot, tmp_2577
-    !tmp_2577
-    store messages+0, tmp_2578 as i64
-    !tmp_2578
+    tmp_2593 = 1
+    tmp_2594 = add slot, tmp_2593
+    !tmp_2593
+    store messages+0, tmp_2594 as i64
+    !tmp_2594
     !slot
     return messages
 
 @sla__table_value_world_write_message_TableValueData_TableValueTime_TableValueEvent(world: ptr, value: ptr) -> ptr:
 L_ENTRY:
-    tmp_2579 = load world+32 as ptr
-    tmp_2580 = call @sla__messages_write_TableValueEvent(tmp_2579, value)
-    !tmp_2579
-    store world+32, tmp_2580 as ptr
-    !tmp_2580
+    tmp_2595 = load world+32 as ptr
+    tmp_2596 = call @sla__messages_write_TableValueEvent(tmp_2595, value)
+    !tmp_2595
+    store world+32, tmp_2596 as ptr
+    !tmp_2596
     !value
     return world
 
 @sla__table_value_world_despawn_TableValueData_TableValueTime_TableValueEvent(world: ptr, entity: ptr) -> ptr:
 L_ENTRY:
-    tmp_2581 = call @sla__table_value_world_is_alive_TableValueData_TableValueTime_TableValueEvent(world, entity)
-    tmp_2582 = 1
-    tmp_2583 = ne tmp_2581, tmp_2582
-    !tmp_2581
-    !tmp_2582
-    br tmp_2583 -> L_THEN_705, L_ELSE_706
+    tmp_2597 = call @sla__table_value_world_is_alive_TableValueData_TableValueTime_TableValueEvent(world, entity)
+    tmp_2598 = 1
+    tmp_2599 = ne tmp_2597, tmp_2598
+    !tmp_2597
+    !tmp_2598
+    br tmp_2599 -> L_THEN_712, L_ELSE_713
 
-L_THEN_705:
-    !tmp_2583
+L_THEN_712:
+    !tmp_2599
     !entity
     return world
 
-L_ELSE_706:
-    !tmp_2583
-    jmp L_MERGE_707
+L_ELSE_713:
+    !tmp_2599
+    jmp L_MERGE_714
 
-L_MERGE_707:
-    tmp_2585 = call @sla__table_value_world_detach_TableValueData_TableValueTime_TableValueEvent(world, entity)
+L_MERGE_714:
+    tmp_2601 = call @sla__table_value_world_detach_TableValueData_TableValueTime_TableValueEvent(world, entity)
     !world
-    world = tmp_2585
-    tmp_2586 = load world+0 as ptr
-    tmp_2587 = call @sla__registry_world_despawn(tmp_2586, entity)
-    !tmp_2586
-    store world+0, tmp_2587 as ptr
-    !tmp_2587
+    world = tmp_2601
+    tmp_2602 = load world+0 as ptr
+    tmp_2603 = call @sla__registry_world_despawn(tmp_2602, entity)
+    !tmp_2602
+    store world+0, tmp_2603 as ptr
+    !tmp_2603
     !entity
     return world
 
 @sla__resource_get_TableValueTime(slot: ptr) -> ptr:
 L_ENTRY:
-    tmp_2588 = load slot+0 as u8
-    tmp_2589 = 1
-    tmp_2590 = ne tmp_2588, tmp_2589
-    !tmp_2588
-    !tmp_2589
-    br tmp_2590 -> L_THEN_708, L_ELSE_709
-
-L_THEN_708:
-    !tmp_2590
-    panic(5001)
-
-L_ELSE_709:
-    !tmp_2590
-    jmp L_MERGE_710
-
-L_MERGE_710:
-    tmp_2593 = load slot+8 as ptr
-    !slot
-    return tmp_2593
-
-@sla__table_value_world_get_resource_TableValueData_TableValueTime_TableValueEvent(world: ptr) -> ptr:
-L_ENTRY:
-    tmp_2594 = load world+24 as ptr
-    tmp_2595 = call @sla__resource_get_TableValueTime(tmp_2594)
-    !tmp_2594
-    !world
-    return tmp_2595
-
-@sla__messages_read_next_TableValueEvent(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
-L_ENTRY:
-    tmp_2596 = load reader+0 as i64
-    tmp_2597 = load messages+0 as i64
-    tmp_2598 = sge tmp_2596, tmp_2597
-    !tmp_2596
-    !tmp_2597
-    br tmp_2598 -> L_THEN_711, L_ELSE_712
-
-L_THEN_711:
-    !tmp_2598
-    tmp_2599 = alloc 24
-    tmp_2600 = 0
-    store tmp_2599+0, tmp_2600 as u8
-    !tmp_2600
-    store tmp_2599+8, default_value as ptr
-    store tmp_2599+16, reader as ptr
-    !messages
-    return tmp_2599
-
-L_ELSE_712:
-    !tmp_2598
-    jmp L_MERGE_713
-
-L_MERGE_713:
-    tmp_2602 = load messages+8 as ptr
-    tmp_2603 = load reader+0 as i64
-    tmp_2604 = mul tmp_2603, 8
-    tmp_2605 = ptr_add tmp_2602, tmp_2604
+    tmp_2604 = load slot+0 as u8
+    tmp_2605 = 1
+    tmp_2606 = ne tmp_2604, tmp_2605
     !tmp_2604
-    !tmp_2603
-    tmp_2606 = load tmp_2605+0 as ptr
     !tmp_2605
-    !tmp_2602
-    value = tmp_2606
-    tmp_2607 = load reader+0 as i64
-    tmp_2608 = 1
-    tmp_2609 = add tmp_2607, tmp_2608
-    !tmp_2607
-    !tmp_2608
-    store reader+0, tmp_2609 as i64
-    !tmp_2609
-    tmp_2610 = alloc 24
-    tmp_2611 = 1
-    store tmp_2610+0, tmp_2611 as u8
-    !tmp_2611
-    store tmp_2610+8, value as ptr
-    store tmp_2610+16, reader as ptr
-    !messages
-    !default_value
-    return tmp_2610
-
-@sla__table_value_world_read_message_TableValueData_TableValueTime_TableValueEvent(world: ptr, reader: ptr, default_value: ptr) -> ptr:
-L_ENTRY:
-    tmp_2612 = load world+32 as ptr
-    tmp_2613 = call @sla__messages_read_next_TableValueEvent(tmp_2612, reader, default_value)
-    !tmp_2612
-    !world
-    return tmp_2613
-
-@test "component registry defaults to table and supports sparse opt in"():
-L_TEST_ENTRY_714:
-    tmp_2614 = call @sla__component_registry_new()
-    reg0 = tmp_2614
-    tmp_2615 = call @sla__component_register_table(reg0)
-    reg1 = load tmp_2615+0 as ptr
-    table_info = load tmp_2615+8 as ptr
-    !tmp_2615
-    tmp_2616 = call @sla__component_register_sparse_set(reg1)
-    reg2 = load tmp_2616+0 as ptr
-    sparse_info = load tmp_2616+8 as ptr
-    !tmp_2616
-    tmp_2617 = load table_info+0 as i32
-    tmp_2618 = 1
-    tmp_2619 = ne tmp_2617, tmp_2618
-    !tmp_2617
-    !tmp_2618
-    br tmp_2619 -> L_THEN_715, L_ELSE_716
+    br tmp_2606 -> L_THEN_715, L_ELSE_716
 
 L_THEN_715:
-    !tmp_2619
-    panic(4310)
+    !tmp_2606
+    panic(5001)
 
 L_ELSE_716:
-    !tmp_2619
+    !tmp_2606
     jmp L_MERGE_717
 
 L_MERGE_717:
-    tmp_2622 = load sparse_info+0 as i32
-    tmp_2623 = 2
-    tmp_2624 = ne tmp_2622, tmp_2623
-    !tmp_2622
-    !tmp_2623
-    br tmp_2624 -> L_THEN_718, L_ELSE_719
+    tmp_2609 = load slot+8 as ptr
+    !slot
+    return tmp_2609
+
+@sla__table_value_world_get_resource_TableValueData_TableValueTime_TableValueEvent(world: ptr) -> ptr:
+L_ENTRY:
+    tmp_2610 = load world+24 as ptr
+    tmp_2611 = call @sla__resource_get_TableValueTime(tmp_2610)
+    !tmp_2610
+    !world
+    return tmp_2611
+
+@sla__messages_read_next_TableValueEvent(messages: ptr, reader: ptr, default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_2612 = load reader+0 as i64
+    tmp_2613 = load messages+0 as i64
+    tmp_2614 = sge tmp_2612, tmp_2613
+    !tmp_2612
+    !tmp_2613
+    br tmp_2614 -> L_THEN_718, L_ELSE_719
 
 L_THEN_718:
-    !tmp_2624
-    panic(4311)
+    !tmp_2614
+    tmp_2615 = alloc 24
+    tmp_2616 = 0
+    store tmp_2615+0, tmp_2616 as u8
+    !tmp_2616
+    store tmp_2615+8, default_value as ptr
+    store tmp_2615+16, reader as ptr
+    !messages
+    return tmp_2615
 
 L_ELSE_719:
-    !tmp_2624
+    !tmp_2614
     jmp L_MERGE_720
 
 L_MERGE_720:
-    tmp_2627 = load table_info+8 as ptr
-    tmp_2628 = call @sla__storage_kind_is_table(^tmp_2627)
-    tmp_2629 = 1
-    tmp_2630 = ne tmp_2628, tmp_2629
-    !tmp_2628
-    !tmp_2629
-    br tmp_2630 -> L_THEN_721, L_ELSE_722
+    tmp_2618 = load messages+8 as ptr
+    tmp_2619 = load reader+0 as i64
+    tmp_2620 = mul tmp_2619, 8
+    tmp_2621 = ptr_add tmp_2618, tmp_2620
+    !tmp_2620
+    !tmp_2619
+    tmp_2622 = load tmp_2621+0 as ptr
+    !tmp_2621
+    !tmp_2618
+    value = tmp_2622
+    tmp_2623 = load reader+0 as i64
+    tmp_2624 = 1
+    tmp_2625 = add tmp_2623, tmp_2624
+    !tmp_2623
+    !tmp_2624
+    store reader+0, tmp_2625 as i64
+    !tmp_2625
+    tmp_2626 = alloc 24
+    tmp_2627 = 1
+    store tmp_2626+0, tmp_2627 as u8
+    !tmp_2627
+    store tmp_2626+8, value as ptr
+    store tmp_2626+16, reader as ptr
+    !messages
+    !default_value
+    return tmp_2626
 
-L_THEN_721:
-    !tmp_2630
+@sla__table_value_world_read_message_TableValueData_TableValueTime_TableValueEvent(world: ptr, reader: ptr, default_value: ptr) -> ptr:
+L_ENTRY:
+    tmp_2628 = load world+32 as ptr
+    tmp_2629 = call @sla__messages_read_next_TableValueEvent(tmp_2628, reader, default_value)
+    !tmp_2628
+    !world
+    return tmp_2629
+
+@test "component registry defaults to table and supports sparse opt in"():
+L_TEST_ENTRY_721:
+    tmp_2630 = call @sla__component_registry_new()
+    reg0 = tmp_2630
+    tmp_2631 = call @sla__component_register_table(reg0)
+    reg1 = load tmp_2631+0 as ptr
+    table_info = load tmp_2631+8 as ptr
+    !tmp_2631
+    tmp_2632 = call @sla__component_register_sparse_set(reg1)
+    reg2 = load tmp_2632+0 as ptr
+    sparse_info = load tmp_2632+8 as ptr
+    !tmp_2632
+    tmp_2633 = load table_info+0 as i32
+    tmp_2634 = 1
+    tmp_2635 = ne tmp_2633, tmp_2634
+    !tmp_2633
+    !tmp_2634
+    br tmp_2635 -> L_THEN_722, L_ELSE_723
+
+L_THEN_722:
+    !tmp_2635
+    panic(4310)
+
+L_ELSE_723:
+    !tmp_2635
+    jmp L_MERGE_724
+
+L_MERGE_724:
+    tmp_2638 = load sparse_info+0 as i32
+    tmp_2639 = 2
+    tmp_2640 = ne tmp_2638, tmp_2639
+    !tmp_2638
+    !tmp_2639
+    br tmp_2640 -> L_THEN_725, L_ELSE_726
+
+L_THEN_725:
+    !tmp_2640
+    panic(4311)
+
+L_ELSE_726:
+    !tmp_2640
+    jmp L_MERGE_727
+
+L_MERGE_727:
+    tmp_2643 = load table_info+8 as ptr
+    tmp_2644 = call @sla__storage_kind_is_table(^tmp_2643)
+    tmp_2645 = 1
+    tmp_2646 = ne tmp_2644, tmp_2645
+    !tmp_2644
+    !tmp_2645
+    br tmp_2646 -> L_THEN_728, L_ELSE_729
+
+L_THEN_728:
+    !tmp_2646
     panic(4312)
 
-L_ELSE_722:
-    !tmp_2630
-    jmp L_MERGE_723
+L_ELSE_729:
+    !tmp_2646
+    jmp L_MERGE_730
 
-L_MERGE_723:
-    tmp_2633 = load sparse_info+8 as ptr
-    tmp_2634 = call @sla__storage_kind_is_sparse_set(^tmp_2633)
-    tmp_2635 = 1
-    tmp_2636 = ne tmp_2634, tmp_2635
-    !tmp_2634
-    !tmp_2635
-    br tmp_2636 -> L_THEN_724, L_ELSE_725
+L_MERGE_730:
+    tmp_2649 = load sparse_info+8 as ptr
+    tmp_2650 = call @sla__storage_kind_is_sparse_set(^tmp_2649)
+    tmp_2651 = 1
+    tmp_2652 = ne tmp_2650, tmp_2651
+    !tmp_2650
+    !tmp_2651
+    br tmp_2652 -> L_THEN_731, L_ELSE_732
 
-L_THEN_724:
-    !tmp_2636
+L_THEN_731:
+    !tmp_2652
     panic(4313)
 
-L_ELSE_725:
-    !tmp_2636
-    jmp L_MERGE_726
+L_ELSE_732:
+    !tmp_2652
+    jmp L_MERGE_733
 
-L_MERGE_726:
-    tmp_2639 = 2
-    tmp_2640 = call @sla__component_registry_get(reg2, tmp_2639)
-    !tmp_2639
-    again = tmp_2640
-    tmp_2641 = load again+0 as i32
-    tmp_2642 = load sparse_info+0 as i32
-    tmp_2643 = ne tmp_2641, tmp_2642
-    !tmp_2641
-    !tmp_2642
-    br tmp_2643 -> L_THEN_727, L_ELSE_728
+L_MERGE_733:
+    tmp_2655 = 2
+    tmp_2656 = call @sla__component_registry_get(reg2, tmp_2655)
+    !tmp_2655
+    again = tmp_2656
+    tmp_2657 = load again+0 as i32
+    tmp_2658 = load sparse_info+0 as i32
+    tmp_2659 = ne tmp_2657, tmp_2658
+    !tmp_2657
+    !tmp_2658
+    br tmp_2659 -> L_THEN_734, L_ELSE_735
 
-L_THEN_727:
-    !tmp_2643
+L_THEN_734:
+    !tmp_2659
     panic(4314)
 
-L_ELSE_728:
-    !tmp_2643
-    jmp L_MERGE_729
+L_ELSE_735:
+    !tmp_2659
+    jmp L_MERGE_736
 
-L_MERGE_729:
-    tmp_2646 = load again+8 as ptr
-    tmp_2647 = call @sla__storage_kind_is_sparse_set(^tmp_2646)
-    tmp_2648 = 1
-    tmp_2649 = ne tmp_2647, tmp_2648
-    !tmp_2647
-    !tmp_2648
-    br tmp_2649 -> L_THEN_730, L_ELSE_731
+L_MERGE_736:
+    tmp_2662 = load again+8 as ptr
+    tmp_2663 = call @sla__storage_kind_is_sparse_set(^tmp_2662)
+    tmp_2664 = 1
+    tmp_2665 = ne tmp_2663, tmp_2664
+    !tmp_2663
+    !tmp_2664
+    br tmp_2665 -> L_THEN_737, L_ELSE_738
 
-L_THEN_730:
-    !tmp_2649
+L_THEN_737:
+    !tmp_2665
     panic(4315)
 
-L_ELSE_731:
-    !tmp_2649
-    jmp L_MERGE_732
+L_ELSE_738:
+    !tmp_2665
+    jmp L_MERGE_739
 
-L_MERGE_732:
+L_MERGE_739:
     !reg0
     !reg1
     !reg2
@@ -9330,47 +9395,47 @@ L_MERGE_732:
     return
 
 @test "entity placeholder is never allocated"():
-L_TEST_ENTRY_733:
-    tmp_2652 = call @sla__entity_placeholder()
-    placeholder = tmp_2652
-    tmp_2653 = call @sla__allocator_new()
-    a = tmp_2653
-    tmp_2654 = call @sla__alloc_entity(a)
-    a1 = load tmp_2654+0 as ptr
-    e1 = load tmp_2654+8 as ptr
-    !tmp_2654
-    tmp_2655 = load placeholder+0 as i32
-    tmp_2656 = load e1+0 as i32
-    tmp_2657 = eq tmp_2655, tmp_2656
-    !tmp_2655
-    !tmp_2656
-    br tmp_2657 -> L_THEN_734, L_ELSE_735
+L_TEST_ENTRY_740:
+    tmp_2668 = call @sla__entity_placeholder()
+    placeholder = tmp_2668
+    tmp_2669 = call @sla__allocator_new()
+    a = tmp_2669
+    tmp_2670 = call @sla__alloc_entity(a)
+    a1 = load tmp_2670+0 as ptr
+    e1 = load tmp_2670+8 as ptr
+    !tmp_2670
+    tmp_2671 = load placeholder+0 as i32
+    tmp_2672 = load e1+0 as i32
+    tmp_2673 = eq tmp_2671, tmp_2672
+    !tmp_2671
+    !tmp_2672
+    br tmp_2673 -> L_THEN_741, L_ELSE_742
 
-L_THEN_734:
-    !tmp_2657
+L_THEN_741:
+    !tmp_2673
     panic(2100)
 
-L_ELSE_735:
-    !tmp_2657
-    jmp L_MERGE_736
+L_ELSE_742:
+    !tmp_2673
+    jmp L_MERGE_743
 
-L_MERGE_736:
-    tmp_2660 = call @sla__is_alive(a1, placeholder)
-    tmp_2661 = 0
-    tmp_2662 = ne tmp_2660, tmp_2661
-    !tmp_2660
-    !tmp_2661
-    br tmp_2662 -> L_THEN_737, L_ELSE_738
+L_MERGE_743:
+    tmp_2676 = call @sla__is_alive(a1, placeholder)
+    tmp_2677 = 0
+    tmp_2678 = ne tmp_2676, tmp_2677
+    !tmp_2676
+    !tmp_2677
+    br tmp_2678 -> L_THEN_744, L_ELSE_745
 
-L_THEN_737:
-    !tmp_2662
+L_THEN_744:
+    !tmp_2678
     panic(2101)
 
-L_ELSE_738:
-    !tmp_2662
-    jmp L_MERGE_739
+L_ELSE_745:
+    !tmp_2678
+    jmp L_MERGE_746
 
-L_MERGE_739:
+L_MERGE_746:
     !a
     !placeholder
     !e1
@@ -9378,132 +9443,132 @@ L_MERGE_739:
     return
 
 @test "entity bit roundtrip"():
-L_TEST_ENTRY_740:
-    tmp_2665 = 42
-    tmp_2666 = 7
-    tmp_2667 = call @sla__entity_new(tmp_2665, tmp_2666)
-    !tmp_2665
-    !tmp_2666
-    e = tmp_2667
-    tmp_2668 = call @sla__entity_to_bits(e)
-    bits = tmp_2668
-    tmp_2669 = call @sla__entity_from_bits(bits)
-    out = tmp_2669
-    tmp_2670 = call @sla__entity_eq(e, out)
-    tmp_2671 = 1
-    tmp_2672 = ne tmp_2670, tmp_2671
-    !tmp_2670
-    !tmp_2671
-    br tmp_2672 -> L_THEN_741, L_ELSE_742
+L_TEST_ENTRY_747:
+    tmp_2681 = 42
+    tmp_2682 = 7
+    tmp_2683 = call @sla__entity_new(tmp_2681, tmp_2682)
+    !tmp_2681
+    !tmp_2682
+    e = tmp_2683
+    tmp_2684 = call @sla__entity_to_bits(e)
+    bits = tmp_2684
+    tmp_2685 = call @sla__entity_from_bits(bits)
+    out = tmp_2685
+    tmp_2686 = call @sla__entity_eq(e, out)
+    tmp_2687 = 1
+    tmp_2688 = ne tmp_2686, tmp_2687
+    !tmp_2686
+    !tmp_2687
+    br tmp_2688 -> L_THEN_748, L_ELSE_749
 
-L_THEN_741:
-    !tmp_2672
+L_THEN_748:
+    !tmp_2688
     panic(2110)
 
-L_ELSE_742:
-    !tmp_2672
-    jmp L_MERGE_743
+L_ELSE_749:
+    !tmp_2688
+    jmp L_MERGE_750
 
-L_MERGE_743:
+L_MERGE_750:
     !out
     !bits
     !e
     return
 
 @test "allocator rejects stale generation"():
-L_TEST_ENTRY_744:
-    tmp_2675 = call @sla__allocator_new()
-    a0 = tmp_2675
-    tmp_2676 = call @sla__alloc_entity(a0)
-    a1 = load tmp_2676+0 as ptr
-    e1 = load tmp_2676+8 as ptr
-    !tmp_2676
-    tmp_2677 = call @sla__free_entity(a1, e1)
-    a2 = tmp_2677
-    tmp_2678 = load e1+0 as i32
-    tmp_2679 = load e1+4 as i32
-    tmp_2680 = call @sla__entity_new(tmp_2678, tmp_2679)
-    !tmp_2678
-    !tmp_2679
-    stale = tmp_2680
-    tmp_2681 = load e1+0 as i32
-    tmp_2682 = load e1+4 as i32
-    tmp_2683 = 1
-    tmp_2684 = add tmp_2682, tmp_2683
-    !tmp_2682
-    !tmp_2683
-    tmp_2685 = call @sla__entity_new(tmp_2681, tmp_2684)
-    !tmp_2681
-    !tmp_2684
-    fabricated = tmp_2685
-    tmp_2686 = call @sla__is_alive(a2, stale)
-    tmp_2687 = 0
-    tmp_2688 = ne tmp_2686, tmp_2687
-    !tmp_2686
-    !tmp_2687
-    br tmp_2688 -> L_THEN_745, L_ELSE_746
-
-L_THEN_745:
-    !tmp_2688
-    panic(2120)
-
-L_ELSE_746:
-    !tmp_2688
-    jmp L_MERGE_747
-
-L_MERGE_747:
-    tmp_2691 = call @sla__is_alive(a2, fabricated)
-    tmp_2692 = 0
-    tmp_2693 = ne tmp_2691, tmp_2692
-    !tmp_2691
+L_TEST_ENTRY_751:
+    tmp_2691 = call @sla__allocator_new()
+    a0 = tmp_2691
+    tmp_2692 = call @sla__alloc_entity(a0)
+    a1 = load tmp_2692+0 as ptr
+    e1 = load tmp_2692+8 as ptr
     !tmp_2692
-    br tmp_2693 -> L_THEN_748, L_ELSE_749
-
-L_THEN_748:
-    !tmp_2693
-    panic(2121)
-
-L_ELSE_749:
-    !tmp_2693
-    jmp L_MERGE_750
-
-L_MERGE_750:
-    tmp_2696 = call @sla__alloc_entity(a2)
-    a3 = load tmp_2696+0 as ptr
-    e2 = load tmp_2696+8 as ptr
-    !tmp_2696
-    tmp_2697 = call @sla__entity_eq(e2, fabricated)
-    tmp_2698 = 1
-    tmp_2699 = ne tmp_2697, tmp_2698
-    !tmp_2697
+    tmp_2693 = call @sla__free_entity(a1, e1)
+    a2 = tmp_2693
+    tmp_2694 = load e1+0 as i32
+    tmp_2695 = load e1+4 as i32
+    tmp_2696 = call @sla__entity_new(tmp_2694, tmp_2695)
+    !tmp_2694
+    !tmp_2695
+    stale = tmp_2696
+    tmp_2697 = load e1+0 as i32
+    tmp_2698 = load e1+4 as i32
+    tmp_2699 = 1
+    tmp_2700 = add tmp_2698, tmp_2699
     !tmp_2698
-    br tmp_2699 -> L_THEN_751, L_ELSE_752
-
-L_THEN_751:
     !tmp_2699
-    panic(2122)
-
-L_ELSE_752:
-    !tmp_2699
-    jmp L_MERGE_753
-
-L_MERGE_753:
-    tmp_2702 = call @sla__is_alive(a3, e2)
-    tmp_2703 = 1
+    tmp_2701 = call @sla__entity_new(tmp_2697, tmp_2700)
+    !tmp_2697
+    !tmp_2700
+    fabricated = tmp_2701
+    tmp_2702 = call @sla__is_alive(a2, stale)
+    tmp_2703 = 0
     tmp_2704 = ne tmp_2702, tmp_2703
     !tmp_2702
     !tmp_2703
-    br tmp_2704 -> L_THEN_754, L_ELSE_755
+    br tmp_2704 -> L_THEN_752, L_ELSE_753
 
-L_THEN_754:
+L_THEN_752:
     !tmp_2704
+    panic(2120)
+
+L_ELSE_753:
+    !tmp_2704
+    jmp L_MERGE_754
+
+L_MERGE_754:
+    tmp_2707 = call @sla__is_alive(a2, fabricated)
+    tmp_2708 = 0
+    tmp_2709 = ne tmp_2707, tmp_2708
+    !tmp_2707
+    !tmp_2708
+    br tmp_2709 -> L_THEN_755, L_ELSE_756
+
+L_THEN_755:
+    !tmp_2709
+    panic(2121)
+
+L_ELSE_756:
+    !tmp_2709
+    jmp L_MERGE_757
+
+L_MERGE_757:
+    tmp_2712 = call @sla__alloc_entity(a2)
+    a3 = load tmp_2712+0 as ptr
+    e2 = load tmp_2712+8 as ptr
+    !tmp_2712
+    tmp_2713 = call @sla__entity_eq(e2, fabricated)
+    tmp_2714 = 1
+    tmp_2715 = ne tmp_2713, tmp_2714
+    !tmp_2713
+    !tmp_2714
+    br tmp_2715 -> L_THEN_758, L_ELSE_759
+
+L_THEN_758:
+    !tmp_2715
+    panic(2122)
+
+L_ELSE_759:
+    !tmp_2715
+    jmp L_MERGE_760
+
+L_MERGE_760:
+    tmp_2718 = call @sla__is_alive(a3, e2)
+    tmp_2719 = 1
+    tmp_2720 = ne tmp_2718, tmp_2719
+    !tmp_2718
+    !tmp_2719
+    br tmp_2720 -> L_THEN_761, L_ELSE_762
+
+L_THEN_761:
+    !tmp_2720
     panic(2123)
 
-L_ELSE_755:
-    !tmp_2704
-    jmp L_MERGE_756
+L_ELSE_762:
+    !tmp_2720
+    jmp L_MERGE_763
 
-L_MERGE_756:
+L_MERGE_763:
     !e2
     !a0
     !a2
@@ -9515,227 +9580,227 @@ L_MERGE_756:
     return
 
 @test "entity index generation accessors"():
-L_TEST_ENTRY_757:
-    tmp_2707 = 5
-    tmp_2708 = 3
-    tmp_2709 = call @sla__entity_new(tmp_2707, tmp_2708)
-    !tmp_2707
-    !tmp_2708
-    e = tmp_2709
-    tmp_2710 = call @sla__entity_index(e)
-    tmp_2711 = 5
-    tmp_2712 = ne tmp_2710, tmp_2711
-    !tmp_2710
-    !tmp_2711
-    br tmp_2712 -> L_THEN_758, L_ELSE_759
+L_TEST_ENTRY_764:
+    tmp_2723 = 5
+    tmp_2724 = 3
+    tmp_2725 = call @sla__entity_new(tmp_2723, tmp_2724)
+    !tmp_2723
+    !tmp_2724
+    e = tmp_2725
+    tmp_2726 = call @sla__entity_index(e)
+    tmp_2727 = 5
+    tmp_2728 = ne tmp_2726, tmp_2727
+    !tmp_2726
+    !tmp_2727
+    br tmp_2728 -> L_THEN_765, L_ELSE_766
 
-L_THEN_758:
-    !tmp_2712
+L_THEN_765:
+    !tmp_2728
     panic(2130)
 
-L_ELSE_759:
-    !tmp_2712
-    jmp L_MERGE_760
+L_ELSE_766:
+    !tmp_2728
+    jmp L_MERGE_767
 
-L_MERGE_760:
-    tmp_2715 = call @sla__entity_generation(e)
-    tmp_2716 = 3
-    tmp_2717 = ne tmp_2715, tmp_2716
-    !tmp_2715
-    !tmp_2716
-    br tmp_2717 -> L_THEN_761, L_ELSE_762
+L_MERGE_767:
+    tmp_2731 = call @sla__entity_generation(e)
+    tmp_2732 = 3
+    tmp_2733 = ne tmp_2731, tmp_2732
+    !tmp_2731
+    !tmp_2732
+    br tmp_2733 -> L_THEN_768, L_ELSE_769
 
-L_THEN_761:
-    !tmp_2717
+L_THEN_768:
+    !tmp_2733
     panic(2131)
 
-L_ELSE_762:
-    !tmp_2717
-    jmp L_MERGE_763
+L_ELSE_769:
+    !tmp_2733
+    jmp L_MERGE_770
 
-L_MERGE_763:
+L_MERGE_770:
     !e
     return
 
 @test "dynamic allocator grows beyond fixed capacity"():
-L_TEST_ENTRY_764:
-    tmp_2720 = call @sla__dyn_allocator_new()
-    a = tmp_2720
-    tmp_2721 = 0
-    i = tmp_2721
-    jmp L_WHILE_HEAD_765
+L_TEST_ENTRY_771:
+    tmp_2736 = call @sla__dyn_allocator_new()
+    a = tmp_2736
+    tmp_2737 = 0
+    i = tmp_2737
+    jmp L_WHILE_HEAD_772
 
-L_WHILE_HEAD_765:
-    tmp_2722 = 20
-    tmp_2723 = slt i, tmp_2722
-    !tmp_2722
-    br tmp_2723 -> L_WHILE_BODY_766, L_WHILE_COND_FALSE_767
+L_WHILE_HEAD_772:
+    tmp_2738 = 20
+    tmp_2739 = slt i, tmp_2738
+    !tmp_2738
+    br tmp_2739 -> L_WHILE_BODY_773, L_WHILE_COND_FALSE_774
 
-L_WHILE_BODY_766:
-    !tmp_2723
-    tmp_2724 = call @sla__dyn_alloc_entity(a)
-    next_a = load tmp_2724+0 as ptr
-    entity = load tmp_2724+8 as ptr
-    !tmp_2724
+L_WHILE_BODY_773:
+    !tmp_2739
+    tmp_2740 = call @sla__dyn_alloc_entity(a)
+    next_a = load tmp_2740+0 as ptr
+    entity = load tmp_2740+8 as ptr
+    !tmp_2740
     !a
     a = next_a
-    tmp_2725 = load entity+0 as i32
-    tmp_2726 = 1
-    tmp_2727 = add i, tmp_2726
-    !tmp_2726
-    tmp_2728 = ne tmp_2725, tmp_2727
-    !tmp_2725
-    !tmp_2727
-    br tmp_2728 -> L_THEN_769, L_ELSE_770
+    tmp_2741 = load entity+0 as i32
+    tmp_2742 = 1
+    tmp_2743 = add i, tmp_2742
+    !tmp_2742
+    tmp_2744 = ne tmp_2741, tmp_2743
+    !tmp_2741
+    !tmp_2743
+    br tmp_2744 -> L_THEN_776, L_ELSE_777
 
-L_THEN_769:
-    !tmp_2728
+L_THEN_776:
+    !tmp_2744
     panic(2150)
 
-L_ELSE_770:
-    !tmp_2728
-    jmp L_MERGE_771
+L_ELSE_777:
+    !tmp_2744
+    jmp L_MERGE_778
 
-L_MERGE_771:
-    tmp_2731 = call @sla__dyn_is_alive(a, entity)
-    tmp_2732 = 1
-    tmp_2733 = ne tmp_2731, tmp_2732
-    !tmp_2731
-    !tmp_2732
-    br tmp_2733 -> L_THEN_772, L_ELSE_773
+L_MERGE_778:
+    tmp_2747 = call @sla__dyn_is_alive(a, entity)
+    tmp_2748 = 1
+    tmp_2749 = ne tmp_2747, tmp_2748
+    !tmp_2747
+    !tmp_2748
+    br tmp_2749 -> L_THEN_779, L_ELSE_780
 
-L_THEN_772:
-    !tmp_2733
+L_THEN_779:
+    !tmp_2749
     panic(2151)
 
-L_ELSE_773:
-    !tmp_2733
-    jmp L_MERGE_774
+L_ELSE_780:
+    !tmp_2749
+    jmp L_MERGE_781
 
-L_MERGE_774:
-    tmp_2736 = 1
-    tmp_2737 = add i, tmp_2736
-    !tmp_2736
+L_MERGE_781:
+    tmp_2752 = 1
+    tmp_2753 = add i, tmp_2752
+    !tmp_2752
     !i
-    i = tmp_2737
+    i = tmp_2753
     !entity
-    jmp L_WHILE_HEAD_765
+    jmp L_WHILE_HEAD_772
 
-L_WHILE_COND_FALSE_767:
-    !tmp_2723
-    jmp L_WHILE_EXIT_768
-
-L_WHILE_EXIT_768:
-    tmp_2738 = load a+8 as ptr
-    EXPAND VEC_LEN tmp_2739, tmp_2738
-    !tmp_2738
-    tmp_2740 = 21
-    tmp_2741 = ne tmp_2739, tmp_2740
+L_WHILE_COND_FALSE_774:
     !tmp_2739
-    !tmp_2740
-    br tmp_2741 -> L_THEN_775, L_ELSE_776
+    jmp L_WHILE_EXIT_775
 
-L_THEN_775:
-    !tmp_2741
+L_WHILE_EXIT_775:
+    tmp_2754 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_2755, tmp_2754
+    !tmp_2754
+    tmp_2756 = 21
+    tmp_2757 = ne tmp_2755, tmp_2756
+    !tmp_2755
+    !tmp_2756
+    br tmp_2757 -> L_THEN_782, L_ELSE_783
+
+L_THEN_782:
+    !tmp_2757
     panic(2152)
 
-L_ELSE_776:
-    !tmp_2741
-    jmp L_MERGE_777
+L_ELSE_783:
+    !tmp_2757
+    jmp L_MERGE_784
 
-L_MERGE_777:
+L_MERGE_784:
     !a
     !i
     return
 
 @test "dynamic allocator rejects fabricated next generation before reuse"():
-L_TEST_ENTRY_778:
-    tmp_2744 = call @sla__dyn_allocator_new()
-    a0 = tmp_2744
-    tmp_2745 = call @sla__dyn_alloc_entity(a0)
-    a1 = load tmp_2745+0 as ptr
-    e1 = load tmp_2745+8 as ptr
-    !tmp_2745
-    tmp_2746 = call @sla__dyn_free_entity(a1, e1)
-    a2 = tmp_2746
-    tmp_2747 = load e1+0 as i32
-    tmp_2748 = load e1+4 as i32
-    tmp_2749 = 1
-    tmp_2750 = add tmp_2748, tmp_2749
-    !tmp_2748
-    !tmp_2749
-    tmp_2751 = call @sla__entity_new(tmp_2747, tmp_2750)
-    !tmp_2747
-    !tmp_2750
-    fake = tmp_2751
-    tmp_2752 = call @sla__dyn_is_alive(a2, e1)
-    tmp_2753 = 0
-    tmp_2754 = ne tmp_2752, tmp_2753
-    !tmp_2752
-    !tmp_2753
-    br tmp_2754 -> L_THEN_779, L_ELSE_780
-
-L_THEN_779:
-    !tmp_2754
-    panic(2160)
-
-L_ELSE_780:
-    !tmp_2754
-    jmp L_MERGE_781
-
-L_MERGE_781:
-    tmp_2757 = call @sla__dyn_is_alive(a2, fake)
-    tmp_2758 = 0
-    tmp_2759 = ne tmp_2757, tmp_2758
-    !tmp_2757
-    !tmp_2758
-    br tmp_2759 -> L_THEN_782, L_ELSE_783
-
-L_THEN_782:
-    !tmp_2759
-    panic(2161)
-
-L_ELSE_783:
-    !tmp_2759
-    jmp L_MERGE_784
-
-L_MERGE_784:
-    tmp_2762 = call @sla__dyn_alloc_entity(a2)
-    a3 = load tmp_2762+0 as ptr
-    e2 = load tmp_2762+8 as ptr
-    !tmp_2762
-    tmp_2763 = call @sla__entity_eq(e2, fake)
-    tmp_2764 = 1
-    tmp_2765 = ne tmp_2763, tmp_2764
-    !tmp_2763
+L_TEST_ENTRY_785:
+    tmp_2760 = call @sla__dyn_allocator_new()
+    a0 = tmp_2760
+    tmp_2761 = call @sla__dyn_alloc_entity(a0)
+    a1 = load tmp_2761+0 as ptr
+    e1 = load tmp_2761+8 as ptr
+    !tmp_2761
+    tmp_2762 = call @sla__dyn_free_entity(a1, e1)
+    a2 = tmp_2762
+    tmp_2763 = load e1+0 as i32
+    tmp_2764 = load e1+4 as i32
+    tmp_2765 = 1
+    tmp_2766 = add tmp_2764, tmp_2765
     !tmp_2764
-    br tmp_2765 -> L_THEN_785, L_ELSE_786
-
-L_THEN_785:
     !tmp_2765
-    panic(2162)
-
-L_ELSE_786:
-    !tmp_2765
-    jmp L_MERGE_787
-
-L_MERGE_787:
-    tmp_2768 = call @sla__dyn_is_alive(a3, e2)
-    tmp_2769 = 1
+    tmp_2767 = call @sla__entity_new(tmp_2763, tmp_2766)
+    !tmp_2763
+    !tmp_2766
+    fake = tmp_2767
+    tmp_2768 = call @sla__dyn_is_alive(a2, e1)
+    tmp_2769 = 0
     tmp_2770 = ne tmp_2768, tmp_2769
     !tmp_2768
     !tmp_2769
-    br tmp_2770 -> L_THEN_788, L_ELSE_789
+    br tmp_2770 -> L_THEN_786, L_ELSE_787
 
-L_THEN_788:
+L_THEN_786:
     !tmp_2770
+    panic(2160)
+
+L_ELSE_787:
+    !tmp_2770
+    jmp L_MERGE_788
+
+L_MERGE_788:
+    tmp_2773 = call @sla__dyn_is_alive(a2, fake)
+    tmp_2774 = 0
+    tmp_2775 = ne tmp_2773, tmp_2774
+    !tmp_2773
+    !tmp_2774
+    br tmp_2775 -> L_THEN_789, L_ELSE_790
+
+L_THEN_789:
+    !tmp_2775
+    panic(2161)
+
+L_ELSE_790:
+    !tmp_2775
+    jmp L_MERGE_791
+
+L_MERGE_791:
+    tmp_2778 = call @sla__dyn_alloc_entity(a2)
+    a3 = load tmp_2778+0 as ptr
+    e2 = load tmp_2778+8 as ptr
+    !tmp_2778
+    tmp_2779 = call @sla__entity_eq(e2, fake)
+    tmp_2780 = 1
+    tmp_2781 = ne tmp_2779, tmp_2780
+    !tmp_2779
+    !tmp_2780
+    br tmp_2781 -> L_THEN_792, L_ELSE_793
+
+L_THEN_792:
+    !tmp_2781
+    panic(2162)
+
+L_ELSE_793:
+    !tmp_2781
+    jmp L_MERGE_794
+
+L_MERGE_794:
+    tmp_2784 = call @sla__dyn_is_alive(a3, e2)
+    tmp_2785 = 1
+    tmp_2786 = ne tmp_2784, tmp_2785
+    !tmp_2784
+    !tmp_2785
+    br tmp_2786 -> L_THEN_795, L_ELSE_796
+
+L_THEN_795:
+    !tmp_2786
     panic(2163)
 
-L_ELSE_789:
-    !tmp_2770
-    jmp L_MERGE_790
+L_ELSE_796:
+    !tmp_2786
+    jmp L_MERGE_797
 
-L_MERGE_790:
+L_MERGE_797:
     !e2
     !a0
     !fake
@@ -9746,200 +9811,200 @@ L_MERGE_790:
     return
 
 @test "registry world tracks arbitrary component membership"():
-L_TEST_ENTRY_791:
-    tmp_2773 = call @sla__registry_world_new()
-    w0 = tmp_2773
-    tmp_2774 = call @sla__registry_world_register_table(w0)
-    w1 = load tmp_2774+0 as ptr
-    position = load tmp_2774+8 as ptr
-    !tmp_2774
-    tmp_2775 = call @sla__registry_world_register_table(w1)
-    w2 = load tmp_2775+0 as ptr
-    velocity = load tmp_2775+8 as ptr
-    !tmp_2775
-    tmp_2776 = call @sla__registry_world_register_sparse_set(w2)
-    w3 = load tmp_2776+0 as ptr
-    marker = load tmp_2776+8 as ptr
-    !tmp_2776
-    tmp_2777 = call @sla__registry_world_component_count(w3)
-    tmp_2778 = 3
-    tmp_2779 = ne tmp_2777, tmp_2778
-    !tmp_2777
-    !tmp_2778
-    br tmp_2779 -> L_THEN_792, L_ELSE_793
+L_TEST_ENTRY_798:
+    tmp_2789 = call @sla__registry_world_new()
+    w0 = tmp_2789
+    tmp_2790 = call @sla__registry_world_register_table(w0)
+    w1 = load tmp_2790+0 as ptr
+    position = load tmp_2790+8 as ptr
+    !tmp_2790
+    tmp_2791 = call @sla__registry_world_register_table(w1)
+    w2 = load tmp_2791+0 as ptr
+    velocity = load tmp_2791+8 as ptr
+    !tmp_2791
+    tmp_2792 = call @sla__registry_world_register_sparse_set(w2)
+    w3 = load tmp_2792+0 as ptr
+    marker = load tmp_2792+8 as ptr
+    !tmp_2792
+    tmp_2793 = call @sla__registry_world_component_count(w3)
+    tmp_2794 = 3
+    tmp_2795 = ne tmp_2793, tmp_2794
+    !tmp_2793
+    !tmp_2794
+    br tmp_2795 -> L_THEN_799, L_ELSE_800
 
-L_THEN_792:
-    !tmp_2779
+L_THEN_799:
+    !tmp_2795
     panic(8710)
 
-L_ELSE_793:
-    !tmp_2779
-    jmp L_MERGE_794
+L_ELSE_800:
+    !tmp_2795
+    jmp L_MERGE_801
 
-L_MERGE_794:
-    tmp_2782 = load position+8 as ptr
-    tmp_2783 = call @sla__storage_kind_is_table(^tmp_2782)
-    tmp_2784 = 1
-    tmp_2785 = ne tmp_2783, tmp_2784
-    !tmp_2783
-    !tmp_2784
-    br tmp_2785 -> L_THEN_795, L_ELSE_796
+L_MERGE_801:
+    tmp_2798 = load position+8 as ptr
+    tmp_2799 = call @sla__storage_kind_is_table(^tmp_2798)
+    tmp_2800 = 1
+    tmp_2801 = ne tmp_2799, tmp_2800
+    !tmp_2799
+    !tmp_2800
+    br tmp_2801 -> L_THEN_802, L_ELSE_803
 
-L_THEN_795:
-    !tmp_2785
+L_THEN_802:
+    !tmp_2801
     panic(8711)
 
-L_ELSE_796:
-    !tmp_2785
-    jmp L_MERGE_797
+L_ELSE_803:
+    !tmp_2801
+    jmp L_MERGE_804
 
-L_MERGE_797:
-    tmp_2788 = load marker+8 as ptr
-    tmp_2789 = call @sla__storage_kind_is_sparse_set(^tmp_2788)
-    tmp_2790 = 1
-    tmp_2791 = ne tmp_2789, tmp_2790
-    !tmp_2789
-    !tmp_2790
-    br tmp_2791 -> L_THEN_798, L_ELSE_799
-
-L_THEN_798:
-    !tmp_2791
-    panic(8712)
-
-L_ELSE_799:
-    !tmp_2791
-    jmp L_MERGE_800
-
-L_MERGE_800:
-    tmp_2794 = call @sla__registry_world_spawn(w3)
-    w4 = load tmp_2794+0 as ptr
-    e1 = load tmp_2794+8 as ptr
-    !tmp_2794
-    tmp_2795 = call @sla__registry_world_spawn(w4)
-    w5 = load tmp_2795+0 as ptr
-    e2 = load tmp_2795+8 as ptr
-    !tmp_2795
-    tmp_2796 = load position+0 as i32
-    tmp_2797 = call @sla__registry_world_insert_component(w5, e1, tmp_2796)
-    !tmp_2796
-    w6 = tmp_2797
-    tmp_2798 = load velocity+0 as i32
-    tmp_2799 = call @sla__registry_world_insert_component(w6, e1, tmp_2798)
-    !tmp_2798
-    w7 = tmp_2799
-    tmp_2800 = load position+0 as i32
-    tmp_2801 = call @sla__registry_world_insert_component(w7, e2, tmp_2800)
-    !tmp_2800
-    w8 = tmp_2801
-    tmp_2802 = load marker+0 as i32
-    tmp_2803 = call @sla__registry_world_insert_component(w8, e2, tmp_2802)
-    !tmp_2802
-    w9 = tmp_2803
-    tmp_2804 = load position+0 as i32
-    tmp_2805 = call @sla__registry_world_has_component(w9, e1, tmp_2804)
-    !tmp_2804
+L_MERGE_804:
+    tmp_2804 = load marker+8 as ptr
+    tmp_2805 = call @sla__storage_kind_is_sparse_set(^tmp_2804)
     tmp_2806 = 1
     tmp_2807 = ne tmp_2805, tmp_2806
     !tmp_2805
     !tmp_2806
-    br tmp_2807 -> L_THEN_801, L_ELSE_802
+    br tmp_2807 -> L_THEN_805, L_ELSE_806
 
-L_THEN_801:
+L_THEN_805:
     !tmp_2807
+    panic(8712)
+
+L_ELSE_806:
+    !tmp_2807
+    jmp L_MERGE_807
+
+L_MERGE_807:
+    tmp_2810 = call @sla__registry_world_spawn(w3)
+    w4 = load tmp_2810+0 as ptr
+    e1 = load tmp_2810+8 as ptr
+    !tmp_2810
+    tmp_2811 = call @sla__registry_world_spawn(w4)
+    w5 = load tmp_2811+0 as ptr
+    e2 = load tmp_2811+8 as ptr
+    !tmp_2811
+    tmp_2812 = load position+0 as i32
+    tmp_2813 = call @sla__registry_world_insert_component(w5, e1, tmp_2812)
+    !tmp_2812
+    w6 = tmp_2813
+    tmp_2814 = load velocity+0 as i32
+    tmp_2815 = call @sla__registry_world_insert_component(w6, e1, tmp_2814)
+    !tmp_2814
+    w7 = tmp_2815
+    tmp_2816 = load position+0 as i32
+    tmp_2817 = call @sla__registry_world_insert_component(w7, e2, tmp_2816)
+    !tmp_2816
+    w8 = tmp_2817
+    tmp_2818 = load marker+0 as i32
+    tmp_2819 = call @sla__registry_world_insert_component(w8, e2, tmp_2818)
+    !tmp_2818
+    w9 = tmp_2819
+    tmp_2820 = load position+0 as i32
+    tmp_2821 = call @sla__registry_world_has_component(w9, e1, tmp_2820)
+    !tmp_2820
+    tmp_2822 = 1
+    tmp_2823 = ne tmp_2821, tmp_2822
+    !tmp_2821
+    !tmp_2822
+    br tmp_2823 -> L_THEN_808, L_ELSE_809
+
+L_THEN_808:
+    !tmp_2823
     panic(8713)
 
-L_ELSE_802:
-    !tmp_2807
-    jmp L_MERGE_803
+L_ELSE_809:
+    !tmp_2823
+    jmp L_MERGE_810
 
-L_MERGE_803:
-    tmp_2810 = load marker+0 as i32
-    tmp_2811 = call @sla__registry_world_has_component(w9, e1, tmp_2810)
-    !tmp_2810
-    tmp_2812 = 0
-    tmp_2813 = ne tmp_2811, tmp_2812
-    !tmp_2811
-    !tmp_2812
-    br tmp_2813 -> L_THEN_804, L_ELSE_805
+L_MERGE_810:
+    tmp_2826 = load marker+0 as i32
+    tmp_2827 = call @sla__registry_world_has_component(w9, e1, tmp_2826)
+    !tmp_2826
+    tmp_2828 = 0
+    tmp_2829 = ne tmp_2827, tmp_2828
+    !tmp_2827
+    !tmp_2828
+    br tmp_2829 -> L_THEN_811, L_ELSE_812
 
-L_THEN_804:
-    !tmp_2813
+L_THEN_811:
+    !tmp_2829
     panic(8714)
 
-L_ELSE_805:
-    !tmp_2813
-    jmp L_MERGE_806
+L_ELSE_812:
+    !tmp_2829
+    jmp L_MERGE_813
 
-L_MERGE_806:
-    tmp_2816 = load position+0 as i32
-    tmp_2817 = call @sla__registry_world_query_component(w9, tmp_2816)
-    !tmp_2816
-    q = tmp_2817
-    tmp_2818 = load q+0 as ptr
-    EXPAND VEC_LEN tmp_2819, tmp_2818
-    !tmp_2818
-    tmp_2820 = 2
-    tmp_2821 = ne tmp_2819, tmp_2820
-    !tmp_2819
-    !tmp_2820
-    br tmp_2821 -> L_THEN_807, L_ELSE_808
+L_MERGE_813:
+    tmp_2832 = load position+0 as i32
+    tmp_2833 = call @sla__registry_world_query_component(w9, tmp_2832)
+    !tmp_2832
+    q = tmp_2833
+    tmp_2834 = load q+0 as ptr
+    EXPAND VEC_LEN tmp_2835, tmp_2834
+    !tmp_2834
+    tmp_2836 = 2
+    tmp_2837 = ne tmp_2835, tmp_2836
+    !tmp_2835
+    !tmp_2836
+    br tmp_2837 -> L_THEN_814, L_ELSE_815
 
-L_THEN_807:
-    !tmp_2821
+L_THEN_814:
+    !tmp_2837
     panic(8715)
 
-L_ELSE_808:
-    !tmp_2821
-    jmp L_MERGE_809
+L_ELSE_815:
+    !tmp_2837
+    jmp L_MERGE_816
 
-L_MERGE_809:
-    tmp_2824 = load position+0 as i32
-    tmp_2825 = load marker+0 as i32
-    tmp_2826 = call @sla__registry_world_query_with_without(w9, tmp_2824, tmp_2825)
-    !tmp_2824
-    !tmp_2825
-    filtered = tmp_2826
-    tmp_2827 = load filtered+0 as ptr
-    EXPAND VEC_LEN tmp_2828, tmp_2827
-    !tmp_2827
-    tmp_2829 = 1
-    tmp_2830 = ne tmp_2828, tmp_2829
-    !tmp_2828
-    !tmp_2829
-    br tmp_2830 -> L_THEN_810, L_ELSE_811
+L_MERGE_816:
+    tmp_2840 = load position+0 as i32
+    tmp_2841 = load marker+0 as i32
+    tmp_2842 = call @sla__registry_world_query_with_without(w9, tmp_2840, tmp_2841)
+    !tmp_2840
+    !tmp_2841
+    filtered = tmp_2842
+    tmp_2843 = load filtered+0 as ptr
+    EXPAND VEC_LEN tmp_2844, tmp_2843
+    !tmp_2843
+    tmp_2845 = 1
+    tmp_2846 = ne tmp_2844, tmp_2845
+    !tmp_2844
+    !tmp_2845
+    br tmp_2846 -> L_THEN_817, L_ELSE_818
 
-L_THEN_810:
-    !tmp_2830
+L_THEN_817:
+    !tmp_2846
     panic(8716)
 
-L_ELSE_811:
-    !tmp_2830
-    jmp L_MERGE_812
+L_ELSE_818:
+    !tmp_2846
+    jmp L_MERGE_819
 
-L_MERGE_812:
-    tmp_2833 = load filtered+0 as ptr
-    tmp_2834 = 0
-    EXPAND VEC_GET tmp_2835, tmp_2833, tmp_2834
-    !tmp_2834
-    !tmp_2833
-    tmp_2836 = tmp_2835 as ptr
-    tmp_2837 = load tmp_2836+0 as i32
-    !tmp_2836
-    tmp_2838 = load e1+0 as i32
-    tmp_2839 = ne tmp_2837, tmp_2838
-    !tmp_2837
-    !tmp_2838
-    br tmp_2839 -> L_THEN_813, L_ELSE_814
+L_MERGE_819:
+    tmp_2849 = load filtered+0 as ptr
+    tmp_2850 = 0
+    EXPAND VEC_GET tmp_2851, tmp_2849, tmp_2850
+    !tmp_2850
+    !tmp_2849
+    tmp_2852 = tmp_2851 as ptr
+    tmp_2853 = load tmp_2852+0 as i32
+    !tmp_2852
+    tmp_2854 = load e1+0 as i32
+    tmp_2855 = ne tmp_2853, tmp_2854
+    !tmp_2853
+    !tmp_2854
+    br tmp_2855 -> L_THEN_820, L_ELSE_821
 
-L_THEN_813:
-    !tmp_2839
+L_THEN_820:
+    !tmp_2855
     panic(8717)
 
-L_ELSE_814:
-    !tmp_2839
-    jmp L_MERGE_815
+L_ELSE_821:
+    !tmp_2855
+    jmp L_MERGE_822
 
-L_MERGE_815:
+L_MERGE_822:
     !e2
     !position
     !e1
@@ -9960,194 +10025,194 @@ L_MERGE_815:
     return
 
 @test "registry world added changed and despawn cleanup"():
-L_TEST_ENTRY_816:
-    tmp_2842 = call @sla__registry_world_new()
-    w0 = tmp_2842
-    tmp_2843 = call @sla__registry_world_register_table(w0)
-    w1 = load tmp_2843+0 as ptr
-    health = load tmp_2843+8 as ptr
-    !tmp_2843
-    tmp_2844 = call @sla__registry_world_register_sparse_set(w1)
-    w2 = load tmp_2844+0 as ptr
-    tag = load tmp_2844+8 as ptr
-    !tmp_2844
-    tmp_2845 = call @sla__registry_world_spawn(w2)
-    w3 = load tmp_2845+0 as ptr
-    entity = load tmp_2845+8 as ptr
-    !tmp_2845
-    tmp_2846 = load w3+24 as i32
-    before = tmp_2846
-    tmp_2847 = load health+0 as i32
-    tmp_2848 = call @sla__registry_world_insert_component(w3, entity, tmp_2847)
-    !tmp_2847
-    w4 = tmp_2848
-    tmp_2849 = load health+0 as i32
-    tmp_2850 = 1
-    tmp_2851 = sub before, tmp_2850
-    !tmp_2850
-    tmp_2852 = call @sla__registry_world_component_added_since(w4, entity, tmp_2849, tmp_2851)
-    !tmp_2849
-    !tmp_2851
-    tmp_2853 = 1
-    tmp_2854 = ne tmp_2852, tmp_2853
-    !tmp_2852
-    !tmp_2853
-    br tmp_2854 -> L_THEN_817, L_ELSE_818
+L_TEST_ENTRY_823:
+    tmp_2858 = call @sla__registry_world_new()
+    w0 = tmp_2858
+    tmp_2859 = call @sla__registry_world_register_table(w0)
+    w1 = load tmp_2859+0 as ptr
+    health = load tmp_2859+8 as ptr
+    !tmp_2859
+    tmp_2860 = call @sla__registry_world_register_sparse_set(w1)
+    w2 = load tmp_2860+0 as ptr
+    tag = load tmp_2860+8 as ptr
+    !tmp_2860
+    tmp_2861 = call @sla__registry_world_spawn(w2)
+    w3 = load tmp_2861+0 as ptr
+    entity = load tmp_2861+8 as ptr
+    !tmp_2861
+    tmp_2862 = load w3+24 as i32
+    before = tmp_2862
+    tmp_2863 = load health+0 as i32
+    tmp_2864 = call @sla__registry_world_insert_component(w3, entity, tmp_2863)
+    !tmp_2863
+    w4 = tmp_2864
+    tmp_2865 = load health+0 as i32
+    tmp_2866 = 1
+    tmp_2867 = sub before, tmp_2866
+    !tmp_2866
+    tmp_2868 = call @sla__registry_world_component_added_since(w4, entity, tmp_2865, tmp_2867)
+    !tmp_2865
+    !tmp_2867
+    tmp_2869 = 1
+    tmp_2870 = ne tmp_2868, tmp_2869
+    !tmp_2868
+    !tmp_2869
+    br tmp_2870 -> L_THEN_824, L_ELSE_825
 
-L_THEN_817:
-    !tmp_2854
+L_THEN_824:
+    !tmp_2870
     panic(8720)
 
-L_ELSE_818:
-    !tmp_2854
-    jmp L_MERGE_819
+L_ELSE_825:
+    !tmp_2870
+    jmp L_MERGE_826
 
-L_MERGE_819:
-    tmp_2857 = load health+0 as i32
-    tmp_2858 = 1
-    tmp_2859 = sub before, tmp_2858
-    !tmp_2858
-    tmp_2860 = call @sla__registry_world_component_changed_since(w4, entity, tmp_2857, tmp_2859)
-    !tmp_2857
-    !tmp_2859
-    tmp_2861 = 1
-    tmp_2862 = ne tmp_2860, tmp_2861
-    !tmp_2860
-    !tmp_2861
-    br tmp_2862 -> L_THEN_820, L_ELSE_821
+L_MERGE_826:
+    tmp_2873 = load health+0 as i32
+    tmp_2874 = 1
+    tmp_2875 = sub before, tmp_2874
+    !tmp_2874
+    tmp_2876 = call @sla__registry_world_component_changed_since(w4, entity, tmp_2873, tmp_2875)
+    !tmp_2873
+    !tmp_2875
+    tmp_2877 = 1
+    tmp_2878 = ne tmp_2876, tmp_2877
+    !tmp_2876
+    !tmp_2877
+    br tmp_2878 -> L_THEN_827, L_ELSE_828
 
-L_THEN_820:
-    !tmp_2862
+L_THEN_827:
+    !tmp_2878
     panic(8721)
 
-L_ELSE_821:
-    !tmp_2862
-    jmp L_MERGE_822
+L_ELSE_828:
+    !tmp_2878
+    jmp L_MERGE_829
 
-L_MERGE_822:
-    tmp_2865 = call @sla__registry_world_increment_tick(w4)
-    w5 = tmp_2865
-    tmp_2866 = load health+0 as i32
-    tmp_2867 = call @sla__registry_world_insert_component(w5, entity, tmp_2866)
-    !tmp_2866
-    w6 = tmp_2867
-    tmp_2868 = load health+0 as i32
-    tmp_2869 = call @sla__registry_world_component_added_since(w6, entity, tmp_2868, before)
-    !tmp_2868
-    tmp_2870 = 0
-    tmp_2871 = ne tmp_2869, tmp_2870
-    !tmp_2869
-    !tmp_2870
-    br tmp_2871 -> L_THEN_823, L_ELSE_824
+L_MERGE_829:
+    tmp_2881 = call @sla__registry_world_increment_tick(w4)
+    w5 = tmp_2881
+    tmp_2882 = load health+0 as i32
+    tmp_2883 = call @sla__registry_world_insert_component(w5, entity, tmp_2882)
+    !tmp_2882
+    w6 = tmp_2883
+    tmp_2884 = load health+0 as i32
+    tmp_2885 = call @sla__registry_world_component_added_since(w6, entity, tmp_2884, before)
+    !tmp_2884
+    tmp_2886 = 0
+    tmp_2887 = ne tmp_2885, tmp_2886
+    !tmp_2885
+    !tmp_2886
+    br tmp_2887 -> L_THEN_830, L_ELSE_831
 
-L_THEN_823:
-    !tmp_2871
+L_THEN_830:
+    !tmp_2887
     panic(8722)
 
-L_ELSE_824:
-    !tmp_2871
-    jmp L_MERGE_825
+L_ELSE_831:
+    !tmp_2887
+    jmp L_MERGE_832
 
-L_MERGE_825:
-    tmp_2874 = load health+0 as i32
-    tmp_2875 = call @sla__registry_world_component_changed_since(w6, entity, tmp_2874, before)
-    !tmp_2874
-    tmp_2876 = 1
-    tmp_2877 = ne tmp_2875, tmp_2876
-    !tmp_2875
-    !tmp_2876
-    br tmp_2877 -> L_THEN_826, L_ELSE_827
-
-L_THEN_826:
-    !tmp_2877
-    panic(8723)
-
-L_ELSE_827:
-    !tmp_2877
-    jmp L_MERGE_828
-
-L_MERGE_828:
-    tmp_2880 = load health+0 as i32
-    tmp_2881 = call @sla__registry_world_query_changed_since(w6, tmp_2880, before)
-    !tmp_2880
-    changed = tmp_2881
-    tmp_2882 = load changed+0 as ptr
-    EXPAND VEC_LEN tmp_2883, tmp_2882
-    !tmp_2882
-    tmp_2884 = 1
-    tmp_2885 = ne tmp_2883, tmp_2884
-    !tmp_2883
-    !tmp_2884
-    br tmp_2885 -> L_THEN_829, L_ELSE_830
-
-L_THEN_829:
-    !tmp_2885
-    panic(8724)
-
-L_ELSE_830:
-    !tmp_2885
-    jmp L_MERGE_831
-
-L_MERGE_831:
-    tmp_2888 = load tag+0 as i32
-    tmp_2889 = call @sla__registry_world_insert_component(w6, entity, tmp_2888)
-    !tmp_2888
-    w7 = tmp_2889
-    tmp_2890 = call @sla__registry_world_despawn(w7, entity)
-    w8 = tmp_2890
-    tmp_2891 = call @sla__registry_world_is_alive(w8, entity)
-    tmp_2892 = 0
+L_MERGE_832:
+    tmp_2890 = load health+0 as i32
+    tmp_2891 = call @sla__registry_world_component_changed_since(w6, entity, tmp_2890, before)
+    !tmp_2890
+    tmp_2892 = 1
     tmp_2893 = ne tmp_2891, tmp_2892
     !tmp_2891
     !tmp_2892
-    br tmp_2893 -> L_THEN_832, L_ELSE_833
+    br tmp_2893 -> L_THEN_833, L_ELSE_834
 
-L_THEN_832:
+L_THEN_833:
     !tmp_2893
+    panic(8723)
+
+L_ELSE_834:
+    !tmp_2893
+    jmp L_MERGE_835
+
+L_MERGE_835:
+    tmp_2896 = load health+0 as i32
+    tmp_2897 = call @sla__registry_world_query_changed_since(w6, tmp_2896, before)
+    !tmp_2896
+    changed = tmp_2897
+    tmp_2898 = load changed+0 as ptr
+    EXPAND VEC_LEN tmp_2899, tmp_2898
+    !tmp_2898
+    tmp_2900 = 1
+    tmp_2901 = ne tmp_2899, tmp_2900
+    !tmp_2899
+    !tmp_2900
+    br tmp_2901 -> L_THEN_836, L_ELSE_837
+
+L_THEN_836:
+    !tmp_2901
+    panic(8724)
+
+L_ELSE_837:
+    !tmp_2901
+    jmp L_MERGE_838
+
+L_MERGE_838:
+    tmp_2904 = load tag+0 as i32
+    tmp_2905 = call @sla__registry_world_insert_component(w6, entity, tmp_2904)
+    !tmp_2904
+    w7 = tmp_2905
+    tmp_2906 = call @sla__registry_world_despawn(w7, entity)
+    w8 = tmp_2906
+    tmp_2907 = call @sla__registry_world_is_alive(w8, entity)
+    tmp_2908 = 0
+    tmp_2909 = ne tmp_2907, tmp_2908
+    !tmp_2907
+    !tmp_2908
+    br tmp_2909 -> L_THEN_839, L_ELSE_840
+
+L_THEN_839:
+    !tmp_2909
     panic(8725)
 
-L_ELSE_833:
-    !tmp_2893
-    jmp L_MERGE_834
+L_ELSE_840:
+    !tmp_2909
+    jmp L_MERGE_841
 
-L_MERGE_834:
-    tmp_2896 = load health+0 as i32
-    tmp_2897 = call @sla__registry_world_has_component(w8, entity, tmp_2896)
-    !tmp_2896
-    tmp_2898 = 0
-    tmp_2899 = ne tmp_2897, tmp_2898
-    !tmp_2897
-    !tmp_2898
-    br tmp_2899 -> L_THEN_835, L_ELSE_836
+L_MERGE_841:
+    tmp_2912 = load health+0 as i32
+    tmp_2913 = call @sla__registry_world_has_component(w8, entity, tmp_2912)
+    !tmp_2912
+    tmp_2914 = 0
+    tmp_2915 = ne tmp_2913, tmp_2914
+    !tmp_2913
+    !tmp_2914
+    br tmp_2915 -> L_THEN_842, L_ELSE_843
 
-L_THEN_835:
-    !tmp_2899
+L_THEN_842:
+    !tmp_2915
     panic(8726)
 
-L_ELSE_836:
-    !tmp_2899
-    jmp L_MERGE_837
+L_ELSE_843:
+    !tmp_2915
+    jmp L_MERGE_844
 
-L_MERGE_837:
-    tmp_2902 = load health+0 as i32
-    tmp_2903 = call @sla__registry_world_query_component(w8, tmp_2902)
-    !tmp_2902
-    tmp_2904 = call @sla__RegistryEntityQuery_iter_len(&tmp_2903)
-    tmp_2905 = 0
-    tmp_2906 = ne tmp_2904, tmp_2905
-    !tmp_2904
-    !tmp_2905
-    br tmp_2906 -> L_THEN_838, L_ELSE_839
+L_MERGE_844:
+    tmp_2918 = load health+0 as i32
+    tmp_2919 = call @sla__registry_world_query_component(w8, tmp_2918)
+    !tmp_2918
+    tmp_2920 = call @sla__RegistryEntityQuery_iter_len(&tmp_2919)
+    tmp_2921 = 0
+    tmp_2922 = ne tmp_2920, tmp_2921
+    !tmp_2920
+    !tmp_2921
+    br tmp_2922 -> L_THEN_845, L_ELSE_846
 
-L_THEN_838:
-    !tmp_2906
+L_THEN_845:
+    !tmp_2922
     panic(8727)
 
-L_ELSE_839:
-    !tmp_2906
-    jmp L_MERGE_840
+L_ELSE_846:
+    !tmp_2922
+    jmp L_MERGE_847
 
-L_MERGE_840:
+L_MERGE_847:
     !entity
     !changed
     !before
@@ -10165,86 +10230,86 @@ L_MERGE_840:
     return
 
 @test "registry entity query supports for in"():
-L_TEST_ENTRY_841:
+L_TEST_ENTRY_848:
     entity_slot = stack_alloc 8
-    tmp_2909 = call @sla__registry_world_new()
-    w0 = tmp_2909
-    tmp_2910 = call @sla__registry_world_register_table(w0)
-    w1 = load tmp_2910+0 as ptr
-    component = load tmp_2910+8 as ptr
-    !tmp_2910
-    tmp_2911 = call @sla__registry_world_spawn(w1)
-    w2 = load tmp_2911+0 as ptr
-    e1 = load tmp_2911+8 as ptr
-    !tmp_2911
-    tmp_2912 = call @sla__registry_world_spawn(w2)
-    w3 = load tmp_2912+0 as ptr
-    e2 = load tmp_2912+8 as ptr
-    !tmp_2912
-    tmp_2913 = load component+0 as i32
-    tmp_2914 = call @sla__registry_world_insert_component(w3, e1, tmp_2913)
-    !tmp_2913
-    w4 = tmp_2914
-    tmp_2915 = load component+0 as i32
-    tmp_2916 = call @sla__registry_world_insert_component(w4, e2, tmp_2915)
-    !tmp_2915
-    w5 = tmp_2916
-    tmp_2917 = load component+0 as i32
-    tmp_2918 = call @sla__registry_world_query_component(w5, tmp_2917)
-    !tmp_2917
-    q = tmp_2918
-    tmp_2919 = 0
-    total = tmp_2919
-    tmp_2920 = call @sla__RegistryEntityQuery_iter_len(&q)
-    store entity_slot+0, 0 as i64
-    jmp L_LOOP_HEAD_842
-
-L_LOOP_HEAD_842:
-    tmp_2921 = load entity_slot+0 as i64
-    tmp_2922 = slt tmp_2921, tmp_2920
-    br tmp_2922 -> L_LOOP_BODY_843, L_LOOP_COND_FALSE_845
-
-L_LOOP_BODY_843:
-    !tmp_2922
-    entity = call @sla__RegistryEntityQuery_iter_at(&q, tmp_2921)
-    tmp_2923 = load entity+0 as i32
-    tmp_2924 = add total, tmp_2923
-    !tmp_2923
-    !total
-    total = tmp_2924
-L_LOOP_CONTINUE_844:
-    tmp_2925 = add tmp_2921, 1
-    store entity_slot+0, tmp_2925 as i64
-    !tmp_2925
-    !tmp_2921
-    !entity
-    jmp L_LOOP_HEAD_842
-
-L_LOOP_COND_FALSE_845:
-    !tmp_2922
-    !tmp_2921
-    jmp L_LOOP_EXIT_846
-
-L_LOOP_EXIT_846:
-    !tmp_2920
-    tmp_2926 = load e1+0 as i32
-    tmp_2927 = load e2+0 as i32
-    tmp_2928 = add tmp_2926, tmp_2927
+    tmp_2925 = call @sla__registry_world_new()
+    w0 = tmp_2925
+    tmp_2926 = call @sla__registry_world_register_table(w0)
+    w1 = load tmp_2926+0 as ptr
+    component = load tmp_2926+8 as ptr
     !tmp_2926
+    tmp_2927 = call @sla__registry_world_spawn(w1)
+    w2 = load tmp_2927+0 as ptr
+    e1 = load tmp_2927+8 as ptr
     !tmp_2927
-    tmp_2929 = ne total, tmp_2928
+    tmp_2928 = call @sla__registry_world_spawn(w2)
+    w3 = load tmp_2928+0 as ptr
+    e2 = load tmp_2928+8 as ptr
     !tmp_2928
-    br tmp_2929 -> L_THEN_847, L_ELSE_848
-
-L_THEN_847:
+    tmp_2929 = load component+0 as i32
+    tmp_2930 = call @sla__registry_world_insert_component(w3, e1, tmp_2929)
     !tmp_2929
+    w4 = tmp_2930
+    tmp_2931 = load component+0 as i32
+    tmp_2932 = call @sla__registry_world_insert_component(w4, e2, tmp_2931)
+    !tmp_2931
+    w5 = tmp_2932
+    tmp_2933 = load component+0 as i32
+    tmp_2934 = call @sla__registry_world_query_component(w5, tmp_2933)
+    !tmp_2933
+    q = tmp_2934
+    tmp_2935 = 0
+    total = tmp_2935
+    tmp_2936 = call @sla__RegistryEntityQuery_iter_len(&q)
+    store entity_slot+0, 0 as i64
+    jmp L_LOOP_HEAD_849
+
+L_LOOP_HEAD_849:
+    tmp_2937 = load entity_slot+0 as i64
+    tmp_2938 = slt tmp_2937, tmp_2936
+    br tmp_2938 -> L_LOOP_BODY_850, L_LOOP_COND_FALSE_852
+
+L_LOOP_BODY_850:
+    !tmp_2938
+    entity = call @sla__RegistryEntityQuery_iter_at(&q, tmp_2937)
+    tmp_2939 = load entity+0 as i32
+    tmp_2940 = add total, tmp_2939
+    !tmp_2939
+    !total
+    total = tmp_2940
+L_LOOP_CONTINUE_851:
+    tmp_2941 = add tmp_2937, 1
+    store entity_slot+0, tmp_2941 as i64
+    !tmp_2941
+    !tmp_2937
+    !entity
+    jmp L_LOOP_HEAD_849
+
+L_LOOP_COND_FALSE_852:
+    !tmp_2938
+    !tmp_2937
+    jmp L_LOOP_EXIT_853
+
+L_LOOP_EXIT_853:
+    !tmp_2936
+    tmp_2942 = load e1+0 as i32
+    tmp_2943 = load e2+0 as i32
+    tmp_2944 = add tmp_2942, tmp_2943
+    !tmp_2942
+    !tmp_2943
+    tmp_2945 = ne total, tmp_2944
+    !tmp_2944
+    br tmp_2945 -> L_THEN_854, L_ELSE_855
+
+L_THEN_854:
+    !tmp_2945
     panic(8730)
 
-L_ELSE_848:
-    !tmp_2929
-    jmp L_MERGE_849
+L_ELSE_855:
+    !tmp_2945
+    jmp L_MERGE_856
 
-L_MERGE_849:
+L_MERGE_856:
     !component
     !w0
     !e2
@@ -10259,112 +10324,112 @@ L_MERGE_849:
     return
 
 @test "resource generic constructor"():
-L_TEST_ENTRY_850:
-    tmp_2932 = alloc 4
-    tmp_2933 = 0
-    store tmp_2932+0, tmp_2933 as i32
-    !tmp_2933
-    tmp_2934 = call @sla__resource_slot_new_TestTime(tmp_2932)
-    !tmp_2932
-    r = tmp_2934
-    tmp_2935 = call @sla__resource_has_TestTime(r)
-    tmp_2936 = 0
-    tmp_2937 = ne tmp_2935, tmp_2936
-    !tmp_2935
-    !tmp_2936
-    br tmp_2937 -> L_THEN_851, L_ELSE_852
+L_TEST_ENTRY_857:
+    tmp_2948 = alloc 4
+    tmp_2949 = 0
+    store tmp_2948+0, tmp_2949 as i32
+    !tmp_2949
+    tmp_2950 = call @sla__resource_slot_new_TestTime(tmp_2948)
+    !tmp_2948
+    r = tmp_2950
+    tmp_2951 = call @sla__resource_has_TestTime(r)
+    tmp_2952 = 0
+    tmp_2953 = ne tmp_2951, tmp_2952
+    !tmp_2951
+    !tmp_2952
+    br tmp_2953 -> L_THEN_858, L_ELSE_859
 
-L_THEN_851:
-    !tmp_2937
+L_THEN_858:
+    !tmp_2953
     panic(2290)
 
-L_ELSE_852:
-    !tmp_2937
-    jmp L_MERGE_853
+L_ELSE_859:
+    !tmp_2953
+    jmp L_MERGE_860
 
-L_MERGE_853:
+L_MERGE_860:
     !r
     return
 
 @test "resource insert get remove"():
-L_TEST_ENTRY_854:
-    tmp_2940 = call @sla__test_time_slot_new()
-    r0 = tmp_2940
-    tmp_2941 = call @sla__resource_has_TestTime(r0)
-    tmp_2942 = 0
-    tmp_2943 = ne tmp_2941, tmp_2942
-    !tmp_2941
-    !tmp_2942
-    br tmp_2943 -> L_THEN_855, L_ELSE_856
+L_TEST_ENTRY_861:
+    tmp_2956 = call @sla__test_time_slot_new()
+    r0 = tmp_2956
+    tmp_2957 = call @sla__resource_has_TestTime(r0)
+    tmp_2958 = 0
+    tmp_2959 = ne tmp_2957, tmp_2958
+    !tmp_2957
+    !tmp_2958
+    br tmp_2959 -> L_THEN_862, L_ELSE_863
 
-L_THEN_855:
-    !tmp_2943
+L_THEN_862:
+    !tmp_2959
     panic(2300)
 
-L_ELSE_856:
-    !tmp_2943
-    jmp L_MERGE_857
+L_ELSE_863:
+    !tmp_2959
+    jmp L_MERGE_864
 
-L_MERGE_857:
-    tmp_2946 = alloc 4
-    tmp_2947 = 7
-    store tmp_2946+0, tmp_2947 as i32
-    !tmp_2947
-    tmp_2948 = call @sla__resource_insert_TestTime(r0, tmp_2946)
-    !tmp_2946
-    r1 = tmp_2948
-    tmp_2949 = call @sla__resource_has_TestTime(r1)
-    tmp_2950 = 1
-    tmp_2951 = ne tmp_2949, tmp_2950
-    !tmp_2949
-    !tmp_2950
-    br tmp_2951 -> L_THEN_858, L_ELSE_859
+L_MERGE_864:
+    tmp_2962 = alloc 4
+    tmp_2963 = 7
+    store tmp_2962+0, tmp_2963 as i32
+    !tmp_2963
+    tmp_2964 = call @sla__resource_insert_TestTime(r0, tmp_2962)
+    !tmp_2962
+    r1 = tmp_2964
+    tmp_2965 = call @sla__resource_has_TestTime(r1)
+    tmp_2966 = 1
+    tmp_2967 = ne tmp_2965, tmp_2966
+    !tmp_2965
+    !tmp_2966
+    br tmp_2967 -> L_THEN_865, L_ELSE_866
 
-L_THEN_858:
-    !tmp_2951
+L_THEN_865:
+    !tmp_2967
     panic(2301)
 
-L_ELSE_859:
-    !tmp_2951
-    jmp L_MERGE_860
+L_ELSE_866:
+    !tmp_2967
+    jmp L_MERGE_867
 
-L_MERGE_860:
-    tmp_2954 = call @sla__resource_get_TestTime(r1)
-    t = tmp_2954
-    tmp_2955 = load t+0 as i32
-    tmp_2956 = 7
-    tmp_2957 = ne tmp_2955, tmp_2956
-    !tmp_2955
-    !tmp_2956
-    br tmp_2957 -> L_THEN_861, L_ELSE_862
+L_MERGE_867:
+    tmp_2970 = call @sla__resource_get_TestTime(r1)
+    t = tmp_2970
+    tmp_2971 = load t+0 as i32
+    tmp_2972 = 7
+    tmp_2973 = ne tmp_2971, tmp_2972
+    !tmp_2971
+    !tmp_2972
+    br tmp_2973 -> L_THEN_868, L_ELSE_869
 
-L_THEN_861:
-    !tmp_2957
+L_THEN_868:
+    !tmp_2973
     panic(2302)
 
-L_ELSE_862:
-    !tmp_2957
-    jmp L_MERGE_863
+L_ELSE_869:
+    !tmp_2973
+    jmp L_MERGE_870
 
-L_MERGE_863:
-    tmp_2960 = call @sla__resource_remove_TestTime(r1)
-    r2 = tmp_2960
-    tmp_2961 = call @sla__resource_has_TestTime(r2)
-    tmp_2962 = 0
-    tmp_2963 = ne tmp_2961, tmp_2962
-    !tmp_2961
-    !tmp_2962
-    br tmp_2963 -> L_THEN_864, L_ELSE_865
+L_MERGE_870:
+    tmp_2976 = call @sla__resource_remove_TestTime(r1)
+    r2 = tmp_2976
+    tmp_2977 = call @sla__resource_has_TestTime(r2)
+    tmp_2978 = 0
+    tmp_2979 = ne tmp_2977, tmp_2978
+    !tmp_2977
+    !tmp_2978
+    br tmp_2979 -> L_THEN_871, L_ELSE_872
 
-L_THEN_864:
-    !tmp_2963
+L_THEN_871:
+    !tmp_2979
     panic(2303)
 
-L_ELSE_865:
-    !tmp_2963
-    jmp L_MERGE_866
+L_ELSE_872:
+    !tmp_2979
+    jmp L_MERGE_873
 
-L_MERGE_866:
+L_MERGE_873:
     !r1
     !t
     !r2
@@ -10372,41 +10437,41 @@ L_MERGE_866:
     return
 
 @test "resource replace overwrites value"():
-L_TEST_ENTRY_867:
-    tmp_2966 = call @sla__test_time_slot_new()
-    r0 = tmp_2966
-    tmp_2967 = alloc 4
-    tmp_2968 = 1
-    store tmp_2967+0, tmp_2968 as i32
-    !tmp_2968
-    tmp_2969 = call @sla__resource_insert_TestTime(r0, tmp_2967)
-    !tmp_2967
-    r1 = tmp_2969
-    tmp_2970 = alloc 4
-    tmp_2971 = 2
-    store tmp_2970+0, tmp_2971 as i32
-    !tmp_2971
-    tmp_2972 = call @sla__resource_insert_TestTime(r1, tmp_2970)
-    !tmp_2970
-    r2 = tmp_2972
-    tmp_2973 = call @sla__resource_get_TestTime(r2)
-    t = tmp_2973
-    tmp_2974 = load t+0 as i32
-    tmp_2975 = 2
-    tmp_2976 = ne tmp_2974, tmp_2975
-    !tmp_2974
-    !tmp_2975
-    br tmp_2976 -> L_THEN_868, L_ELSE_869
+L_TEST_ENTRY_874:
+    tmp_2982 = call @sla__test_time_slot_new()
+    r0 = tmp_2982
+    tmp_2983 = alloc 4
+    tmp_2984 = 1
+    store tmp_2983+0, tmp_2984 as i32
+    !tmp_2984
+    tmp_2985 = call @sla__resource_insert_TestTime(r0, tmp_2983)
+    !tmp_2983
+    r1 = tmp_2985
+    tmp_2986 = alloc 4
+    tmp_2987 = 2
+    store tmp_2986+0, tmp_2987 as i32
+    !tmp_2987
+    tmp_2988 = call @sla__resource_insert_TestTime(r1, tmp_2986)
+    !tmp_2986
+    r2 = tmp_2988
+    tmp_2989 = call @sla__resource_get_TestTime(r2)
+    t = tmp_2989
+    tmp_2990 = load t+0 as i32
+    tmp_2991 = 2
+    tmp_2992 = ne tmp_2990, tmp_2991
+    !tmp_2990
+    !tmp_2991
+    br tmp_2992 -> L_THEN_875, L_ELSE_876
 
-L_THEN_868:
-    !tmp_2976
+L_THEN_875:
+    !tmp_2992
     panic(2310)
 
-L_ELSE_869:
-    !tmp_2976
-    jmp L_MERGE_870
+L_ELSE_876:
+    !tmp_2992
+    jmp L_MERGE_877
 
-L_MERGE_870:
+L_MERGE_877:
     !r1
     !r2
     !t
@@ -10414,139 +10479,139 @@ L_MERGE_870:
     return
 
 @test "messages generic constructor"():
-L_TEST_ENTRY_871:
-    tmp_2979 = call @sla__test_damage_default()
-    tmp_2980 = call @sla__messages_new_TestDamageMessage(tmp_2979)
-    !tmp_2979
-    m = tmp_2980
-    tmp_2981 = load m+0 as i64
-    tmp_2982 = 0
-    tmp_2983 = ne tmp_2981, tmp_2982
-    !tmp_2981
-    !tmp_2982
-    br tmp_2983 -> L_THEN_872, L_ELSE_873
+L_TEST_ENTRY_878:
+    tmp_2995 = call @sla__test_damage_default()
+    tmp_2996 = call @sla__messages_new_TestDamageMessage(tmp_2995)
+    !tmp_2995
+    m = tmp_2996
+    tmp_2997 = load m+0 as i64
+    tmp_2998 = 0
+    tmp_2999 = ne tmp_2997, tmp_2998
+    !tmp_2997
+    !tmp_2998
+    br tmp_2999 -> L_THEN_879, L_ELSE_880
 
-L_THEN_872:
-    !tmp_2983
+L_THEN_879:
+    !tmp_2999
     panic(2390)
 
-L_ELSE_873:
-    !tmp_2983
-    jmp L_MERGE_874
+L_ELSE_880:
+    !tmp_2999
+    jmp L_MERGE_881
 
-L_MERGE_874:
+L_MERGE_881:
     !m
     return
 
 @test "messages writer appends"():
-L_TEST_ENTRY_875:
-    tmp_2986 = call @sla__test_damage_messages_new()
-    m0 = tmp_2986
-    tmp_2987 = alloc 4
-    tmp_2988 = 5
-    store tmp_2987+0, tmp_2988 as i32
-    !tmp_2988
-    tmp_2989 = call @sla__messages_write_TestDamageMessage(m0, tmp_2987)
-    !tmp_2987
-    m1 = tmp_2989
-    tmp_2990 = alloc 4
-    tmp_2991 = 7
-    store tmp_2990+0, tmp_2991 as i32
-    !tmp_2991
-    tmp_2992 = call @sla__messages_write_TestDamageMessage(m1, tmp_2990)
-    !tmp_2990
-    m2 = tmp_2992
-    tmp_2993 = load m2+0 as i64
-    tmp_2994 = 2
-    tmp_2995 = ne tmp_2993, tmp_2994
-    !tmp_2993
-    !tmp_2994
-    br tmp_2995 -> L_THEN_876, L_ELSE_877
+L_TEST_ENTRY_882:
+    tmp_3002 = call @sla__test_damage_messages_new()
+    m0 = tmp_3002
+    tmp_3003 = alloc 4
+    tmp_3004 = 5
+    store tmp_3003+0, tmp_3004 as i32
+    !tmp_3004
+    tmp_3005 = call @sla__messages_write_TestDamageMessage(m0, tmp_3003)
+    !tmp_3003
+    m1 = tmp_3005
+    tmp_3006 = alloc 4
+    tmp_3007 = 7
+    store tmp_3006+0, tmp_3007 as i32
+    !tmp_3007
+    tmp_3008 = call @sla__messages_write_TestDamageMessage(m1, tmp_3006)
+    !tmp_3006
+    m2 = tmp_3008
+    tmp_3009 = load m2+0 as i64
+    tmp_3010 = 2
+    tmp_3011 = ne tmp_3009, tmp_3010
+    !tmp_3009
+    !tmp_3010
+    br tmp_3011 -> L_THEN_883, L_ELSE_884
 
-L_THEN_876:
-    !tmp_2995
+L_THEN_883:
+    !tmp_3011
     panic(2400)
 
-L_ELSE_877:
-    !tmp_2995
-    jmp L_MERGE_878
+L_ELSE_884:
+    !tmp_3011
+    jmp L_MERGE_885
 
-L_MERGE_878:
+L_MERGE_885:
     !m2
     !m0
     !m1
     return
 
 @test "message writer param batches appends"():
-L_TEST_ENTRY_879:
-    tmp_2998 = call @sla__test_damage_messages_new()
-    m0 = tmp_2998
-    tmp_2999 = call @sla__message_writer_new_TestDamageMessage()
-    w0 = tmp_2999
-    tmp_3000 = alloc 4
-    tmp_3001 = 3
-    store tmp_3000+0, tmp_3001 as i32
-    !tmp_3001
-    tmp_3002 = call @sla__message_writer_send_TestDamageMessage(w0, tmp_3000)
-    !tmp_3000
-    w1 = tmp_3002
-    tmp_3003 = alloc 4
-    tmp_3004 = 9
-    store tmp_3003+0, tmp_3004 as i32
-    !tmp_3004
-    tmp_3005 = call @sla__message_writer_send_TestDamageMessage(w1, tmp_3003)
-    !tmp_3003
-    w2 = tmp_3005
-    tmp_3006 = call @sla__messages_apply_writer_TestDamageMessage(m0, w2)
-    m1 = tmp_3006
-    tmp_3007 = call @sla__message_reader_new()
-    r0 = tmp_3007
-    tmp_3008 = call @sla__test_damage_default()
-    tmp_3009 = call @sla__messages_read_next_TestDamageMessage(m1, r0, tmp_3008)
-    !tmp_3008
-    read1 = tmp_3009
-    tmp_3010 = load read1+16 as ptr
-    tmp_3011 = call @sla__test_damage_default()
-    tmp_3012 = call @sla__messages_read_next_TestDamageMessage(m1, tmp_3010, tmp_3011)
-    !tmp_3010
-    !tmp_3011
-    read2 = tmp_3012
-    tmp_3013 = load read1+8 as ptr
-    tmp_3014 = load tmp_3013+0 as i32
-    !tmp_3013
-    tmp_3015 = 3
-    tmp_3016 = ne tmp_3014, tmp_3015
-    !tmp_3014
-    !tmp_3015
-    br tmp_3016 -> L_THEN_880, L_ELSE_881
-
-L_THEN_880:
+L_TEST_ENTRY_886:
+    tmp_3014 = call @sla__test_damage_messages_new()
+    m0 = tmp_3014
+    tmp_3015 = call @sla__message_writer_new_TestDamageMessage()
+    w0 = tmp_3015
+    tmp_3016 = alloc 4
+    tmp_3017 = 3
+    store tmp_3016+0, tmp_3017 as i32
+    !tmp_3017
+    tmp_3018 = call @sla__message_writer_send_TestDamageMessage(w0, tmp_3016)
     !tmp_3016
+    w1 = tmp_3018
+    tmp_3019 = alloc 4
+    tmp_3020 = 9
+    store tmp_3019+0, tmp_3020 as i32
+    !tmp_3020
+    tmp_3021 = call @sla__message_writer_send_TestDamageMessage(w1, tmp_3019)
+    !tmp_3019
+    w2 = tmp_3021
+    tmp_3022 = call @sla__messages_apply_writer_TestDamageMessage(m0, w2)
+    m1 = tmp_3022
+    tmp_3023 = call @sla__message_reader_new()
+    r0 = tmp_3023
+    tmp_3024 = call @sla__test_damage_default()
+    tmp_3025 = call @sla__messages_read_next_TestDamageMessage(m1, r0, tmp_3024)
+    !tmp_3024
+    read1 = tmp_3025
+    tmp_3026 = load read1+16 as ptr
+    tmp_3027 = call @sla__test_damage_default()
+    tmp_3028 = call @sla__messages_read_next_TestDamageMessage(m1, tmp_3026, tmp_3027)
+    !tmp_3026
+    !tmp_3027
+    read2 = tmp_3028
+    tmp_3029 = load read1+8 as ptr
+    tmp_3030 = load tmp_3029+0 as i32
+    !tmp_3029
+    tmp_3031 = 3
+    tmp_3032 = ne tmp_3030, tmp_3031
+    !tmp_3030
+    !tmp_3031
+    br tmp_3032 -> L_THEN_887, L_ELSE_888
+
+L_THEN_887:
+    !tmp_3032
     panic(2420)
 
-L_ELSE_881:
-    !tmp_3016
-    jmp L_MERGE_882
+L_ELSE_888:
+    !tmp_3032
+    jmp L_MERGE_889
 
-L_MERGE_882:
-    tmp_3019 = load read2+8 as ptr
-    tmp_3020 = load tmp_3019+0 as i32
-    !tmp_3019
-    tmp_3021 = 9
-    tmp_3022 = ne tmp_3020, tmp_3021
-    !tmp_3020
-    !tmp_3021
-    br tmp_3022 -> L_THEN_883, L_ELSE_884
+L_MERGE_889:
+    tmp_3035 = load read2+8 as ptr
+    tmp_3036 = load tmp_3035+0 as i32
+    !tmp_3035
+    tmp_3037 = 9
+    tmp_3038 = ne tmp_3036, tmp_3037
+    !tmp_3036
+    !tmp_3037
+    br tmp_3038 -> L_THEN_890, L_ELSE_891
 
-L_THEN_883:
-    !tmp_3022
+L_THEN_890:
+    !tmp_3038
     panic(2421)
 
-L_ELSE_884:
-    !tmp_3022
-    jmp L_MERGE_885
+L_ELSE_891:
+    !tmp_3038
+    jmp L_MERGE_892
 
-L_MERGE_885:
+L_MERGE_892:
     !read1
     !m0
     !w0
@@ -10558,149 +10623,149 @@ L_MERGE_885:
     return
 
 @test "message reader cursor advances independently"():
-L_TEST_ENTRY_886:
-    tmp_3025 = call @sla__test_damage_messages_new()
-    m0 = tmp_3025
-    tmp_3026 = alloc 4
-    tmp_3027 = 5
-    store tmp_3026+0, tmp_3027 as i32
-    !tmp_3027
-    tmp_3028 = call @sla__messages_write_TestDamageMessage(m0, tmp_3026)
-    !tmp_3026
-    m1 = tmp_3028
-    tmp_3029 = alloc 4
-    tmp_3030 = 7
-    store tmp_3029+0, tmp_3030 as i32
-    !tmp_3030
-    tmp_3031 = call @sla__messages_write_TestDamageMessage(m1, tmp_3029)
-    !tmp_3029
-    m2 = tmp_3031
-    tmp_3032 = call @sla__message_reader_new()
-    r0 = tmp_3032
-    tmp_3033 = call @sla__message_reader_new()
-    r_other = tmp_3033
-    tmp_3034 = call @sla__test_damage_default()
-    tmp_3035 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_3034)
-    !tmp_3034
-    read1 = tmp_3035
-    tmp_3036 = load read1+0 as u8
-    tmp_3037 = 1
-    tmp_3038 = ne tmp_3036, tmp_3037
-    !tmp_3036
-    !tmp_3037
-    br tmp_3038 -> L_THEN_887, L_ELSE_888
+L_TEST_ENTRY_893:
+    tmp_3041 = call @sla__test_damage_messages_new()
+    m0 = tmp_3041
+    tmp_3042 = alloc 4
+    tmp_3043 = 5
+    store tmp_3042+0, tmp_3043 as i32
+    !tmp_3043
+    tmp_3044 = call @sla__messages_write_TestDamageMessage(m0, tmp_3042)
+    !tmp_3042
+    m1 = tmp_3044
+    tmp_3045 = alloc 4
+    tmp_3046 = 7
+    store tmp_3045+0, tmp_3046 as i32
+    !tmp_3046
+    tmp_3047 = call @sla__messages_write_TestDamageMessage(m1, tmp_3045)
+    !tmp_3045
+    m2 = tmp_3047
+    tmp_3048 = call @sla__message_reader_new()
+    r0 = tmp_3048
+    tmp_3049 = call @sla__message_reader_new()
+    r_other = tmp_3049
+    tmp_3050 = call @sla__test_damage_default()
+    tmp_3051 = call @sla__messages_read_next_TestDamageMessage(m2, r0, tmp_3050)
+    !tmp_3050
+    read1 = tmp_3051
+    tmp_3052 = load read1+0 as u8
+    tmp_3053 = 1
+    tmp_3054 = ne tmp_3052, tmp_3053
+    !tmp_3052
+    !tmp_3053
+    br tmp_3054 -> L_THEN_894, L_ELSE_895
 
-L_THEN_887:
-    !tmp_3038
+L_THEN_894:
+    !tmp_3054
     panic(2410)
 
-L_ELSE_888:
-    !tmp_3038
-    jmp L_MERGE_889
+L_ELSE_895:
+    !tmp_3054
+    jmp L_MERGE_896
 
-L_MERGE_889:
-    tmp_3041 = load read1+8 as ptr
-    tmp_3042 = load tmp_3041+0 as i32
-    !tmp_3041
-    tmp_3043 = 5
-    tmp_3044 = ne tmp_3042, tmp_3043
-    !tmp_3042
-    !tmp_3043
-    br tmp_3044 -> L_THEN_890, L_ELSE_891
+L_MERGE_896:
+    tmp_3057 = load read1+8 as ptr
+    tmp_3058 = load tmp_3057+0 as i32
+    !tmp_3057
+    tmp_3059 = 5
+    tmp_3060 = ne tmp_3058, tmp_3059
+    !tmp_3058
+    !tmp_3059
+    br tmp_3060 -> L_THEN_897, L_ELSE_898
 
-L_THEN_890:
-    !tmp_3044
+L_THEN_897:
+    !tmp_3060
     panic(2411)
 
-L_ELSE_891:
-    !tmp_3044
-    jmp L_MERGE_892
+L_ELSE_898:
+    !tmp_3060
+    jmp L_MERGE_899
 
-L_MERGE_892:
-    tmp_3047 = load read1+16 as ptr
-    tmp_3048 = call @sla__test_damage_default()
-    tmp_3049 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_3047, tmp_3048)
-    !tmp_3047
-    !tmp_3048
-    read2 = tmp_3049
-    tmp_3050 = load read2+0 as u8
-    tmp_3051 = 1
-    tmp_3052 = ne tmp_3050, tmp_3051
-    !tmp_3050
-    !tmp_3051
-    br tmp_3052 -> L_THEN_893, L_ELSE_894
+L_MERGE_899:
+    tmp_3063 = load read1+16 as ptr
+    tmp_3064 = call @sla__test_damage_default()
+    tmp_3065 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_3063, tmp_3064)
+    !tmp_3063
+    !tmp_3064
+    read2 = tmp_3065
+    tmp_3066 = load read2+0 as u8
+    tmp_3067 = 1
+    tmp_3068 = ne tmp_3066, tmp_3067
+    !tmp_3066
+    !tmp_3067
+    br tmp_3068 -> L_THEN_900, L_ELSE_901
 
-L_THEN_893:
-    !tmp_3052
+L_THEN_900:
+    !tmp_3068
     panic(2412)
 
-L_ELSE_894:
-    !tmp_3052
-    jmp L_MERGE_895
+L_ELSE_901:
+    !tmp_3068
+    jmp L_MERGE_902
 
-L_MERGE_895:
-    tmp_3055 = load read2+8 as ptr
-    tmp_3056 = load tmp_3055+0 as i32
-    !tmp_3055
-    tmp_3057 = 7
-    tmp_3058 = ne tmp_3056, tmp_3057
-    !tmp_3056
-    !tmp_3057
-    br tmp_3058 -> L_THEN_896, L_ELSE_897
-
-L_THEN_896:
-    !tmp_3058
-    panic(2413)
-
-L_ELSE_897:
-    !tmp_3058
-    jmp L_MERGE_898
-
-L_MERGE_898:
-    tmp_3061 = load read2+16 as ptr
-    tmp_3062 = call @sla__test_damage_default()
-    tmp_3063 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_3061, tmp_3062)
-    !tmp_3061
-    !tmp_3062
-    read3 = tmp_3063
-    tmp_3064 = load read3+0 as u8
-    tmp_3065 = 0
-    tmp_3066 = ne tmp_3064, tmp_3065
-    !tmp_3064
-    !tmp_3065
-    br tmp_3066 -> L_THEN_899, L_ELSE_900
-
-L_THEN_899:
-    !tmp_3066
-    panic(2414)
-
-L_ELSE_900:
-    !tmp_3066
-    jmp L_MERGE_901
-
-L_MERGE_901:
-    tmp_3069 = call @sla__test_damage_default()
-    tmp_3070 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_3069)
-    !tmp_3069
-    other = tmp_3070
-    tmp_3071 = load other+8 as ptr
+L_MERGE_902:
+    tmp_3071 = load read2+8 as ptr
     tmp_3072 = load tmp_3071+0 as i32
     !tmp_3071
-    tmp_3073 = 5
+    tmp_3073 = 7
     tmp_3074 = ne tmp_3072, tmp_3073
     !tmp_3072
     !tmp_3073
-    br tmp_3074 -> L_THEN_902, L_ELSE_903
+    br tmp_3074 -> L_THEN_903, L_ELSE_904
 
-L_THEN_902:
+L_THEN_903:
     !tmp_3074
+    panic(2413)
+
+L_ELSE_904:
+    !tmp_3074
+    jmp L_MERGE_905
+
+L_MERGE_905:
+    tmp_3077 = load read2+16 as ptr
+    tmp_3078 = call @sla__test_damage_default()
+    tmp_3079 = call @sla__messages_read_next_TestDamageMessage(m2, tmp_3077, tmp_3078)
+    !tmp_3077
+    !tmp_3078
+    read3 = tmp_3079
+    tmp_3080 = load read3+0 as u8
+    tmp_3081 = 0
+    tmp_3082 = ne tmp_3080, tmp_3081
+    !tmp_3080
+    !tmp_3081
+    br tmp_3082 -> L_THEN_906, L_ELSE_907
+
+L_THEN_906:
+    !tmp_3082
+    panic(2414)
+
+L_ELSE_907:
+    !tmp_3082
+    jmp L_MERGE_908
+
+L_MERGE_908:
+    tmp_3085 = call @sla__test_damage_default()
+    tmp_3086 = call @sla__messages_read_next_TestDamageMessage(m2, r_other, tmp_3085)
+    !tmp_3085
+    other = tmp_3086
+    tmp_3087 = load other+8 as ptr
+    tmp_3088 = load tmp_3087+0 as i32
+    !tmp_3087
+    tmp_3089 = 5
+    tmp_3090 = ne tmp_3088, tmp_3089
+    !tmp_3088
+    !tmp_3089
+    br tmp_3090 -> L_THEN_909, L_ELSE_910
+
+L_THEN_909:
+    !tmp_3090
     panic(2415)
 
-L_ELSE_903:
-    !tmp_3074
-    jmp L_MERGE_904
+L_ELSE_910:
+    !tmp_3090
+    jmp L_MERGE_911
 
-L_MERGE_904:
+L_MERGE_911:
     !m2
     !m0
     !read1
@@ -10713,257 +10778,257 @@ L_MERGE_904:
     return
 
 @test "dynamic store grows beyond fixed capacity"():
-L_TEST_ENTRY_905:
-    tmp_3077 = call @sla__dyn_store_new_DynPoint()
-    s = tmp_3077
-    tmp_3078 = 0
-    i = tmp_3078
-    jmp L_WHILE_HEAD_906
+L_TEST_ENTRY_912:
+    tmp_3093 = call @sla__dyn_store_new_DynPoint()
+    s = tmp_3093
+    tmp_3094 = 0
+    i = tmp_3094
+    jmp L_WHILE_HEAD_913
 
-L_WHILE_HEAD_906:
-    tmp_3079 = 20
-    tmp_3080 = slt i, tmp_3079
-    !tmp_3079
-    br tmp_3080 -> L_WHILE_BODY_907, L_WHILE_COND_FALSE_908
+L_WHILE_HEAD_913:
+    tmp_3095 = 20
+    tmp_3096 = slt i, tmp_3095
+    !tmp_3095
+    br tmp_3096 -> L_WHILE_BODY_914, L_WHILE_COND_FALSE_915
 
-L_WHILE_BODY_907:
-    !tmp_3080
-    tmp_3081 = 1
-    tmp_3082 = add i, tmp_3081
-    !tmp_3081
-    tmp_3083 = call @sla__dyn_point(i, tmp_3082)
-    !tmp_3082
-    tmp_3084 = call @sla__dyn_store_insert_DynPoint(s, i, tmp_3083)
-    !tmp_3083
+L_WHILE_BODY_914:
+    !tmp_3096
+    tmp_3097 = 1
+    tmp_3098 = add i, tmp_3097
+    !tmp_3097
+    tmp_3099 = call @sla__dyn_point(i, tmp_3098)
+    !tmp_3098
+    tmp_3100 = call @sla__dyn_store_insert_DynPoint(s, i, tmp_3099)
+    !tmp_3099
     !s
-    s = tmp_3084
-    tmp_3085 = 1
-    tmp_3086 = add i, tmp_3085
-    !tmp_3085
+    s = tmp_3100
+    tmp_3101 = 1
+    tmp_3102 = add i, tmp_3101
+    !tmp_3101
     !i
-    i = tmp_3086
-    jmp L_WHILE_HEAD_906
+    i = tmp_3102
+    jmp L_WHILE_HEAD_913
 
-L_WHILE_COND_FALSE_908:
-    !tmp_3080
-    jmp L_WHILE_EXIT_909
+L_WHILE_COND_FALSE_915:
+    !tmp_3096
+    jmp L_WHILE_EXIT_916
 
-L_WHILE_EXIT_909:
-    tmp_3087 = call @sla__dyn_store_count_DynPoint(s)
-    tmp_3088 = 20
-    tmp_3089 = ne tmp_3087, tmp_3088
-    !tmp_3087
-    !tmp_3088
-    br tmp_3089 -> L_THEN_910, L_ELSE_911
+L_WHILE_EXIT_916:
+    tmp_3103 = call @sla__dyn_store_count_DynPoint(s)
+    tmp_3104 = 20
+    tmp_3105 = ne tmp_3103, tmp_3104
+    !tmp_3103
+    !tmp_3104
+    br tmp_3105 -> L_THEN_917, L_ELSE_918
 
-L_THEN_910:
-    !tmp_3089
+L_THEN_917:
+    !tmp_3105
     panic(4210)
 
-L_ELSE_911:
-    !tmp_3089
-    jmp L_MERGE_912
+L_ELSE_918:
+    !tmp_3105
+    jmp L_MERGE_919
 
-L_MERGE_912:
-    tmp_3092 = 19
-    tmp_3093 = call @sla__dyn_store_get_DynPoint(s, tmp_3092)
-    !tmp_3092
-    p = tmp_3093
-    tmp_3094 = load p+0 as i32
-    tmp_3095 = 19
-    tmp_3096 = ne tmp_3094, tmp_3095
-    !tmp_3094
-    !tmp_3095
-    br tmp_3096 -> L_THEN_913, L_ELSE_914
+L_MERGE_919:
+    tmp_3108 = 19
+    tmp_3109 = call @sla__dyn_store_get_DynPoint(s, tmp_3108)
+    !tmp_3108
+    p = tmp_3109
+    tmp_3110 = load p+0 as i32
+    tmp_3111 = 19
+    tmp_3112 = ne tmp_3110, tmp_3111
+    !tmp_3110
+    !tmp_3111
+    br tmp_3112 -> L_THEN_920, L_ELSE_921
 
-L_THEN_913:
-    !tmp_3096
+L_THEN_920:
+    !tmp_3112
     panic(4211)
 
-L_ELSE_914:
-    !tmp_3096
-    jmp L_MERGE_915
+L_ELSE_921:
+    !tmp_3112
+    jmp L_MERGE_922
 
-L_MERGE_915:
-    tmp_3099 = load p+4 as i32
-    tmp_3100 = 20
-    tmp_3101 = ne tmp_3099, tmp_3100
-    !tmp_3099
-    !tmp_3100
-    br tmp_3101 -> L_THEN_916, L_ELSE_917
+L_MERGE_922:
+    tmp_3115 = load p+4 as i32
+    tmp_3116 = 20
+    tmp_3117 = ne tmp_3115, tmp_3116
+    !tmp_3115
+    !tmp_3116
+    br tmp_3117 -> L_THEN_923, L_ELSE_924
 
-L_THEN_916:
-    !tmp_3101
+L_THEN_923:
+    !tmp_3117
     panic(4212)
 
-L_ELSE_917:
-    !tmp_3101
-    jmp L_MERGE_918
+L_ELSE_924:
+    !tmp_3117
+    jmp L_MERGE_925
 
-L_MERGE_918:
+L_MERGE_925:
     !s
     !i
     !p
     return
 
 @test "dynamic store write and swap remove"():
-L_TEST_ENTRY_919:
-    tmp_3104 = call @sla__dyn_store_new_DynPoint()
-    s0 = tmp_3104
-    tmp_3105 = 1
-    tmp_3106 = 10
-    tmp_3107 = 0
-    tmp_3108 = call @sla__dyn_point(tmp_3106, tmp_3107)
-    !tmp_3106
-    !tmp_3107
-    tmp_3109 = call @sla__dyn_store_insert_DynPoint(s0, tmp_3105, tmp_3108)
-    !tmp_3105
-    !tmp_3108
-    s1 = tmp_3109
-    tmp_3110 = 2
-    tmp_3111 = 20
-    tmp_3112 = 0
-    tmp_3113 = call @sla__dyn_point(tmp_3111, tmp_3112)
-    !tmp_3111
-    !tmp_3112
-    tmp_3114 = call @sla__dyn_store_insert_DynPoint(s1, tmp_3110, tmp_3113)
-    !tmp_3110
-    !tmp_3113
-    s2 = tmp_3114
-    tmp_3115 = 3
-    tmp_3116 = 30
-    tmp_3117 = 0
-    tmp_3118 = call @sla__dyn_point(tmp_3116, tmp_3117)
-    !tmp_3116
-    !tmp_3117
-    tmp_3119 = call @sla__dyn_store_insert_DynPoint(s2, tmp_3115, tmp_3118)
-    !tmp_3115
-    !tmp_3118
-    s3 = tmp_3119
-    tmp_3120 = 2
-    tmp_3121 = call @sla__dyn_store_slot_of_DynPoint(s3, tmp_3120)
-    !tmp_3120
-    slot = tmp_3121
-    tmp_3122 = 25
-    tmp_3123 = 5
+L_TEST_ENTRY_926:
+    tmp_3120 = call @sla__dyn_store_new_DynPoint()
+    s0 = tmp_3120
+    tmp_3121 = 1
+    tmp_3122 = 10
+    tmp_3123 = 0
     tmp_3124 = call @sla__dyn_point(tmp_3122, tmp_3123)
     !tmp_3122
     !tmp_3123
-    tmp_3125 = call @sla__dyn_store_write_DynPoint(s3, slot, tmp_3124)
+    tmp_3125 = call @sla__dyn_store_insert_DynPoint(s0, tmp_3121, tmp_3124)
+    !tmp_3121
     !tmp_3124
-    s4 = tmp_3125
+    s1 = tmp_3125
     tmp_3126 = 2
-    tmp_3127 = call @sla__dyn_store_get_DynPoint(s4, tmp_3126)
-    !tmp_3126
-    written = tmp_3127
-    tmp_3128 = load written+0 as i32
-    tmp_3129 = 25
-    tmp_3130 = ne tmp_3128, tmp_3129
+    tmp_3127 = 20
+    tmp_3128 = 0
+    tmp_3129 = call @sla__dyn_point(tmp_3127, tmp_3128)
+    !tmp_3127
     !tmp_3128
+    tmp_3130 = call @sla__dyn_store_insert_DynPoint(s1, tmp_3126, tmp_3129)
+    !tmp_3126
     !tmp_3129
-    br tmp_3130 -> L_THEN_920, L_ELSE_921
+    s2 = tmp_3130
+    tmp_3131 = 3
+    tmp_3132 = 30
+    tmp_3133 = 0
+    tmp_3134 = call @sla__dyn_point(tmp_3132, tmp_3133)
+    !tmp_3132
+    !tmp_3133
+    tmp_3135 = call @sla__dyn_store_insert_DynPoint(s2, tmp_3131, tmp_3134)
+    !tmp_3131
+    !tmp_3134
+    s3 = tmp_3135
+    tmp_3136 = 2
+    tmp_3137 = call @sla__dyn_store_slot_of_DynPoint(s3, tmp_3136)
+    !tmp_3136
+    slot = tmp_3137
+    tmp_3138 = 25
+    tmp_3139 = 5
+    tmp_3140 = call @sla__dyn_point(tmp_3138, tmp_3139)
+    !tmp_3138
+    !tmp_3139
+    tmp_3141 = call @sla__dyn_store_write_DynPoint(s3, slot, tmp_3140)
+    !tmp_3140
+    s4 = tmp_3141
+    tmp_3142 = 2
+    tmp_3143 = call @sla__dyn_store_get_DynPoint(s4, tmp_3142)
+    !tmp_3142
+    written = tmp_3143
+    tmp_3144 = load written+0 as i32
+    tmp_3145 = 25
+    tmp_3146 = ne tmp_3144, tmp_3145
+    !tmp_3144
+    !tmp_3145
+    br tmp_3146 -> L_THEN_927, L_ELSE_928
 
-L_THEN_920:
-    !tmp_3130
+L_THEN_927:
+    !tmp_3146
     panic(4220)
 
-L_ELSE_921:
-    !tmp_3130
-    jmp L_MERGE_922
+L_ELSE_928:
+    !tmp_3146
+    jmp L_MERGE_929
 
-L_MERGE_922:
-    tmp_3133 = load written+4 as i32
-    tmp_3134 = 5
-    tmp_3135 = ne tmp_3133, tmp_3134
-    !tmp_3133
-    !tmp_3134
-    br tmp_3135 -> L_THEN_923, L_ELSE_924
+L_MERGE_929:
+    tmp_3149 = load written+4 as i32
+    tmp_3150 = 5
+    tmp_3151 = ne tmp_3149, tmp_3150
+    !tmp_3149
+    !tmp_3150
+    br tmp_3151 -> L_THEN_930, L_ELSE_931
 
-L_THEN_923:
-    !tmp_3135
+L_THEN_930:
+    !tmp_3151
     panic(4221)
 
-L_ELSE_924:
-    !tmp_3135
-    jmp L_MERGE_925
+L_ELSE_931:
+    !tmp_3151
+    jmp L_MERGE_932
 
-L_MERGE_925:
-    tmp_3138 = 2
-    tmp_3139 = call @sla__dyn_store_remove_DynPoint(s4, tmp_3138)
-    !tmp_3138
-    s5 = tmp_3139
-    tmp_3140 = call @sla__dyn_store_count_DynPoint(s5)
-    tmp_3141 = 2
-    tmp_3142 = ne tmp_3140, tmp_3141
-    !tmp_3140
-    !tmp_3141
-    br tmp_3142 -> L_THEN_926, L_ELSE_927
+L_MERGE_932:
+    tmp_3154 = 2
+    tmp_3155 = call @sla__dyn_store_remove_DynPoint(s4, tmp_3154)
+    !tmp_3154
+    s5 = tmp_3155
+    tmp_3156 = call @sla__dyn_store_count_DynPoint(s5)
+    tmp_3157 = 2
+    tmp_3158 = ne tmp_3156, tmp_3157
+    !tmp_3156
+    !tmp_3157
+    br tmp_3158 -> L_THEN_933, L_ELSE_934
 
-L_THEN_926:
-    !tmp_3142
+L_THEN_933:
+    !tmp_3158
     panic(4222)
 
-L_ELSE_927:
-    !tmp_3142
-    jmp L_MERGE_928
+L_ELSE_934:
+    !tmp_3158
+    jmp L_MERGE_935
 
-L_MERGE_928:
-    tmp_3145 = 2
-    tmp_3146 = call @sla__dyn_store_has_DynPoint(s5, tmp_3145)
-    !tmp_3145
-    tmp_3147 = 0
-    tmp_3148 = ne tmp_3146, tmp_3147
-    !tmp_3146
-    !tmp_3147
-    br tmp_3148 -> L_THEN_929, L_ELSE_930
+L_MERGE_935:
+    tmp_3161 = 2
+    tmp_3162 = call @sla__dyn_store_has_DynPoint(s5, tmp_3161)
+    !tmp_3161
+    tmp_3163 = 0
+    tmp_3164 = ne tmp_3162, tmp_3163
+    !tmp_3162
+    !tmp_3163
+    br tmp_3164 -> L_THEN_936, L_ELSE_937
 
-L_THEN_929:
-    !tmp_3148
+L_THEN_936:
+    !tmp_3164
     panic(4223)
 
-L_ELSE_930:
-    !tmp_3148
-    jmp L_MERGE_931
+L_ELSE_937:
+    !tmp_3164
+    jmp L_MERGE_938
 
-L_MERGE_931:
-    tmp_3151 = 3
-    tmp_3152 = call @sla__dyn_store_has_DynPoint(s5, tmp_3151)
-    !tmp_3151
-    tmp_3153 = 1
-    tmp_3154 = ne tmp_3152, tmp_3153
-    !tmp_3152
-    !tmp_3153
-    br tmp_3154 -> L_THEN_932, L_ELSE_933
+L_MERGE_938:
+    tmp_3167 = 3
+    tmp_3168 = call @sla__dyn_store_has_DynPoint(s5, tmp_3167)
+    !tmp_3167
+    tmp_3169 = 1
+    tmp_3170 = ne tmp_3168, tmp_3169
+    !tmp_3168
+    !tmp_3169
+    br tmp_3170 -> L_THEN_939, L_ELSE_940
 
-L_THEN_932:
-    !tmp_3154
+L_THEN_939:
+    !tmp_3170
     panic(4224)
 
-L_ELSE_933:
-    !tmp_3154
-    jmp L_MERGE_934
+L_ELSE_940:
+    !tmp_3170
+    jmp L_MERGE_941
 
-L_MERGE_934:
-    tmp_3157 = 3
-    tmp_3158 = call @sla__dyn_store_get_DynPoint(s5, tmp_3157)
-    !tmp_3157
-    moved = tmp_3158
-    tmp_3159 = load moved+0 as i32
-    tmp_3160 = 30
-    tmp_3161 = ne tmp_3159, tmp_3160
-    !tmp_3159
-    !tmp_3160
-    br tmp_3161 -> L_THEN_935, L_ELSE_936
+L_MERGE_941:
+    tmp_3173 = 3
+    tmp_3174 = call @sla__dyn_store_get_DynPoint(s5, tmp_3173)
+    !tmp_3173
+    moved = tmp_3174
+    tmp_3175 = load moved+0 as i32
+    tmp_3176 = 30
+    tmp_3177 = ne tmp_3175, tmp_3176
+    !tmp_3175
+    !tmp_3176
+    br tmp_3177 -> L_THEN_942, L_ELSE_943
 
-L_THEN_935:
-    !tmp_3161
+L_THEN_942:
+    !tmp_3177
     panic(4225)
 
-L_ELSE_936:
-    !tmp_3161
-    jmp L_MERGE_937
+L_ELSE_943:
+    !tmp_3177
+    jmp L_MERGE_944
 
-L_MERGE_937:
+L_MERGE_944:
     !s0
     !s5
     !moved
@@ -10976,279 +11041,279 @@ L_MERGE_937:
     return
 
 @test "dynamic world spawn exceeds old entity cap"():
-L_TEST_ENTRY_938:
-    tmp_3164 = call @sla__test_dynamic_world_new()
-    w = tmp_3164
-    tmp_3165 = 0
-    i = tmp_3165
-    jmp L_WHILE_HEAD_939
+L_TEST_ENTRY_945:
+    tmp_3180 = call @sla__test_dynamic_world_new()
+    w = tmp_3180
+    tmp_3181 = 0
+    i = tmp_3181
+    jmp L_WHILE_HEAD_946
 
-L_WHILE_HEAD_939:
-    tmp_3166 = 20
-    tmp_3167 = slt i, tmp_3166
-    !tmp_3166
-    br tmp_3167 -> L_WHILE_BODY_940, L_WHILE_COND_FALSE_941
+L_WHILE_HEAD_946:
+    tmp_3182 = 20
+    tmp_3183 = slt i, tmp_3182
+    !tmp_3182
+    br tmp_3183 -> L_WHILE_BODY_947, L_WHILE_COND_FALSE_948
 
-L_WHILE_BODY_940:
-    !tmp_3167
-    tmp_3168 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w)
-    next_w = load tmp_3168+0 as ptr
-    entity = load tmp_3168+8 as ptr
-    !tmp_3168
+L_WHILE_BODY_947:
+    !tmp_3183
+    tmp_3184 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w)
+    next_w = load tmp_3184+0 as ptr
+    entity = load tmp_3184+8 as ptr
+    !tmp_3184
     !w
     w = next_w
-    tmp_3169 = load entity+0 as i32
-    tmp_3170 = 1
-    tmp_3171 = add i, tmp_3170
-    !tmp_3170
-    tmp_3172 = ne tmp_3169, tmp_3171
-    !tmp_3169
-    !tmp_3171
-    br tmp_3172 -> L_THEN_943, L_ELSE_944
+    tmp_3185 = load entity+0 as i32
+    tmp_3186 = 1
+    tmp_3187 = add i, tmp_3186
+    !tmp_3186
+    tmp_3188 = ne tmp_3185, tmp_3187
+    !tmp_3185
+    !tmp_3187
+    br tmp_3188 -> L_THEN_950, L_ELSE_951
 
-L_THEN_943:
-    !tmp_3172
+L_THEN_950:
+    !tmp_3188
     panic(7600)
 
-L_ELSE_944:
-    !tmp_3172
-    jmp L_MERGE_945
+L_ELSE_951:
+    !tmp_3188
+    jmp L_MERGE_952
 
-L_MERGE_945:
-    tmp_3175 = call @sla__dynamic_world_is_alive_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w, entity)
-    tmp_3176 = 1
-    tmp_3177 = ne tmp_3175, tmp_3176
-    !tmp_3175
-    !tmp_3176
-    br tmp_3177 -> L_THEN_946, L_ELSE_947
+L_MERGE_952:
+    tmp_3191 = call @sla__dynamic_world_is_alive_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w, entity)
+    tmp_3192 = 1
+    tmp_3193 = ne tmp_3191, tmp_3192
+    !tmp_3191
+    !tmp_3192
+    br tmp_3193 -> L_THEN_953, L_ELSE_954
 
-L_THEN_946:
-    !tmp_3177
+L_THEN_953:
+    !tmp_3193
     panic(7601)
 
-L_ELSE_947:
-    !tmp_3177
-    jmp L_MERGE_948
+L_ELSE_954:
+    !tmp_3193
+    jmp L_MERGE_955
 
-L_MERGE_948:
-    tmp_3180 = 1
-    tmp_3181 = add i, tmp_3180
-    !tmp_3180
+L_MERGE_955:
+    tmp_3196 = 1
+    tmp_3197 = add i, tmp_3196
+    !tmp_3196
     !i
-    i = tmp_3181
+    i = tmp_3197
     !entity
-    jmp L_WHILE_HEAD_939
+    jmp L_WHILE_HEAD_946
 
-L_WHILE_COND_FALSE_941:
-    !tmp_3167
-    jmp L_WHILE_EXIT_942
+L_WHILE_COND_FALSE_948:
+    !tmp_3183
+    jmp L_WHILE_EXIT_949
 
-L_WHILE_EXIT_942:
+L_WHILE_EXIT_949:
     !i
     !w
     return
 
 @test "dynamic world insert remove query and writeback"():
-L_TEST_ENTRY_949:
-    tmp_3182 = call @sla__test_dynamic_world_new()
-    w0 = tmp_3182
-    tmp_3183 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0)
-    w1 = load tmp_3183+0 as ptr
-    e1 = load tmp_3183+8 as ptr
-    !tmp_3183
-    tmp_3184 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
-    w2 = load tmp_3184+0 as ptr
-    e2 = load tmp_3184+8 as ptr
-    !tmp_3184
-    tmp_3185 = alloc 8
-    tmp_3186 = 1
-    store tmp_3185+0, tmp_3186 as i32
-    !tmp_3186
-    tmp_3187 = 2
-    store tmp_3185+4, tmp_3187 as i32
-    !tmp_3187
-    tmp_3188 = call @sla__dynamic_world_insert_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, e1, tmp_3185)
-    !tmp_3185
-    w3 = tmp_3188
-    tmp_3189 = alloc 8
-    tmp_3190 = 10
-    store tmp_3189+0, tmp_3190 as i32
-    !tmp_3190
-    tmp_3191 = 20
-    store tmp_3189+4, tmp_3191 as i32
-    !tmp_3191
-    tmp_3192 = call @sla__dynamic_world_insert_b_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, e1, tmp_3189)
-    !tmp_3189
-    w4 = tmp_3192
-    tmp_3193 = alloc 8
-    tmp_3194 = 5
-    store tmp_3193+0, tmp_3194 as i32
-    !tmp_3194
-    tmp_3195 = 6
-    store tmp_3193+4, tmp_3195 as i32
-    !tmp_3195
-    tmp_3196 = call @sla__dynamic_world_insert_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4, e2, tmp_3193)
-    !tmp_3193
-    w5 = tmp_3196
-    tmp_3197 = call @sla__dynamic_world_query_a_b_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5)
-    q = tmp_3197
-    tmp_3198 = load q+0 as ptr
-    EXPAND VEC_LEN tmp_3199, tmp_3198
-    !tmp_3198
-    tmp_3200 = 1
-    tmp_3201 = ne tmp_3199, tmp_3200
+L_TEST_ENTRY_956:
+    tmp_3198 = call @sla__test_dynamic_world_new()
+    w0 = tmp_3198
+    tmp_3199 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0)
+    w1 = load tmp_3199+0 as ptr
+    e1 = load tmp_3199+8 as ptr
     !tmp_3199
+    tmp_3200 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
+    w2 = load tmp_3200+0 as ptr
+    e2 = load tmp_3200+8 as ptr
     !tmp_3200
-    br tmp_3201 -> L_THEN_950, L_ELSE_951
-
-L_THEN_950:
+    tmp_3201 = alloc 8
+    tmp_3202 = 1
+    store tmp_3201+0, tmp_3202 as i32
+    !tmp_3202
+    tmp_3203 = 2
+    store tmp_3201+4, tmp_3203 as i32
+    !tmp_3203
+    tmp_3204 = call @sla__dynamic_world_insert_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, e1, tmp_3201)
     !tmp_3201
+    w3 = tmp_3204
+    tmp_3205 = alloc 8
+    tmp_3206 = 10
+    store tmp_3205+0, tmp_3206 as i32
+    !tmp_3206
+    tmp_3207 = 20
+    store tmp_3205+4, tmp_3207 as i32
+    !tmp_3207
+    tmp_3208 = call @sla__dynamic_world_insert_b_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, e1, tmp_3205)
+    !tmp_3205
+    w4 = tmp_3208
+    tmp_3209 = alloc 8
+    tmp_3210 = 5
+    store tmp_3209+0, tmp_3210 as i32
+    !tmp_3210
+    tmp_3211 = 6
+    store tmp_3209+4, tmp_3211 as i32
+    !tmp_3211
+    tmp_3212 = call @sla__dynamic_world_insert_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4, e2, tmp_3209)
+    !tmp_3209
+    w5 = tmp_3212
+    tmp_3213 = call @sla__dynamic_world_query_a_b_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5)
+    q = tmp_3213
+    tmp_3214 = load q+0 as ptr
+    EXPAND VEC_LEN tmp_3215, tmp_3214
+    !tmp_3214
+    tmp_3216 = 1
+    tmp_3217 = ne tmp_3215, tmp_3216
+    !tmp_3215
+    !tmp_3216
+    br tmp_3217 -> L_THEN_957, L_ELSE_958
+
+L_THEN_957:
+    !tmp_3217
     panic(7610)
 
-L_ELSE_951:
-    !tmp_3201
-    jmp L_MERGE_952
+L_ELSE_958:
+    !tmp_3217
+    jmp L_MERGE_959
 
-L_MERGE_952:
-    tmp_3204 = load q+0 as ptr
-    tmp_3205 = 0
-    EXPAND VEC_GET tmp_3206, tmp_3204, tmp_3205
-    !tmp_3205
-    !tmp_3204
-    tmp_3207 = tmp_3206 as ptr
-    tmp_3208 = load tmp_3207+0 as ptr
-    !tmp_3207
-    tmp_3209 = load tmp_3208+0 as i32
-    !tmp_3208
-    tmp_3210 = load e1+0 as i32
-    tmp_3211 = ne tmp_3209, tmp_3210
-    !tmp_3209
-    !tmp_3210
-    br tmp_3211 -> L_THEN_953, L_ELSE_954
+L_MERGE_959:
+    tmp_3220 = load q+0 as ptr
+    tmp_3221 = 0
+    EXPAND VEC_GET tmp_3222, tmp_3220, tmp_3221
+    !tmp_3221
+    !tmp_3220
+    tmp_3223 = tmp_3222 as ptr
+    tmp_3224 = load tmp_3223+0 as ptr
+    !tmp_3223
+    tmp_3225 = load tmp_3224+0 as i32
+    !tmp_3224
+    tmp_3226 = load e1+0 as i32
+    tmp_3227 = ne tmp_3225, tmp_3226
+    !tmp_3225
+    !tmp_3226
+    br tmp_3227 -> L_THEN_960, L_ELSE_961
 
-L_THEN_953:
-    !tmp_3211
+L_THEN_960:
+    !tmp_3227
     panic(7611)
 
-L_ELSE_954:
-    !tmp_3211
-    jmp L_MERGE_955
-
-L_MERGE_955:
-    tmp_3214 = call @sla__dynamic_world_increment_tick_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5)
-    w6 = tmp_3214
-    moved = alloc 8
-    tmp_3215 = load q+0 as ptr
-    tmp_3216 = 0
-    EXPAND VEC_GET tmp_3217, tmp_3215, tmp_3216
-    !tmp_3216
-    !tmp_3215
-    tmp_3218 = tmp_3217 as ptr
-    tmp_3219 = load tmp_3218+24 as ptr
-    !tmp_3218
-    tmp_3220 = load tmp_3219+0 as i32
-    !tmp_3219
-    tmp_3221 = load q+0 as ptr
-    tmp_3222 = 0
-    EXPAND VEC_GET tmp_3223, tmp_3221, tmp_3222
-    !tmp_3222
-    !tmp_3221
-    tmp_3224 = tmp_3223 as ptr
-    tmp_3225 = load tmp_3224+32 as ptr
-    !tmp_3224
-    tmp_3226 = load tmp_3225+0 as i32
-    !tmp_3225
-    tmp_3227 = add tmp_3220, tmp_3226
-    !tmp_3220
-    !tmp_3226
-    store moved+0, tmp_3227 as i32
+L_ELSE_961:
     !tmp_3227
-    tmp_3228 = load q+0 as ptr
-    tmp_3229 = 0
-    EXPAND VEC_GET tmp_3230, tmp_3228, tmp_3229
-    !tmp_3229
-    !tmp_3228
-    tmp_3231 = tmp_3230 as ptr
-    tmp_3232 = load tmp_3231+24 as ptr
-    !tmp_3231
-    tmp_3233 = load tmp_3232+4 as i32
-    !tmp_3232
-    tmp_3234 = load q+0 as ptr
-    tmp_3235 = 0
-    EXPAND VEC_GET tmp_3236, tmp_3234, tmp_3235
-    !tmp_3235
-    !tmp_3234
-    tmp_3237 = tmp_3236 as ptr
-    tmp_3238 = load tmp_3237+32 as ptr
-    !tmp_3237
-    tmp_3239 = load tmp_3238+4 as i32
-    !tmp_3238
-    tmp_3240 = add tmp_3233, tmp_3239
-    !tmp_3233
-    !tmp_3239
-    store moved+4, tmp_3240 as i32
-    !tmp_3240
-    tmp_3241 = load q+0 as ptr
-    tmp_3242 = 0
-    EXPAND VEC_GET tmp_3243, tmp_3241, tmp_3242
-    !tmp_3242
-    !tmp_3241
-    tmp_3244 = tmp_3243 as ptr
-    tmp_3245 = call @sla__dynamic_world_pair_write_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w6, tmp_3244, moved)
-    !tmp_3244
-    w7 = tmp_3245
-    tmp_3246 = call @sla__dynamic_world_get_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w7, e1)
-    p = tmp_3246
-    tmp_3247 = load p+0 as i32
-    tmp_3248 = 11
-    tmp_3249 = ne tmp_3247, tmp_3248
-    !tmp_3247
-    !tmp_3248
-    br tmp_3249 -> L_THEN_956, L_ELSE_957
+    jmp L_MERGE_962
 
-L_THEN_956:
+L_MERGE_962:
+    tmp_3230 = call @sla__dynamic_world_increment_tick_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5)
+    w6 = tmp_3230
+    moved = alloc 8
+    tmp_3231 = load q+0 as ptr
+    tmp_3232 = 0
+    EXPAND VEC_GET tmp_3233, tmp_3231, tmp_3232
+    !tmp_3232
+    !tmp_3231
+    tmp_3234 = tmp_3233 as ptr
+    tmp_3235 = load tmp_3234+24 as ptr
+    !tmp_3234
+    tmp_3236 = load tmp_3235+0 as i32
+    !tmp_3235
+    tmp_3237 = load q+0 as ptr
+    tmp_3238 = 0
+    EXPAND VEC_GET tmp_3239, tmp_3237, tmp_3238
+    !tmp_3238
+    !tmp_3237
+    tmp_3240 = tmp_3239 as ptr
+    tmp_3241 = load tmp_3240+32 as ptr
+    !tmp_3240
+    tmp_3242 = load tmp_3241+0 as i32
+    !tmp_3241
+    tmp_3243 = add tmp_3236, tmp_3242
+    !tmp_3236
+    !tmp_3242
+    store moved+0, tmp_3243 as i32
+    !tmp_3243
+    tmp_3244 = load q+0 as ptr
+    tmp_3245 = 0
+    EXPAND VEC_GET tmp_3246, tmp_3244, tmp_3245
+    !tmp_3245
+    !tmp_3244
+    tmp_3247 = tmp_3246 as ptr
+    tmp_3248 = load tmp_3247+24 as ptr
+    !tmp_3247
+    tmp_3249 = load tmp_3248+4 as i32
+    !tmp_3248
+    tmp_3250 = load q+0 as ptr
+    tmp_3251 = 0
+    EXPAND VEC_GET tmp_3252, tmp_3250, tmp_3251
+    !tmp_3251
+    !tmp_3250
+    tmp_3253 = tmp_3252 as ptr
+    tmp_3254 = load tmp_3253+32 as ptr
+    !tmp_3253
+    tmp_3255 = load tmp_3254+4 as i32
+    !tmp_3254
+    tmp_3256 = add tmp_3249, tmp_3255
     !tmp_3249
+    !tmp_3255
+    store moved+4, tmp_3256 as i32
+    !tmp_3256
+    tmp_3257 = load q+0 as ptr
+    tmp_3258 = 0
+    EXPAND VEC_GET tmp_3259, tmp_3257, tmp_3258
+    !tmp_3258
+    !tmp_3257
+    tmp_3260 = tmp_3259 as ptr
+    tmp_3261 = call @sla__dynamic_world_pair_write_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w6, tmp_3260, moved)
+    !tmp_3260
+    w7 = tmp_3261
+    tmp_3262 = call @sla__dynamic_world_get_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w7, e1)
+    p = tmp_3262
+    tmp_3263 = load p+0 as i32
+    tmp_3264 = 11
+    tmp_3265 = ne tmp_3263, tmp_3264
+    !tmp_3263
+    !tmp_3264
+    br tmp_3265 -> L_THEN_963, L_ELSE_964
+
+L_THEN_963:
+    !tmp_3265
     panic(7612)
 
-L_ELSE_957:
-    !tmp_3249
-    jmp L_MERGE_958
+L_ELSE_964:
+    !tmp_3265
+    jmp L_MERGE_965
 
-L_MERGE_958:
-    tmp_3252 = load p+4 as i32
-    tmp_3253 = 22
-    tmp_3254 = ne tmp_3252, tmp_3253
-    !tmp_3252
-    !tmp_3253
-    br tmp_3254 -> L_THEN_959, L_ELSE_960
+L_MERGE_965:
+    tmp_3268 = load p+4 as i32
+    tmp_3269 = 22
+    tmp_3270 = ne tmp_3268, tmp_3269
+    !tmp_3268
+    !tmp_3269
+    br tmp_3270 -> L_THEN_966, L_ELSE_967
 
-L_THEN_959:
-    !tmp_3254
+L_THEN_966:
+    !tmp_3270
     panic(7613)
 
-L_ELSE_960:
-    !tmp_3254
-    jmp L_MERGE_961
+L_ELSE_967:
+    !tmp_3270
+    jmp L_MERGE_968
 
-L_MERGE_961:
-    tmp_3257 = call @sla__dynamic_world_remove_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w7, e1)
-    w8 = tmp_3257
-    tmp_3258 = call @sla__dynamic_world_has_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w8, e1)
-    tmp_3259 = 0
-    tmp_3260 = ne tmp_3258, tmp_3259
-    !tmp_3258
-    !tmp_3259
-    br tmp_3260 -> L_THEN_962, L_ELSE_963
+L_MERGE_968:
+    tmp_3273 = call @sla__dynamic_world_remove_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w7, e1)
+    w8 = tmp_3273
+    tmp_3274 = call @sla__dynamic_world_has_a_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w8, e1)
+    tmp_3275 = 0
+    tmp_3276 = ne tmp_3274, tmp_3275
+    !tmp_3274
+    !tmp_3275
+    br tmp_3276 -> L_THEN_969, L_ELSE_970
 
-L_THEN_962:
-    !tmp_3260
+L_THEN_969:
+    !tmp_3276
     panic(7614)
 
-L_ELSE_963:
-    !tmp_3260
-    jmp L_MERGE_964
+L_ELSE_970:
+    !tmp_3276
+    jmp L_MERGE_971
 
-L_MERGE_964:
+L_MERGE_971:
     !e2
     !e1
     !w3
@@ -11266,143 +11331,143 @@ L_MERGE_964:
     return
 
 @test "dynamic world stale entity rejection and resource messages"():
-L_TEST_ENTRY_965:
-    tmp_3263 = call @sla__test_dynamic_world_new()
-    w0 = tmp_3263
-    tmp_3264 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0)
-    w1 = load tmp_3264+0 as ptr
-    e1 = load tmp_3264+8 as ptr
-    !tmp_3264
-    tmp_3265 = call @sla__dynamic_world_despawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, e1)
-    w2 = tmp_3265
-    tmp_3266 = call @sla__dynamic_world_is_alive_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, e1)
-    tmp_3267 = 0
-    tmp_3268 = ne tmp_3266, tmp_3267
-    !tmp_3266
-    !tmp_3267
-    br tmp_3268 -> L_THEN_966, L_ELSE_967
+L_TEST_ENTRY_972:
+    tmp_3279 = call @sla__test_dynamic_world_new()
+    w0 = tmp_3279
+    tmp_3280 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0)
+    w1 = load tmp_3280+0 as ptr
+    e1 = load tmp_3280+8 as ptr
+    !tmp_3280
+    tmp_3281 = call @sla__dynamic_world_despawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, e1)
+    w2 = tmp_3281
+    tmp_3282 = call @sla__dynamic_world_is_alive_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, e1)
+    tmp_3283 = 0
+    tmp_3284 = ne tmp_3282, tmp_3283
+    !tmp_3282
+    !tmp_3283
+    br tmp_3284 -> L_THEN_973, L_ELSE_974
 
-L_THEN_966:
-    !tmp_3268
+L_THEN_973:
+    !tmp_3284
     panic(7620)
 
-L_ELSE_967:
-    !tmp_3268
-    jmp L_MERGE_968
-
-L_MERGE_968:
-    tmp_3271 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2)
-    w3 = load tmp_3271+0 as ptr
-    e2 = load tmp_3271+8 as ptr
-    !tmp_3271
-    tmp_3272 = load e2+0 as i32
-    tmp_3273 = load e1+0 as i32
-    tmp_3274 = ne tmp_3272, tmp_3273
-    !tmp_3272
-    !tmp_3273
-    br tmp_3274 -> L_THEN_969, L_ELSE_970
-
-L_THEN_969:
-    !tmp_3274
-    panic(7621)
-
-L_ELSE_970:
-    !tmp_3274
-    jmp L_MERGE_971
-
-L_MERGE_971:
-    tmp_3277 = load e2+4 as i32
-    tmp_3278 = load e1+4 as i32
-    tmp_3279 = 1
-    tmp_3280 = add tmp_3278, tmp_3279
-    !tmp_3278
-    !tmp_3279
-    tmp_3281 = ne tmp_3277, tmp_3280
-    !tmp_3277
-    !tmp_3280
-    br tmp_3281 -> L_THEN_972, L_ELSE_973
-
-L_THEN_972:
-    !tmp_3281
-    panic(7622)
-
-L_ELSE_973:
-    !tmp_3281
-    jmp L_MERGE_974
-
-L_MERGE_974:
-    tmp_3284 = alloc 4
-    tmp_3285 = 9
-    store tmp_3284+0, tmp_3285 as i32
-    !tmp_3285
-    tmp_3286 = call @sla__dynamic_world_insert_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3284)
+L_ELSE_974:
     !tmp_3284
-    w4 = tmp_3286
-    tmp_3287 = call @sla__dynamic_world_get_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4)
-    t = tmp_3287
-    tmp_3288 = load t+0 as i32
-    tmp_3289 = 9
+    jmp L_MERGE_975
+
+L_MERGE_975:
+    tmp_3287 = call @sla__dynamic_world_spawn_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2)
+    w3 = load tmp_3287+0 as ptr
+    e2 = load tmp_3287+8 as ptr
+    !tmp_3287
+    tmp_3288 = load e2+0 as i32
+    tmp_3289 = load e1+0 as i32
     tmp_3290 = ne tmp_3288, tmp_3289
     !tmp_3288
     !tmp_3289
-    br tmp_3290 -> L_THEN_975, L_ELSE_976
+    br tmp_3290 -> L_THEN_976, L_ELSE_977
 
-L_THEN_975:
+L_THEN_976:
     !tmp_3290
+    panic(7621)
+
+L_ELSE_977:
+    !tmp_3290
+    jmp L_MERGE_978
+
+L_MERGE_978:
+    tmp_3293 = load e2+4 as i32
+    tmp_3294 = load e1+4 as i32
+    tmp_3295 = 1
+    tmp_3296 = add tmp_3294, tmp_3295
+    !tmp_3294
+    !tmp_3295
+    tmp_3297 = ne tmp_3293, tmp_3296
+    !tmp_3293
+    !tmp_3296
+    br tmp_3297 -> L_THEN_979, L_ELSE_980
+
+L_THEN_979:
+    !tmp_3297
+    panic(7622)
+
+L_ELSE_980:
+    !tmp_3297
+    jmp L_MERGE_981
+
+L_MERGE_981:
+    tmp_3300 = alloc 4
+    tmp_3301 = 9
+    store tmp_3300+0, tmp_3301 as i32
+    !tmp_3301
+    tmp_3302 = call @sla__dynamic_world_insert_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3300)
+    !tmp_3300
+    w4 = tmp_3302
+    tmp_3303 = call @sla__dynamic_world_get_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4)
+    t = tmp_3303
+    tmp_3304 = load t+0 as i32
+    tmp_3305 = 9
+    tmp_3306 = ne tmp_3304, tmp_3305
+    !tmp_3304
+    !tmp_3305
+    br tmp_3306 -> L_THEN_982, L_ELSE_983
+
+L_THEN_982:
+    !tmp_3306
     panic(7623)
 
-L_ELSE_976:
-    !tmp_3290
-    jmp L_MERGE_977
+L_ELSE_983:
+    !tmp_3306
+    jmp L_MERGE_984
 
-L_MERGE_977:
-    tmp_3293 = alloc 4
-    tmp_3294 = 5
-    store tmp_3293+0, tmp_3294 as i32
-    !tmp_3294
-    tmp_3295 = call @sla__dynamic_world_write_message_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4, tmp_3293)
-    !tmp_3293
-    w5 = tmp_3295
-    tmp_3296 = call @sla__message_reader_new()
-    tmp_3297 = call @sla__dynamic_world_damage_default()
-    tmp_3298 = call @sla__dynamic_world_read_message_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5, tmp_3296, tmp_3297)
-    !tmp_3296
-    !tmp_3297
-    read = tmp_3298
-    tmp_3299 = load read+0 as u8
-    tmp_3300 = 1
-    tmp_3301 = ne tmp_3299, tmp_3300
-    !tmp_3299
-    !tmp_3300
-    br tmp_3301 -> L_THEN_978, L_ELSE_979
+L_MERGE_984:
+    tmp_3309 = alloc 4
+    tmp_3310 = 5
+    store tmp_3309+0, tmp_3310 as i32
+    !tmp_3310
+    tmp_3311 = call @sla__dynamic_world_write_message_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w4, tmp_3309)
+    !tmp_3309
+    w5 = tmp_3311
+    tmp_3312 = call @sla__message_reader_new()
+    tmp_3313 = call @sla__dynamic_world_damage_default()
+    tmp_3314 = call @sla__dynamic_world_read_message_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w5, tmp_3312, tmp_3313)
+    !tmp_3312
+    !tmp_3313
+    read = tmp_3314
+    tmp_3315 = load read+0 as u8
+    tmp_3316 = 1
+    tmp_3317 = ne tmp_3315, tmp_3316
+    !tmp_3315
+    !tmp_3316
+    br tmp_3317 -> L_THEN_985, L_ELSE_986
 
-L_THEN_978:
-    !tmp_3301
+L_THEN_985:
+    !tmp_3317
     panic(7624)
 
-L_ELSE_979:
-    !tmp_3301
-    jmp L_MERGE_980
+L_ELSE_986:
+    !tmp_3317
+    jmp L_MERGE_987
 
-L_MERGE_980:
-    tmp_3304 = load read+8 as ptr
-    tmp_3305 = load tmp_3304+0 as i32
-    !tmp_3304
-    tmp_3306 = 5
-    tmp_3307 = ne tmp_3305, tmp_3306
-    !tmp_3305
-    !tmp_3306
-    br tmp_3307 -> L_THEN_981, L_ELSE_982
+L_MERGE_987:
+    tmp_3320 = load read+8 as ptr
+    tmp_3321 = load tmp_3320+0 as i32
+    !tmp_3320
+    tmp_3322 = 5
+    tmp_3323 = ne tmp_3321, tmp_3322
+    !tmp_3321
+    !tmp_3322
+    br tmp_3323 -> L_THEN_988, L_ELSE_989
 
-L_THEN_981:
-    !tmp_3307
+L_THEN_988:
+    !tmp_3323
     panic(7625)
 
-L_ELSE_982:
-    !tmp_3307
-    jmp L_MERGE_983
+L_ELSE_989:
+    !tmp_3323
+    jmp L_MERGE_990
 
-L_MERGE_983:
+L_MERGE_990:
     !w0
     !e2
     !w4
@@ -11416,173 +11481,173 @@ L_MERGE_983:
     return
 
 @test "dynamic world resource res and resmut change detection"():
-L_TEST_ENTRY_984:
-    tmp_3310 = call @sla__test_dynamic_world_new()
-    w0 = tmp_3310
-    tmp_3311 = alloc 4
-    tmp_3312 = 4
-    store tmp_3311+0, tmp_3312 as i32
-    !tmp_3312
-    tmp_3313 = call @sla__dynamic_world_insert_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0, tmp_3311)
-    !tmp_3311
-    w1 = tmp_3313
-    tmp_3314 = 0
-    tmp_3315 = call @sla__dynamic_world_resource_added_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, tmp_3314)
-    !tmp_3314
-    tmp_3316 = 1
-    tmp_3317 = ne tmp_3315, tmp_3316
-    !tmp_3315
-    !tmp_3316
-    br tmp_3317 -> L_THEN_985, L_ELSE_986
+L_TEST_ENTRY_991:
+    tmp_3326 = call @sla__test_dynamic_world_new()
+    w0 = tmp_3326
+    tmp_3327 = alloc 4
+    tmp_3328 = 4
+    store tmp_3327+0, tmp_3328 as i32
+    !tmp_3328
+    tmp_3329 = call @sla__dynamic_world_insert_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w0, tmp_3327)
+    !tmp_3327
+    w1 = tmp_3329
+    tmp_3330 = 0
+    tmp_3331 = call @sla__dynamic_world_resource_added_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, tmp_3330)
+    !tmp_3330
+    tmp_3332 = 1
+    tmp_3333 = ne tmp_3331, tmp_3332
+    !tmp_3331
+    !tmp_3332
+    br tmp_3333 -> L_THEN_992, L_ELSE_993
 
-L_THEN_985:
-    !tmp_3317
+L_THEN_992:
+    !tmp_3333
     panic(7640)
 
-L_ELSE_986:
-    !tmp_3317
-    jmp L_MERGE_987
+L_ELSE_993:
+    !tmp_3333
+    jmp L_MERGE_994
 
-L_MERGE_987:
-    tmp_3320 = 0
-    tmp_3321 = call @sla__dynamic_world_resource_changed_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, tmp_3320)
-    !tmp_3320
-    tmp_3322 = 1
-    tmp_3323 = ne tmp_3321, tmp_3322
-    !tmp_3321
-    !tmp_3322
-    br tmp_3323 -> L_THEN_988, L_ELSE_989
+L_MERGE_994:
+    tmp_3336 = 0
+    tmp_3337 = call @sla__dynamic_world_resource_changed_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1, tmp_3336)
+    !tmp_3336
+    tmp_3338 = 1
+    tmp_3339 = ne tmp_3337, tmp_3338
+    !tmp_3337
+    !tmp_3338
+    br tmp_3339 -> L_THEN_995, L_ELSE_996
 
-L_THEN_988:
-    !tmp_3323
+L_THEN_995:
+    !tmp_3339
     panic(7641)
 
-L_ELSE_989:
-    !tmp_3323
-    jmp L_MERGE_990
+L_ELSE_996:
+    !tmp_3339
+    jmp L_MERGE_997
 
-L_MERGE_990:
-    tmp_3326 = call @sla__dynamic_world_res_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
-    res = tmp_3326
-    tmp_3327 = load res+0 as ptr
-    tmp_3328 = load tmp_3327+0 as i32
-    !tmp_3327
-    tmp_3329 = 4
-    tmp_3330 = ne tmp_3328, tmp_3329
-    !tmp_3328
-    !tmp_3329
-    br tmp_3330 -> L_THEN_991, L_ELSE_992
+L_MERGE_997:
+    tmp_3342 = call @sla__dynamic_world_res_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
+    res = tmp_3342
+    tmp_3343 = load res+0 as ptr
+    tmp_3344 = load tmp_3343+0 as i32
+    !tmp_3343
+    tmp_3345 = 4
+    tmp_3346 = ne tmp_3344, tmp_3345
+    !tmp_3344
+    !tmp_3345
+    br tmp_3346 -> L_THEN_998, L_ELSE_999
 
-L_THEN_991:
-    !tmp_3330
+L_THEN_998:
+    !tmp_3346
     panic(7642)
 
-L_ELSE_992:
-    !tmp_3330
-    jmp L_MERGE_993
+L_ELSE_999:
+    !tmp_3346
+    jmp L_MERGE_1000
 
-L_MERGE_993:
-    tmp_3333 = 0
-    tmp_3334 = call @sla__res_is_added_since_DynamicWorldTime(res, tmp_3333)
-    !tmp_3333
-    tmp_3335 = 1
-    tmp_3336 = ne tmp_3334, tmp_3335
-    !tmp_3334
-    !tmp_3335
-    br tmp_3336 -> L_THEN_994, L_ELSE_995
+L_MERGE_1000:
+    tmp_3349 = 0
+    tmp_3350 = call @sla__res_is_added_since_DynamicWorldTime(res, tmp_3349)
+    !tmp_3349
+    tmp_3351 = 1
+    tmp_3352 = ne tmp_3350, tmp_3351
+    !tmp_3350
+    !tmp_3351
+    br tmp_3352 -> L_THEN_1001, L_ELSE_1002
 
-L_THEN_994:
-    !tmp_3336
+L_THEN_1001:
+    !tmp_3352
     panic(7643)
 
-L_ELSE_995:
-    !tmp_3336
-    jmp L_MERGE_996
+L_ELSE_1002:
+    !tmp_3352
+    jmp L_MERGE_1003
 
-L_MERGE_996:
-    tmp_3339 = call @sla__dynamic_world_increment_tick_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
-    w2 = tmp_3339
-    tmp_3340 = call @sla__dynamic_world_res_mut_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2)
-    res_mut = tmp_3340
-    tmp_3341 = 1
-    tmp_3342 = call @sla__res_mut_is_changed_since_DynamicWorldTime(res_mut, tmp_3341)
-    !tmp_3341
-    tmp_3343 = 0
-    tmp_3344 = ne tmp_3342, tmp_3343
-    !tmp_3342
-    !tmp_3343
-    br tmp_3344 -> L_THEN_997, L_ELSE_998
+L_MERGE_1003:
+    tmp_3355 = call @sla__dynamic_world_increment_tick_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w1)
+    w2 = tmp_3355
+    tmp_3356 = call @sla__dynamic_world_res_mut_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2)
+    res_mut = tmp_3356
+    tmp_3357 = 1
+    tmp_3358 = call @sla__res_mut_is_changed_since_DynamicWorldTime(res_mut, tmp_3357)
+    !tmp_3357
+    tmp_3359 = 0
+    tmp_3360 = ne tmp_3358, tmp_3359
+    !tmp_3358
+    !tmp_3359
+    br tmp_3360 -> L_THEN_1004, L_ELSE_1005
 
-L_THEN_997:
-    !tmp_3344
+L_THEN_1004:
+    !tmp_3360
     panic(7644)
 
-L_ELSE_998:
-    !tmp_3344
-    jmp L_MERGE_999
+L_ELSE_1005:
+    !tmp_3360
+    jmp L_MERGE_1006
 
-L_MERGE_999:
-    tmp_3347 = alloc 4
-    tmp_3348 = 8
-    store tmp_3347+0, tmp_3348 as i32
-    !tmp_3348
-    tmp_3349 = call @sla__dynamic_world_res_mut_write_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, res_mut, tmp_3347)
-    !tmp_3347
-    w3 = tmp_3349
-    tmp_3350 = 1
-    tmp_3351 = call @sla__dynamic_world_resource_added_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3350)
-    !tmp_3350
-    tmp_3352 = 0
-    tmp_3353 = ne tmp_3351, tmp_3352
-    !tmp_3351
-    !tmp_3352
-    br tmp_3353 -> L_THEN_1000, L_ELSE_1001
+L_MERGE_1006:
+    tmp_3363 = alloc 4
+    tmp_3364 = 8
+    store tmp_3363+0, tmp_3364 as i32
+    !tmp_3364
+    tmp_3365 = call @sla__dynamic_world_res_mut_write_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w2, res_mut, tmp_3363)
+    !tmp_3363
+    w3 = tmp_3365
+    tmp_3366 = 1
+    tmp_3367 = call @sla__dynamic_world_resource_added_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3366)
+    !tmp_3366
+    tmp_3368 = 0
+    tmp_3369 = ne tmp_3367, tmp_3368
+    !tmp_3367
+    !tmp_3368
+    br tmp_3369 -> L_THEN_1007, L_ELSE_1008
 
-L_THEN_1000:
-    !tmp_3353
+L_THEN_1007:
+    !tmp_3369
     panic(7645)
 
-L_ELSE_1001:
-    !tmp_3353
-    jmp L_MERGE_1002
+L_ELSE_1008:
+    !tmp_3369
+    jmp L_MERGE_1009
 
-L_MERGE_1002:
-    tmp_3356 = 1
-    tmp_3357 = call @sla__dynamic_world_resource_changed_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3356)
-    !tmp_3356
-    tmp_3358 = 1
-    tmp_3359 = ne tmp_3357, tmp_3358
-    !tmp_3357
-    !tmp_3358
-    br tmp_3359 -> L_THEN_1003, L_ELSE_1004
+L_MERGE_1009:
+    tmp_3372 = 1
+    tmp_3373 = call @sla__dynamic_world_resource_changed_since_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3, tmp_3372)
+    !tmp_3372
+    tmp_3374 = 1
+    tmp_3375 = ne tmp_3373, tmp_3374
+    !tmp_3373
+    !tmp_3374
+    br tmp_3375 -> L_THEN_1010, L_ELSE_1011
 
-L_THEN_1003:
-    !tmp_3359
+L_THEN_1010:
+    !tmp_3375
     panic(7646)
 
-L_ELSE_1004:
-    !tmp_3359
-    jmp L_MERGE_1005
+L_ELSE_1011:
+    !tmp_3375
+    jmp L_MERGE_1012
 
-L_MERGE_1005:
-    tmp_3362 = call @sla__dynamic_world_get_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3)
-    out = tmp_3362
-    tmp_3363 = load out+0 as i32
-    tmp_3364 = 8
-    tmp_3365 = ne tmp_3363, tmp_3364
-    !tmp_3363
-    !tmp_3364
-    br tmp_3365 -> L_THEN_1006, L_ELSE_1007
+L_MERGE_1012:
+    tmp_3378 = call @sla__dynamic_world_get_resource_DynamicWorldPos_DynamicWorldVel_DynamicWorldTime_DynamicWorldDamage(w3)
+    out = tmp_3378
+    tmp_3379 = load out+0 as i32
+    tmp_3380 = 8
+    tmp_3381 = ne tmp_3379, tmp_3380
+    !tmp_3379
+    !tmp_3380
+    br tmp_3381 -> L_THEN_1013, L_ELSE_1014
 
-L_THEN_1006:
-    !tmp_3365
+L_THEN_1013:
+    !tmp_3381
     panic(7647)
 
-L_ELSE_1007:
-    !tmp_3365
-    jmp L_MERGE_1008
+L_ELSE_1014:
+    !tmp_3381
+    jmp L_MERGE_1015
 
-L_MERGE_1008:
+L_MERGE_1015:
     !out
     !w0
     !res
@@ -11593,142 +11658,142 @@ L_MERGE_1008:
     return
 
 @test "dynamic query read entity and for in"():
-L_TEST_ENTRY_1009:
+L_TEST_ENTRY_1016:
     item_slot = stack_alloc 8
-    tmp_3368 = call @sla__query_test_world_new()
-    w0 = tmp_3368
-    tmp_3369 = 10
-    tmp_3370 = call @sla__query_spawn_a(w0, tmp_3369)
-    !tmp_3369
-    w1 = load tmp_3370+0 as ptr
-    e1 = load tmp_3370+8 as ptr
-    !tmp_3370
-    tmp_3371 = 20
-    tmp_3372 = call @sla__query_spawn_a(w1, tmp_3371)
-    !tmp_3371
-    w2 = load tmp_3372+0 as ptr
-    e2 = load tmp_3372+8 as ptr
-    !tmp_3372
-    tmp_3373 = call @sla__query_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
-    q = tmp_3373
-    tmp_3374 = 0
-    total = tmp_3374
-    tmp_3375 = call @sla__Query_QueryDynPos_iter_len(&q)
-    store item_slot+0, 0 as i64
-    jmp L_LOOP_HEAD_1010
-
-L_LOOP_HEAD_1010:
-    tmp_3376 = load item_slot+0 as i64
-    tmp_3377 = slt tmp_3376, tmp_3375
-    br tmp_3377 -> L_LOOP_BODY_1011, L_LOOP_COND_FALSE_1013
-
-L_LOOP_BODY_1011:
-    !tmp_3377
-    item = call @sla__Query_QueryDynPos_iter_at(&q, tmp_3376)
-    tmp_3378 = load item+0 as i32
-    tmp_3379 = add total, tmp_3378
-    !tmp_3378
-    !total
-    total = tmp_3379
-L_LOOP_CONTINUE_1012:
-    tmp_3380 = add tmp_3376, 1
-    store item_slot+0, tmp_3380 as i64
-    !tmp_3380
-    !tmp_3376
-    !item
-    jmp L_LOOP_HEAD_1010
-
-L_LOOP_COND_FALSE_1013:
-    !tmp_3377
-    !tmp_3376
-    jmp L_LOOP_EXIT_1014
-
-L_LOOP_EXIT_1014:
-    !tmp_3375
-    tmp_3381 = 30
-    tmp_3382 = ne total, tmp_3381
-    !tmp_3381
-    br tmp_3382 -> L_THEN_1015, L_ELSE_1016
-
-L_THEN_1015:
-    !tmp_3382
-    panic(7800)
-
-L_ELSE_1016:
-    !tmp_3382
-    jmp L_MERGE_1017
-
-L_MERGE_1017:
-    tmp_3385 = call @sla__query_entity_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
-    entity_q = tmp_3385
-    tmp_3386 = load entity_q+0 as ptr
-    EXPAND VEC_LEN tmp_3387, tmp_3386
+    tmp_3384 = call @sla__query_test_world_new()
+    w0 = tmp_3384
+    tmp_3385 = 10
+    tmp_3386 = call @sla__query_spawn_a(w0, tmp_3385)
+    !tmp_3385
+    w1 = load tmp_3386+0 as ptr
+    e1 = load tmp_3386+8 as ptr
     !tmp_3386
-    tmp_3388 = 2
-    tmp_3389 = ne tmp_3387, tmp_3388
+    tmp_3387 = 20
+    tmp_3388 = call @sla__query_spawn_a(w1, tmp_3387)
     !tmp_3387
+    w2 = load tmp_3388+0 as ptr
+    e2 = load tmp_3388+8 as ptr
     !tmp_3388
-    br tmp_3389 -> L_THEN_1018, L_ELSE_1019
+    tmp_3389 = call @sla__query_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
+    q = tmp_3389
+    tmp_3390 = 0
+    total = tmp_3390
+    tmp_3391 = call @sla__Query_QueryDynPos_iter_len(&q)
+    store item_slot+0, 0 as i64
+    jmp L_LOOP_HEAD_1017
 
-L_THEN_1018:
-    !tmp_3389
-    panic(7801)
+L_LOOP_HEAD_1017:
+    tmp_3392 = load item_slot+0 as i64
+    tmp_3393 = slt tmp_3392, tmp_3391
+    br tmp_3393 -> L_LOOP_BODY_1018, L_LOOP_COND_FALSE_1020
 
-L_ELSE_1019:
-    !tmp_3389
-    jmp L_MERGE_1020
+L_LOOP_BODY_1018:
+    !tmp_3393
+    item = call @sla__Query_QueryDynPos_iter_at(&q, tmp_3392)
+    tmp_3394 = load item+0 as i32
+    tmp_3395 = add total, tmp_3394
+    !tmp_3394
+    !total
+    total = tmp_3395
+L_LOOP_CONTINUE_1019:
+    tmp_3396 = add tmp_3392, 1
+    store item_slot+0, tmp_3396 as i64
+    !tmp_3396
+    !tmp_3392
+    !item
+    jmp L_LOOP_HEAD_1017
 
-L_MERGE_1020:
-    tmp_3392 = load entity_q+0 as ptr
-    tmp_3393 = 0
-    EXPAND VEC_GET tmp_3394, tmp_3392, tmp_3393
+L_LOOP_COND_FALSE_1020:
     !tmp_3393
     !tmp_3392
-    tmp_3395 = tmp_3394 as ptr
-    tmp_3396 = load tmp_3395+0 as ptr
-    !tmp_3395
-    tmp_3397 = load tmp_3396+0 as i32
-    !tmp_3396
-    tmp_3398 = load e1+0 as i32
-    tmp_3399 = ne tmp_3397, tmp_3398
-    !tmp_3397
-    !tmp_3398
-    br tmp_3399 -> L_THEN_1021, L_ELSE_1022
+    jmp L_LOOP_EXIT_1021
 
-L_THEN_1021:
-    !tmp_3399
+L_LOOP_EXIT_1021:
+    !tmp_3391
+    tmp_3397 = 30
+    tmp_3398 = ne total, tmp_3397
+    !tmp_3397
+    br tmp_3398 -> L_THEN_1022, L_ELSE_1023
+
+L_THEN_1022:
+    !tmp_3398
+    panic(7800)
+
+L_ELSE_1023:
+    !tmp_3398
+    jmp L_MERGE_1024
+
+L_MERGE_1024:
+    tmp_3401 = call @sla__query_entity_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
+    entity_q = tmp_3401
+    tmp_3402 = load entity_q+0 as ptr
+    EXPAND VEC_LEN tmp_3403, tmp_3402
+    !tmp_3402
+    tmp_3404 = 2
+    tmp_3405 = ne tmp_3403, tmp_3404
+    !tmp_3403
+    !tmp_3404
+    br tmp_3405 -> L_THEN_1025, L_ELSE_1026
+
+L_THEN_1025:
+    !tmp_3405
+    panic(7801)
+
+L_ELSE_1026:
+    !tmp_3405
+    jmp L_MERGE_1027
+
+L_MERGE_1027:
+    tmp_3408 = load entity_q+0 as ptr
+    tmp_3409 = 0
+    EXPAND VEC_GET tmp_3410, tmp_3408, tmp_3409
+    !tmp_3409
+    !tmp_3408
+    tmp_3411 = tmp_3410 as ptr
+    tmp_3412 = load tmp_3411+0 as ptr
+    !tmp_3411
+    tmp_3413 = load tmp_3412+0 as i32
+    !tmp_3412
+    tmp_3414 = load e1+0 as i32
+    tmp_3415 = ne tmp_3413, tmp_3414
+    !tmp_3413
+    !tmp_3414
+    br tmp_3415 -> L_THEN_1028, L_ELSE_1029
+
+L_THEN_1028:
+    !tmp_3415
     panic(7802)
 
-L_ELSE_1022:
-    !tmp_3399
-    jmp L_MERGE_1023
+L_ELSE_1029:
+    !tmp_3415
+    jmp L_MERGE_1030
 
-L_MERGE_1023:
-    tmp_3402 = load entity_q+0 as ptr
-    tmp_3403 = 1
-    EXPAND VEC_GET tmp_3404, tmp_3402, tmp_3403
-    !tmp_3403
-    !tmp_3402
-    tmp_3405 = tmp_3404 as ptr
-    tmp_3406 = load tmp_3405+0 as ptr
-    !tmp_3405
-    tmp_3407 = load tmp_3406+0 as i32
-    !tmp_3406
-    tmp_3408 = load e2+0 as i32
-    tmp_3409 = ne tmp_3407, tmp_3408
-    !tmp_3407
-    !tmp_3408
-    br tmp_3409 -> L_THEN_1024, L_ELSE_1025
+L_MERGE_1030:
+    tmp_3418 = load entity_q+0 as ptr
+    tmp_3419 = 1
+    EXPAND VEC_GET tmp_3420, tmp_3418, tmp_3419
+    !tmp_3419
+    !tmp_3418
+    tmp_3421 = tmp_3420 as ptr
+    tmp_3422 = load tmp_3421+0 as ptr
+    !tmp_3421
+    tmp_3423 = load tmp_3422+0 as i32
+    !tmp_3422
+    tmp_3424 = load e2+0 as i32
+    tmp_3425 = ne tmp_3423, tmp_3424
+    !tmp_3423
+    !tmp_3424
+    br tmp_3425 -> L_THEN_1031, L_ELSE_1032
 
-L_THEN_1024:
-    !tmp_3409
+L_THEN_1031:
+    !tmp_3425
     panic(7803)
 
-L_ELSE_1025:
-    !tmp_3409
-    jmp L_MERGE_1026
+L_ELSE_1032:
+    !tmp_3425
+    jmp L_MERGE_1033
 
-L_MERGE_1026:
+L_MERGE_1033:
     !w0
     !e2
     !total
@@ -11740,79 +11805,79 @@ L_MERGE_1026:
     return
 
 @test "dynamic query mut writeback"():
-L_TEST_ENTRY_1027:
-    tmp_3412 = call @sla__query_test_world_new()
-    w0 = tmp_3412
-    tmp_3413 = 1
-    tmp_3414 = call @sla__query_spawn_a(w0, tmp_3413)
-    !tmp_3413
-    w1 = load tmp_3414+0 as ptr
-    e1 = load tmp_3414+8 as ptr
-    !tmp_3414
-    tmp_3415 = call @sla__dynamic_world_increment_tick_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w1)
-    w2 = tmp_3415
-    tmp_3416 = call @sla__query_mut_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
-    q = tmp_3416
-    tmp_3417 = load q+0 as ptr
-    tmp_3418 = 0
-    EXPAND VEC_GET tmp_3419, tmp_3417, tmp_3418
-    !tmp_3418
-    !tmp_3417
-    tmp_3420 = tmp_3419 as ptr
-    item = tmp_3420
-    next = alloc 8
-    tmp_3421 = load item+16 as ptr
-    tmp_3422 = load tmp_3421+0 as i32
-    !tmp_3421
-    tmp_3423 = 9
-    tmp_3424 = add tmp_3422, tmp_3423
-    !tmp_3422
-    !tmp_3423
-    store next+0, tmp_3424 as i32
-    !tmp_3424
-    tmp_3425 = load item+16 as ptr
-    tmp_3426 = load tmp_3425+4 as i32
-    !tmp_3425
-    store next+4, tmp_3426 as i32
-    !tmp_3426
-    tmp_3427 = call @sla__query_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, item, next)
-    w3 = tmp_3427
-    tmp_3428 = call @sla__dynamic_world_get_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, e1)
-    out = tmp_3428
-    tmp_3429 = load out+0 as i32
-    tmp_3430 = 10
-    tmp_3431 = ne tmp_3429, tmp_3430
+L_TEST_ENTRY_1034:
+    tmp_3428 = call @sla__query_test_world_new()
+    w0 = tmp_3428
+    tmp_3429 = 1
+    tmp_3430 = call @sla__query_spawn_a(w0, tmp_3429)
     !tmp_3429
+    w1 = load tmp_3430+0 as ptr
+    e1 = load tmp_3430+8 as ptr
     !tmp_3430
-    br tmp_3431 -> L_THEN_1028, L_ELSE_1029
+    tmp_3431 = call @sla__dynamic_world_increment_tick_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w1)
+    w2 = tmp_3431
+    tmp_3432 = call @sla__query_mut_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
+    q = tmp_3432
+    tmp_3433 = load q+0 as ptr
+    tmp_3434 = 0
+    EXPAND VEC_GET tmp_3435, tmp_3433, tmp_3434
+    !tmp_3434
+    !tmp_3433
+    tmp_3436 = tmp_3435 as ptr
+    item = tmp_3436
+    next = alloc 8
+    tmp_3437 = load item+16 as ptr
+    tmp_3438 = load tmp_3437+0 as i32
+    !tmp_3437
+    tmp_3439 = 9
+    tmp_3440 = add tmp_3438, tmp_3439
+    !tmp_3438
+    !tmp_3439
+    store next+0, tmp_3440 as i32
+    !tmp_3440
+    tmp_3441 = load item+16 as ptr
+    tmp_3442 = load tmp_3441+4 as i32
+    !tmp_3441
+    store next+4, tmp_3442 as i32
+    !tmp_3442
+    tmp_3443 = call @sla__query_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, item, next)
+    w3 = tmp_3443
+    tmp_3444 = call @sla__dynamic_world_get_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, e1)
+    out = tmp_3444
+    tmp_3445 = load out+0 as i32
+    tmp_3446 = 10
+    tmp_3447 = ne tmp_3445, tmp_3446
+    !tmp_3445
+    !tmp_3446
+    br tmp_3447 -> L_THEN_1035, L_ELSE_1036
 
-L_THEN_1028:
-    !tmp_3431
+L_THEN_1035:
+    !tmp_3447
     panic(7810)
 
-L_ELSE_1029:
-    !tmp_3431
-    jmp L_MERGE_1030
+L_ELSE_1036:
+    !tmp_3447
+    jmp L_MERGE_1037
 
-L_MERGE_1030:
-    tmp_3434 = 1
-    tmp_3435 = call @sla__dynamic_world_a_changed_since_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, e1, tmp_3434)
-    !tmp_3434
-    tmp_3436 = 1
-    tmp_3437 = ne tmp_3435, tmp_3436
-    !tmp_3435
-    !tmp_3436
-    br tmp_3437 -> L_THEN_1031, L_ELSE_1032
+L_MERGE_1037:
+    tmp_3450 = 1
+    tmp_3451 = call @sla__dynamic_world_a_changed_since_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, e1, tmp_3450)
+    !tmp_3450
+    tmp_3452 = 1
+    tmp_3453 = ne tmp_3451, tmp_3452
+    !tmp_3451
+    !tmp_3452
+    br tmp_3453 -> L_THEN_1038, L_ELSE_1039
 
-L_THEN_1031:
-    !tmp_3437
+L_THEN_1038:
+    !tmp_3453
     panic(7811)
 
-L_ELSE_1032:
-    !tmp_3437
-    jmp L_MERGE_1033
+L_ELSE_1039:
+    !tmp_3453
+    jmp L_MERGE_1040
 
-L_MERGE_1033:
+L_MERGE_1040:
     !item
     !out
     !w0
@@ -11825,162 +11890,162 @@ L_MERGE_1033:
     return
 
 @test "dynamic query pair mut and with without filters"():
-L_TEST_ENTRY_1034:
-    tmp_3440 = call @sla__query_test_world_new()
-    w0 = tmp_3440
-    tmp_3441 = 1
-    tmp_3442 = call @sla__query_spawn_a(w0, tmp_3441)
-    !tmp_3441
-    w1 = load tmp_3442+0 as ptr
-    e1 = load tmp_3442+8 as ptr
-    !tmp_3442
-    tmp_3443 = 2
-    tmp_3444 = call @sla__query_spawn_a(w1, tmp_3443)
-    !tmp_3443
-    w2 = load tmp_3444+0 as ptr
-    e2 = load tmp_3444+8 as ptr
-    !tmp_3444
-    tmp_3445 = alloc 8
-    tmp_3446 = 5
-    store tmp_3445+0, tmp_3446 as i32
-    !tmp_3446
-    tmp_3447 = 0
-    store tmp_3445+4, tmp_3447 as i32
-    !tmp_3447
-    tmp_3448 = call @sla__dynamic_world_insert_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, e1, tmp_3445)
-    !tmp_3445
-    w3 = tmp_3448
-    tmp_3449 = call @sla__query_mut_a_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3)
-    pairs = tmp_3449
-    tmp_3450 = load pairs+0 as ptr
-    EXPAND VEC_LEN tmp_3451, tmp_3450
-    !tmp_3450
-    tmp_3452 = 1
-    tmp_3453 = ne tmp_3451, tmp_3452
-    !tmp_3451
-    !tmp_3452
-    br tmp_3453 -> L_THEN_1035, L_ELSE_1036
+L_TEST_ENTRY_1041:
+    tmp_3456 = call @sla__query_test_world_new()
+    w0 = tmp_3456
+    tmp_3457 = 1
+    tmp_3458 = call @sla__query_spawn_a(w0, tmp_3457)
+    !tmp_3457
+    w1 = load tmp_3458+0 as ptr
+    e1 = load tmp_3458+8 as ptr
+    !tmp_3458
+    tmp_3459 = 2
+    tmp_3460 = call @sla__query_spawn_a(w1, tmp_3459)
+    !tmp_3459
+    w2 = load tmp_3460+0 as ptr
+    e2 = load tmp_3460+8 as ptr
+    !tmp_3460
+    tmp_3461 = alloc 8
+    tmp_3462 = 5
+    store tmp_3461+0, tmp_3462 as i32
+    !tmp_3462
+    tmp_3463 = 0
+    store tmp_3461+4, tmp_3463 as i32
+    !tmp_3463
+    tmp_3464 = call @sla__dynamic_world_insert_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, e1, tmp_3461)
+    !tmp_3461
+    w3 = tmp_3464
+    tmp_3465 = call @sla__query_mut_a_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3)
+    pairs = tmp_3465
+    tmp_3466 = load pairs+0 as ptr
+    EXPAND VEC_LEN tmp_3467, tmp_3466
+    !tmp_3466
+    tmp_3468 = 1
+    tmp_3469 = ne tmp_3467, tmp_3468
+    !tmp_3467
+    !tmp_3468
+    br tmp_3469 -> L_THEN_1042, L_ELSE_1043
 
-L_THEN_1035:
-    !tmp_3453
+L_THEN_1042:
+    !tmp_3469
     panic(7820)
 
-L_ELSE_1036:
-    !tmp_3453
-    jmp L_MERGE_1037
-
-L_MERGE_1037:
-    tmp_3456 = load pairs+0 as ptr
-    tmp_3457 = 0
-    EXPAND VEC_GET tmp_3458, tmp_3456, tmp_3457
-    !tmp_3457
-    !tmp_3456
-    tmp_3459 = tmp_3458 as ptr
-    pair = tmp_3459
-    moved = alloc 8
-    tmp_3460 = load pair+0 as ptr
-    tmp_3461 = load tmp_3460+16 as ptr
-    !tmp_3460
-    tmp_3462 = load tmp_3461+0 as i32
-    !tmp_3461
-    tmp_3463 = load pair+8 as ptr
-    tmp_3464 = load tmp_3463+0 as i32
-    !tmp_3463
-    tmp_3465 = add tmp_3462, tmp_3464
-    !tmp_3462
-    !tmp_3464
-    store moved+0, tmp_3465 as i32
-    !tmp_3465
-    tmp_3466 = 0
-    store moved+4, tmp_3466 as i32
-    !tmp_3466
-    tmp_3467 = call @sla__query_pair_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, pair, moved)
-    w4 = tmp_3467
-    tmp_3468 = call @sla__dynamic_world_get_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, e1)
-    out = tmp_3468
-    tmp_3469 = load out+0 as i32
-    tmp_3470 = 6
-    tmp_3471 = ne tmp_3469, tmp_3470
+L_ELSE_1043:
     !tmp_3469
-    !tmp_3470
-    br tmp_3471 -> L_THEN_1038, L_ELSE_1039
+    jmp L_MERGE_1044
 
-L_THEN_1038:
-    !tmp_3471
-    panic(7821)
-
-L_ELSE_1039:
-    !tmp_3471
-    jmp L_MERGE_1040
-
-L_MERGE_1040:
-    tmp_3474 = call @sla__with_filter_QueryDynVel()
-    tmp_3475 = call @sla__query_a_with_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3474)
-    !tmp_3474
-    with_q = tmp_3475
-    tmp_3476 = call @sla__without_filter_QueryDynVel()
-    tmp_3477 = call @sla__query_a_without_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3476)
+L_MERGE_1044:
+    tmp_3472 = load pairs+0 as ptr
+    tmp_3473 = 0
+    EXPAND VEC_GET tmp_3474, tmp_3472, tmp_3473
+    !tmp_3473
+    !tmp_3472
+    tmp_3475 = tmp_3474 as ptr
+    pair = tmp_3475
+    moved = alloc 8
+    tmp_3476 = load pair+0 as ptr
+    tmp_3477 = load tmp_3476+16 as ptr
     !tmp_3476
-    without_q = tmp_3477
-    tmp_3478 = load with_q+0 as ptr
-    EXPAND VEC_LEN tmp_3479, tmp_3478
-    !tmp_3478
-    tmp_3480 = 1
-    tmp_3481 = ne tmp_3479, tmp_3480
+    tmp_3478 = load tmp_3477+0 as i32
+    !tmp_3477
+    tmp_3479 = load pair+8 as ptr
+    tmp_3480 = load tmp_3479+0 as i32
     !tmp_3479
+    tmp_3481 = add tmp_3478, tmp_3480
+    !tmp_3478
     !tmp_3480
-    br tmp_3481 -> L_THEN_1041, L_ELSE_1042
-
-L_THEN_1041:
+    store moved+0, tmp_3481 as i32
     !tmp_3481
-    panic(7822)
-
-L_ELSE_1042:
-    !tmp_3481
-    jmp L_MERGE_1043
-
-L_MERGE_1043:
-    tmp_3484 = load without_q+0 as ptr
-    EXPAND VEC_LEN tmp_3485, tmp_3484
-    !tmp_3484
-    tmp_3486 = 1
+    tmp_3482 = 0
+    store moved+4, tmp_3482 as i32
+    !tmp_3482
+    tmp_3483 = call @sla__query_pair_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, pair, moved)
+    w4 = tmp_3483
+    tmp_3484 = call @sla__dynamic_world_get_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, e1)
+    out = tmp_3484
+    tmp_3485 = load out+0 as i32
+    tmp_3486 = 6
     tmp_3487 = ne tmp_3485, tmp_3486
     !tmp_3485
     !tmp_3486
-    br tmp_3487 -> L_THEN_1044, L_ELSE_1045
+    br tmp_3487 -> L_THEN_1045, L_ELSE_1046
 
-L_THEN_1044:
+L_THEN_1045:
     !tmp_3487
+    panic(7821)
+
+L_ELSE_1046:
+    !tmp_3487
+    jmp L_MERGE_1047
+
+L_MERGE_1047:
+    tmp_3490 = call @sla__with_filter_QueryDynVel()
+    tmp_3491 = call @sla__query_a_with_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3490)
+    !tmp_3490
+    with_q = tmp_3491
+    tmp_3492 = call @sla__without_filter_QueryDynVel()
+    tmp_3493 = call @sla__query_a_without_b_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3492)
+    !tmp_3492
+    without_q = tmp_3493
+    tmp_3494 = load with_q+0 as ptr
+    EXPAND VEC_LEN tmp_3495, tmp_3494
+    !tmp_3494
+    tmp_3496 = 1
+    tmp_3497 = ne tmp_3495, tmp_3496
+    !tmp_3495
+    !tmp_3496
+    br tmp_3497 -> L_THEN_1048, L_ELSE_1049
+
+L_THEN_1048:
+    !tmp_3497
+    panic(7822)
+
+L_ELSE_1049:
+    !tmp_3497
+    jmp L_MERGE_1050
+
+L_MERGE_1050:
+    tmp_3500 = load without_q+0 as ptr
+    EXPAND VEC_LEN tmp_3501, tmp_3500
+    !tmp_3500
+    tmp_3502 = 1
+    tmp_3503 = ne tmp_3501, tmp_3502
+    !tmp_3501
+    !tmp_3502
+    br tmp_3503 -> L_THEN_1051, L_ELSE_1052
+
+L_THEN_1051:
+    !tmp_3503
     panic(7823)
 
-L_ELSE_1045:
-    !tmp_3487
-    jmp L_MERGE_1046
+L_ELSE_1052:
+    !tmp_3503
+    jmp L_MERGE_1053
 
-L_MERGE_1046:
-    tmp_3490 = load without_q+0 as ptr
-    tmp_3491 = 0
-    EXPAND VEC_GET tmp_3492, tmp_3490, tmp_3491
-    !tmp_3491
-    !tmp_3490
-    tmp_3493 = tmp_3492 as ptr
-    tmp_3494 = load tmp_3493+0 as i32
-    !tmp_3493
-    tmp_3495 = 2
-    tmp_3496 = ne tmp_3494, tmp_3495
-    !tmp_3494
-    !tmp_3495
-    br tmp_3496 -> L_THEN_1047, L_ELSE_1048
+L_MERGE_1053:
+    tmp_3506 = load without_q+0 as ptr
+    tmp_3507 = 0
+    EXPAND VEC_GET tmp_3508, tmp_3506, tmp_3507
+    !tmp_3507
+    !tmp_3506
+    tmp_3509 = tmp_3508 as ptr
+    tmp_3510 = load tmp_3509+0 as i32
+    !tmp_3509
+    tmp_3511 = 2
+    tmp_3512 = ne tmp_3510, tmp_3511
+    !tmp_3510
+    !tmp_3511
+    br tmp_3512 -> L_THEN_1054, L_ELSE_1055
 
-L_THEN_1047:
-    !tmp_3496
+L_THEN_1054:
+    !tmp_3512
     panic(7824)
 
-L_ELSE_1048:
-    !tmp_3496
-    jmp L_MERGE_1049
+L_ELSE_1055:
+    !tmp_3512
+    jmp L_MERGE_1056
 
-L_MERGE_1049:
+L_MERGE_1056:
     !e2
     !pair
     !with_q
@@ -11997,137 +12062,137 @@ L_MERGE_1049:
     return
 
 @test "dynamic query added changed filters"():
-L_TEST_ENTRY_1050:
-    tmp_3499 = call @sla__query_test_world_new()
-    w0 = tmp_3499
-    tmp_3500 = 1
-    tmp_3501 = call @sla__query_spawn_a(w0, tmp_3500)
-    !tmp_3500
-    w1 = load tmp_3501+0 as ptr
-    e1 = load tmp_3501+8 as ptr
-    !tmp_3501
-    tmp_3502 = 2
-    tmp_3503 = call @sla__query_spawn_a(w1, tmp_3502)
-    !tmp_3502
-    w2 = load tmp_3503+0 as ptr
-    e2 = load tmp_3503+8 as ptr
-    !tmp_3503
-    tmp_3504 = 0
-    tmp_3505 = call @sla__added_filter_QueryDynPos(tmp_3504)
-    !tmp_3504
-    tmp_3506 = call @sla__query_a_added_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, tmp_3505)
-    !tmp_3505
-    added = tmp_3506
-    tmp_3507 = load added+0 as ptr
-    EXPAND VEC_LEN tmp_3508, tmp_3507
-    !tmp_3507
-    tmp_3509 = 2
-    tmp_3510 = ne tmp_3508, tmp_3509
-    !tmp_3508
-    !tmp_3509
-    br tmp_3510 -> L_THEN_1051, L_ELSE_1052
+L_TEST_ENTRY_1057:
+    tmp_3515 = call @sla__query_test_world_new()
+    w0 = tmp_3515
+    tmp_3516 = 1
+    tmp_3517 = call @sla__query_spawn_a(w0, tmp_3516)
+    !tmp_3516
+    w1 = load tmp_3517+0 as ptr
+    e1 = load tmp_3517+8 as ptr
+    !tmp_3517
+    tmp_3518 = 2
+    tmp_3519 = call @sla__query_spawn_a(w1, tmp_3518)
+    !tmp_3518
+    w2 = load tmp_3519+0 as ptr
+    e2 = load tmp_3519+8 as ptr
+    !tmp_3519
+    tmp_3520 = 0
+    tmp_3521 = call @sla__added_filter_QueryDynPos(tmp_3520)
+    !tmp_3520
+    tmp_3522 = call @sla__query_a_added_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2, tmp_3521)
+    !tmp_3521
+    added = tmp_3522
+    tmp_3523 = load added+0 as ptr
+    EXPAND VEC_LEN tmp_3524, tmp_3523
+    !tmp_3523
+    tmp_3525 = 2
+    tmp_3526 = ne tmp_3524, tmp_3525
+    !tmp_3524
+    !tmp_3525
+    br tmp_3526 -> L_THEN_1058, L_ELSE_1059
 
-L_THEN_1051:
-    !tmp_3510
+L_THEN_1058:
+    !tmp_3526
     panic(7830)
 
-L_ELSE_1052:
-    !tmp_3510
-    jmp L_MERGE_1053
-
-L_MERGE_1053:
-    tmp_3513 = call @sla__dynamic_world_increment_tick_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
-    w3 = tmp_3513
-    tmp_3514 = call @sla__query_mut_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3)
-    tmp_3515 = load tmp_3514+0 as ptr
-    !tmp_3514
-    tmp_3516 = 0
-    EXPAND VEC_GET tmp_3517, tmp_3515, tmp_3516
-    !tmp_3516
-    !tmp_3515
-    tmp_3518 = tmp_3517 as ptr
-    item = tmp_3518
-    tmp_3519 = alloc 8
-    tmp_3520 = 9
-    store tmp_3519+0, tmp_3520 as i32
-    !tmp_3520
-    tmp_3521 = 0
-    store tmp_3519+4, tmp_3521 as i32
-    !tmp_3521
-    tmp_3522 = call @sla__query_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, item, tmp_3519)
-    !tmp_3519
-    w4 = tmp_3522
-    tmp_3523 = 1
-    tmp_3524 = call @sla__changed_filter_QueryDynPos(tmp_3523)
-    !tmp_3523
-    tmp_3525 = call @sla__query_a_changed_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3524)
-    !tmp_3524
-    changed = tmp_3525
-    tmp_3526 = load changed+0 as ptr
-    EXPAND VEC_LEN tmp_3527, tmp_3526
+L_ELSE_1059:
     !tmp_3526
-    tmp_3528 = 1
-    tmp_3529 = ne tmp_3527, tmp_3528
-    !tmp_3527
-    !tmp_3528
-    br tmp_3529 -> L_THEN_1054, L_ELSE_1055
+    jmp L_MERGE_1060
 
-L_THEN_1054:
-    !tmp_3529
+L_MERGE_1060:
+    tmp_3529 = call @sla__dynamic_world_increment_tick_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w2)
+    w3 = tmp_3529
+    tmp_3530 = call @sla__query_mut_a_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3)
+    tmp_3531 = load tmp_3530+0 as ptr
+    !tmp_3530
+    tmp_3532 = 0
+    EXPAND VEC_GET tmp_3533, tmp_3531, tmp_3532
+    !tmp_3532
+    !tmp_3531
+    tmp_3534 = tmp_3533 as ptr
+    item = tmp_3534
+    tmp_3535 = alloc 8
+    tmp_3536 = 9
+    store tmp_3535+0, tmp_3536 as i32
+    !tmp_3536
+    tmp_3537 = 0
+    store tmp_3535+4, tmp_3537 as i32
+    !tmp_3537
+    tmp_3538 = call @sla__query_mut_a_write_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w3, item, tmp_3535)
+    !tmp_3535
+    w4 = tmp_3538
+    tmp_3539 = 1
+    tmp_3540 = call @sla__changed_filter_QueryDynPos(tmp_3539)
+    !tmp_3539
+    tmp_3541 = call @sla__query_a_changed_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3540)
+    !tmp_3540
+    changed = tmp_3541
+    tmp_3542 = load changed+0 as ptr
+    EXPAND VEC_LEN tmp_3543, tmp_3542
+    !tmp_3542
+    tmp_3544 = 1
+    tmp_3545 = ne tmp_3543, tmp_3544
+    !tmp_3543
+    !tmp_3544
+    br tmp_3545 -> L_THEN_1061, L_ELSE_1062
+
+L_THEN_1061:
+    !tmp_3545
     panic(7831)
 
-L_ELSE_1055:
-    !tmp_3529
-    jmp L_MERGE_1056
+L_ELSE_1062:
+    !tmp_3545
+    jmp L_MERGE_1063
 
-L_MERGE_1056:
-    tmp_3532 = load changed+0 as ptr
-    tmp_3533 = 0
-    EXPAND VEC_GET tmp_3534, tmp_3532, tmp_3533
-    !tmp_3533
-    !tmp_3532
-    tmp_3535 = tmp_3534 as ptr
-    tmp_3536 = load tmp_3535+0 as i32
-    !tmp_3535
-    tmp_3537 = 9
-    tmp_3538 = ne tmp_3536, tmp_3537
-    !tmp_3536
-    !tmp_3537
-    br tmp_3538 -> L_THEN_1057, L_ELSE_1058
+L_MERGE_1063:
+    tmp_3548 = load changed+0 as ptr
+    tmp_3549 = 0
+    EXPAND VEC_GET tmp_3550, tmp_3548, tmp_3549
+    !tmp_3549
+    !tmp_3548
+    tmp_3551 = tmp_3550 as ptr
+    tmp_3552 = load tmp_3551+0 as i32
+    !tmp_3551
+    tmp_3553 = 9
+    tmp_3554 = ne tmp_3552, tmp_3553
+    !tmp_3552
+    !tmp_3553
+    br tmp_3554 -> L_THEN_1064, L_ELSE_1065
 
-L_THEN_1057:
-    !tmp_3538
+L_THEN_1064:
+    !tmp_3554
     panic(7832)
 
-L_ELSE_1058:
-    !tmp_3538
-    jmp L_MERGE_1059
+L_ELSE_1065:
+    !tmp_3554
+    jmp L_MERGE_1066
 
-L_MERGE_1059:
-    tmp_3541 = 1
-    tmp_3542 = call @sla__added_filter_QueryDynPos(tmp_3541)
-    !tmp_3541
-    tmp_3543 = call @sla__query_a_added_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3542)
-    !tmp_3542
-    added_late = tmp_3543
-    tmp_3544 = load added_late+0 as ptr
-    EXPAND VEC_LEN tmp_3545, tmp_3544
-    !tmp_3544
-    tmp_3546 = 0
-    tmp_3547 = ne tmp_3545, tmp_3546
-    !tmp_3545
-    !tmp_3546
-    br tmp_3547 -> L_THEN_1060, L_ELSE_1061
+L_MERGE_1066:
+    tmp_3557 = 1
+    tmp_3558 = call @sla__added_filter_QueryDynPos(tmp_3557)
+    !tmp_3557
+    tmp_3559 = call @sla__query_a_added_QueryDynPos_QueryDynVel_QueryDynTime_QueryDynEvent(w4, tmp_3558)
+    !tmp_3558
+    added_late = tmp_3559
+    tmp_3560 = load added_late+0 as ptr
+    EXPAND VEC_LEN tmp_3561, tmp_3560
+    !tmp_3560
+    tmp_3562 = 0
+    tmp_3563 = ne tmp_3561, tmp_3562
+    !tmp_3561
+    !tmp_3562
+    br tmp_3563 -> L_THEN_1067, L_ELSE_1068
 
-L_THEN_1060:
-    !tmp_3547
+L_THEN_1067:
+    !tmp_3563
     panic(7833)
 
-L_ELSE_1061:
-    !tmp_3547
-    jmp L_MERGE_1062
+L_ELSE_1068:
+    !tmp_3563
+    jmp L_MERGE_1069
 
-L_MERGE_1062:
+L_MERGE_1069:
     !item
     !changed
     !w0
@@ -12142,194 +12207,194 @@ L_MERGE_1062:
     return
 
 @test "table value world stores component values by archetype row"():
-L_TEST_ENTRY_1063:
-    tmp_3550 = call @sla__table_value_test_world_new()
-    w0 = tmp_3550
-    tmp_3551 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
-    w1 = load tmp_3551+0 as ptr
-    health = load tmp_3551+8 as ptr
-    !tmp_3551
-    tmp_3552 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
-    w2 = load tmp_3552+0 as ptr
-    mana = load tmp_3552+8 as ptr
-    !tmp_3552
-    tmp_3553 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w2)
-    w3 = load tmp_3553+0 as ptr
-    selected = load tmp_3553+8 as ptr
-    !tmp_3553
-    tmp_3554 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w3)
-    w4 = load tmp_3554+0 as ptr
-    e1 = load tmp_3554+8 as ptr
-    !tmp_3554
-    tmp_3555 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w4)
-    w5 = load tmp_3555+0 as ptr
-    e2 = load tmp_3555+8 as ptr
-    !tmp_3555
-    tmp_3556 = load health+0 as i32
-    tmp_3557 = alloc 4
-    tmp_3558 = 10
-    store tmp_3557+0, tmp_3558 as i32
-    !tmp_3558
-    tmp_3559 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w5, e1, tmp_3556, tmp_3557)
-    !tmp_3556
-    !tmp_3557
-    w6 = tmp_3559
-    tmp_3560 = load mana+0 as i32
-    tmp_3561 = alloc 4
-    tmp_3562 = 4
-    store tmp_3561+0, tmp_3562 as i32
-    !tmp_3562
-    tmp_3563 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w6, e1, tmp_3560, tmp_3561)
-    !tmp_3560
-    !tmp_3561
-    w7 = tmp_3563
-    tmp_3564 = load health+0 as i32
-    tmp_3565 = alloc 4
-    tmp_3566 = 8
-    store tmp_3565+0, tmp_3566 as i32
-    !tmp_3566
-    tmp_3567 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w7, e2, tmp_3564, tmp_3565)
-    !tmp_3564
-    !tmp_3565
-    w8 = tmp_3567
-    tmp_3568 = load mana+0 as i32
-    tmp_3569 = alloc 4
-    tmp_3570 = 2
-    store tmp_3569+0, tmp_3570 as i32
-    !tmp_3570
-    tmp_3571 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w8, e2, tmp_3568, tmp_3569)
+L_TEST_ENTRY_1070:
+    tmp_3566 = call @sla__table_value_test_world_new()
+    w0 = tmp_3566
+    tmp_3567 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
+    w1 = load tmp_3567+0 as ptr
+    health = load tmp_3567+8 as ptr
+    !tmp_3567
+    tmp_3568 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
+    w2 = load tmp_3568+0 as ptr
+    mana = load tmp_3568+8 as ptr
     !tmp_3568
+    tmp_3569 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w2)
+    w3 = load tmp_3569+0 as ptr
+    selected = load tmp_3569+8 as ptr
     !tmp_3569
-    w9 = tmp_3571
-    tmp_3572 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w9, e1)
-    shared = tmp_3572
-    tmp_3573 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w9, e2)
-    tmp_3574 = ne shared, tmp_3573
-    !tmp_3573
-    br tmp_3574 -> L_THEN_1064, L_ELSE_1065
-
-L_THEN_1064:
+    tmp_3570 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w3)
+    w4 = load tmp_3570+0 as ptr
+    e1 = load tmp_3570+8 as ptr
+    !tmp_3570
+    tmp_3571 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w4)
+    w5 = load tmp_3571+0 as ptr
+    e2 = load tmp_3571+8 as ptr
+    !tmp_3571
+    tmp_3572 = load health+0 as i32
+    tmp_3573 = alloc 4
+    tmp_3574 = 10
+    store tmp_3573+0, tmp_3574 as i32
     !tmp_3574
+    tmp_3575 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w5, e1, tmp_3572, tmp_3573)
+    !tmp_3572
+    !tmp_3573
+    w6 = tmp_3575
+    tmp_3576 = load mana+0 as i32
+    tmp_3577 = alloc 4
+    tmp_3578 = 4
+    store tmp_3577+0, tmp_3578 as i32
+    !tmp_3578
+    tmp_3579 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w6, e1, tmp_3576, tmp_3577)
+    !tmp_3576
+    !tmp_3577
+    w7 = tmp_3579
+    tmp_3580 = load health+0 as i32
+    tmp_3581 = alloc 4
+    tmp_3582 = 8
+    store tmp_3581+0, tmp_3582 as i32
+    !tmp_3582
+    tmp_3583 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w7, e2, tmp_3580, tmp_3581)
+    !tmp_3580
+    !tmp_3581
+    w8 = tmp_3583
+    tmp_3584 = load mana+0 as i32
+    tmp_3585 = alloc 4
+    tmp_3586 = 2
+    store tmp_3585+0, tmp_3586 as i32
+    !tmp_3586
+    tmp_3587 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w8, e2, tmp_3584, tmp_3585)
+    !tmp_3584
+    !tmp_3585
+    w9 = tmp_3587
+    tmp_3588 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w9, e1)
+    shared = tmp_3588
+    tmp_3589 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w9, e2)
+    tmp_3590 = ne shared, tmp_3589
+    !tmp_3589
+    br tmp_3590 -> L_THEN_1071, L_ELSE_1072
+
+L_THEN_1071:
+    !tmp_3590
     panic(11010)
 
-L_ELSE_1065:
-    !tmp_3574
-    jmp L_MERGE_1066
+L_ELSE_1072:
+    !tmp_3590
+    jmp L_MERGE_1073
 
-L_MERGE_1066:
-    tmp_3577 = call @sla__table_value_world_archetype_entity_count_TableValueData_TableValueTime_TableValueEvent(w9, shared)
-    tmp_3578 = 2
-    tmp_3579 = ne tmp_3577, tmp_3578
-    !tmp_3577
-    !tmp_3578
-    br tmp_3579 -> L_THEN_1067, L_ELSE_1068
+L_MERGE_1073:
+    tmp_3593 = call @sla__table_value_world_archetype_entity_count_TableValueData_TableValueTime_TableValueEvent(w9, shared)
+    tmp_3594 = 2
+    tmp_3595 = ne tmp_3593, tmp_3594
+    !tmp_3593
+    !tmp_3594
+    br tmp_3595 -> L_THEN_1074, L_ELSE_1075
 
-L_THEN_1067:
-    !tmp_3579
+L_THEN_1074:
+    !tmp_3595
     panic(11011)
 
-L_ELSE_1068:
-    !tmp_3579
-    jmp L_MERGE_1069
+L_ELSE_1075:
+    !tmp_3595
+    jmp L_MERGE_1076
 
-L_MERGE_1069:
-    tmp_3582 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w9, e2)
-    row_e2_before = tmp_3582
-    tmp_3583 = 1
-    tmp_3584 = ne row_e2_before, tmp_3583
-    !tmp_3583
-    br tmp_3584 -> L_THEN_1070, L_ELSE_1071
+L_MERGE_1076:
+    tmp_3598 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w9, e2)
+    row_e2_before = tmp_3598
+    tmp_3599 = 1
+    tmp_3600 = ne row_e2_before, tmp_3599
+    !tmp_3599
+    br tmp_3600 -> L_THEN_1077, L_ELSE_1078
 
-L_THEN_1070:
-    !tmp_3584
+L_THEN_1077:
+    !tmp_3600
     panic(11012)
 
-L_ELSE_1071:
-    !tmp_3584
-    jmp L_MERGE_1072
+L_ELSE_1078:
+    !tmp_3600
+    jmp L_MERGE_1079
 
-L_MERGE_1072:
-    tmp_3587 = load selected+0 as i32
-    tmp_3588 = alloc 4
-    tmp_3589 = 1
-    store tmp_3588+0, tmp_3589 as i32
-    !tmp_3589
-    tmp_3590 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w9, e1, tmp_3587, tmp_3588)
-    !tmp_3587
-    !tmp_3588
-    w10 = tmp_3590
-    tmp_3591 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w10, e1)
-    tmp_3592 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w10, e2)
-    tmp_3593 = eq tmp_3591, tmp_3592
-    !tmp_3591
-    !tmp_3592
-    br tmp_3593 -> L_THEN_1073, L_ELSE_1074
-
-L_THEN_1073:
-    !tmp_3593
-    panic(11013)
-
-L_ELSE_1074:
-    !tmp_3593
-    jmp L_MERGE_1075
-
-L_MERGE_1075:
-    tmp_3596 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w10, e2)
-    tmp_3597 = 0
-    tmp_3598 = ne tmp_3596, tmp_3597
-    !tmp_3596
-    !tmp_3597
-    br tmp_3598 -> L_THEN_1076, L_ELSE_1077
-
-L_THEN_1076:
-    !tmp_3598
-    panic(11014)
-
-L_ELSE_1077:
-    !tmp_3598
-    jmp L_MERGE_1078
-
-L_MERGE_1078:
-    tmp_3601 = load health+0 as i32
-    tmp_3602 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w10, e2, tmp_3601)
-    !tmp_3601
-    tmp_3603 = load tmp_3602+0 as i32
-    !tmp_3602
-    tmp_3604 = 8
-    tmp_3605 = ne tmp_3603, tmp_3604
+L_MERGE_1079:
+    tmp_3603 = load selected+0 as i32
+    tmp_3604 = alloc 4
+    tmp_3605 = 1
+    store tmp_3604+0, tmp_3605 as i32
+    !tmp_3605
+    tmp_3606 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w9, e1, tmp_3603, tmp_3604)
     !tmp_3603
     !tmp_3604
-    br tmp_3605 -> L_THEN_1079, L_ELSE_1080
+    w10 = tmp_3606
+    tmp_3607 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w10, e1)
+    tmp_3608 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w10, e2)
+    tmp_3609 = eq tmp_3607, tmp_3608
+    !tmp_3607
+    !tmp_3608
+    br tmp_3609 -> L_THEN_1080, L_ELSE_1081
 
-L_THEN_1079:
-    !tmp_3605
+L_THEN_1080:
+    !tmp_3609
+    panic(11013)
+
+L_ELSE_1081:
+    !tmp_3609
+    jmp L_MERGE_1082
+
+L_MERGE_1082:
+    tmp_3612 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w10, e2)
+    tmp_3613 = 0
+    tmp_3614 = ne tmp_3612, tmp_3613
+    !tmp_3612
+    !tmp_3613
+    br tmp_3614 -> L_THEN_1083, L_ELSE_1084
+
+L_THEN_1083:
+    !tmp_3614
+    panic(11014)
+
+L_ELSE_1084:
+    !tmp_3614
+    jmp L_MERGE_1085
+
+L_MERGE_1085:
+    tmp_3617 = load health+0 as i32
+    tmp_3618 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w10, e2, tmp_3617)
+    !tmp_3617
+    tmp_3619 = load tmp_3618+0 as i32
+    !tmp_3618
+    tmp_3620 = 8
+    tmp_3621 = ne tmp_3619, tmp_3620
+    !tmp_3619
+    !tmp_3620
+    br tmp_3621 -> L_THEN_1086, L_ELSE_1087
+
+L_THEN_1086:
+    !tmp_3621
     panic(11015)
 
-L_ELSE_1080:
-    !tmp_3605
-    jmp L_MERGE_1081
+L_ELSE_1087:
+    !tmp_3621
+    jmp L_MERGE_1088
 
-L_MERGE_1081:
-    tmp_3608 = load mana+0 as i32
-    tmp_3609 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w10, e2, tmp_3608)
-    !tmp_3608
-    tmp_3610 = load tmp_3609+0 as i32
-    !tmp_3609
-    tmp_3611 = 2
-    tmp_3612 = ne tmp_3610, tmp_3611
-    !tmp_3610
-    !tmp_3611
-    br tmp_3612 -> L_THEN_1082, L_ELSE_1083
+L_MERGE_1088:
+    tmp_3624 = load mana+0 as i32
+    tmp_3625 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w10, e2, tmp_3624)
+    !tmp_3624
+    tmp_3626 = load tmp_3625+0 as i32
+    !tmp_3625
+    tmp_3627 = 2
+    tmp_3628 = ne tmp_3626, tmp_3627
+    !tmp_3626
+    !tmp_3627
+    br tmp_3628 -> L_THEN_1089, L_ELSE_1090
 
-L_THEN_1082:
-    !tmp_3612
+L_THEN_1089:
+    !tmp_3628
     panic(11016)
 
-L_ELSE_1083:
-    !tmp_3612
-    jmp L_MERGE_1084
+L_ELSE_1090:
+    !tmp_3628
+    jmp L_MERGE_1091
 
-L_MERGE_1084:
+L_MERGE_1091:
     !e2
     !w10
     !e1
@@ -12351,167 +12416,167 @@ L_MERGE_1084:
     return
 
 @test "table value world writeback preserves archetype row"():
-L_TEST_ENTRY_1085:
-    tmp_3615 = call @sla__table_value_test_world_new()
-    w0 = tmp_3615
-    tmp_3616 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
-    w1 = load tmp_3616+0 as ptr
-    health = load tmp_3616+8 as ptr
-    !tmp_3616
-    tmp_3617 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
-    w2 = load tmp_3617+0 as ptr
-    mana = load tmp_3617+8 as ptr
-    !tmp_3617
-    tmp_3618 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w2)
-    w3 = load tmp_3618+0 as ptr
-    entity = load tmp_3618+8 as ptr
-    !tmp_3618
-    tmp_3619 = load health+0 as i32
-    tmp_3620 = alloc 4
-    tmp_3621 = 5
-    store tmp_3620+0, tmp_3621 as i32
-    !tmp_3621
-    tmp_3622 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w3, entity, tmp_3619, tmp_3620)
-    !tmp_3619
-    !tmp_3620
-    w4 = tmp_3622
-    tmp_3623 = load mana+0 as i32
-    tmp_3624 = alloc 4
-    tmp_3625 = 3
-    store tmp_3624+0, tmp_3625 as i32
-    !tmp_3625
-    tmp_3626 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w4, entity, tmp_3623, tmp_3624)
-    !tmp_3623
-    !tmp_3624
-    w5 = tmp_3626
-    tmp_3627 = load w5+0 as ptr
-    tmp_3628 = load tmp_3627+24 as i32
-    !tmp_3627
-    before = tmp_3628
-    tmp_3629 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w5, entity)
-    group_before = tmp_3629
-    tmp_3630 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w5, entity)
-    row_before = tmp_3630
-    tmp_3631 = call @sla__table_value_world_increment_tick_TableValueData_TableValueTime_TableValueEvent(w5)
-    w6 = tmp_3631
-    tmp_3632 = load health+0 as i32
-    tmp_3633 = load mana+0 as i32
-    tmp_3634 = call @sla__table_value_world_query_pair_mut_first_TableValueData_TableValueTime_TableValueEvent(w6, tmp_3632, tmp_3633)
+L_TEST_ENTRY_1092:
+    tmp_3631 = call @sla__table_value_test_world_new()
+    w0 = tmp_3631
+    tmp_3632 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
+    w1 = load tmp_3632+0 as ptr
+    health = load tmp_3632+8 as ptr
     !tmp_3632
+    tmp_3633 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
+    w2 = load tmp_3633+0 as ptr
+    mana = load tmp_3633+8 as ptr
     !tmp_3633
-    q = tmp_3634
-    tmp_3635 = load q+0 as ptr
-    tmp_3636 = 0
-    EXPAND VEC_GET tmp_3637, tmp_3635, tmp_3636
-    !tmp_3636
+    tmp_3634 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w2)
+    w3 = load tmp_3634+0 as ptr
+    entity = load tmp_3634+8 as ptr
+    !tmp_3634
+    tmp_3635 = load health+0 as i32
+    tmp_3636 = alloc 4
+    tmp_3637 = 5
+    store tmp_3636+0, tmp_3637 as i32
+    !tmp_3637
+    tmp_3638 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w3, entity, tmp_3635, tmp_3636)
     !tmp_3635
-    tmp_3638 = tmp_3637 as ptr
-    item = tmp_3638
-    tmp_3639 = alloc 4
-    tmp_3640 = load item+0 as ptr
-    tmp_3641 = load tmp_3640+24 as ptr
-    !tmp_3640
-    tmp_3642 = load tmp_3641+0 as i32
+    !tmp_3636
+    w4 = tmp_3638
+    tmp_3639 = load mana+0 as i32
+    tmp_3640 = alloc 4
+    tmp_3641 = 3
+    store tmp_3640+0, tmp_3641 as i32
     !tmp_3641
-    tmp_3643 = load item+16 as ptr
-    tmp_3644 = load tmp_3643+0 as i32
-    !tmp_3643
-    tmp_3645 = add tmp_3642, tmp_3644
-    !tmp_3642
-    !tmp_3644
-    store tmp_3639+0, tmp_3645 as i32
-    !tmp_3645
-    tmp_3646 = call @sla__table_value_world_pair_write_first_TableValueData_TableValueTime_TableValueEvent(w6, item, tmp_3639)
+    tmp_3642 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w4, entity, tmp_3639, tmp_3640)
     !tmp_3639
-    w7 = tmp_3646
-    tmp_3647 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w7, entity)
-    tmp_3648 = ne tmp_3647, group_before
-    !tmp_3647
-    br tmp_3648 -> L_THEN_1086, L_ELSE_1087
-
-L_THEN_1086:
+    !tmp_3640
+    w5 = tmp_3642
+    tmp_3643 = load w5+0 as ptr
+    tmp_3644 = load tmp_3643+24 as i32
+    !tmp_3643
+    before = tmp_3644
+    tmp_3645 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w5, entity)
+    group_before = tmp_3645
+    tmp_3646 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w5, entity)
+    row_before = tmp_3646
+    tmp_3647 = call @sla__table_value_world_increment_tick_TableValueData_TableValueTime_TableValueEvent(w5)
+    w6 = tmp_3647
+    tmp_3648 = load health+0 as i32
+    tmp_3649 = load mana+0 as i32
+    tmp_3650 = call @sla__table_value_world_query_pair_mut_first_TableValueData_TableValueTime_TableValueEvent(w6, tmp_3648, tmp_3649)
     !tmp_3648
+    !tmp_3649
+    q = tmp_3650
+    tmp_3651 = load q+0 as ptr
+    tmp_3652 = 0
+    EXPAND VEC_GET tmp_3653, tmp_3651, tmp_3652
+    !tmp_3652
+    !tmp_3651
+    tmp_3654 = tmp_3653 as ptr
+    item = tmp_3654
+    tmp_3655 = alloc 4
+    tmp_3656 = load item+0 as ptr
+    tmp_3657 = load tmp_3656+24 as ptr
+    !tmp_3656
+    tmp_3658 = load tmp_3657+0 as i32
+    !tmp_3657
+    tmp_3659 = load item+16 as ptr
+    tmp_3660 = load tmp_3659+0 as i32
+    !tmp_3659
+    tmp_3661 = add tmp_3658, tmp_3660
+    !tmp_3658
+    !tmp_3660
+    store tmp_3655+0, tmp_3661 as i32
+    !tmp_3661
+    tmp_3662 = call @sla__table_value_world_pair_write_first_TableValueData_TableValueTime_TableValueEvent(w6, item, tmp_3655)
+    !tmp_3655
+    w7 = tmp_3662
+    tmp_3663 = call @sla__table_value_world_entity_archetype_id_TableValueData_TableValueTime_TableValueEvent(w7, entity)
+    tmp_3664 = ne tmp_3663, group_before
+    !tmp_3663
+    br tmp_3664 -> L_THEN_1093, L_ELSE_1094
+
+L_THEN_1093:
+    !tmp_3664
     panic(11020)
 
-L_ELSE_1087:
-    !tmp_3648
-    jmp L_MERGE_1088
+L_ELSE_1094:
+    !tmp_3664
+    jmp L_MERGE_1095
 
-L_MERGE_1088:
-    tmp_3651 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w7, entity)
-    tmp_3652 = ne tmp_3651, row_before
-    !tmp_3651
-    br tmp_3652 -> L_THEN_1089, L_ELSE_1090
+L_MERGE_1095:
+    tmp_3667 = call @sla__table_value_world_entity_row_TableValueData_TableValueTime_TableValueEvent(w7, entity)
+    tmp_3668 = ne tmp_3667, row_before
+    !tmp_3667
+    br tmp_3668 -> L_THEN_1096, L_ELSE_1097
 
-L_THEN_1089:
-    !tmp_3652
+L_THEN_1096:
+    !tmp_3668
     panic(11021)
 
-L_ELSE_1090:
-    !tmp_3652
-    jmp L_MERGE_1091
+L_ELSE_1097:
+    !tmp_3668
+    jmp L_MERGE_1098
 
-L_MERGE_1091:
-    tmp_3655 = load health+0 as i32
-    tmp_3656 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w7, entity, tmp_3655)
-    !tmp_3655
-    tmp_3657 = load tmp_3656+0 as i32
-    !tmp_3656
-    tmp_3658 = 8
-    tmp_3659 = ne tmp_3657, tmp_3658
-    !tmp_3657
-    !tmp_3658
-    br tmp_3659 -> L_THEN_1092, L_ELSE_1093
+L_MERGE_1098:
+    tmp_3671 = load health+0 as i32
+    tmp_3672 = call @sla__table_value_world_get_TableValueData_TableValueTime_TableValueEvent(w7, entity, tmp_3671)
+    !tmp_3671
+    tmp_3673 = load tmp_3672+0 as i32
+    !tmp_3672
+    tmp_3674 = 8
+    tmp_3675 = ne tmp_3673, tmp_3674
+    !tmp_3673
+    !tmp_3674
+    br tmp_3675 -> L_THEN_1099, L_ELSE_1100
 
-L_THEN_1092:
-    !tmp_3659
+L_THEN_1099:
+    !tmp_3675
     panic(11022)
 
-L_ELSE_1093:
-    !tmp_3659
-    jmp L_MERGE_1094
+L_ELSE_1100:
+    !tmp_3675
+    jmp L_MERGE_1101
 
-L_MERGE_1094:
-    tmp_3662 = load health+0 as i32
-    tmp_3663 = call @sla__table_value_world_changed_since_TableValueData_TableValueTime_TableValueEvent(w7, entity, tmp_3662, before)
-    !tmp_3662
-    tmp_3664 = 1
-    tmp_3665 = ne tmp_3663, tmp_3664
-    !tmp_3663
-    !tmp_3664
-    br tmp_3665 -> L_THEN_1095, L_ELSE_1096
+L_MERGE_1101:
+    tmp_3678 = load health+0 as i32
+    tmp_3679 = call @sla__table_value_world_changed_since_TableValueData_TableValueTime_TableValueEvent(w7, entity, tmp_3678, before)
+    !tmp_3678
+    tmp_3680 = 1
+    tmp_3681 = ne tmp_3679, tmp_3680
+    !tmp_3679
+    !tmp_3680
+    br tmp_3681 -> L_THEN_1102, L_ELSE_1103
 
-L_THEN_1095:
-    !tmp_3665
+L_THEN_1102:
+    !tmp_3681
     panic(11023)
 
-L_ELSE_1096:
-    !tmp_3665
-    jmp L_MERGE_1097
+L_ELSE_1103:
+    !tmp_3681
+    jmp L_MERGE_1104
 
-L_MERGE_1097:
-    tmp_3668 = load health+0 as i32
-    tmp_3669 = call @sla__table_value_world_query_changed_TableValueData_TableValueTime_TableValueEvent(w7, tmp_3668, before)
-    !tmp_3668
-    changed = tmp_3669
-    tmp_3670 = load changed+0 as ptr
-    EXPAND VEC_LEN tmp_3671, tmp_3670
-    !tmp_3670
-    tmp_3672 = 1
-    tmp_3673 = ne tmp_3671, tmp_3672
-    !tmp_3671
-    !tmp_3672
-    br tmp_3673 -> L_THEN_1098, L_ELSE_1099
+L_MERGE_1104:
+    tmp_3684 = load health+0 as i32
+    tmp_3685 = call @sla__table_value_world_query_changed_TableValueData_TableValueTime_TableValueEvent(w7, tmp_3684, before)
+    !tmp_3684
+    changed = tmp_3685
+    tmp_3686 = load changed+0 as ptr
+    EXPAND VEC_LEN tmp_3687, tmp_3686
+    !tmp_3686
+    tmp_3688 = 1
+    tmp_3689 = ne tmp_3687, tmp_3688
+    !tmp_3687
+    !tmp_3688
+    br tmp_3689 -> L_THEN_1105, L_ELSE_1106
 
-L_THEN_1098:
-    !tmp_3673
+L_THEN_1105:
+    !tmp_3689
     panic(11024)
 
-L_ELSE_1099:
-    !tmp_3673
-    jmp L_MERGE_1100
+L_ELSE_1106:
+    !tmp_3689
+    jmp L_MERGE_1107
 
-L_MERGE_1100:
+L_MERGE_1107:
     !entity
     !changed
     !group_before
@@ -12532,194 +12597,243 @@ L_MERGE_1100:
     return
 
 @test "table value world remove despawn resources and messages"():
-L_TEST_ENTRY_1101:
-    tmp_3676 = call @sla__table_value_test_world_new()
-    w0 = tmp_3676
-    tmp_3677 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
-    w1 = load tmp_3677+0 as ptr
-    health = load tmp_3677+8 as ptr
-    !tmp_3677
-    tmp_3678 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
-    w2 = load tmp_3678+0 as ptr
-    mana = load tmp_3678+8 as ptr
-    !tmp_3678
-    tmp_3679 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w2)
-    w3 = load tmp_3679+0 as ptr
-    e1 = load tmp_3679+8 as ptr
-    !tmp_3679
-    tmp_3680 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w3)
-    w4 = load tmp_3680+0 as ptr
-    e2 = load tmp_3680+8 as ptr
-    !tmp_3680
-    tmp_3681 = load health+0 as i32
-    tmp_3682 = alloc 4
-    tmp_3683 = 5
-    store tmp_3682+0, tmp_3683 as i32
-    !tmp_3683
-    tmp_3684 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w4, e1, tmp_3681, tmp_3682)
-    !tmp_3681
-    !tmp_3682
-    w5 = tmp_3684
-    tmp_3685 = load mana+0 as i32
-    tmp_3686 = alloc 4
-    tmp_3687 = 3
-    store tmp_3686+0, tmp_3687 as i32
-    !tmp_3687
-    tmp_3688 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w5, e1, tmp_3685, tmp_3686)
-    !tmp_3685
-    !tmp_3686
-    w6 = tmp_3688
-    tmp_3689 = load health+0 as i32
-    tmp_3690 = alloc 4
-    tmp_3691 = 7
-    store tmp_3690+0, tmp_3691 as i32
-    !tmp_3691
-    tmp_3692 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w6, e2, tmp_3689, tmp_3690)
-    !tmp_3689
-    !tmp_3690
-    w7 = tmp_3692
-    tmp_3693 = load mana+0 as i32
-    tmp_3694 = call @sla__table_value_world_remove_TableValueData_TableValueTime_TableValueEvent(w7, e1, tmp_3693)
+L_TEST_ENTRY_1108:
+    tmp_3692 = call @sla__table_value_test_world_new()
+    w0 = tmp_3692
+    tmp_3693 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w0)
+    w1 = load tmp_3693+0 as ptr
+    health = load tmp_3693+8 as ptr
     !tmp_3693
-    w8 = tmp_3694
-    tmp_3695 = load mana+0 as i32
-    tmp_3696 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(w8, e1, tmp_3695)
+    tmp_3694 = call @sla__table_value_world_register_table_TableValueData_TableValueTime_TableValueEvent(w1)
+    w2 = load tmp_3694+0 as ptr
+    mana = load tmp_3694+8 as ptr
+    !tmp_3694
+    tmp_3695 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w2)
+    w3 = load tmp_3695+0 as ptr
+    e1 = load tmp_3695+8 as ptr
     !tmp_3695
-    tmp_3697 = 0
-    tmp_3698 = ne tmp_3696, tmp_3697
+    tmp_3696 = call @sla__table_value_world_spawn_TableValueData_TableValueTime_TableValueEvent(w3)
+    w4 = load tmp_3696+0 as ptr
+    e2 = load tmp_3696+8 as ptr
     !tmp_3696
+    tmp_3697 = load health+0 as i32
+    tmp_3698 = alloc 4
+    tmp_3699 = 5
+    store tmp_3698+0, tmp_3699 as i32
+    !tmp_3699
+    tmp_3700 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w4, e1, tmp_3697, tmp_3698)
     !tmp_3697
-    br tmp_3698 -> L_THEN_1102, L_ELSE_1103
-
-L_THEN_1102:
     !tmp_3698
-    panic(11030)
-
-L_ELSE_1103:
-    !tmp_3698
-    jmp L_MERGE_1104
-
-L_MERGE_1104:
-    tmp_3701 = load health+0 as i32
-    tmp_3702 = load mana+0 as i32
-    tmp_3703 = call @sla__table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent(w8, tmp_3701, tmp_3702)
+    w5 = tmp_3700
+    tmp_3701 = load mana+0 as i32
+    tmp_3702 = alloc 4
+    tmp_3703 = 3
+    store tmp_3702+0, tmp_3703 as i32
+    !tmp_3703
+    tmp_3704 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w5, e1, tmp_3701, tmp_3702)
     !tmp_3701
     !tmp_3702
-    health_only = tmp_3703
-    tmp_3704 = load health_only+0 as ptr
-    EXPAND VEC_LEN tmp_3705, tmp_3704
-    !tmp_3704
-    tmp_3706 = 2
-    tmp_3707 = ne tmp_3705, tmp_3706
+    w6 = tmp_3704
+    tmp_3705 = load health+0 as i32
+    tmp_3706 = alloc 4
+    tmp_3707 = 7
+    store tmp_3706+0, tmp_3707 as i32
+    !tmp_3707
+    tmp_3708 = call @sla__table_value_world_insert_TableValueData_TableValueTime_TableValueEvent(w6, e2, tmp_3705, tmp_3706)
     !tmp_3705
     !tmp_3706
-    br tmp_3707 -> L_THEN_1105, L_ELSE_1106
-
-L_THEN_1105:
-    !tmp_3707
-    panic(11031)
-
-L_ELSE_1106:
-    !tmp_3707
-    jmp L_MERGE_1107
-
-L_MERGE_1107:
-    tmp_3710 = alloc 4
-    tmp_3711 = 6
-    store tmp_3710+0, tmp_3711 as i32
-    !tmp_3711
-    tmp_3712 = call @sla__table_value_world_insert_resource_TableValueData_TableValueTime_TableValueEvent(w8, tmp_3710)
+    w7 = tmp_3708
+    tmp_3709 = load health+0 as i32
+    tmp_3710 = load mana+0 as i32
+    tmp_3711 = call @sla__table_value_world_query_with_TableValueData_TableValueTime_TableValueEvent(w7, tmp_3709, tmp_3710)
+    !tmp_3709
     !tmp_3710
-    w9 = tmp_3712
-    tmp_3713 = alloc 4
-    tmp_3714 = 9
-    store tmp_3713+0, tmp_3714 as i32
-    !tmp_3714
-    tmp_3715 = call @sla__table_value_world_write_message_TableValueData_TableValueTime_TableValueEvent(w9, tmp_3713)
+    has_mana = tmp_3711
+    tmp_3712 = load has_mana+0 as ptr
+    EXPAND VEC_LEN tmp_3713, tmp_3712
+    !tmp_3712
+    tmp_3714 = 1
+    tmp_3715 = ne tmp_3713, tmp_3714
     !tmp_3713
-    w10 = tmp_3715
-    tmp_3716 = call @sla__table_value_world_despawn_TableValueData_TableValueTime_TableValueEvent(w10, e2)
-    w11 = tmp_3716
-    tmp_3717 = load health+0 as i32
-    tmp_3718 = call @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent(w11, tmp_3717)
-    !tmp_3717
-    q = tmp_3718
-    tmp_3719 = call @sla__table_value_world_get_resource_TableValueData_TableValueTime_TableValueEvent(w11)
-    time = tmp_3719
-    tmp_3720 = call @sla__message_reader_new()
-    tmp_3721 = call @sla__table_value_event_default()
-    tmp_3722 = call @sla__table_value_world_read_message_TableValueData_TableValueTime_TableValueEvent(w11, tmp_3720, tmp_3721)
-    !tmp_3720
+    !tmp_3714
+    br tmp_3715 -> L_THEN_1109, L_ELSE_1110
+
+L_THEN_1109:
+    !tmp_3715
+    panic(11036)
+
+L_ELSE_1110:
+    !tmp_3715
+    jmp L_MERGE_1111
+
+L_MERGE_1111:
+    tmp_3718 = load has_mana+0 as ptr
+    tmp_3719 = 0
+    EXPAND VEC_GET tmp_3720, tmp_3718, tmp_3719
+    !tmp_3719
+    !tmp_3718
+    tmp_3721 = tmp_3720 as ptr
+    tmp_3722 = load tmp_3721+0 as ptr
     !tmp_3721
-    event = tmp_3722
-    tmp_3723 = load q+0 as ptr
-    EXPAND VEC_LEN tmp_3724, tmp_3723
+    tmp_3723 = load tmp_3722+0 as i32
+    !tmp_3722
+    tmp_3724 = load e1+0 as i32
+    tmp_3725 = ne tmp_3723, tmp_3724
     !tmp_3723
-    tmp_3725 = 1
-    tmp_3726 = ne tmp_3724, tmp_3725
     !tmp_3724
+    br tmp_3725 -> L_THEN_1112, L_ELSE_1113
+
+L_THEN_1112:
     !tmp_3725
-    br tmp_3726 -> L_THEN_1108, L_ELSE_1109
+    panic(11037)
 
-L_THEN_1108:
-    !tmp_3726
-    panic(11032)
+L_ELSE_1113:
+    !tmp_3725
+    jmp L_MERGE_1114
 
-L_ELSE_1109:
-    !tmp_3726
-    jmp L_MERGE_1110
-
-L_MERGE_1110:
-    tmp_3729 = call @sla__table_value_world_is_alive_TableValueData_TableValueTime_TableValueEvent(w11, e2)
-    tmp_3730 = 0
-    tmp_3731 = ne tmp_3729, tmp_3730
-    !tmp_3729
+L_MERGE_1114:
+    tmp_3728 = load mana+0 as i32
+    tmp_3729 = call @sla__table_value_world_remove_TableValueData_TableValueTime_TableValueEvent(w7, e1, tmp_3728)
+    !tmp_3728
+    w8 = tmp_3729
+    tmp_3730 = load mana+0 as i32
+    tmp_3731 = call @sla__table_value_world_has_TableValueData_TableValueTime_TableValueEvent(w8, e1, tmp_3730)
     !tmp_3730
-    br tmp_3731 -> L_THEN_1111, L_ELSE_1112
-
-L_THEN_1111:
+    tmp_3732 = 0
+    tmp_3733 = ne tmp_3731, tmp_3732
     !tmp_3731
-    panic(11033)
+    !tmp_3732
+    br tmp_3733 -> L_THEN_1115, L_ELSE_1116
 
-L_ELSE_1112:
-    !tmp_3731
-    jmp L_MERGE_1113
+L_THEN_1115:
+    !tmp_3733
+    panic(11030)
 
-L_MERGE_1113:
-    tmp_3734 = load time+0 as i32
-    tmp_3735 = 6
-    tmp_3736 = ne tmp_3734, tmp_3735
-    !tmp_3734
-    !tmp_3735
-    br tmp_3736 -> L_THEN_1114, L_ELSE_1115
+L_ELSE_1116:
+    !tmp_3733
+    jmp L_MERGE_1117
 
-L_THEN_1114:
+L_MERGE_1117:
+    tmp_3736 = load health+0 as i32
+    tmp_3737 = load mana+0 as i32
+    tmp_3738 = call @sla__table_value_world_query_without_TableValueData_TableValueTime_TableValueEvent(w8, tmp_3736, tmp_3737)
     !tmp_3736
-    panic(11034)
-
-L_ELSE_1115:
-    !tmp_3736
-    jmp L_MERGE_1116
-
-L_MERGE_1116:
-    tmp_3739 = load event+8 as ptr
-    tmp_3740 = load tmp_3739+0 as i32
+    !tmp_3737
+    health_only = tmp_3738
+    tmp_3739 = load health_only+0 as ptr
+    EXPAND VEC_LEN tmp_3740, tmp_3739
     !tmp_3739
-    tmp_3741 = 9
+    tmp_3741 = 2
     tmp_3742 = ne tmp_3740, tmp_3741
     !tmp_3740
     !tmp_3741
-    br tmp_3742 -> L_THEN_1117, L_ELSE_1118
+    br tmp_3742 -> L_THEN_1118, L_ELSE_1119
 
-L_THEN_1117:
+L_THEN_1118:
     !tmp_3742
+    panic(11031)
+
+L_ELSE_1119:
+    !tmp_3742
+    jmp L_MERGE_1120
+
+L_MERGE_1120:
+    tmp_3745 = alloc 4
+    tmp_3746 = 6
+    store tmp_3745+0, tmp_3746 as i32
+    !tmp_3746
+    tmp_3747 = call @sla__table_value_world_insert_resource_TableValueData_TableValueTime_TableValueEvent(w8, tmp_3745)
+    !tmp_3745
+    w9 = tmp_3747
+    tmp_3748 = alloc 4
+    tmp_3749 = 9
+    store tmp_3748+0, tmp_3749 as i32
+    !tmp_3749
+    tmp_3750 = call @sla__table_value_world_write_message_TableValueData_TableValueTime_TableValueEvent(w9, tmp_3748)
+    !tmp_3748
+    w10 = tmp_3750
+    tmp_3751 = call @sla__table_value_world_despawn_TableValueData_TableValueTime_TableValueEvent(w10, e2)
+    w11 = tmp_3751
+    tmp_3752 = load health+0 as i32
+    tmp_3753 = call @sla__table_value_world_query_TableValueData_TableValueTime_TableValueEvent(w11, tmp_3752)
+    !tmp_3752
+    q = tmp_3753
+    tmp_3754 = call @sla__table_value_world_get_resource_TableValueData_TableValueTime_TableValueEvent(w11)
+    time = tmp_3754
+    tmp_3755 = call @sla__message_reader_new()
+    tmp_3756 = call @sla__table_value_event_default()
+    tmp_3757 = call @sla__table_value_world_read_message_TableValueData_TableValueTime_TableValueEvent(w11, tmp_3755, tmp_3756)
+    !tmp_3755
+    !tmp_3756
+    event = tmp_3757
+    tmp_3758 = load q+0 as ptr
+    EXPAND VEC_LEN tmp_3759, tmp_3758
+    !tmp_3758
+    tmp_3760 = 1
+    tmp_3761 = ne tmp_3759, tmp_3760
+    !tmp_3759
+    !tmp_3760
+    br tmp_3761 -> L_THEN_1121, L_ELSE_1122
+
+L_THEN_1121:
+    !tmp_3761
+    panic(11032)
+
+L_ELSE_1122:
+    !tmp_3761
+    jmp L_MERGE_1123
+
+L_MERGE_1123:
+    tmp_3764 = call @sla__table_value_world_is_alive_TableValueData_TableValueTime_TableValueEvent(w11, e2)
+    tmp_3765 = 0
+    tmp_3766 = ne tmp_3764, tmp_3765
+    !tmp_3764
+    !tmp_3765
+    br tmp_3766 -> L_THEN_1124, L_ELSE_1125
+
+L_THEN_1124:
+    !tmp_3766
+    panic(11033)
+
+L_ELSE_1125:
+    !tmp_3766
+    jmp L_MERGE_1126
+
+L_MERGE_1126:
+    tmp_3769 = load time+0 as i32
+    tmp_3770 = 6
+    tmp_3771 = ne tmp_3769, tmp_3770
+    !tmp_3769
+    !tmp_3770
+    br tmp_3771 -> L_THEN_1127, L_ELSE_1128
+
+L_THEN_1127:
+    !tmp_3771
+    panic(11034)
+
+L_ELSE_1128:
+    !tmp_3771
+    jmp L_MERGE_1129
+
+L_MERGE_1129:
+    tmp_3774 = load event+8 as ptr
+    tmp_3775 = load tmp_3774+0 as i32
+    !tmp_3774
+    tmp_3776 = 9
+    tmp_3777 = ne tmp_3775, tmp_3776
+    !tmp_3775
+    !tmp_3776
+    br tmp_3777 -> L_THEN_1130, L_ELSE_1131
+
+L_THEN_1130:
+    !tmp_3777
     panic(11035)
 
-L_ELSE_1118:
-    !tmp_3742
-    jmp L_MERGE_1119
+L_ELSE_1131:
+    !tmp_3777
+    jmp L_MERGE_1132
 
-L_MERGE_1119:
+L_MERGE_1132:
     !e2
     !w10
     !time
@@ -12734,6 +12848,7 @@ L_MERGE_1119:
     !health
     !w4
     !w5
+    !has_mana
     !w11
     !event
     !w9

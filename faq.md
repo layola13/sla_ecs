@@ -51,8 +51,8 @@
 - [x] **【erased 资源/消息 derive 化】`resource_erased`(21)+ `messages_erased`(6)+ multi demo**:资源/消息也走类型擦除 + derive type_id,支持一个 world 多种资源/消息类型。
 - [x] **【已修复】`lib/hierarchy.sla`(17:16,bevy 父子层级 ChildOf/Children)**:上轮 16:52 的 `UseAfterMove: parent` 已由 codex 修好(补齐遗漏的 Entity move 规避点)。现 11 tests PASS,配套 `examples/hierarchy_relationship_demo.sla` 12 PASS。功能完整:spawn_child、parent/child_count、relationship_sources、add_child(重挂父子)、replace_children —— 忠实对应 bevy ChildOf/Children 关系系统。用户代码全程 `entity_new(e.id,e.gen)` 重建规避 move。
 - [x] **【通用关系系统!】`lib/relationship.sla`(17:30,bevy 0.15+ Relationship)**:可注册任意关系类型(many/one 目标模式、linked_spawn 联动删除、allow_self),`set_related`/`spawn_related`/`sources`/`replace_related`/`despawn_related`/`detach_all_related`。父子层级只是其特例。11 tests PASS,配套 `examples/relationship_runtime_demo.sla` 12 PASS。忠实对应 bevy 通用 Relationship trait。
-- [ ] **下一步建议**:核心 + 进阶子系统已几乎全覆盖 bevy(Entity/Component/Archetype/Table/类型擦除列/Query+filter/SystemParam/Schedule/Commands/Resource/Message/change tick/**Bundle**/**Observer**/**metadata marker**)。收尾:① 统一对外 World API(目前多个 stepping-stone world 并存);② README/progress 忠实度对照表汇总;③ 后续用通用 macro/derive 设施生成 metadata,但不要写入编译器 ECS 关键字。
-- [ ] **接手推进(待命)**:规则更新 —— 默认只巡检不续写;仅当 codex 超 30 分钟无改动且收到明确续写指令时才动手。codex 自 10:47 暂停。候选续写项(待指令):① query_with(With<T> 额外组件存在过滤)+ query_added(Added<T>),table_erased query 目前有 without/changed 但缺 with/added;② 端到端对标 bevy README 的完整 example;③ 忠实度对照表收尾。
+- [x] **【table_erased Query filter 补齐】**:`world_table_erased` 已新增 `query_with`/`query_added` 和 auto type-id 版本;`system_param_table_erased` 与 observer system-param 已新增 `With`/`Added`/`Changed` query-resource adapter。同步补齐 table-value/archetype-value 的 `With` 过滤缺口。聚焦验证全绿,未改编译器。
+- [ ] **下一步建议**:核心 + 进阶子系统已几乎全覆盖 bevy(Entity/Component/Archetype/Table/类型擦除列/Query+filter/SystemParam/Schedule/Commands/Resource/Message/change tick/**Bundle**/**Observer**/**metadata marker**)。收尾:① 统一对外 World API(目前多个 stepping-stone world 并存);② README/progress 忠实度对照表汇总;③ 后续用通用 macro/derive 设施生成 metadata,但不要写入编译器 ECS 关键字;④ 继续扩大 tuple/pair-mut 组合过滤器覆盖。
 
 ## D. 测试基线(最近巡检)
 

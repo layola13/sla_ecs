@@ -178,6 +178,21 @@ fn archetype_value_world_query_without<T, R, M>(world: ArchetypeValueWorld<T, R,
     return query;
 }
 
+fn archetype_value_world_query_with<T, R, M>(world: ArchetypeValueWorld<T, R, M>, component_id: i32, with_component_id: i32) -> Query<EntityItem<T>> {
+    let query = query_new<EntityItem<T>>();
+    let entities = registry_archetype_world_query_component(world.archetypes, component_id);
+    let i: i64 = 0;
+    let cnt = len(entities.items) as i64;
+    while i < cnt {
+        let entity = entities.items[i];
+        if archetype_value_world_has<T, R, M>(world, entity, with_component_id) {
+            query.items.push(EntityItem<T> { entity: entity, value: archetype_value_world_get<T, R, M>(world, entity, component_id) });
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
 fn archetype_value_world_query_added<T, R, M>(world: ArchetypeValueWorld<T, R, M>, component_id: i32, tick: i32) -> Query<EntityItem<T>> {
     let query = query_new<EntityItem<T>>();
     let entities = registry_archetype_world_query_component(world.archetypes, component_id);
@@ -397,6 +412,9 @@ fn archetype_value_test_world_new() -> ArchetypeValueWorld<ArchetypeValueData, A
     let unselected = archetype_value_world_query_pair_without<ArchetypeValueData, ArchetypeValueTime, ArchetypeValueEvent>(w10, health.id, mana.id, selected.id);
     if len(unselected.items) != 1 { panic(9923); };
     if unselected.items[0].entity.id != e1.id { panic(9924); };
+    let selected_health = archetype_value_world_query_with<ArchetypeValueData, ArchetypeValueTime, ArchetypeValueEvent>(w10, health.id, selected.id);
+    if len(selected_health.items) != 1 { panic(9926); };
+    if selected_health.items[0].entity.id != e2.id { panic(9927); };
     let w11 = archetype_value_world_remove<ArchetypeValueData, ArchetypeValueTime, ArchetypeValueEvent>(w10, e2, selected.id);
     if archetype_value_world_entity_archetype_id<ArchetypeValueData, ArchetypeValueTime, ArchetypeValueEvent>(w11, e1) != archetype_value_world_entity_archetype_id<ArchetypeValueData, ArchetypeValueTime, ArchetypeValueEvent>(w11, e2) { panic(9925); };
 }

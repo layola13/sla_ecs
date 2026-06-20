@@ -120,6 +120,13 @@ fn archetype_value_run_without_query_resource_system<T, R, M>(world: ArchetypeVa
     return archetype_value_world_insert_resource<T, R, M>(world, param1.resource);
 }
 
+fn archetype_value_run_with_query_resource_system<T, R, M>(world: ArchetypeValueWorld<T, R, M>, component_id: i32, with_component_id: i32, run: fn(ArchetypeValueQueryResourceParam<T, R>) -> ArchetypeValueQueryResourceParam<T, R>) -> ArchetypeValueWorld<T, R, M> {
+    let query = archetype_value_world_query_with<T, R, M>(world, component_id, with_component_id);
+    let param0 = archetype_value_query_resource_param<T, R>(query, archetype_value_world_get_resource<T, R, M>(world));
+    let param1 = run(param0);
+    return archetype_value_world_insert_resource<T, R, M>(world, param1.resource);
+}
+
 fn archetype_value_run_added_query_resource_system<T, R, M>(world: ArchetypeValueWorld<T, R, M>, component_id: i32, since_tick: i32, run: fn(ArchetypeValueQueryResourceParam<T, R>) -> ArchetypeValueQueryResourceParam<T, R>) -> ArchetypeValueWorld<T, R, M> {
     let query = archetype_value_world_query_added<T, R, M>(world, component_id, since_tick);
     let param0 = archetype_value_query_resource_param<T, R>(query, archetype_value_world_get_resource<T, R, M>(world));
@@ -284,7 +291,9 @@ fn archetype_param_resource_adapter_system(world: ArchetypeValueWorld<ArchetypeP
     let w6 = archetype_value_world_insert<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w5a, e1, health.id, ArchetypeParamData { amount: 5 });
     let w7 = archetype_value_world_insert<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w6, e2, health.id, ArchetypeParamData { amount: 7 });
     let w8 = archetype_value_world_insert<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w7, e2, selected.id, ArchetypeParamData { amount: 1 });
-    let w9 = archetype_value_run_without_query_resource_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w8, health.id, selected.id, archetype_param_count_query_system);
+    let w8a = archetype_value_run_with_query_resource_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w8, health.id, selected.id, archetype_param_count_query_system);
+    if archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w8a).tick != 1 { panic(10050); };
+    let w9 = archetype_value_run_without_query_resource_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w8a, health.id, selected.id, archetype_param_count_query_system);
     if archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w9).tick != 1 { panic(10047); };
     let w10 = archetype_value_run_added_query_resource_system<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w9, health.id, before_add, archetype_param_count_query_system);
     if archetype_value_world_get_resource<ArchetypeParamData, ArchetypeParamTime, ArchetypeParamEvent>(w10).tick != 2 { panic(10048); };
