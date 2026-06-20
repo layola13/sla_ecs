@@ -56,6 +56,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-row type-erased relationship system-param adapters in `lib/system_param_table_erased_relationship.sla`: pair-mut query writeback, relationship query + resource param, relationship Commands param, ResMut, MessageWriter, and MessageReader. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_relationship.sla`.
 - [x] Add verified table-row type-erased observer wrapper in `lib/world_table_erased_observer.sla`: targeted entity events plus component lifecycle events for add/insert/replace/remove/despawn over `TableErasedWorld`. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_observer.sla`.
 - [x] Add verified table-row type-erased observer Commands in `lib/commands_table_erased_observer.sla`: deferred insert/remove/despawn/resource/message/explicit-event commands that trigger lifecycle/events during apply. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/commands_table_erased_observer.sla`.
+- [x] Add verified table-row type-erased observer Schedule in `lib/schedule_table_erased_observer.sla`: component access, event-type access, resource/message access, conflict counting, batch selection, sequential run, and planned run. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/schedule_table_erased_observer.sla`.
+- [x] Add verified table-row type-erased observer system-param adapters in `lib/system_param_table_erased_observer.sla`: pair-mut query writeback, observer Commands param, ResMut, MessageWriter, MessageReader, resource/message params, and explicit event trigger param. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 - [x] Add verified table-row type-erased system-param adapters over `TableErasedWorld<R, M>`.
 - [x] Add verified no-conflict parallel batch planning over `TableErasedSchedule<R, M>`.
 - [x] Add verified runtime type-id metadata lookup helpers for `TableErasedWorld<R, M>`: component-id lookup by type id, auto insert/get/query/filters/Changed/remove, type-id Commands insert, type-id schedule access declarations, and type-id system-param adapters.
@@ -125,6 +127,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified ordered table-erased relationship command example: `examples/table_erased_relationship_commands_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_commands_demo.sla`.
 - [x] Add verified table-erased relationship schedule/system-param example: `examples/table_erased_relationship_system_param_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_relationship_system_param_demo.sla`.
 - [x] Add verified table-erased observer lifecycle example: `examples/table_erased_observer_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_observer_demo.sla`.
+- [x] Add verified table-erased observer schedule/system-param example: `examples/table_erased_observer_system_param_demo.sla`. Verification: `SA_PLUGIN_DEV=1 sa sla test examples/table_erased_observer_system_param_demo.sla`.
 - [x] Add verified table-erased component metadata example: `examples/table_erased_derive_component_demo.sla`, using project-level derive markers plus ordinary `impl` metadata, including sparse-set storage metadata driving sparse component registration.
 - [x] Add verified multi-resource metadata example: `examples/resource_derive_multi_demo.sla`.
 - [x] Add verified multi-channel message metadata example: `examples/message_derive_multi_demo.sla`.
@@ -151,4 +154,5 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Rewrite `README.md` around the actual implemented reusable API.
 - [x] Update `progress.md` with verified status, test counts, compiler fixes, and known limitations.
 - [x] Update `README.md` and `progress.md` to reflect the current tree accurately: verified `lib/` and `examples/`, no present `src/` prototype directory.
+- [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the observer schedule/system-param batch, including the compiler-boundary note that no engine semantics were added to `sa_plugin_sla`. Verification: full `lib/*.sla` and `examples/*.sla` loops pass, generated `.sa` imports have no absolute `sa_std` path, and `git diff --check` passes.
 - [ ] Restore or intentionally supersede old `src/*.sla` prototype sources if future history requires them.
