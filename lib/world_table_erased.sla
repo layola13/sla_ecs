@@ -105,6 +105,11 @@ struct TableErasedOptional<T> {
     value: T,
 }
 
+struct TableErasedPairValue<A, B> {
+    first: A,
+    second: B,
+}
+
 struct TableErasedPairOptionalSecond<A, B> {
     entity: Entity,
     first: A,
@@ -149,6 +154,14 @@ struct TableErasedPairWithAnyOf2<A, B, C, D> {
     second: B,
     any_first: TableErasedOptional<C>,
     any_second: TableErasedOptional<D>,
+}
+
+struct TableErasedAnyOf3WithOptionalPair<A, B, C, D, E> {
+    entity: Entity,
+    first: TableErasedOptional<A>,
+    second: TableErasedOptional<B>,
+    third: TableErasedOptional<C>,
+    pair: TableErasedOptional<TableErasedPairValue<D, E>>,
 }
 
 struct TableErasedCombination2<T> {
@@ -1967,6 +1980,48 @@ fn table_erased_world_query_any_of3_auto<A, B, C, R, M>(world: TableErasedWorld<
     return table_erased_world_query_any_of3<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third);
 }
 
+fn table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, pair_first_component_id: i32, pair_first_type_id: i32, pair_second_component_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>) -> Query<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>> {
+    let query = query_new<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>>();
+    let i: i64 = 0;
+    let cnt = len(world.locations) as i64;
+    while i < cnt {
+        let entity_id = world.locations[i].entity_id;
+        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
+        if table_erased_world_is_alive<R, M>(world, entity) {
+            let include = false;
+            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, third_component_id) { include = true; };
+            if include {
+                let first = table_erased_optional_none<A>(default_first);
+                let second = table_erased_optional_none<B>(default_second);
+                let third = table_erased_optional_none<C>(default_third);
+                let pair = table_erased_optional_none<TableErasedPairValue<D, E>>(default_pair);
+                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, third_component_id) { third = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, entity, third_component_id, third_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, pair_first_component_id) {
+                    if table_erased_world_has<R, M>(world, entity, pair_second_component_id) {
+                        pair = table_erased_optional_some<TableErasedPairValue<D, E>>(TableErasedPairValue<D, E> { first: table_erased_world_get<D, R, M>(world, entity, pair_first_component_id, pair_first_type_id), second: table_erased_world_get<E, R, M>(world, entity, pair_second_component_id, pair_second_type_id) });
+                    };
+                };
+                query.items.push(TableErasedAnyOf3WithOptionalPair<A, B, C, D, E> { entity: entity, first: first, second: second, third: third, pair: pair });
+            };
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_any_of3_with_optional_pair_auto<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, pair_first_type_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>) -> Query<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
+    let pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world, pair_first_type_id);
+    let pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world, pair_second_type_id);
+    return table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, pair_first_component_id, pair_first_type_id, pair_second_component_id, pair_second_type_id, default_first, default_second, default_third, default_pair);
+}
+
 fn table_erased_world_query_with_any_of2<A, B, C, R, M>(world: TableErasedWorld<R, M>, required_component_id: i32, required_type_id: i32, any_first_component_id: i32, any_first_type_id: i32, any_second_component_id: i32, any_second_type_id: i32, default_any_first: fn() -> B, default_any_second: fn() -> C) -> Query<TableErasedWithAnyOf2<A, B, C>> {
     let query = query_new<TableErasedWithAnyOf2<A, B, C>>();
     let base = table_erased_world_query<A, R, M>(world, required_component_id, required_type_id);
@@ -2807,6 +2862,7 @@ fn table_erased_pos_default() -> TableErasedPos { return TableErasedPos { x: 0, 
 fn table_erased_vel_default() -> TableErasedVel { return TableErasedVel { x: 0, y: 0 }; }
 fn table_erased_marker_default() -> TableErasedMarker { return TableErasedMarker { value: 0 }; }
 fn table_erased_tag_default() -> TableErasedTag { return TableErasedTag { value: 0 }; }
+fn table_erased_vel_marker_pair_default() -> TableErasedPairValue<TableErasedVel, TableErasedMarker> { return TableErasedPairValue<TableErasedVel, TableErasedMarker> { first: table_erased_vel_default(), second: table_erased_marker_default() }; }
 fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErasedEvent> { return table_erased_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default()); }
 
 fn table_erased_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedPos; let boxed = unsafe { Box::from_raw(typed) }; }
@@ -3549,4 +3605,27 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pos_vel_any.items[0].any_first.has_value { panic(11808); };
     if pos_vel_any.items[0].any_second.has_value != true { panic(11809); };
     if pos_vel_any.items[0].any_second.value.value != 300 { panic(11810); };
+
+    let any_with_pair = table_erased_world_query_any_of3_with_optional_pair_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedVel, TableErasedMarker, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_tag_default, table_erased_vel_marker_pair_default);
+    if len(any_with_pair.items) != 4 { panic(12300); };
+    if any_with_pair.items[0].entity.id != e1.id { panic(12301); };
+    if any_with_pair.items[0].first.has_value != true { panic(12302); };
+    if any_with_pair.items[0].third.has_value != true { panic(12303); };
+    if any_with_pair.items[0].pair.has_value { panic(12304); };
+    let pair_present: i32 = 0;
+    let pair_vel_sum: i32 = 0;
+    let pair_marker_sum: i32 = 0;
+    let j: i64 = 0;
+    let query_count = len(any_with_pair.items) as i64;
+    while j < query_count {
+        if any_with_pair.items[j].pair.has_value {
+            pair_present = pair_present + 1;
+            pair_vel_sum = pair_vel_sum + any_with_pair.items[j].pair.value.first.x;
+            pair_marker_sum = pair_marker_sum + any_with_pair.items[j].pair.value.second.value;
+        };
+        j = j + 1;
+    }
+    if pair_present != 1 { panic(12305); };
+    if pair_vel_sum != 30 { panic(12306); };
+    if pair_marker_sum != 300 { panic(12307); };
 }
