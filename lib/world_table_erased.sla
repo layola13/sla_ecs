@@ -162,6 +162,13 @@ struct TableErasedCombination3<T> {
     third: T,
 }
 
+struct TableErasedCombination4<T> {
+    first: T,
+    second: T,
+    third: T,
+    fourth: T,
+}
+
 struct TableErasedPairMut<A, B> {
     first: TableErasedMut<A>,
     second_component_id: i32,
@@ -501,6 +508,58 @@ fn table_erased_query_pair_mut_combinations3<A, B>(query: Query<TableErasedPairM
                 if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(11953); };
                 if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(11954); };
                 result.items.push(TableErasedCombination3<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k] });
+                k = k + 1;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_combinations4<T>(query: Query<T>) -> Query<TableErasedCombination4<T>> {
+    let result = query_new<TableErasedCombination4<T>>();
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            let k = j + 1;
+            while k < cnt {
+                let l = k + 1;
+                while l < cnt {
+                    result.items.push(TableErasedCombination4<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l] });
+                    l = l + 1;
+                }
+                k = k + 1;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_pair_mut_combinations4<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination4<TableErasedPairMut<A, B>>> {
+    let result = query_new<TableErasedCombination4<TableErasedPairMut<A, B>>>();
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            let k = j + 1;
+            while k < cnt {
+                let l = k + 1;
+                while l < cnt {
+                    if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12150); };
+                    if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12151); };
+                    if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12152); };
+                    if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12153); };
+                    if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12154); };
+                    if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12155); };
+                    result.items.push(TableErasedCombination4<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l] });
+                    l = l + 1;
+                }
                 k = k + 1;
             }
             j = j + 1;
@@ -2767,6 +2826,12 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pos_combinations3.items[3].first.entity.id != e2.id { panic(11964); };
     if pos_combinations3.items[3].second.entity.id != e3.id { panic(11965); };
     if pos_combinations3.items[3].third.entity.id != e4.id { panic(11966); };
+    let pos_combinations4 = table_erased_query_combinations4<EntityItem<TableErasedPos>>(all_positions);
+    if len(pos_combinations4.items) != 1 { panic(12156); };
+    if pos_combinations4.items[0].first.entity.id != e1.id { panic(12157); };
+    if pos_combinations4.items[0].second.entity.id != e2.id { panic(12158); };
+    if pos_combinations4.items[0].third.entity.id != e3.id { panic(12159); };
+    if pos_combinations4.items[0].fourth.entity.id != e4.id { panic(12160); };
 
     let pos_get = table_erased_world_query_get_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w14, e2, TABLE_ERASED_POS_TYPE);
     if pos_get.value.x != 20 { panic(11885); };
@@ -2819,6 +2884,12 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pair_combinations3.items[2].first.entity.id != e1.id { panic(11968); };
     if pair_combinations3.items[2].second.entity.id != e3.id { panic(11969); };
     if pair_combinations3.items[2].third.entity.id != e4.id { panic(11970); };
+    let pair_combinations4 = table_erased_query_combinations4<TableErasedPair<TableErasedPos, TableErasedVel>>(all_pairs);
+    if len(pair_combinations4.items) != 1 { panic(12161); };
+    if pair_combinations4.items[0].first.entity.id != e1.id { panic(12162); };
+    if pair_combinations4.items[0].second.entity.id != e2.id { panic(12163); };
+    if pair_combinations4.items[0].third.entity.id != e3.id { panic(12164); };
+    if pair_combinations4.items[0].fourth.entity.id != e4.id { panic(12165); };
     let pairs = table_erased_world_query_pair_get_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if pairs.items[0].entity.id != e3.id { panic(11894); };
     if pairs.items[0].first.x != 30 { panic(11895); };
@@ -2871,6 +2942,13 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if mover_combinations3.items[3].first.first.entity.id != e2.id { panic(11975); };
     if mover_combinations3.items[3].second.first.entity.id != e3.id { panic(11976); };
     if mover_combinations3.items[3].third.first.entity.id != e4.id { panic(11977); };
+    let mover_combinations4 = table_erased_query_pair_mut_combinations4<TableErasedPos, TableErasedVel>(all_movers);
+    if len(mover_combinations4.items) != 1 { panic(12166); };
+    if mover_combinations4.items[0].first.first.entity.id != e1.id { panic(12167); };
+    if mover_combinations4.items[0].second.first.entity.id != e2.id { panic(12168); };
+    if mover_combinations4.items[0].third.first.entity.id != e3.id { panic(12169); };
+    if mover_combinations4.items[0].fourth.first.entity.id != e4.id { panic(12170); };
+    if entity_eq(mover_combinations4.items[0].first.first.entity, mover_combinations4.items[0].fourth.first.entity) { panic(12171); };
     let movers = table_erased_world_query_pair_mut_first_get_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if movers.items[0].first.entity.id != e3.id { panic(11902); };
     if movers.items[0].first.value.x != 30 { panic(11903); };
