@@ -124,6 +124,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Extend verified table-row type-erased and observer system-param adapters with item-query resource params for `Query<(Option<A>, B)>`, `Query<(A, Has<B>)>`, and `Query<AnyOf<(A, B, C)>>`. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla` and `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 - [x] Extend verified table-row type-erased system-param adapters with `Query<Entity>` resource params and binary `And` query-resource/pair-mut writeback params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`.
 - [x] Extend verified table-row type-erased observer system-param adapters with `Query<Entity>` resource params and binary `And` query-resource/pair-mut writeback params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
+- [x] Extend verified table-row type-erased and observer system-param adapters with nested `AnyOf` query-data runners for Bevy-shaped `Query<(A, AnyOf<(B, C)>)>` and `Query<(A, B, AnyOf<(C, D)>)>`. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`, `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`, and `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 
 ## Phase 4: Resources, Messages, Examples
 
