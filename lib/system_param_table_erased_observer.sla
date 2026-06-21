@@ -869,27 +869,31 @@ fn table_erased_observer_param_entity_count_system(param: TableErasedObserverIte
 fn table_erased_observer_param_spawn_details_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedSpawnDetails, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedSpawnDetails, TableErasedTime> {
     let spawned: i32 = 0;
     let tick_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].is_spawned() { spawned = spawned + 1; };
         tick_sum = tick_sum + param.query.items[i].spawn_tick();
+        file_sum = file_sum + param.query.items[i].spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_observer_item_query_resource_param<TableErasedSpawnDetails, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + tick_sum });
+    return table_erased_observer_item_query_resource_param<TableErasedSpawnDetails, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + tick_sum + file_sum * 1000 });
 }
 
 fn table_erased_observer_param_pos_spawn_details_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedWithSpawnDetails<TableErasedPos>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedWithSpawnDetails<TableErasedPos>, TableErasedTime> {
     let spawned: i32 = 0;
     let pos_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].details.is_spawned() { spawned = spawned + 1; };
         pos_sum = pos_sum + param.query.items[i].value.x;
+        file_sum = file_sum + param.query.items[i].details.spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_observer_item_query_resource_param<TableErasedWithSpawnDetails<TableErasedPos>, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + pos_sum });
+    return table_erased_observer_item_query_resource_param<TableErasedWithSpawnDetails<TableErasedPos>, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + pos_sum + file_sum * 1000 });
 }
 
 fn table_erased_observer_param_pair_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime> {
@@ -899,14 +903,16 @@ fn table_erased_observer_param_pair_count_system(param: TableErasedObserverItemQ
 fn table_erased_observer_param_pair_spawn_details_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime> {
     let spawned: i32 = 0;
     let value_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].details.is_spawned() { spawned = spawned + 1; };
         value_sum = value_sum + param.query.items[i].first.x + param.query.items[i].second.x;
+        file_sum = file_sum + param.query.items[i].details.spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_observer_item_query_resource_param<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + value_sum });
+    return table_erased_observer_item_query_resource_param<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: spawned * 100 + value_sum + file_sum * 1000 });
 }
 
 fn table_erased_observer_param_spawn_detail_movement_system(query: Query<TableErasedPairMutWithSpawnDetails<TableErasedPos, TableErasedVel>>) -> Query<TableErasedPairMutWithSpawnDetails<TableErasedPos, TableErasedVel>> {
@@ -1320,7 +1326,7 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w5 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 10, y: 0 });
     let first_tick = w5.table.registry.change_tick;
     let w6 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w5.table), observers: w5.observers };
-    let (w7, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let (w7, e2) = table_erased_observer_world_spawn_with_location<TableErasedTime, TableErasedEvent>(w6, table_erased_spawn_location_new(6, 44, 8));
     let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
     let w9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 20, y: 0 });
     let second_tick = w9.table.registry.change_tick;
@@ -1331,15 +1337,15 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let entity_repeated = table_erased_observer_run_entity_spawned_query_resource_system<TableErasedTime, TableErasedEvent>(w9r, second_tick, table_erased_observer_param_entity_count_system);
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(entity_repeated.table).tick != 0 { panic(14501); };
     let details = table_erased_observer_run_spawn_details_query_resource_system<TableErasedTime, TableErasedEvent>(w9r, first_tick, table_erased_observer_param_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(details.table).tick != 100 + first_tick + second_tick { panic(14502); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(details.table).tick != 6100 + first_tick + second_tick { panic(14502); };
     let spawned_pos = table_erased_observer_run_spawned_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, first_tick, table_erased_observer_param_count_query_system);
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(spawned_pos.table).tick != 1 { panic(14503); };
     let pos_details = table_erased_observer_run_with_spawn_details_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, first_tick, table_erased_observer_param_pos_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pos_details.table).tick != 103 { panic(14504); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pos_details.table).tick != 6103 { panic(14504); };
     let pair_spawned = table_erased_observer_run_pair_spawned_query_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick, table_erased_observer_param_pair_count_system);
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pair_spawned.table).tick != 1 { panic(14505); };
     let pair_details = table_erased_observer_run_pair_with_spawn_details_query_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick, table_erased_observer_param_pair_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pair_details.table).tick != 133 { panic(14506); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pair_details.table).tick != 6133 { panic(14506); };
 
     let w10 = table_erased_observer_run_pair_mut_system_spawned_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick, table_erased_observer_param_movement_system);
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, e1, position.id, TABLE_ERASED_POS_TYPE).x != 1 { panic(14507); };

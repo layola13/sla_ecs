@@ -29,11 +29,19 @@ struct TableErasedLocation {
     row: i64,
 }
 
+struct TableErasedSpawnLocation {
+    has_location: bool,
+    file_id: i32,
+    line: i32,
+    column: i32,
+}
+
 struct TableErasedSpawnDetails {
     entity: Entity,
     spawn_tick_value: i32,
     last_run_tick: i32,
     this_run_tick: i32,
+    spawned_by_value: TableErasedSpawnLocation,
 }
 
 struct TableErasedWorld<R, M> {
@@ -42,6 +50,7 @@ struct TableErasedWorld<R, M> {
     archetypes: Vec<TableErasedArchetype>,
     locations: Vec<TableErasedLocation>,
     spawn_ticks: Vec<i32>,
+    spawn_locations: Vec<TableErasedSpawnLocation>,
     resource: ResourceSlot<R>,
     messages: Messages<M>,
     resource_added_tick: i32,
@@ -173,6 +182,20 @@ impl TableErasedSpawnDetails {
     fn spawn_tick(&self) -> i32 {
         return self.spawn_tick_value;
     }
+
+    fn spawned_by(&self) -> TableErasedSpawnLocation {
+        return self.spawned_by_value;
+    }
+
+    fn has_spawned_by(&self) -> bool {
+        return self.spawned_by_value.has_location;
+    }
+}
+
+impl TableErasedSpawnLocation {
+    fn is_some(&self) -> bool {
+        return self.has_location;
+    }
 }
 
 const TABLE_ERASED_FILTER_WITH: i32 = 1;
@@ -234,8 +257,16 @@ fn table_erased_location_empty(entity_id: i32) -> TableErasedLocation {
     return TableErasedLocation { entity_id: entity_id, archetype_id: -1, row: -1 };
 }
 
-fn table_erased_spawn_details_new(entity: Entity, spawn_tick: i32, last_run_tick: i32, this_run_tick: i32) -> TableErasedSpawnDetails {
-    return TableErasedSpawnDetails { entity: entity, spawn_tick_value: spawn_tick, last_run_tick: last_run_tick, this_run_tick: this_run_tick };
+fn table_erased_spawn_location_none() -> TableErasedSpawnLocation {
+    return TableErasedSpawnLocation { has_location: false, file_id: 0, line: 0, column: 0 };
+}
+
+fn table_erased_spawn_location_new(file_id: i32, line: i32, column: i32) -> TableErasedSpawnLocation {
+    return TableErasedSpawnLocation { has_location: true, file_id: file_id, line: line, column: column };
+}
+
+fn table_erased_spawn_details_new(entity: Entity, spawn_tick: i32, last_run_tick: i32, this_run_tick: i32, spawned_by: TableErasedSpawnLocation) -> TableErasedSpawnDetails {
+    return TableErasedSpawnDetails { entity: entity, spawn_tick_value: spawn_tick, last_run_tick: last_run_tick, this_run_tick: this_run_tick, spawned_by_value: spawned_by };
 }
 
 fn table_erased_entity_vec_has_duplicate(entities: Vec<Entity>) -> bool {
@@ -532,12 +563,14 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
     let archetypes: Vec<TableErasedArchetype> = Vec::new();
     let locations: Vec<TableErasedLocation> = Vec::new();
     let spawn_ticks: Vec<i32> = Vec::new();
+    let spawn_locations: Vec<TableErasedSpawnLocation> = Vec::new();
     let world = TableErasedWorld<R, M> {
         registry: registry_world_new(),
         component_defs: component_defs,
         archetypes: archetypes,
         locations: locations,
         spawn_ticks: spawn_ticks,
+        spawn_locations: spawn_locations,
         resource: resource_slot_new<R>(default_r),
         messages: messages_new<M>(default_m),
         resource_added_tick: 0,
@@ -620,6 +653,9 @@ fn table_erased_world_ensure_location<R, M>(world: TableErasedWorld<R, M>, entit
     }
     while (len(world.spawn_ticks) as i32) < entity.id + 1 {
         world.spawn_ticks.push(0);
+    }
+    while (len(world.spawn_locations) as i32) < entity.id + 1 {
+        world.spawn_locations.push(table_erased_spawn_location_none());
     }
     return world;
 }
@@ -788,12 +824,17 @@ fn table_erased_world_attach_empty<R, M>(world: TableErasedWorld<R, M>, entity: 
     return table_erased_world_attach_with_values<R, M>(world, entity, table_erased_signature_empty(), values);
 }
 
-fn table_erased_world_spawn<R, M>(world: TableErasedWorld<R, M>) -> (TableErasedWorld<R, M>, Entity) {
+fn table_erased_world_spawn_with_location<R, M>(world: TableErasedWorld<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedWorld<R, M>, Entity) {
     let (registry, entity) = registry_world_spawn(world.registry);
     world.registry = registry;
     world = table_erased_world_attach_empty<R, M>(world, entity);
     world.spawn_ticks[entity.id] = world.registry.change_tick;
+    world.spawn_locations[entity.id] = spawned_by;
     return (world, entity);
+}
+
+fn table_erased_world_spawn<R, M>(world: TableErasedWorld<R, M>) -> (TableErasedWorld<R, M>, Entity) {
+    return table_erased_world_spawn_with_location<R, M>(world, table_erased_spawn_location_none());
 }
 
 fn table_erased_world_replace_existing<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedWorld<R, M> {
@@ -893,6 +934,12 @@ fn table_erased_world_spawn_tick<R, M>(world: TableErasedWorld<R, M>, entity: En
     return world.spawn_ticks[entity.id];
 }
 
+fn table_erased_world_spawned_by<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> TableErasedSpawnLocation {
+    if table_erased_world_is_alive<R, M>(world, entity) != true { return table_erased_spawn_location_none(); };
+    if entity.id >= (len(world.spawn_locations) as i32) { return table_erased_spawn_location_none(); };
+    return world.spawn_locations[entity.id];
+}
+
 fn table_erased_world_spawned_since<R, M>(world: TableErasedWorld<R, M>, entity: Entity, tick: i32) -> bool {
     let spawn_tick = table_erased_world_spawn_tick<R, M>(world, entity);
     if spawn_tick < 0 { return false; };
@@ -903,7 +950,7 @@ fn table_erased_world_spawned_since<R, M>(world: TableErasedWorld<R, M>, entity:
 fn table_erased_world_spawn_details<R, M>(world: TableErasedWorld<R, M>, entity: Entity, last_run_tick: i32) -> TableErasedSpawnDetails {
     let spawn_tick = table_erased_world_spawn_tick<R, M>(world, entity);
     if spawn_tick < 0 { panic(11820); };
-    return table_erased_spawn_details_new(entity, spawn_tick, last_run_tick, world.registry.change_tick);
+    return table_erased_spawn_details_new(entity, spawn_tick, last_run_tick, world.registry.change_tick, table_erased_world_spawned_by<R, M>(world, entity));
 }
 
 fn table_erased_world_added_since_auto<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, tick: i32) -> bool {
@@ -3073,14 +3120,22 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if first_details.items[0].entity.id != e1.id { panic(11831); };
     if first_details.items[0].spawn_tick() != first_tick { panic(11832); };
     if first_details.items[0].is_spawned() != true { panic(11833); };
+    if first_details.items[0].has_spawned_by() { panic(12120); };
+    if table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w5, e1).is_some() { panic(12121); };
     let repeated_spawned = table_erased_world_query_entities_spawned<TableErasedTime, TableErasedEvent>(w5, first_tick);
     if len(repeated_spawned.items) != 0 { panic(11834); };
 
     let w6 = table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w5);
-    let (w7, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let source_location = table_erased_spawn_location_new(77, 120, 9);
+    let (w7, e2) = table_erased_world_spawn_with_location<TableErasedTime, TableErasedEvent>(w6, source_location);
     let w8 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
     let w9 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 20, y: 0 });
     let second_tick = w9.registry.change_tick;
+    let direct_spawned_by = table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w9, e2);
+    if direct_spawned_by.is_some() != true { panic(12122); };
+    if direct_spawned_by.file_id != 77 { panic(12123); };
+    if direct_spawned_by.line != 120 { panic(12124); };
+    if direct_spawned_by.column != 9 { panic(12125); };
 
     let spawned_entities = table_erased_world_query_entities_spawned<TableErasedTime, TableErasedEvent>(w9, first_tick);
     if len(spawned_entities.items) != 1 { panic(11835); };
@@ -3103,12 +3158,17 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     }
     if detail_spawned_count != 1 { panic(11841); };
     if detail_tick_sum != first_tick + second_tick { panic(11842); };
+    let second_detail_location = positions_with_details.items[1].details.spawned_by();
+    if second_detail_location.file_id != 77 { panic(12126); };
+    if second_detail_location.line != 120 { panic(12127); };
+    if second_detail_location.column != 9 { panic(12128); };
 
     let spawned_pairs = table_erased_world_query_pair_spawned_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick);
     if len(spawned_pairs.items) != 1 { panic(11843); };
     if spawned_pairs.items[0].entity.id != e2.id { panic(11844); };
     let pair_details = table_erased_world_query_pair_with_spawn_details_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick);
     if len(pair_details.items) != 2 { panic(11845); };
+    if pair_details.items[1].details.spawned_by().file_id != 77 { panic(12129); };
 
     let spawned_movers = table_erased_world_query_pair_mut_first_spawned_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, first_tick);
     if len(spawned_movers.items) != 1 { panic(11846); };
@@ -3124,6 +3184,7 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     }
     if detail_slot < 0 { panic(11849); };
     if detail_movers.items[detail_slot].details.is_spawned_after(first_tick) != true { panic(11850); };
+    if detail_movers.items[detail_slot].details.spawned_by().file_id != 77 { panic(12130); };
     let w10 = table_erased_world_pair_mut_with_spawn_details_write_first<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9, detail_movers.items[detail_slot], TableErasedPos { x: detail_movers.items[detail_slot].first.value.x + detail_movers.items[detail_slot].second.x, y: 0 });
     if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, e2, position.id, TABLE_ERASED_POS_TYPE).x != 22 { panic(11851); };
 

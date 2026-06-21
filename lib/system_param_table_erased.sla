@@ -815,27 +815,31 @@ fn table_erased_param_entity_count_system(param: TableErasedItemQueryResourcePar
 fn table_erased_param_spawn_details_count_system(param: TableErasedItemQueryResourceParam<TableErasedSpawnDetails, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedSpawnDetails, TableErasedParamTime> {
     let spawned: i32 = 0;
     let tick_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].is_spawned() { spawned = spawned + 1; };
         tick_sum = tick_sum + param.query.items[i].spawn_tick();
+        file_sum = file_sum + param.query.items[i].spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_item_query_resource_param<TableErasedSpawnDetails, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + tick_sum });
+    return table_erased_item_query_resource_param<TableErasedSpawnDetails, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + tick_sum + file_sum * 1000 });
 }
 
 fn table_erased_param_pos_spawn_details_count_system(param: TableErasedItemQueryResourceParam<TableErasedWithSpawnDetails<TableErasedParamPos>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedWithSpawnDetails<TableErasedParamPos>, TableErasedParamTime> {
     let spawned: i32 = 0;
     let pos_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].details.is_spawned() { spawned = spawned + 1; };
         pos_sum = pos_sum + param.query.items[i].value.x;
+        file_sum = file_sum + param.query.items[i].details.spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_item_query_resource_param<TableErasedWithSpawnDetails<TableErasedParamPos>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + pos_sum });
+    return table_erased_item_query_resource_param<TableErasedWithSpawnDetails<TableErasedParamPos>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + pos_sum + file_sum * 1000 });
 }
 
 fn table_erased_param_pair_count_system(param: TableErasedItemQueryResourceParam<TableErasedPair<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedPair<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime> {
@@ -845,14 +849,16 @@ fn table_erased_param_pair_count_system(param: TableErasedItemQueryResourceParam
 fn table_erased_param_pair_spawn_details_count_system(param: TableErasedItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime> {
     let spawned: i32 = 0;
     let value_sum: i32 = 0;
+    let file_sum: i32 = 0;
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
     while i < cnt {
         if param.query.items[i].details.is_spawned() { spawned = spawned + 1; };
         value_sum = value_sum + param.query.items[i].first.x + param.query.items[i].second.x;
+        file_sum = file_sum + param.query.items[i].details.spawned_by().file_id;
         i = i + 1;
     }
-    return table_erased_item_query_resource_param<TableErasedPairWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + value_sum });
+    return table_erased_item_query_resource_param<TableErasedPairWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: spawned * 100 + value_sum + file_sum * 1000 });
 }
 
 fn table_erased_param_spawn_detail_movement_system(query: Query<TableErasedPairMutWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>>) -> Query<TableErasedPairMutWithSpawnDetails<TableErasedParamPos, TableErasedParamVel>> {
@@ -1248,7 +1254,7 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let w5 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w4, e1, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 10, y: 0 });
     let first_tick = w5.registry.change_tick;
     let w6 = table_erased_world_increment_tick<TableErasedParamTime, TableErasedParamEvent>(w5);
-    let (w7, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w6);
+    let (w7, e2) = table_erased_world_spawn_with_location<TableErasedParamTime, TableErasedParamEvent>(w6, table_erased_spawn_location_new(5, 40, 7));
     let w8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w7, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 2, y: 0 });
     let w9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w8, e2, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 20, y: 0 });
     let second_tick = w9.registry.change_tick;
@@ -1259,15 +1265,15 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let entity_repeated = table_erased_run_entity_spawned_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w9r, second_tick, table_erased_param_entity_count_system);
     if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(entity_repeated).tick != 0 { panic(12101); };
     let details = table_erased_run_spawn_details_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w9r, first_tick, table_erased_param_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(details).tick != 100 + first_tick + second_tick { panic(12102); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(details).tick != 5100 + first_tick + second_tick { panic(12102); };
     let spawned_pos = table_erased_run_spawned_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w9r, TABLE_ERASED_PARAM_POS_TYPE, first_tick, table_erased_param_count_query_system);
     if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(spawned_pos).tick != 1 { panic(12103); };
     let pos_details = table_erased_run_with_spawn_details_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w9r, TABLE_ERASED_PARAM_POS_TYPE, first_tick, table_erased_param_pos_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pos_details).tick != 103 { panic(12104); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pos_details).tick != 5103 { panic(12104); };
     let pair_spawned = table_erased_run_pair_spawned_query_resource_system_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w9r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, first_tick, table_erased_param_pair_count_system);
     if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pair_spawned).tick != 1 { panic(12105); };
     let pair_details = table_erased_run_pair_with_spawn_details_query_resource_system_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w9r, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, first_tick, table_erased_param_pair_spawn_details_count_system);
-    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pair_details).tick != 133 { panic(12106); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pair_details).tick != 5133 { panic(12106); };
 
     let w10 = table_erased_run_pair_mut_system_spawned_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w9, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, first_tick, table_erased_param_movement_system);
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w10, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 1 { panic(12107); };

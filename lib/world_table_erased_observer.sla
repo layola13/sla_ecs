@@ -56,6 +56,12 @@ fn table_erased_observer_world_spawn<R, M>(world: TableErasedObserverWorld<R, M>
     return (world, entity);
 }
 
+fn table_erased_observer_world_spawn_with_location<R, M>(world: TableErasedObserverWorld<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedObserverWorld<R, M>, Entity) {
+    let (table, entity) = table_erased_world_spawn_with_location<R, M>(world.table, spawned_by);
+    world.table = table;
+    return (world, entity);
+}
+
 fn table_erased_observer_world_trigger_lifecycle<R, M>(world: TableErasedObserverWorld<R, M>, kind: i32, entity: Entity, component_id: i32, type_id: i32) -> TableErasedObserverWorld<R, M> {
     let event = TableErasedLifecycleEvent { kind: kind, entity_id: entity.id, component_id: component_id, type_id: type_id };
     world.observers = erased_observers_trigger_entity<TableErasedLifecycleEvent>(world.observers, entity, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_event_drop, event);
