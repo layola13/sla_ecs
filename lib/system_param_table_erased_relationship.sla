@@ -25,8 +25,18 @@ fn table_erased_relationship_commands_param_reserve_entity<R, M>(param: TableEra
     return (TableErasedRelationshipCommandsParam<R, M> { world: world, commands: commands }, entity);
 }
 
+fn table_erased_relationship_commands_param_reserve_entity_with_location<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedRelationshipCommandsParam<R, M>, Entity) {
+    let (world, commands, entity) = table_erased_relationship_commands_reserve_entity_with_location<R, M>(param.world, param.commands, spawned_by);
+    return (TableErasedRelationshipCommandsParam<R, M> { world: world, commands: commands }, entity);
+}
+
 fn table_erased_relationship_commands_param_spawn_related<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, relationship_kind_id: i32, target: Entity) -> (TableErasedRelationshipCommandsParam<R, M>, Entity) {
     let (world, commands, entity) = table_erased_relationship_commands_spawn_related<R, M>(param.world, param.commands, relationship_kind_id, target);
+    return (TableErasedRelationshipCommandsParam<R, M> { world: world, commands: commands }, entity);
+}
+
+fn table_erased_relationship_commands_param_spawn_related_with_location<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, relationship_kind_id: i32, target: Entity, spawned_by: TableErasedSpawnLocation) -> (TableErasedRelationshipCommandsParam<R, M>, Entity) {
+    let (world, commands, entity) = table_erased_relationship_commands_spawn_related_with_location<R, M>(param.world, param.commands, relationship_kind_id, target, spawned_by);
     return (TableErasedRelationshipCommandsParam<R, M> { world: world, commands: commands }, entity);
 }
 
@@ -134,8 +144,8 @@ fn table_erased_relationship_param_count_system(param: TableErasedRelationshipQu
 }
 
 fn table_erased_relationship_param_commands_system(param: TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent> {
-    let (param1, root) = table_erased_relationship_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param);
-    let (param2, child) = table_erased_relationship_commands_param_spawn_related<TableErasedTime, TableErasedEvent>(param1, 1, root);
+    let (param1, root) = table_erased_relationship_commands_param_reserve_entity_with_location<TableErasedTime, TableErasedEvent>(param, table_erased_spawn_location_new(97, 32, 6));
+    let (param2, child) = table_erased_relationship_commands_param_spawn_related_with_location<TableErasedTime, TableErasedEvent>(param1, 1, root, table_erased_spawn_location_new(98, 33, 7));
     let param3 = table_erased_relationship_commands_param_insert_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(param2, child, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 12, y: 0 });
     let param4 = table_erased_relationship_commands_param_insert_resource<TableErasedTime, TableErasedEvent>(param3, TableErasedTime { tick: 7 });
     return table_erased_relationship_commands_param_write_message<TableErasedTime, TableErasedEvent>(param4, TableErasedEvent { amount: 5 });
@@ -198,4 +208,9 @@ fn table_erased_relationship_param_reader_resmut_system(param: TableErasedRelati
     if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, child, position.id, TABLE_ERASED_POS_TYPE).x != 12 { panic(12521); };
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w3.table).tick != 7 { panic(12522); };
     if read.value.amount != 5 { panic(12523); };
+    let root_by = table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w3.table, root);
+    let child_by = table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w3.table, child);
+    if root_by.file_id != 97 { panic(12524); };
+    if child_by.file_id != 98 { panic(12525); };
+    if child_by.column != 7 { panic(12526); };
 }

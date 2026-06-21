@@ -48,6 +48,11 @@ fn table_erased_observer_commands_param_reserve_entity<R, M>(param: TableErasedO
     return (TableErasedObserverCommandsParam<R, M> { world: world, commands: commands }, entity);
 }
 
+fn table_erased_observer_commands_param_reserve_entity_with_location<R, M>(param: TableErasedObserverCommandsParam<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedObserverCommandsParam<R, M>, Entity) {
+    let (world, commands, entity) = table_erased_observer_commands_reserve_entity_with_location<R, M>(param.world, param.commands, spawned_by);
+    return (TableErasedObserverCommandsParam<R, M> { world: world, commands: commands }, entity);
+}
+
 fn table_erased_observer_commands_param_insert<T, R, M>(param: TableErasedObserverCommandsParam<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedObserverCommandsParam<R, M> {
     return TableErasedObserverCommandsParam<R, M> { world: param.world, commands: table_erased_observer_commands_insert<T, R, M>(param.commands, entity, component_id, type_id, value) };
 }
@@ -846,7 +851,7 @@ fn table_erased_observer_param_reader_resmut_system(param: TableErasedObserverRe
 }
 
 fn table_erased_observer_param_commands_system(param: TableErasedObserverCommandsParam<TableErasedTime, TableErasedEvent>) -> TableErasedObserverCommandsParam<TableErasedTime, TableErasedEvent> {
-    let (param1, entity) = table_erased_observer_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param);
+    let (param1, entity) = table_erased_observer_commands_param_reserve_entity_with_location<TableErasedTime, TableErasedEvent>(param, table_erased_spawn_location_new(96, 31, 5));
     let param2 = table_erased_observer_commands_param_insert_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(param1, entity, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 12, y: 0 });
     let param3 = table_erased_observer_commands_param_insert_resource<TableErasedTime, TableErasedEvent>(param2, TableErasedTime { tick: 7 });
     let param4 = table_erased_observer_commands_param_write_message<TableErasedTime, TableErasedEvent>(param3, TableErasedEvent { amount: 4 });
@@ -1107,6 +1112,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if read.value.amount != 4 { panic(14423); };
     if w4.observers.trigger_count != 3 { panic(14424); };
     if w4.observers.last_event_type_id != TableErasedObserverPing::event_type_id() { panic(14425); };
+    let spawned_by = table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w4.table, query.items[0].entity);
+    if spawned_by.file_id != 96 { panic(14426); };
+    if spawned_by.line != 31 { panic(14427); };
 }
 
 @test "table erased observer explicit event and filtered query params"() {

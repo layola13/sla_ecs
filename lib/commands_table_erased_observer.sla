@@ -48,9 +48,13 @@ fn table_erased_observer_commands_new<R, M>() -> TableErasedObserverCommands<R, 
 
 fn table_erased_observer_commands_len<R, M>(commands: TableErasedObserverCommands<R, M>) -> i64 { return len(commands.items) as i64; }
 
-fn table_erased_observer_commands_reserve_entity<R, M>(world: TableErasedObserverWorld<R, M>, commands: TableErasedObserverCommands<R, M>) -> (TableErasedObserverWorld<R, M>, TableErasedObserverCommands<R, M>, Entity) {
-    let (next_world, entity) = table_erased_observer_world_spawn<R, M>(world);
+fn table_erased_observer_commands_reserve_entity_with_location<R, M>(world: TableErasedObserverWorld<R, M>, commands: TableErasedObserverCommands<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedObserverWorld<R, M>, TableErasedObserverCommands<R, M>, Entity) {
+    let (next_world, entity) = table_erased_observer_world_spawn_with_location<R, M>(world, spawned_by);
     return (next_world, commands, entity);
+}
+
+fn table_erased_observer_commands_reserve_entity<R, M>(world: TableErasedObserverWorld<R, M>, commands: TableErasedObserverCommands<R, M>) -> (TableErasedObserverWorld<R, M>, TableErasedObserverCommands<R, M>, Entity) {
+    return table_erased_observer_commands_reserve_entity_with_location<R, M>(world, commands, table_erased_spawn_location_none());
 }
 
 fn table_erased_observer_commands_insert<T, R, M>(commands: TableErasedObserverCommands<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedObserverCommands<R, M> {
@@ -191,4 +195,22 @@ fn table_erased_observer_commands_test_new() -> TableErasedObserverCommands<Tabl
     if w3.observers.trigger_count != 1 { panic(14232); };
     if w3.observers.result_sum != entity.id + 7 { panic(14233); };
     if table_erased_observer_commands_len<TableErasedTime, TableErasedEvent>(c5) != 0 { panic(14234); };
+}
+
+@test "table erased observer commands preserve explicit spawn location"() {
+    let w0 = table_erased_observer_test_world_new();
+    let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let c0 = table_erased_observer_commands_test_new();
+    let loc = table_erased_spawn_location_new(92, 25, 7);
+    let (w3, c1, entity) = table_erased_observer_commands_reserve_entity_with_location<TableErasedTime, TableErasedEvent>(w2, c0, loc);
+    let c2 = table_erased_observer_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c1, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 15, y: 0 });
+    let (w4, c3) = table_erased_observer_commands_apply<TableErasedTime, TableErasedEvent>(w3, c2);
+    let spawned_by = table_erased_world_spawned_by<TableErasedTime, TableErasedEvent>(w4.table, entity);
+    let details = table_erased_world_spawn_details<TableErasedTime, TableErasedEvent>(w4.table, entity, 0);
+    if table_erased_observer_commands_len<TableErasedTime, TableErasedEvent>(c3) != 0 { panic(14240); };
+    if w4.observers.trigger_count != 2 { panic(14241); };
+    if spawned_by.file_id != 92 { panic(14242); };
+    if spawned_by.line != 25 { panic(14243); };
+    if details.spawned_by().column != 7 { panic(14244); };
 }

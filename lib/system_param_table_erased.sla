@@ -46,6 +46,11 @@ fn table_erased_commands_param_reserve_entity<R, M>(param: TableErasedCommandsPa
     return (TableErasedCommandsParam<R, M> { world: world, commands: commands }, entity);
 }
 
+fn table_erased_commands_param_reserve_entity_with_location<R, M>(param: TableErasedCommandsParam<R, M>, spawned_by: TableErasedSpawnLocation) -> (TableErasedCommandsParam<R, M>, Entity) {
+    let (world, commands, entity) = table_erased_commands_reserve_entity_with_location<R, M>(param.world, param.commands, spawned_by);
+    return (TableErasedCommandsParam<R, M> { world: world, commands: commands }, entity);
+}
+
 fn table_erased_commands_param_insert<T, R, M>(param: TableErasedCommandsParam<R, M>, entity: Entity, component_id: i32, type_id: i32, value: T) -> TableErasedCommandsParam<R, M> {
     return TableErasedCommandsParam<R, M> { world: param.world, commands: table_erased_commands_insert<T, R, M>(param.commands, entity, component_id, type_id, value) };
 }
@@ -793,7 +798,7 @@ fn table_erased_param_reader_resmut_system(param: TableErasedResMutMessageReadPa
 }
 
 fn table_erased_param_commands_system(param: TableErasedCommandsParam<TableErasedParamTime, TableErasedParamEvent>) -> TableErasedCommandsParam<TableErasedParamTime, TableErasedParamEvent> {
-    let (param1, entity) = table_erased_commands_param_reserve_entity<TableErasedParamTime, TableErasedParamEvent>(param);
+    let (param1, entity) = table_erased_commands_param_reserve_entity_with_location<TableErasedParamTime, TableErasedParamEvent>(param, table_erased_spawn_location_new(95, 30, 4));
     let param2 = table_erased_commands_param_insert_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(param1, entity, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 12, y: 0 });
     let param3 = table_erased_commands_param_insert_resource<TableErasedParamTime, TableErasedParamEvent>(param2, TableErasedParamTime { tick: 7 });
     return table_erased_commands_param_write_message<TableErasedParamTime, TableErasedParamEvent>(param3, TableErasedParamEvent { amount: 4 });
@@ -1051,6 +1056,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if reader2.cursor != 2 { panic(12022); };
     let query = table_erased_world_query<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w6, position.id, TABLE_ERASED_PARAM_POS_TYPE);
     if len(query.items) != 1 { panic(12023); };
+    let spawned_by = table_erased_world_spawned_by<TableErasedParamTime, TableErasedParamEvent>(w6, query.items[0].entity);
+    if spawned_by.file_id != 95 { panic(12024); };
+    if spawned_by.line != 30 { panic(12025); };
 }
 
 @test "table erased with added changed query resource params"() {
