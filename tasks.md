@@ -36,7 +36,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Implement verified dynamic `DynamicEntityAllocator`: Vec-backed generations/free-list/live occupancy, grows beyond 16 entities, rejects stale/fabricated generations.
 - [x] Add verified fixed-capacity generic `ComponentStore<T>` behavior tests: insert/get/has/slot/write/swap-remove.
 - [x] Add verified `DynamicComponentStore<T>` backed by `sa_std Vec`: grows past 16 components, get/has/slot/write/swap-remove.
-- [ ] Replace fixed-capacity demo storage with reusable component storage backed by dynamic `sa_std Vec` where compiler support permits.
+ - [x] Replace fixed-capacity demo storage with reusable component storage backed by dynamic `sa_std Vec` where compiler support permits.
 - [x] Add component registration metadata and storage-kind selection: table default, sparse-set opt-in.
 - [x] Implement verified registry-driven arbitrary component id membership index: registration, insert/remove membership, despawn cleanup, With/Without entity queries, Added/Changed ticks, and `for in` query iteration.
 - [x] Attach typed A/B component value stores to registry-driven component ids for a verified registry-bound typed value owner.
@@ -58,6 +58,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-row type-erased query-data helpers for Bevy-shaped `Query<(Option<A>, B)>`, `Query<(A, Has<B>)>`, and `Query<AnyOf<(A, B, C)>>`, with explicit library-level default-value providers and no compiler ECS semantics. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 - [x] Add verified table-row type-erased `Query<Entity>` helpers with `With`, `Without`, `(With, Without)`, `Added`, `Changed`, binary `Or`, and binary `And` filters plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 - [x] Add verified table-row type-erased binary `And` filter helpers for value, pair, and pair-mut queries across `With<T>`, `Without<T>`, `Added<T>`, and `Changed<T>` plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Add verified table-row type-erased `Spawned` filter and `SpawnDetails` tick query-data helpers for entity, component, pair, and pair-mut queries plus type-id auto lookup variants. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 - [x] Add verified homogeneous table-row `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_value.sla`.
 - [x] Add verified archetype-backed homogeneous `With<T>` value query helper. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_archetype_value.sla`.
 - [x] Add verified table-row type-erased relationship wrapper in `lib/world_table_erased_relationship.sla`: synchronized `TableErasedWorld` + `RelationshipWorld` entity allocation, component storage, relation source/target queries, linked despawn cleanup, and allocator free-list order preservation. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased_relationship.sla`.
@@ -125,6 +126,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Extend verified table-row type-erased system-param adapters with `Query<Entity>` resource params and binary `And` query-resource/pair-mut writeback params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`.
 - [x] Extend verified table-row type-erased observer system-param adapters with `Query<Entity>` resource params and binary `And` query-resource/pair-mut writeback params. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 - [x] Extend verified table-row type-erased and observer system-param adapters with nested `AnyOf` query-data runners for Bevy-shaped `Query<(A, AnyOf<(B, C)>)>` and `Query<(A, B, AnyOf<(C, D)>)>`. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`, `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`, and `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
+- [x] Extend verified table-row type-erased and observer system-param adapters with `Spawned` filters and `SpawnDetails` tick query-data runners for entity/component/pair/pair-mut query shapes. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`, `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`, and `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`.
 
 ## Phase 4: Resources, Messages, Examples
 
@@ -192,4 +194,5 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the table-erased README parity and global scalar const cleanup batch.
 - [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the table-erased `Query<Entity>` and binary `And` filter batch. Verification: all 54 current `lib/*.sla` files and all 41 current `examples/*.sla` files pass; generated `.sa` imports have no absolute `sa_std` path; `git diff --check` passes.
 - [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the table-erased `Option`-first, `Has`, and ternary `AnyOf` query-data batch. Verification: all 54 current `lib/*.sla` files and all 41 current `examples/*.sla` files pass; generated `.sa` imports have no absolute `sa_std` path; `git diff --check` passes.
-- [ ] Restore or intentionally supersede old `src/*.sla` prototype sources if future history requires them.
+- [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the table-erased `Spawned` / `SpawnDetails` query and system-param batch. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla`, `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased.sla`, and `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla` pass. No Sla compiler changes were made.
+ - [x] Restore or intentionally supersede old `src/*.sla` prototype sources if future history requires them.
