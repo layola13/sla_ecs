@@ -142,6 +142,11 @@ struct TableErasedPairWithAnyOf2<A, B, C, D> {
     any_second: TableErasedOptional<D>,
 }
 
+struct TableErasedCombination2<T> {
+    first: T,
+    second: T,
+}
+
 struct TableErasedPairMut<A, B> {
     first: TableErasedMut<A>,
     second_component_id: i32,
@@ -307,6 +312,37 @@ fn table_erased_query_pair_mut_get_many<A, B>(query: Query<TableErasedPairMut<A,
     let cnt = len(entities) as i64;
     while i < cnt {
         result.items.push(table_erased_query_pair_mut_get<A, B>(query, entities[i]));
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_combinations2<T>(query: Query<T>) -> Query<TableErasedCombination2<T>> {
+    let result = query_new<TableErasedCombination2<T>>();
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            result.items.push(TableErasedCombination2<T> { first: query.items[i], second: query.items[j] });
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_pair_mut_combinations2<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination2<TableErasedPairMut<A, B>>> {
+    let result = query_new<TableErasedCombination2<TableErasedPairMut<A, B>>>();
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        let j = i + 1;
+        while j < cnt {
+            if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(11937); };
+            result.items.push(TableErasedCombination2<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j] });
+            j = j + 1;
+        }
         i = i + 1;
     }
     return result;
@@ -2378,6 +2414,14 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if query_positions.items[1].value.x != 10 { panic(11918); };
     if query_positions.items[2].entity.id != e2.id { panic(11919); };
     if query_positions.items[2].value.x != 20 { panic(11920); };
+    let pos_combinations = table_erased_query_combinations2<EntityItem<TableErasedPos>>(all_positions);
+    if len(pos_combinations.items) != 3 { panic(11938); };
+    if pos_combinations.items[0].first.entity.id != e1.id { panic(11939); };
+    if pos_combinations.items[0].second.entity.id != e2.id { panic(11940); };
+    if pos_combinations.items[1].first.entity.id != e1.id { panic(11941); };
+    if pos_combinations.items[1].second.entity.id != e3.id { panic(11942); };
+    if pos_combinations.items[2].first.entity.id != e2.id { panic(11943); };
+    if pos_combinations.items[2].second.entity.id != e3.id { panic(11944); };
 
     let pos_get = table_erased_world_query_get_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e2, TABLE_ERASED_POS_TYPE);
     if pos_get.value.x != 20 { panic(11885); };
@@ -2403,6 +2447,10 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if query_pairs.items[1].first.x != 10 { panic(11926); };
     if query_pairs.items[2].entity.id != e2.id { panic(11927); };
     if query_pairs.items[2].first.x != 20 { panic(11928); };
+    let pair_combinations = table_erased_query_combinations2<TableErasedPair<TableErasedPos, TableErasedVel>>(all_pairs);
+    if len(pair_combinations.items) != 3 { panic(11945); };
+    if pair_combinations.items[0].first.entity.id != e1.id { panic(11946); };
+    if pair_combinations.items[0].second.entity.id != e2.id { panic(11947); };
     let pairs = table_erased_world_query_pair_get_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w11, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if pairs.items[0].entity.id != e3.id { panic(11894); };
     if pairs.items[0].first.x != 30 { panic(11895); };
@@ -2425,6 +2473,11 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if query_movers.items[1].first.value.x != 10 { panic(11934); };
     if query_movers.items[2].first.entity.id != e2.id { panic(11935); };
     if query_movers.items[2].first.value.x != 20 { panic(11936); };
+    let mover_combinations = table_erased_query_pair_mut_combinations2<TableErasedPos, TableErasedVel>(all_movers);
+    if len(mover_combinations.items) != 3 { panic(11948); };
+    if entity_eq(mover_combinations.items[0].first.first.entity, mover_combinations.items[0].second.first.entity) { panic(11949); };
+    if entity_eq(mover_combinations.items[1].first.first.entity, mover_combinations.items[1].second.first.entity) { panic(11950); };
+    if entity_eq(mover_combinations.items[2].first.first.entity, mover_combinations.items[2].second.first.entity) { panic(11951); };
     let movers = table_erased_world_query_pair_mut_first_get_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w11, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if movers.items[0].first.entity.id != e3.id { panic(11902); };
     if movers.items[0].first.value.x != 30 { panic(11903); };
