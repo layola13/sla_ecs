@@ -70,7 +70,7 @@ lib/
 ├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
-├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup, `Query<Entity>`, query `single`/`get`/ordered `get_many`/`iter_many` helpers, K=2..10 query combinations, query filters, binary `Or`/`And` filters, `Spawned` filters, `SpawnDetails::spawned_by` metadata, `Option`/`Has` query data, direct and nested `AnyOf` query data up to four branches, and optional tuple query data
+├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup, `Query<Entity>`, query `count`/`is_empty`/`contains`, `single`/`get`/ordered `get_many`/`iter_many` helpers, K=2..10 query combinations, query filters, binary `Or`/`And` filters, `Spawned` filters, `SpawnDetails::spawned_by` metadata, `Option`/`Has` query data, direct and nested `AnyOf` query data up to four branches, and optional tuple query data
 ├── world_table_erased_relationship.sla — TableErasedWorld + RelationshipWorld wrapper with synchronized entity allocation and linked despawn
 ├── world_table_erased_observer.sla — TableErasedWorld + erased observer wrapper with component lifecycle and targeted entity events
 ├── bundle_table_erased.sla — TableErasedWorld component bundle constructors plus spawn/insert helpers
