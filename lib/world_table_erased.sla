@@ -481,6 +481,32 @@ fn table_erased_query_entities_iter_many(query: Query<Entity>, entities: Vec<Ent
     return result;
 }
 
+fn table_erased_query_entities_get(query: Query<Entity>, entity: Entity) -> Entity {
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        if query.items[i] == entity { return query.items[i]; };
+        i = i + 1;
+    }
+    panic(12800);
+}
+
+fn table_erased_query_entities_get_many(query: Query<Entity>, entities: Vec<Entity>) -> Query<Entity> {
+    let result = query_new<Entity>();
+    let i: i64 = 0;
+    let cnt = len(entities) as i64;
+    while i < cnt {
+        result.items.push(table_erased_query_entities_get(query, entities[i]));
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_entities_get_many_unique(query: Query<Entity>, entities: Vec<Entity>) -> Query<Entity> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12801); };
+    return table_erased_query_entities_get_many(query, entities);
+}
+
 fn table_erased_query_entities_iter_many_unique(query: Query<Entity>, entities: Vec<Entity>) -> Query<Entity> {
     if table_erased_entity_vec_has_duplicate(entities) { panic(11978); };
     return table_erased_query_entities_iter_many(query, entities);
@@ -505,6 +531,11 @@ fn table_erased_query_entity_item_get_many<T>(query: Query<EntityItem<T>>, entit
         i = i + 1;
     }
     return result;
+}
+
+fn table_erased_query_entity_item_get_many_unique<T>(query: Query<EntityItem<T>>, entities: Vec<Entity>) -> Query<EntityItem<T>> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12802); };
+    return table_erased_query_entity_item_get_many<T>(query, entities);
 }
 
 fn table_erased_query_entity_item_iter_many<T>(query: Query<EntityItem<T>>, entities: Vec<Entity>) -> Query<EntityItem<T>> {
@@ -549,6 +580,11 @@ fn table_erased_query_pair_get_many<A, B>(query: Query<TableErasedPair<A, B>>, e
     return result;
 }
 
+fn table_erased_query_pair_get_many_unique<A, B>(query: Query<TableErasedPair<A, B>>, entities: Vec<Entity>) -> Query<TableErasedPair<A, B>> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12803); };
+    return table_erased_query_pair_get_many<A, B>(query, entities);
+}
+
 fn table_erased_query_pair_iter_many<A, B>(query: Query<TableErasedPair<A, B>>, entities: Vec<Entity>) -> Query<TableErasedPair<A, B>> {
     let result = query_new<TableErasedPair<A, B>>();
     let i: i64 = 0;
@@ -590,6 +626,10 @@ fn table_erased_query_pair_mut_get_many<A, B>(query: Query<TableErasedPairMut<A,
         i = i + 1;
     }
     return result;
+}
+
+fn table_erased_query_pair_mut_get_many_unique<A, B>(query: Query<TableErasedPairMut<A, B>>, entities: Vec<Entity>) -> Query<TableErasedPairMut<A, B>> {
+    return table_erased_query_pair_mut_get_many<A, B>(query, entities);
 }
 
 fn table_erased_query_pair_mut_iter_many<A, B>(query: Query<TableErasedPairMut<A, B>>, entities: Vec<Entity>) -> Query<TableErasedPairMut<A, B>> {
@@ -1858,9 +1898,19 @@ fn table_erased_world_query_get_many<T, R, M>(world: TableErasedWorld<R, M>, ent
     return query;
 }
 
+fn table_erased_world_query_get_many_unique<T, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, component_id: i32, type_id: i32) -> Query<EntityItem<T>> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12804); };
+    return table_erased_world_query_get_many<T, R, M>(world, entities, component_id, type_id);
+}
+
 fn table_erased_world_query_get_many_auto<T, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, type_id: i32) -> Query<EntityItem<T>> {
     let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
     return table_erased_world_query_get_many<T, R, M>(world, entities, component_id, type_id);
+}
+
+fn table_erased_world_query_get_many_unique_auto<T, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, type_id: i32) -> Query<EntityItem<T>> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_query_get_many_unique<T, R, M>(world, entities, component_id, type_id);
 }
 
 fn table_erased_world_query_iter_many<T, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, component_id: i32, type_id: i32) -> Query<EntityItem<T>> {
@@ -1932,6 +1982,11 @@ fn table_erased_world_query_entities_get_many<R, M>(world: TableErasedWorld<R, M
         i = i + 1;
     }
     return query;
+}
+
+fn table_erased_world_query_entities_get_many_unique<R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>) -> Query<Entity> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12805); };
+    return table_erased_world_query_entities_get_many<R, M>(world, entities);
 }
 
 fn table_erased_world_query_entities_iter_many<R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>) -> Query<Entity> {
@@ -2414,10 +2469,21 @@ fn table_erased_world_query_pair_get_many<A, B, R, M>(world: TableErasedWorld<R,
     return query;
 }
 
+fn table_erased_world_query_pair_get_many_unique<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
+    if table_erased_entity_vec_has_duplicate(entities) { panic(12806); };
+    return table_erased_world_query_pair_get_many<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
+}
+
 fn table_erased_world_query_pair_get_many_auto<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
     return table_erased_world_query_pair_get_many<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
+}
+
+fn table_erased_world_query_pair_get_many_unique_auto<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_get_many_unique<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
 }
 
 fn table_erased_world_query_pair_iter_many<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
@@ -3385,10 +3451,20 @@ fn table_erased_world_query_pair_mut_first_get_many<A, B, R, M>(world: TableEras
     return query;
 }
 
+fn table_erased_world_query_pair_mut_first_get_many_unique<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
+    return table_erased_world_query_pair_mut_first_get_many<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
+}
+
 fn table_erased_world_query_pair_mut_first_get_many_auto<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
     return table_erased_world_query_pair_mut_first_get_many<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
+}
+
+fn table_erased_world_query_pair_mut_first_get_many_unique_auto<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_mut_first_get_many_unique<A, B, R, M>(world, entities, first_component_id, first_type_id, second_component_id, second_type_id);
 }
 
 fn table_erased_world_query_pair_mut_first_iter_many<A, B, R, M>(world: TableErasedWorld<R, M>, entities: Vec<Entity>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPairMut<A, B>> {
@@ -3894,6 +3970,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if query_iter_entities.items[0].id != e3.id { panic(11991); };
     if query_iter_entities.items[1].id != e1.id { panic(11992); };
     if query_iter_entities.items[2].id != e3.id { panic(11993); };
+    let query_get_entities_unique = table_erased_query_entities_get_many_unique(all_entities, order);
+    if len(query_get_entities_unique.items) != 3 { panic(12810); };
+    if query_get_entities_unique.items[0].id != e3.id { panic(12811); };
+    if query_get_entities_unique.items[1].id != e1.id { panic(12812); };
+    if query_get_entities_unique.items[2].id != e2.id { panic(12813); };
     let unique_entities = table_erased_world_query_entities_iter_many_unique<TableErasedTime, TableErasedEvent>(w_iter2, unique_iter_order);
     if len(unique_entities.items) != 2 { panic(11994); };
     if unique_entities.items[0].id != e3.id { panic(11995); };
@@ -3904,6 +3985,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if entity_many.items[0].id != e3.id { panic(11882); };
     if entity_many.items[1].id != e1.id { panic(11883); };
     if entity_many.items[2].id != e2.id { panic(11884); };
+    let entity_many_unique = table_erased_world_query_entities_get_many_unique<TableErasedTime, TableErasedEvent>(w14, order);
+    if len(entity_many_unique.items) != 3 { panic(12814); };
+    if entity_many_unique.items[0].id != e3.id { panic(12815); };
+    if entity_many_unique.items[1].id != e1.id { panic(12816); };
+    if entity_many_unique.items[2].id != e2.id { panic(12817); };
 
     let all_positions = table_erased_world_query_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w14, TABLE_ERASED_POS_TYPE);
     if table_erased_query_count<EntityItem<TableErasedPos>>(all_positions) != 4 { panic(12720); };
@@ -3923,6 +4009,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if query_positions.items[1].value.x != 10 { panic(11918); };
     if query_positions.items[2].entity.id != e2.id { panic(11919); };
     if query_positions.items[2].value.x != 20 { panic(11920); };
+    let query_positions_unique = table_erased_query_entity_item_get_many_unique<TableErasedPos>(all_positions, order);
+    if len(query_positions_unique.items) != 3 { panic(12818); };
+    if query_positions_unique.items[0].entity.id != e3.id { panic(12819); };
+    if query_positions_unique.items[1].entity.id != e1.id { panic(12820); };
+    if query_positions_unique.items[2].entity.id != e2.id { panic(12821); };
     let query_iter_positions = table_erased_query_entity_item_iter_many<TableErasedPos>(all_positions, iter_order);
     if len(query_iter_positions.items) != 3 { panic(11997); };
     if query_iter_positions.items[0].entity.id != e3.id { panic(11998); };
@@ -3969,6 +4060,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if positions.items[1].value.x != 10 { panic(11889); };
     if positions.items[2].entity.id != e2.id { panic(11890); };
     if positions.items[2].value.x != 20 { panic(11891); };
+    let positions_unique = table_erased_world_query_get_many_unique_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w14, order, TABLE_ERASED_POS_TYPE);
+    if len(positions_unique.items) != 3 { panic(12822); };
+    if positions_unique.items[0].entity.id != e3.id { panic(12823); };
+    if positions_unique.items[1].entity.id != e1.id { panic(12824); };
+    if positions_unique.items[2].entity.id != e2.id { panic(12825); };
     let iter_positions = table_erased_world_query_iter_many_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w_iter2, iter_order, TABLE_ERASED_POS_TYPE);
     if len(iter_positions.items) != 3 { panic(12004); };
     if iter_positions.items[0].entity.id != e3.id { panic(12005); };
@@ -4001,6 +4097,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if query_pairs.items[1].first.x != 10 { panic(11926); };
     if query_pairs.items[2].entity.id != e2.id { panic(11927); };
     if query_pairs.items[2].first.x != 20 { panic(11928); };
+    let query_pairs_unique = table_erased_query_pair_get_many_unique<TableErasedPos, TableErasedVel>(all_pairs, order);
+    if len(query_pairs_unique.items) != 3 { panic(12826); };
+    if query_pairs_unique.items[0].entity.id != e3.id { panic(12827); };
+    if query_pairs_unique.items[1].entity.id != e1.id { panic(12828); };
+    if query_pairs_unique.items[2].entity.id != e2.id { panic(12829); };
     let query_iter_pairs = table_erased_query_pair_iter_many<TableErasedPos, TableErasedVel>(all_pairs, iter_order);
     if len(query_iter_pairs.items) != 3 { panic(12011); };
     if query_iter_pairs.items[0].entity.id != e3.id { panic(12012); };
@@ -4032,6 +4133,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if pairs.items[1].first.x != 10 { panic(11897); };
     if pairs.items[2].entity.id != e2.id { panic(11898); };
     if pairs.items[2].first.x != 20 { panic(11899); };
+    let pairs_unique = table_erased_world_query_pair_get_many_unique_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
+    if len(pairs_unique.items) != 3 { panic(12830); };
+    if pairs_unique.items[0].entity.id != e3.id { panic(12831); };
+    if pairs_unique.items[1].entity.id != e1.id { panic(12832); };
+    if pairs_unique.items[2].entity.id != e2.id { panic(12833); };
     let iter_pairs = table_erased_world_query_pair_iter_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w_iter2, iter_order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if len(iter_pairs.items) != 3 { panic(12018); };
     if iter_pairs.items[0].entity.id != e3.id { panic(12019); };
@@ -4064,6 +4170,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if query_movers.items[1].first.value.x != 10 { panic(11934); };
     if query_movers.items[2].first.entity.id != e2.id { panic(11935); };
     if query_movers.items[2].first.value.x != 20 { panic(11936); };
+    let query_movers_unique = table_erased_query_pair_mut_get_many_unique<TableErasedPos, TableErasedVel>(all_movers, order);
+    if len(query_movers_unique.items) != 3 { panic(12834); };
+    if query_movers_unique.items[0].first.entity.id != e3.id { panic(12835); };
+    if query_movers_unique.items[1].first.entity.id != e1.id { panic(12836); };
+    if query_movers_unique.items[2].first.entity.id != e2.id { panic(12837); };
     let query_iter_movers = table_erased_query_pair_mut_iter_many<TableErasedPos, TableErasedVel>(all_movers, unique_iter_order);
     if len(query_iter_movers.items) != 2 { panic(12025); };
     if query_iter_movers.items[0].first.entity.id != e3.id { panic(12026); };
@@ -4099,6 +4210,11 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if movers.items[1].first.value.x != 10 { panic(11905); };
     if movers.items[2].first.entity.id != e2.id { panic(11906); };
     if movers.items[2].first.value.x != 20 { panic(11907); };
+    let movers_unique = table_erased_world_query_pair_mut_first_get_many_unique_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
+    if len(movers_unique.items) != 3 { panic(12838); };
+    if movers_unique.items[0].first.entity.id != e3.id { panic(12839); };
+    if movers_unique.items[1].first.entity.id != e1.id { panic(12840); };
+    if movers_unique.items[2].first.entity.id != e2.id { panic(12841); };
     let iter_movers = table_erased_world_query_pair_mut_first_iter_many_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w_iter2, unique_iter_order, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if len(iter_movers.items) != 2 { panic(12031); };
     if iter_movers.items[0].first.entity.id != e3.id { panic(12032); };
