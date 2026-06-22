@@ -133,6 +133,50 @@ fn table_erased_observer_populated_query_resource_param<I, R>(query: Query<I>, r
     return TableErasedObserverPopulatedQueryResourceParam<I, R> { query: query, resource: resource };
 }
 
+fn table_erased_observer_query_resource_count<T, R>(param: TableErasedObserverQueryResourceParam<T, R>) -> i64 {
+    return table_erased_query_count<EntityItem<T>>(param.query);
+}
+
+fn table_erased_observer_query_resource_is_empty<T, R>(param: TableErasedObserverQueryResourceParam<T, R>) -> bool {
+    return table_erased_query_is_empty<EntityItem<T>>(param.query);
+}
+
+fn table_erased_observer_query_resource_contains<T, R>(param: TableErasedObserverQueryResourceParam<T, R>, entity: Entity) -> bool {
+    return table_erased_query_entity_item_contains<T>(param.query, entity);
+}
+
+fn table_erased_observer_item_query_resource_count<I, R>(param: TableErasedObserverItemQueryResourceParam<I, R>) -> i64 {
+    return table_erased_query_count<I>(param.query);
+}
+
+fn table_erased_observer_item_query_resource_is_empty<I, R>(param: TableErasedObserverItemQueryResourceParam<I, R>) -> bool {
+    return table_erased_query_is_empty<I>(param.query);
+}
+
+fn table_erased_observer_populated_query_resource_count<I, R>(param: TableErasedObserverPopulatedQueryResourceParam<I, R>) -> i64 {
+    return table_erased_query_count<I>(param.query);
+}
+
+fn table_erased_observer_populated_query_resource_is_empty<I, R>(param: TableErasedObserverPopulatedQueryResourceParam<I, R>) -> bool {
+    return table_erased_query_is_empty<I>(param.query);
+}
+
+fn table_erased_observer_entity_query_resource_contains<R>(param: TableErasedObserverItemQueryResourceParam<Entity, R>, entity: Entity) -> bool {
+    return table_erased_query_entities_contains(param.query, entity);
+}
+
+fn table_erased_observer_pair_query_resource_contains<A, B, R>(param: TableErasedObserverItemQueryResourceParam<TableErasedPair<A, B>, R>, entity: Entity) -> bool {
+    return table_erased_query_pair_contains<A, B>(param.query, entity);
+}
+
+fn table_erased_observer_pair_mut_item_query_resource_contains<A, B, R>(param: TableErasedObserverItemQueryResourceParam<TableErasedPairMut<A, B>, R>, entity: Entity) -> bool {
+    return table_erased_query_pair_mut_contains<A, B>(param.query, entity);
+}
+
+fn table_erased_observer_pair_mut_populated_query_resource_contains<A, B, R>(param: TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>, entity: Entity) -> bool {
+    return table_erased_query_pair_mut_contains<A, B>(param.query, entity);
+}
+
 fn table_erased_observer_query_optional_single<I>(query: Query<I>, default_item: fn() -> I) -> TableErasedOptional<I> {
     let cnt = len(query.items);
     if cnt == 0 { return TableErasedOptional<I> { has_value: false, value: default_item() }; };
@@ -1099,6 +1143,19 @@ fn table_erased_observer_param_count_query_system(param: TableErasedObserverQuer
     return table_erased_observer_query_resource_param<TableErasedPos, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 });
 }
 
+fn table_erased_observer_param_inspect_query_system(param: TableErasedObserverQueryResourceParam<TableErasedPos, TableErasedTime>) -> TableErasedObserverQueryResourceParam<TableErasedPos, TableErasedTime> {
+    let count = table_erased_observer_query_resource_count<TableErasedPos, TableErasedTime>(param);
+    let has_items = count > 0;
+    let tick = len(param.query.items) as i32 * 100;
+    if table_erased_observer_query_resource_is_empty<TableErasedPos, TableErasedTime>(param) { tick = tick + 10; };
+    if has_items {
+        let first = param.query.items[0].entity;
+        if table_erased_observer_query_resource_contains<TableErasedPos, TableErasedTime>(param, first) { tick = tick + 1; };
+    };
+    if table_erased_observer_query_resource_contains<TableErasedPos, TableErasedTime>(param, entity_placeholder()) { tick = tick + 50; };
+    return table_erased_observer_query_resource_param<TableErasedPos, TableErasedTime>(param.query, TableErasedTime { tick: tick });
+}
+
 fn table_erased_observer_marker_item_default() -> EntityItem<TableErasedMarker> {
     return EntityItem<TableErasedMarker> { entity: entity_placeholder(), value: table_erased_marker_default() };
 }
@@ -1150,6 +1207,19 @@ fn table_erased_observer_param_entity_count_system(param: TableErasedObserverIte
     return table_erased_observer_item_query_resource_param<Entity, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 });
 }
 
+fn table_erased_observer_param_entity_inspect_system(param: TableErasedObserverItemQueryResourceParam<Entity, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<Entity, TableErasedTime> {
+    let count = table_erased_observer_item_query_resource_count<Entity, TableErasedTime>(param);
+    let has_items = count > 0;
+    let tick = len(param.query.items) as i32 * 100;
+    if table_erased_observer_item_query_resource_is_empty<Entity, TableErasedTime>(param) { tick = tick + 10; };
+    if has_items {
+        let first = param.query.items[0];
+        if table_erased_observer_entity_query_resource_contains<TableErasedTime>(param, first) { tick = tick + 1; };
+    };
+    if table_erased_observer_entity_query_resource_contains<TableErasedTime>(param, entity_placeholder()) { tick = tick + 50; };
+    return table_erased_observer_item_query_resource_param<Entity, TableErasedTime>(param.query, TableErasedTime { tick: tick });
+}
+
 fn table_erased_observer_param_spawn_details_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedSpawnDetails, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedSpawnDetails, TableErasedTime> {
     let spawned: i32 = 0;
     let tick_sum: i32 = 0;
@@ -1182,6 +1252,32 @@ fn table_erased_observer_param_pos_spawn_details_count_system(param: TableErased
 
 fn table_erased_observer_param_pair_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime> {
     return table_erased_observer_item_query_resource_param<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 });
+}
+
+fn table_erased_observer_param_pair_inspect_system(param: TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime> {
+    let count = table_erased_observer_item_query_resource_count<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>(param);
+    let has_items = count > 0;
+    let tick = len(param.query.items) as i32 * 100;
+    if table_erased_observer_item_query_resource_is_empty<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>(param) { tick = tick + 10; };
+    if has_items {
+        let first = param.query.items[0].entity;
+        if table_erased_observer_pair_query_resource_contains<TableErasedPos, TableErasedVel, TableErasedTime>(param, first) { tick = tick + 1; };
+    };
+    if table_erased_observer_pair_query_resource_contains<TableErasedPos, TableErasedVel, TableErasedTime>(param, entity_placeholder()) { tick = tick + 50; };
+    return table_erased_observer_item_query_resource_param<TableErasedPair<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: tick });
+}
+
+fn table_erased_observer_param_pair_mut_populated_inspect_system(param: TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime> {
+    let count = table_erased_observer_populated_query_resource_count<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime>(param);
+    let has_items = count > 0;
+    let tick = len(param.query.items) as i32 * 100;
+    if table_erased_observer_populated_query_resource_is_empty<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime>(param) { tick = tick + 10; };
+    if has_items {
+        let first = param.query.items[0].first.entity;
+        if table_erased_observer_pair_mut_populated_query_resource_contains<TableErasedPos, TableErasedVel, TableErasedTime>(param, first) { tick = tick + 1; };
+    };
+    if table_erased_observer_pair_mut_populated_query_resource_contains<TableErasedPos, TableErasedVel, TableErasedTime>(param, entity_placeholder()) { tick = tick + 50; };
+    return table_erased_observer_populated_query_resource_param<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: tick });
 }
 
 fn table_erased_observer_param_pair_spawn_details_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedPairWithSpawnDetails<TableErasedPos, TableErasedVel>, TableErasedTime> {
@@ -1793,6 +1889,31 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w16r = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w16.table, TableErasedTime { tick: 0 }), observers: w16.observers };
     let w17 = table_erased_observer_run_any_of4_query_resource_system_auto<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag, TableErasedTime, TableErasedEvent>(w16r, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_pos_default, table_erased_tag_default, table_erased_observer_param_anyof4_marker_velocity_pos_tag_count_system);
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w17.table).tick != 22222 { panic(14600); };
+}
+
+@test "table erased observer system params expose query inspection"() {
+    let w0 = table_erased_observer_test_world_new();
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w3, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
+    let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let (w5, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
+    let w7 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w6, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 3, y: 0 });
+    let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 40, y: 0 });
+    let w9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 8, y: 0 });
+    let w9r = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w9.table, TableErasedTime { tick: 0 }), observers: w9.observers };
+
+    let component_seen = table_erased_observer_run_with_without_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_observer_param_inspect_query_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(component_seen.table).tick != 201 { panic(14610); };
+    let component_empty = table_erased_observer_run_with_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_observer_param_inspect_query_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(component_empty.table).tick != 10 { panic(14611); };
+    let entity_seen = table_erased_observer_run_entity_query_resource_system<TableErasedTime, TableErasedEvent>(w9r, table_erased_observer_param_entity_inspect_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(entity_seen.table).tick != 201 { panic(14612); };
+    let pair_seen = table_erased_observer_run_pair_spawned_query_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, 0, table_erased_observer_param_pair_inspect_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pair_seen.table).tick != 201 { panic(14613); };
+    let pair_mut_seen = table_erased_observer_run_pair_mut_populated_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w9r, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_observer_param_pair_mut_populated_inspect_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pair_mut_seen.table).tick != 201 { panic(14614); };
 }
 
 @test "table erased observer system params expose spawned and spawn details"() {
