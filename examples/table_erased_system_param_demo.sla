@@ -3,10 +3,14 @@
 const TABLE_ERASED_PARAM_DEMO_POS_TYPE: i32 = 451;
 const TABLE_ERASED_PARAM_DEMO_VEL_TYPE: i32 = 452;
 const TABLE_ERASED_PARAM_DEMO_MARKER_TYPE: i32 = 453;
+const TABLE_ERASED_PARAM_DEMO_AUX_TYPE: i32 = 454;
+const TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE: i32 = 455;
 
 struct TableErasedParamDemoPos { x: i32, y: i32 }
 struct TableErasedParamDemoVel { x: i32, y: i32 }
 struct TableErasedParamDemoMarker { value: i32 }
+struct TableErasedParamDemoAux { value: i32 }
+struct TableErasedParamDemoExtra { value: i32 }
 struct TableErasedParamDemoTime { tick: i32 }
 struct TableErasedParamDemoEvent { amount: i32 }
 
@@ -15,9 +19,13 @@ fn table_erased_param_demo_event_default() -> TableErasedParamDemoEvent { return
 fn table_erased_param_demo_pos_default() -> TableErasedParamDemoPos { return TableErasedParamDemoPos { x: 0, y: 0 }; }
 fn table_erased_param_demo_vel_default() -> TableErasedParamDemoVel { return TableErasedParamDemoVel { x: 0, y: 0 }; }
 fn table_erased_param_demo_marker_default() -> TableErasedParamDemoMarker { return TableErasedParamDemoMarker { value: 0 }; }
+fn table_erased_param_demo_aux_default() -> TableErasedParamDemoAux { return TableErasedParamDemoAux { value: 0 }; }
+fn table_erased_param_demo_extra_default() -> TableErasedParamDemoExtra { return TableErasedParamDemoExtra { value: 0 }; }
 fn table_erased_param_demo_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoPos; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_param_demo_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoVel; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_param_demo_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoMarker; let boxed = unsafe { Box::from_raw(typed) }; }
+fn table_erased_param_demo_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoAux; let boxed = unsafe { Box::from_raw(typed) }; }
+fn table_erased_param_demo_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoExtra; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_param_demo_world_new() -> TableErasedWorld<TableErasedParamDemoTime, TableErasedParamDemoEvent> {
     return table_erased_world_new<TableErasedParamDemoTime, TableErasedParamDemoEvent>(table_erased_param_demo_time_default(), table_erased_param_demo_event_default());
@@ -93,6 +101,50 @@ fn table_erased_param_demo_count_pair_with_anyof(param: TableErasedItemQueryReso
     return table_erased_item_query_resource_param<TableErasedPairWithAnyOf2<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos>, TableErasedParamDemoTime>(param.query, TableErasedParamDemoTime { tick: len(param.query.items) as i32 * 1000 + first_present * 100 + second_present * 10 + first_missing });
 }
 
+fn table_erased_param_demo_count_with_anyof4(param: TableErasedItemQueryResourceParam<TableErasedWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoMarker, TableErasedParamDemoVel, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime>) -> TableErasedItemQueryResourceParam<TableErasedWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoMarker, TableErasedParamDemoVel, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime> {
+    let first_present: i32 = 0;
+    let first_missing: i32 = 0;
+    let second_present: i32 = 0;
+    let third_present: i32 = 0;
+    let fourth_present: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].any_first.has_value {
+            first_present = first_present + 1;
+        } else {
+            first_missing = first_missing + 1;
+        };
+        if param.query.items[i].any_second.has_value { second_present = second_present + 1; };
+        if param.query.items[i].any_third.has_value { third_present = third_present + 1; };
+        if param.query.items[i].any_fourth.has_value { fourth_present = fourth_present + 1; };
+        i = i + 1;
+    }
+    return table_erased_item_query_resource_param<TableErasedWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoMarker, TableErasedParamDemoVel, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime>(param.query, TableErasedParamDemoTime { tick: len(param.query.items) as i32 * 100000 + first_present * 10000 + second_present * 1000 + third_present * 100 + fourth_present * 10 + first_missing });
+}
+
+fn table_erased_param_demo_count_pair_with_anyof4(param: TableErasedItemQueryResourceParam<TableErasedPairWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime>) -> TableErasedItemQueryResourceParam<TableErasedPairWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime> {
+    let first_present: i32 = 0;
+    let first_missing: i32 = 0;
+    let second_present: i32 = 0;
+    let third_present: i32 = 0;
+    let fourth_present: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].any_first.has_value {
+            first_present = first_present + 1;
+        } else {
+            first_missing = first_missing + 1;
+        };
+        if param.query.items[i].any_second.has_value { second_present = second_present + 1; };
+        if param.query.items[i].any_third.has_value { third_present = third_present + 1; };
+        if param.query.items[i].any_fourth.has_value { fourth_present = fourth_present + 1; };
+        i = i + 1;
+    }
+    return table_erased_item_query_resource_param<TableErasedPairWithAnyOf4<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos, TableErasedParamDemoAux, TableErasedParamDemoExtra>, TableErasedParamDemoTime>(param.query, TableErasedParamDemoTime { tick: len(param.query.items) as i32 * 100000 + first_present * 10000 + second_present * 1000 + third_present * 100 + fourth_present * 10 + first_missing });
+}
+
 fn table_erased_param_demo_movement_adapter(world: TableErasedWorld<TableErasedParamDemoTime, TableErasedParamDemoEvent>) -> TableErasedWorld<TableErasedParamDemoTime, TableErasedParamDemoEvent> {
     return table_erased_run_pair_mut_system<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoTime, TableErasedParamDemoEvent>(world, 1, TABLE_ERASED_PARAM_DEMO_POS_TYPE, 2, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, table_erased_param_demo_movement);
 }
@@ -106,10 +158,14 @@ fn table_erased_system_param_demo() -> i32 {
     let (w1, position) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w0, TABLE_ERASED_PARAM_DEMO_POS_TYPE, table_erased_param_demo_pos_drop);
     let (w2, velocity) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w1, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, table_erased_param_demo_vel_drop);
     let (w3, marker) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w2, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, table_erased_param_demo_marker_drop);
-    let (w4, entity) = table_erased_world_spawn<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3);
+    let (w3a, aux) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, table_erased_param_demo_aux_drop);
+    let (w3b, extra) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3a, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, table_erased_param_demo_extra_drop);
+    let (w4, entity) = table_erased_world_spawn<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3b);
     let w5 = table_erased_world_insert<TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w4, entity, position.id, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TableErasedParamDemoPos { x: 5, y: 0 });
     let w6 = table_erased_world_insert<TableErasedParamDemoVel, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w5, entity, velocity.id, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, TableErasedParamDemoVel { x: 4, y: 0 });
-    let w7 = table_erased_world_insert_resource<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w6, TableErasedParamDemoTime { tick: 3 });
+    let w6a = table_erased_world_insert<TableErasedParamDemoAux, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w6, entity, aux.id, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, TableErasedParamDemoAux { value: 7 });
+    let w6b = table_erased_world_insert<TableErasedParamDemoExtra, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w6a, entity, extra.id, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, TableErasedParamDemoExtra { value: 8 });
+    let w7 = table_erased_world_insert_resource<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w6b, TableErasedParamDemoTime { tick: 3 });
     let move_access = table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id);
     let resource_access = table_erased_access_write_messages(table_erased_access_write_resource(table_erased_system_access_none()));
     let s0 = table_erased_schedule_default<TableErasedParamDemoTime, TableErasedParamDemoEvent>();
@@ -122,15 +178,17 @@ fn table_erased_system_param_demo() -> i32 {
     let w12 = table_erased_run_without_query_resource_system<TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w11, position.id, TABLE_ERASED_PARAM_DEMO_POS_TYPE, velocity.id, table_erased_param_demo_count_without_velocity);
     let w13 = table_erased_run_with_any_of2_query_resource_system_auto<TableErasedParamDemoPos, TableErasedParamDemoMarker, TableErasedParamDemoVel, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w12, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, table_erased_param_demo_marker_default, table_erased_param_demo_vel_default, table_erased_param_demo_count_with_anyof);
     let w14 = table_erased_run_pair_with_any_of2_query_resource_system_auto<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w13, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, TABLE_ERASED_PARAM_DEMO_POS_TYPE, table_erased_param_demo_marker_default, table_erased_param_demo_pos_default, table_erased_param_demo_count_pair_with_anyof);
-    let out = table_erased_world_get<TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, entity, position.id, TABLE_ERASED_PARAM_DEMO_POS_TYPE);
-    let time = table_erased_world_get_resource<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14);
-    let event1 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, message_reader_new(), table_erased_param_demo_event_default());
-    let event2 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, event1.reader, table_erased_param_demo_event_default());
-    let event3 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, event2.reader, table_erased_param_demo_event_default());
-    let event4 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, event3.reader, table_erased_param_demo_event_default());
+    let w15 = table_erased_run_with_any_of4_query_resource_system_auto<TableErasedParamDemoPos, TableErasedParamDemoMarker, TableErasedParamDemoVel, TableErasedParamDemoAux, TableErasedParamDemoExtra, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w14, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, table_erased_param_demo_marker_default, table_erased_param_demo_vel_default, table_erased_param_demo_aux_default, table_erased_param_demo_extra_default, table_erased_param_demo_count_with_anyof4);
+    let w16 = table_erased_run_pair_with_any_of4_query_resource_system_auto<TableErasedParamDemoPos, TableErasedParamDemoVel, TableErasedParamDemoMarker, TableErasedParamDemoPos, TableErasedParamDemoAux, TableErasedParamDemoExtra, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w15, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, table_erased_param_demo_marker_default, table_erased_param_demo_pos_default, table_erased_param_demo_aux_default, table_erased_param_demo_extra_default, table_erased_param_demo_count_pair_with_anyof4);
+    let out = table_erased_world_get<TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16, entity, position.id, TABLE_ERASED_PARAM_DEMO_POS_TYPE);
+    let time = table_erased_world_get_resource<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16);
+    let event1 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16, message_reader_new(), table_erased_param_demo_event_default());
+    let event2 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16, event1.reader, table_erased_param_demo_event_default());
+    let event3 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16, event2.reader, table_erased_param_demo_event_default());
+    let event4 = table_erased_world_read_message<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w16, event3.reader, table_erased_param_demo_event_default());
     if table_erased_schedule_conflict_count<TableErasedParamDemoTime, TableErasedParamDemoEvent>(s2) != 0 { panic(12050); };
     if out.x != 9 { panic(12051); };
-    if time.tick != 1011 { panic(12052); };
+    if time.tick != 101111 { panic(12052); };
     if event1.value.amount != 10 { panic(12053); };
     if reader1.cursor != 1 { panic(12054); };
     if event2.value.amount != 6 { panic(12055); };
@@ -142,5 +200,5 @@ fn table_erased_system_param_demo() -> i32 {
 fn main() -> i32 { return table_erased_system_param_demo(); }
 
 @test "table erased system param demo injects query commands resource and messages"() {
-    if table_erased_system_param_demo() != 1046 { panic(12058); };
+    if table_erased_system_param_demo() != 101146 { panic(12058); };
 }
