@@ -19,18 +19,38 @@ fn table_erased_relationship_commands_demo() -> i32 {
     if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 0), child) != true { panic(12337); };
     if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 1), third) != true { panic(12338); };
     if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 2), second) != true { panic(12339); };
-    let c7 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c6, root);
-    let (w6, c8) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c7);
-    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c8) != 0 { panic(12333); };
-    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, root) != false { panic(12334); };
-    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, child) != false { panic(12335); };
-    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, second) != false { panic(12340); };
-    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, third) != false { panic(12341); };
-    return 3;
+    let remove: Vec<Entity> = Vec::new();
+    remove.push(second);
+    let c7 = table_erased_relationship_commands_remove_related<TableErasedTime, TableErasedEvent>(c6, kind.id, root, remove);
+    let replacement: Vec<Entity> = Vec::new();
+    replacement.push(third);
+    replacement.push(child);
+    replacement.push(second);
+    let c8 = table_erased_relationship_commands_replace_related<TableErasedTime, TableErasedEvent>(c7, kind.id, root, replacement);
+    let unrelate: Vec<Entity> = Vec::new();
+    unrelate.push(child);
+    let relate: Vec<Entity> = Vec::new();
+    relate.push(third);
+    relate.push(second);
+    let newly: Vec<Entity> = Vec::new();
+    let c9 = table_erased_relationship_commands_replace_related_with_difference<TableErasedTime, TableErasedEvent>(c8, kind.id, root, unrelate, relate, newly);
+    let (w6, c10) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c9);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c10) != 0 { panic(12342); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w6, kind.id, root) != 2 { panic(12343); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w6, kind.id, root, 0), third) != true { panic(12344); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w6, kind.id, root, 1), second) != true { panic(12345); };
+    let c11 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c10, root);
+    let (w7, c12) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w6, c11);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c12) != 0 { panic(12333); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, root) != false { panic(12334); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, child) != true { panic(12335); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, second) != false { panic(12340); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, third) != false { panic(12341); };
+    return 2;
 }
 
 fn main() -> i32 { return table_erased_relationship_commands_demo(); }
 
 @test "table erased relationship commands demo applies ordered ECS and relation mutations"() {
-    if table_erased_relationship_commands_demo() != 3 { panic(12336); };
+    if table_erased_relationship_commands_demo() != 2 { panic(12336); };
 }
