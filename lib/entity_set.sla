@@ -22,6 +22,32 @@ struct UniqueEntityVec {
     values: Vec<Entity>,
 }
 
+struct EntityHashSet {
+    keys: Vec<Entity>,
+    states: Vec<i32>,
+    len_value: i64,
+    tombstones: i64,
+}
+
+struct EntityHashMap<T> {
+    keys: Vec<Entity>,
+    states: Vec<i32>,
+    value_slots: Vec<i64>,
+    values: Vec<T>,
+    len_value: i64,
+    tombstones: i64,
+}
+
+struct EntityHashProbe {
+    slot: i64,
+    found: bool,
+}
+
+struct EntityHashMapGet<T> {
+    found: bool,
+    value: T,
+}
+
 impl EntitySet {
     fn iter_len(&self) -> i64 { return len(self.values) as i64; }
     fn iter_at(&self, index: i64) -> Entity { return self.values[index]; }
@@ -30,6 +56,287 @@ impl EntitySet {
 impl UniqueEntityVec {
     fn iter_len(&self) -> i64 { return len(self.values) as i64; }
     fn iter_at(&self, index: i64) -> Entity { return self.values[index]; }
+}
+
+impl EntityHashSet {
+    fn iter_len(&self) -> i64 { return self.len_value; }
+    fn iter_at(&self, index: i64) -> Entity {
+        let seen: i64 = 0;
+        let i: i64 = 0;
+        let count = len(self.states) as i64;
+        while i < count {
+            if self.states[i] == 1 {
+                if seen == index { return self.keys[i]; };
+                seen = seen + 1;
+            };
+            i = i + 1;
+        }
+        return entity_placeholder();
+    }
+}
+
+fn entity_hash_state_empty() -> i32 { return 0; }
+fn entity_hash_state_filled() -> i32 { return 1; }
+fn entity_hash_state_tombstone() -> i32 { return 2; }
+
+fn entity_hash_next_capacity(requested: i64) -> i64 {
+    let cap: i64 = 16;
+    while cap < requested {
+        cap = cap * 2;
+    }
+    return cap;
+}
+
+fn entity_hash_slot_index(entity: Entity, capacity: i64) -> i64 {
+    if capacity <= 0 { return 0; };
+    let value = hash(entity) as i64;
+    if value < 0 { value = 0 - value; };
+    return value % capacity;
+}
+
+fn entity_hash_set_with_capacity(requested: i64) -> EntityHashSet {
+    let cap = entity_hash_next_capacity(requested);
+    let keys: Vec<Entity> = Vec::new();
+    let states: Vec<i32> = Vec::new();
+    let i: i64 = 0;
+    while i < cap {
+        keys.push(entity_placeholder());
+        states.push(entity_hash_state_empty());
+        i = i + 1;
+    }
+    return EntityHashSet { keys: keys, states: states, len_value: 0, tombstones: 0 };
+}
+
+fn entity_hash_set_new() -> EntityHashSet {
+    return entity_hash_set_with_capacity(16);
+}
+
+fn entity_hash_set_len(set: EntityHashSet) -> i64 { return set.len_value; }
+
+fn entity_hash_set_capacity(set: EntityHashSet) -> i64 { return len(set.states) as i64; }
+
+fn entity_hash_set_is_empty(set: EntityHashSet) -> bool { return set.len_value == 0; }
+
+fn entity_hash_set_probe(set: EntityHashSet, key: Entity) -> EntityHashProbe {
+    let cap = len(set.states) as i64;
+    if cap <= 0 { return EntityHashProbe { slot: -1, found: false }; };
+    let index = entity_hash_slot_index(key, cap);
+    let steps: i64 = 0;
+    let first_tombstone: i64 = -1;
+    while steps < cap {
+        let state = set.states[index];
+        if state == entity_hash_state_empty() {
+            if first_tombstone >= 0 { return EntityHashProbe { slot: first_tombstone, found: false }; };
+            return EntityHashProbe { slot: index, found: false };
+        };
+        if state == entity_hash_state_tombstone() {
+            if first_tombstone < 0 { first_tombstone = index; };
+        };
+        if state == entity_hash_state_filled() {
+            if set.keys[index] == key { return EntityHashProbe { slot: index, found: true }; };
+        };
+        index = index + 1;
+        if index >= cap { index = 0; };
+        steps = steps + 1;
+    }
+    if first_tombstone >= 0 { return EntityHashProbe { slot: first_tombstone, found: false }; };
+    return EntityHashProbe { slot: -1, found: false };
+}
+
+fn entity_hash_set_insert_raw(set: EntityHashSet, key: Entity) -> EntityHashSet {
+    let probe = entity_hash_set_probe(set, key);
+    if probe.found { return set; };
+    if probe.slot < 0 { return set; };
+    let previous_state = set.states[probe.slot];
+    if previous_state == entity_hash_state_tombstone() { set.tombstones = set.tombstones - 1; };
+    set.keys[probe.slot] = key;
+    set.states[probe.slot] = entity_hash_state_filled();
+    set.len_value = set.len_value + 1;
+    return set;
+}
+
+fn entity_hash_set_rehash(set: EntityHashSet, requested: i64) -> EntityHashSet {
+    let out = entity_hash_set_with_capacity(requested);
+    let i: i64 = 0;
+    let count = len(set.states) as i64;
+    while i < count {
+        if set.states[i] == entity_hash_state_filled() { out = entity_hash_set_insert_raw(out, set.keys[i]); };
+        i = i + 1;
+    }
+    return out;
+}
+
+fn entity_hash_set_insert(set: EntityHashSet, key: Entity) -> EntityHashSet {
+    let cap = len(set.states) as i64;
+    if ((set.len_value + set.tombstones + 1) * 4) >= (cap * 3) {
+        set = entity_hash_set_rehash(set, cap * 2);
+    };
+    return entity_hash_set_insert_raw(set, key);
+}
+
+fn entity_hash_set_insert_result(set: EntityHashSet, key: Entity) -> (EntityHashSet, bool) {
+    if entity_hash_set_contains(set, key) { return (set, false); };
+    return (entity_hash_set_insert(set, key), true);
+}
+
+fn entity_hash_set_contains(set: EntityHashSet, key: Entity) -> bool {
+    let probe = entity_hash_set_probe(set, key);
+    return probe.found;
+}
+
+fn entity_hash_set_remove(set: EntityHashSet, key: Entity) -> EntityHashSet {
+    let probe = entity_hash_set_probe(set, key);
+    if probe.found != true { return set; };
+    set.keys[probe.slot] = entity_placeholder();
+    set.states[probe.slot] = entity_hash_state_tombstone();
+    set.len_value = set.len_value - 1;
+    set.tombstones = set.tombstones + 1;
+    return set;
+}
+
+fn entity_hash_set_to_entity_set(set: EntityHashSet) -> EntitySet {
+    let out = entity_set_new();
+    let i: i64 = 0;
+    let count = len(set.states) as i64;
+    while i < count {
+        if set.states[i] == entity_hash_state_filled() { out = entity_set_insert(out, set.keys[i]); };
+        i = i + 1;
+    }
+    return out;
+}
+
+fn entity_hash_map_new<T>() -> EntityHashMap<T> {
+    return entity_hash_map_with_capacity<T>(16);
+}
+
+fn entity_hash_map_with_capacity<T>(requested: i64) -> EntityHashMap<T> {
+    let cap = entity_hash_next_capacity(requested);
+    let keys: Vec<Entity> = Vec::new();
+    let states: Vec<i32> = Vec::new();
+    let value_slots: Vec<i64> = Vec::new();
+    let values: Vec<T> = Vec::new();
+    let i: i64 = 0;
+    while i < cap {
+        keys.push(entity_placeholder());
+        states.push(entity_hash_state_empty());
+        value_slots.push(-1);
+        i = i + 1;
+    }
+    return EntityHashMap<T> { keys: keys, states: states, value_slots: value_slots, values: values, len_value: 0, tombstones: 0 };
+}
+
+fn entity_hash_map_len<T>(map: EntityHashMap<T>) -> i64 { return map.len_value; }
+
+fn entity_hash_map_capacity<T>(map: EntityHashMap<T>) -> i64 { return len(map.states) as i64; }
+
+fn entity_hash_map_is_empty<T>(map: EntityHashMap<T>) -> bool { return map.len_value == 0; }
+
+fn entity_hash_map_probe<T>(map: EntityHashMap<T>, key: Entity) -> EntityHashProbe {
+    let cap = len(map.states) as i64;
+    if cap <= 0 { return EntityHashProbe { slot: -1, found: false }; };
+    let index = entity_hash_slot_index(key, cap);
+    let steps: i64 = 0;
+    let first_tombstone: i64 = -1;
+    while steps < cap {
+        let state = map.states[index];
+        if state == entity_hash_state_empty() {
+            if first_tombstone >= 0 { return EntityHashProbe { slot: first_tombstone, found: false }; };
+            return EntityHashProbe { slot: index, found: false };
+        };
+        if state == entity_hash_state_tombstone() {
+            if first_tombstone < 0 { first_tombstone = index; };
+        };
+        if state == entity_hash_state_filled() {
+            if map.keys[index] == key { return EntityHashProbe { slot: index, found: true }; };
+        };
+        index = index + 1;
+        if index >= cap { index = 0; };
+        steps = steps + 1;
+    }
+    if first_tombstone >= 0 { return EntityHashProbe { slot: first_tombstone, found: false }; };
+    return EntityHashProbe { slot: -1, found: false };
+}
+
+fn entity_hash_map_insert_raw<T>(map: EntityHashMap<T>, key: Entity, value: T) -> EntityHashMap<T> {
+    let probe = entity_hash_map_probe<T>(map, key);
+    if probe.found {
+        let value_slot = map.value_slots[probe.slot];
+        map.values[value_slot] = value;
+        return map;
+    };
+    if probe.slot < 0 { return map; };
+    let previous_state = map.states[probe.slot];
+    if previous_state == entity_hash_state_tombstone() { map.tombstones = map.tombstones - 1; };
+    let value_slot = len(map.values) as i64;
+    map.values.push(value);
+    map.keys[probe.slot] = key;
+    map.value_slots[probe.slot] = value_slot;
+    map.states[probe.slot] = entity_hash_state_filled();
+    map.len_value = map.len_value + 1;
+    return map;
+}
+
+fn entity_hash_map_rehash<T>(map: EntityHashMap<T>, requested: i64) -> EntityHashMap<T> {
+    let out = entity_hash_map_with_capacity<T>(requested);
+    let i: i64 = 0;
+    let count = len(map.states) as i64;
+    while i < count {
+        if map.states[i] == entity_hash_state_filled() {
+            let value_slot = map.value_slots[i];
+            out = entity_hash_map_insert_raw<T>(out, map.keys[i], map.values[value_slot]);
+        };
+        i = i + 1;
+    }
+    return out;
+}
+
+fn entity_hash_map_insert<T>(map: EntityHashMap<T>, key: Entity, value: T) -> EntityHashMap<T> {
+    let cap = len(map.states) as i64;
+    if ((map.len_value + map.tombstones + 1) * 4) >= (cap * 3) {
+        map = entity_hash_map_rehash<T>(map, cap * 2);
+    };
+    return entity_hash_map_insert_raw<T>(map, key, value);
+}
+
+fn entity_hash_map_contains_key<T>(map: EntityHashMap<T>, key: Entity) -> bool {
+    let probe = entity_hash_map_probe<T>(map, key);
+    return probe.found;
+}
+
+fn entity_hash_map_get_or<T>(map: EntityHashMap<T>, key: Entity, default_value: T) -> EntityHashMapGet<T> {
+    let probe = entity_hash_map_probe<T>(map, key);
+    if probe.found != true { return EntityHashMapGet<T> { found: false, value: default_value }; };
+    let value_slot = map.value_slots[probe.slot];
+    return EntityHashMapGet<T> { found: true, value: map.values[value_slot] };
+}
+
+fn entity_hash_map_get_unchecked<T>(map: EntityHashMap<T>, key: Entity) -> T {
+    let probe = entity_hash_map_probe<T>(map, key);
+    if probe.found != true { panic(21680); };
+    let value_slot = map.value_slots[probe.slot];
+    return map.values[value_slot];
+}
+
+fn entity_hash_map_remove<T>(map: EntityHashMap<T>, key: Entity) -> EntityHashMap<T> {
+    let probe = entity_hash_map_probe<T>(map, key);
+    if probe.found != true { return map; };
+    map.keys[probe.slot] = entity_placeholder();
+    map.value_slots[probe.slot] = -1;
+    map.states[probe.slot] = entity_hash_state_tombstone();
+    map.len_value = map.len_value - 1;
+    map.tombstones = map.tombstones + 1;
+    return map;
+}
+
+fn entity_hash_map_keys<T>(map: EntityHashMap<T>) -> EntityHashSet {
+    let out = entity_hash_set_with_capacity(len(map.states) as i64);
+    let i: i64 = 0;
+    let count = len(map.states) as i64;
+    while i < count {
+        if map.states[i] == entity_hash_state_filled() { out = entity_hash_set_insert(out, map.keys[i]); };
+        i = i + 1;
+    }
+    return out;
 }
 
 fn entity_set_new() -> EntitySet {
@@ -623,4 +930,103 @@ fn entity_map_clear<T>(map: EntityMap<T>) -> EntityMap<T> {
     if entity_set_contains(set, e1) != true { panic(21559); };
     if entity_set_contains(set, e2) != true { panic(21560); };
     if entity_set_contains(set, e3) != true { panic(21561); };
+}
+
+@test "entity hash set uses derived hash and value equality"() {
+    let e1 = entity_new(1, 0);
+    let e1_same = entity_new(1, 0);
+    let e1_stale = entity_new(1, 1);
+    let e2 = entity_new(2, 0);
+
+    let set0 = entity_hash_set_new();
+    let (set1, inserted1) = entity_hash_set_insert_result(set0, e1);
+    let (set2, inserted2) = entity_hash_set_insert_result(set1, e1_same);
+    let set3 = entity_hash_set_insert(entity_hash_set_insert(set2, e1_stale), e2);
+
+    if inserted1 != true { panic(21600); };
+    if inserted2 != false { panic(21601); };
+    if entity_hash_set_len(set3) != 3 { panic(21602); };
+    if entity_hash_set_contains(set3, e1_same) != true { panic(21603); };
+    if entity_hash_set_contains(set3, e1_stale) != true { panic(21604); };
+    if entity_hash_set_contains(set3, entity_new(99, 0)) { panic(21605); };
+
+    let plain = entity_hash_set_to_entity_set(set3);
+    if entity_set_len(plain) != 3 { panic(21606); };
+    if entity_set_contains(plain, e2) != true { panic(21607); };
+}
+
+@test "entity hash set grows and reuses tombstones"() {
+    let set = entity_hash_set_with_capacity(2);
+    let i: i32 = 0;
+    while i < 40 {
+        set = entity_hash_set_insert(set, entity_new(i + 1, i % 3));
+        i = i + 1;
+    }
+    if entity_hash_set_len(set) != 40 { panic(21620); };
+    if entity_hash_set_capacity(set) < 64 { panic(21621); };
+
+    let j: i32 = 0;
+    while j < 40 {
+        if entity_hash_set_contains(set, entity_new(j + 1, j % 3)) != true { panic(21622); };
+        j = j + 1;
+    }
+
+    let removed = entity_hash_set_remove(entity_hash_set_remove(set, entity_new(5, 1)), entity_new(12, 2));
+    if entity_hash_set_len(removed) != 38 { panic(21623); };
+    if entity_hash_set_contains(removed, entity_new(5, 1)) { panic(21624); };
+
+    let reused = entity_hash_set_insert(entity_hash_set_insert(removed, entity_new(5, 1)), entity_new(88, 0));
+    if entity_hash_set_len(reused) != 40 { panic(21625); };
+    if entity_hash_set_contains(reused, entity_new(5, 1)) != true { panic(21626); };
+    if entity_hash_set_contains(reused, entity_new(88, 0)) != true { panic(21627); };
+}
+
+@test "entity hash map replaces by value key and keeps stale generations distinct"() {
+    let e1 = entity_new(3, 0);
+    let e1_same = entity_new(3, 0);
+    let e1_stale = entity_new(3, 1);
+    let e2 = entity_new(4, 0);
+
+    let map0 = entity_hash_map_new<i32>();
+    let map1 = entity_hash_map_insert<i32>(map0, e1, 10);
+    let map2 = entity_hash_map_insert<i32>(map1, e1_same, 20);
+    let map3 = entity_hash_map_insert<i32>(entity_hash_map_insert<i32>(map2, e1_stale, 30), e2, 40);
+
+    if entity_hash_map_len<i32>(map3) != 3 { panic(21640); };
+    if entity_hash_map_get_unchecked<i32>(map3, e1) != 20 { panic(21641); };
+    if entity_hash_map_get_unchecked<i32>(map3, e1_same) != 20 { panic(21642); };
+    if entity_hash_map_get_unchecked<i32>(map3, e1_stale) != 30 { panic(21643); };
+
+    let missing = entity_hash_map_get_or<i32>(map3, entity_new(99, 0), -9);
+    if missing.found { panic(21644); };
+    if missing.value != -9 { panic(21645); };
+
+    let found = entity_hash_map_get_or<i32>(map3, e2, -1);
+    if found.found != true { panic(21646); };
+    if found.value != 40 { panic(21647); };
+}
+
+@test "entity hash map grows removes and exposes hash key set"() {
+    let map = entity_hash_map_with_capacity<i32>(2);
+    let i: i32 = 0;
+    while i < 36 {
+        map = entity_hash_map_insert<i32>(map, entity_new(i + 10, i % 4), i * 10);
+        i = i + 1;
+    }
+    if entity_hash_map_len<i32>(map) != 36 { panic(21660); };
+    if entity_hash_map_capacity<i32>(map) < 64 { panic(21661); };
+    if entity_hash_map_get_unchecked<i32>(map, entity_new(20, 2)) != 100 { panic(21662); };
+
+    let removed = entity_hash_map_remove<i32>(entity_hash_map_remove<i32>(map, entity_new(20, 2)), entity_new(30, 0));
+    if entity_hash_map_len<i32>(removed) != 34 { panic(21663); };
+    if entity_hash_map_contains_key<i32>(removed, entity_new(20, 2)) { panic(21664); };
+
+    let reinserted = entity_hash_map_insert<i32>(removed, entity_new(20, 2), 777);
+    if entity_hash_map_len<i32>(reinserted) != 35 { panic(21665); };
+    if entity_hash_map_get_unchecked<i32>(reinserted, entity_new(20, 2)) != 777 { panic(21666); };
+
+    let keys = entity_hash_map_keys<i32>(reinserted);
+    if entity_hash_set_len(keys) != 35 { panic(21667); };
+    if entity_hash_set_contains(keys, entity_new(20, 2)) != true { panic(21668); };
+    if entity_hash_set_contains(keys, entity_new(30, 0)) { panic(21669); };
 }

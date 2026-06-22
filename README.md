@@ -48,7 +48,7 @@ cap.
 lib/
 ├── entity.sla        — Reusable `@derive(copy, eq, ord, hash, debug)` Entity handle + allocator, generation checks, bit roundtrip
 ├── entity_dynamic.sla — Vec-backed dynamic entity allocator with live/stale checks
-├── entity_set.sla    — EntitySet, EntityMap<T>, and ordered UniqueEntityVec with Entity value-key semantics while std hash containers remain pointer-keyed
+├── entity_set.sla    — EntitySet, EntityMap<T>, EntityHashSet, EntityHashMap<T>, and ordered UniqueEntityVec with Entity value-key semantics while std hash containers remain pointer-keyed
 ├── store.sla         — Generic fixed-capacity ComponentStore<T>
 ├── dyn_store.sla     — Generic Vec-backed table-style DynamicComponentStore<T>
 ├── sparse_store.sla  — Generic Vec-backed SparseComponentStore<T>

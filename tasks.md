@@ -36,7 +36,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 
 - [x] Implement reusable Bevy-style `Entity` identity in `lib/`: index + generation, placeholder, bit conversion, stale rejection, free-list reuse.
 - [x] Attach generic value derives to `Entity`: `@derive(copy, eq, ord, hash, debug)`, keep `entity_eq` as a compatibility wrapper over `==`, and verify direct copy/comparison/hash/debug behavior. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/entity.sla`, `SA_PLUGIN_DEV=1 sa sla test lib/hierarchy.sla`, and `SA_PLUGIN_DEV=1 sa sla test examples/hierarchy_relationship_demo.sla` pass.
-- [x] Add verified `EntitySet`, `EntityMap<T>`, and ordered `UniqueEntityVec` value-key collection helpers in `lib/entity_set.sla`, using `Entity` derived equality instead of current `sa_std` pointer-keyed hash containers. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/entity_set.sla` passes with 12 tests.
+- [x] Add verified `EntitySet`, `EntityMap<T>`, ordered `UniqueEntityVec`, `EntityHashSet`, and `EntityHashMap<T>` value-key collection helpers in `lib/entity_set.sla`, using `Entity` derived equality/hash instead of current `sa_std` pointer-keyed hash containers. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/entity_set.sla` passes with 16 tests.
 - [x] Implement verified dynamic `DynamicEntityAllocator`: Vec-backed generations/free-list/live occupancy, grows beyond 16 entities, rejects stale/fabricated generations.
 - [x] Add verified fixed-capacity generic `ComponentStore<T>` behavior tests: insert/get/has/slot/write/swap-remove.
 - [x] Add verified `DynamicComponentStore<T>` backed by `sa_std Vec`: grows past 16 components, get/has/slot/write/swap-remove.
