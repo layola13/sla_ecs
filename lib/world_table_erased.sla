@@ -141,6 +141,14 @@ struct TableErasedAnyOf3<A, B, C> {
     third: TableErasedOptional<C>,
 }
 
+struct TableErasedAnyOf4<A, B, C, D> {
+    entity: Entity,
+    first: TableErasedOptional<A>,
+    second: TableErasedOptional<B>,
+    third: TableErasedOptional<C>,
+    fourth: TableErasedOptional<D>,
+}
+
 struct TableErasedWithAnyOf2<A, B, C> {
     entity: Entity,
     value: A,
@@ -2459,6 +2467,44 @@ fn table_erased_world_query_any_of3_auto<A, B, C, R, M>(world: TableErasedWorld<
     return table_erased_world_query_any_of3<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third);
 }
 
+fn table_erased_world_query_any_of4<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D) -> Query<TableErasedAnyOf4<A, B, C, D>> {
+    let query = query_new<TableErasedAnyOf4<A, B, C, D>>();
+    let i: i64 = 0;
+    let cnt = len(world.locations) as i64;
+    while i < cnt {
+        let entity_id = world.locations[i].entity_id;
+        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
+        if table_erased_world_is_alive<R, M>(world, entity) {
+            let include = false;
+            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, third_component_id) { include = true; };
+            if table_erased_world_has<R, M>(world, entity, fourth_component_id) { include = true; };
+            if include {
+                let first = table_erased_optional_none<A>(default_first);
+                let second = table_erased_optional_none<B>(default_second);
+                let third = table_erased_optional_none<C>(default_third);
+                let fourth = table_erased_optional_none<D>(default_fourth);
+                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, third_component_id) { third = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, entity, third_component_id, third_type_id)); };
+                if table_erased_world_has<R, M>(world, entity, fourth_component_id) { fourth = table_erased_optional_some<D>(table_erased_world_get<D, R, M>(world, entity, fourth_component_id, fourth_type_id)); };
+                query.items.push(TableErasedAnyOf4<A, B, C, D> { entity: entity, first: first, second: second, third: third, fourth: fourth });
+            };
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_any_of4_auto<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D) -> Query<TableErasedAnyOf4<A, B, C, D>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
+    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world, fourth_type_id);
+    return table_erased_world_query_any_of4<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
+}
+
 fn table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, pair_first_component_id: i32, pair_first_type_id: i32, pair_second_component_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>) -> Query<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>> {
     let query = query_new<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>>();
     let i: i64 = 0;
@@ -4193,4 +4239,37 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pair_present != 1 { panic(12305); };
     if pair_vel_sum != 30 { panic(12306); };
     if pair_marker_sum != 300 { panic(12307); };
+
+    let any4 = table_erased_world_query_any_of4_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default);
+    if len(any4.items) != 4 { panic(12600); };
+    if any4.items[0].entity.id != e1.id { panic(12601); };
+    if any4.items[0].first.has_value != true { panic(12602); };
+    if any4.items[0].second.has_value { panic(12603); };
+    if any4.items[0].third.has_value { panic(12604); };
+    if any4.items[0].fourth.has_value != true { panic(12605); };
+    let any4_pos_present: i32 = 0;
+    let any4_vel_present: i32 = 0;
+    let any4_marker_present: i32 = 0;
+    let any4_tag_present: i32 = 0;
+    let any4_pos_sum: i32 = 0;
+    let any4_vel_sum: i32 = 0;
+    let any4_marker_sum: i32 = 0;
+    let any4_tag_sum: i32 = 0;
+    let k: i64 = 0;
+    let any4_count = len(any4.items) as i64;
+    while k < any4_count {
+        if any4.items[k].first.has_value { any4_pos_present = any4_pos_present + 1; any4_pos_sum = any4_pos_sum + any4.items[k].first.value.x; };
+        if any4.items[k].second.has_value { any4_vel_present = any4_vel_present + 1; any4_vel_sum = any4_vel_sum + any4.items[k].second.value.x; };
+        if any4.items[k].third.has_value { any4_marker_present = any4_marker_present + 1; any4_marker_sum = any4_marker_sum + any4.items[k].third.value.value; };
+        if any4.items[k].fourth.has_value { any4_tag_present = any4_tag_present + 1; any4_tag_sum = any4_tag_sum + any4.items[k].fourth.value.value; };
+        k = k + 1;
+    }
+    if any4_pos_present != 3 { panic(12606); };
+    if any4_vel_present != 3 { panic(12607); };
+    if any4_marker_present != 1 { panic(12608); };
+    if any4_tag_present != 2 { panic(12609); };
+    if any4_pos_sum != 6 { panic(12610); };
+    if any4_vel_sum != 90 { panic(12611); };
+    if any4_marker_sum != 300 { panic(12612); };
+    if any4_tag_sum != 410 { panic(12613); };
 }

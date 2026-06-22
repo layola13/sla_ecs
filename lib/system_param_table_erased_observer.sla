@@ -781,6 +781,22 @@ fn table_erased_observer_run_any_of3_query_resource_system_auto<A, B, C, R, M>(w
     return table_erased_observer_run_any_of3_query_resource_system<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third, run);
 }
 
+fn table_erased_observer_run_any_of4_query_resource_system<A, B, C, D, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D, run: fn(TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_any_of4<A, B, C, D, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
+    let param0 = table_erased_observer_item_query_resource_param<TableErasedAnyOf4<A, B, C, D>, R>(query, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    return world;
+}
+
+fn table_erased_observer_run_any_of4_query_resource_system_auto<A, B, C, D, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D, run: fn(TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world.table, third_type_id);
+    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world.table, fourth_type_id);
+    return table_erased_observer_run_any_of4_query_resource_system<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth, run);
+}
+
 fn table_erased_observer_run_any_of3_with_optional_pair_query_resource_system<A, B, C, D, E, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, pair_first_component_id: i32, pair_first_type_id: i32, pair_second_component_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>, run: fn(TableErasedObserverItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>) -> TableErasedObserverItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>) -> TableErasedObserverWorld<R, M> {
     let query = table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, pair_first_component_id, pair_first_type_id, pair_second_component_id, pair_second_type_id, default_first, default_second, default_third, default_pair);
     let param0 = table_erased_observer_item_query_resource_param<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>(query, table_erased_world_get_resource<R, M>(world.table));
@@ -1213,6 +1229,28 @@ fn table_erased_observer_param_anyof3_marker_velocity_pos_count_system(param: Ta
     return table_erased_observer_item_query_resource_param<TableErasedAnyOf3<TableErasedMarker, TableErasedVel, TableErasedPos>, TableErasedTime>(param.query, TableErasedTime { tick: first_present * 1000 + second_present * 100 + third_present * 10 + first_missing });
 }
 
+fn table_erased_observer_param_anyof4_marker_velocity_pos_tag_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedAnyOf4<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag>, TableErasedTime> {
+    let first_present: i32 = 0;
+    let first_missing: i32 = 0;
+    let second_present: i32 = 0;
+    let third_present: i32 = 0;
+    let fourth_present: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].first.has_value {
+            first_present = first_present + 1;
+        } else {
+            first_missing = first_missing + 1;
+        };
+        if param.query.items[i].second.has_value { second_present = second_present + 1; };
+        if param.query.items[i].third.has_value { third_present = third_present + 1; };
+        if param.query.items[i].fourth.has_value { fourth_present = fourth_present + 1; };
+        i = i + 1;
+    }
+    return table_erased_observer_item_query_resource_param<TableErasedAnyOf4<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag>, TableErasedTime>(param.query, TableErasedTime { tick: first_present * 10000 + second_present * 1000 + third_present * 100 + fourth_present * 10 + first_missing });
+}
+
 fn table_erased_observer_param_anyof3_optional_pair_count_system(param: TableErasedObserverItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedVel, TableErasedMarker>, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedVel, TableErasedMarker>, TableErasedTime> {
     let pair_present: i32 = 0;
     let pair_vel_sum: i32 = 0;
@@ -1567,6 +1605,29 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let c14 = table_erased_observer_run_pair_mut_system_or_changed_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(c13, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE, c_before, table_erased_observer_param_movement_system);
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(c14, ce1, c_position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14462); };
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(c14, ce2, c_position.id, TABLE_ERASED_POS_TYPE).x != 56 { panic(14463); };
+}
+
+@test "table erased observer anyof4 query resource system param"() {
+    let w0 = table_erased_observer_test_world_new();
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w4, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
+    let (w5, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let (w6, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let (w7, e3) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let (w8, e4) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w7);
+    let w9 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w8, e1, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 10 });
+    let w10 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 20, y: 0 });
+    let w11 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w10, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 2, y: 0 });
+    let w12 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w11, e3, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 30 });
+    let w13 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, e4, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 40, y: 0 });
+    let w14 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w13, e4, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
+    let w15 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w14, e4, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 400 });
+    let w16 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w15, e4, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 4000 });
+    let w16r = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w16.table, TableErasedTime { tick: 0 }), observers: w16.observers };
+    let w17 = table_erased_observer_run_any_of4_query_resource_system_auto<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag, TableErasedTime, TableErasedEvent>(w16r, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_pos_default, table_erased_tag_default, table_erased_observer_param_anyof4_marker_velocity_pos_tag_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w17.table).tick != 22222 { panic(14600); };
 }
 
 @test "table erased observer system params expose spawned and spawn details"() {
