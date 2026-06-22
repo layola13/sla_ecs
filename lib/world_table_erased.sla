@@ -156,12 +156,29 @@ struct TableErasedWithAnyOf2<A, B, C> {
     any_second: TableErasedOptional<C>,
 }
 
+struct TableErasedWithAnyOf3<A, B, C, D> {
+    entity: Entity,
+    value: A,
+    any_first: TableErasedOptional<B>,
+    any_second: TableErasedOptional<C>,
+    any_third: TableErasedOptional<D>,
+}
+
 struct TableErasedPairWithAnyOf2<A, B, C, D> {
     entity: Entity,
     first: A,
     second: B,
     any_first: TableErasedOptional<C>,
     any_second: TableErasedOptional<D>,
+}
+
+struct TableErasedPairWithAnyOf3<A, B, C, D, E> {
+    entity: Entity,
+    first: A,
+    second: B,
+    any_first: TableErasedOptional<C>,
+    any_second: TableErasedOptional<D>,
+    any_third: TableErasedOptional<E>,
 }
 
 struct TableErasedAnyOf3WithOptionalPair<A, B, C, D, E> {
@@ -2578,6 +2595,43 @@ fn table_erased_world_query_with_any_of2_auto<A, B, C, R, M>(world: TableErasedW
     return table_erased_world_query_with_any_of2<A, B, C, R, M>(world, required_component_id, required_type_id, any_first_component_id, any_first_type_id, any_second_component_id, any_second_type_id, default_any_first, default_any_second);
 }
 
+fn table_erased_world_query_with_any_of3<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, required_component_id: i32, required_type_id: i32, any_first_component_id: i32, any_first_type_id: i32, any_second_component_id: i32, any_second_type_id: i32, any_third_component_id: i32, any_third_type_id: i32, default_any_first: fn() -> B, default_any_second: fn() -> C, default_any_third: fn() -> D) -> Query<TableErasedWithAnyOf3<A, B, C, D>> {
+    let query = query_new<TableErasedWithAnyOf3<A, B, C, D>>();
+    let base = table_erased_world_query<A, R, M>(world, required_component_id, required_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        let any_first = table_erased_optional_none<B>(default_any_first);
+        let any_second = table_erased_optional_none<C>(default_any_second);
+        let any_third = table_erased_optional_none<D>(default_any_third);
+        let include = false;
+        if table_erased_world_has<R, M>(world, item.entity, any_first_component_id) {
+            any_first = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, item.entity, any_first_component_id, any_first_type_id));
+            include = true;
+        };
+        if table_erased_world_has<R, M>(world, item.entity, any_second_component_id) {
+            any_second = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, item.entity, any_second_component_id, any_second_type_id));
+            include = true;
+        };
+        if table_erased_world_has<R, M>(world, item.entity, any_third_component_id) {
+            any_third = table_erased_optional_some<D>(table_erased_world_get<D, R, M>(world, item.entity, any_third_component_id, any_third_type_id));
+            include = true;
+        };
+        if include { query.items.push(TableErasedWithAnyOf3<A, B, C, D> { entity: item.entity, value: item.value, any_first: any_first, any_second: any_second, any_third: any_third }); };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_with_any_of3_auto<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, required_type_id: i32, any_first_type_id: i32, any_second_type_id: i32, any_third_type_id: i32, default_any_first: fn() -> B, default_any_second: fn() -> C, default_any_third: fn() -> D) -> Query<TableErasedWithAnyOf3<A, B, C, D>> {
+    let required_component_id = table_erased_world_component_id_for_type<R, M>(world, required_type_id);
+    let any_first_component_id = table_erased_world_component_id_for_type<R, M>(world, any_first_type_id);
+    let any_second_component_id = table_erased_world_component_id_for_type<R, M>(world, any_second_type_id);
+    let any_third_component_id = table_erased_world_component_id_for_type<R, M>(world, any_third_type_id);
+    return table_erased_world_query_with_any_of3<A, B, C, D, R, M>(world, required_component_id, required_type_id, any_first_component_id, any_first_type_id, any_second_component_id, any_second_type_id, any_third_component_id, any_third_type_id, default_any_first, default_any_second, default_any_third);
+}
+
 fn table_erased_world_query_pair_with_any_of2<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, any_first_component_id: i32, any_first_type_id: i32, any_second_component_id: i32, any_second_type_id: i32, default_any_first: fn() -> C, default_any_second: fn() -> D) -> Query<TableErasedPairWithAnyOf2<A, B, C, D>> {
     let query = query_new<TableErasedPairWithAnyOf2<A, B, C, D>>();
     let base = table_erased_world_query_pair<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
@@ -2608,6 +2662,44 @@ fn table_erased_world_query_pair_with_any_of2_auto<A, B, C, D, R, M>(world: Tabl
     let any_first_component_id = table_erased_world_component_id_for_type<R, M>(world, any_first_type_id);
     let any_second_component_id = table_erased_world_component_id_for_type<R, M>(world, any_second_type_id);
     return table_erased_world_query_pair_with_any_of2<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, any_first_component_id, any_first_type_id, any_second_component_id, any_second_type_id, default_any_first, default_any_second);
+}
+
+fn table_erased_world_query_pair_with_any_of3<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, any_first_component_id: i32, any_first_type_id: i32, any_second_component_id: i32, any_second_type_id: i32, any_third_component_id: i32, any_third_type_id: i32, default_any_first: fn() -> C, default_any_second: fn() -> D, default_any_third: fn() -> E) -> Query<TableErasedPairWithAnyOf3<A, B, C, D, E>> {
+    let query = query_new<TableErasedPairWithAnyOf3<A, B, C, D, E>>();
+    let base = table_erased_world_query_pair<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        let any_first = table_erased_optional_none<C>(default_any_first);
+        let any_second = table_erased_optional_none<D>(default_any_second);
+        let any_third = table_erased_optional_none<E>(default_any_third);
+        let include = false;
+        if table_erased_world_has<R, M>(world, item.entity, any_first_component_id) {
+            any_first = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, item.entity, any_first_component_id, any_first_type_id));
+            include = true;
+        };
+        if table_erased_world_has<R, M>(world, item.entity, any_second_component_id) {
+            any_second = table_erased_optional_some<D>(table_erased_world_get<D, R, M>(world, item.entity, any_second_component_id, any_second_type_id));
+            include = true;
+        };
+        if table_erased_world_has<R, M>(world, item.entity, any_third_component_id) {
+            any_third = table_erased_optional_some<E>(table_erased_world_get<E, R, M>(world, item.entity, any_third_component_id, any_third_type_id));
+            include = true;
+        };
+        if include { query.items.push(TableErasedPairWithAnyOf3<A, B, C, D, E> { entity: item.entity, first: item.first, second: item.second, any_first: any_first, any_second: any_second, any_third: any_third }); };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_pair_with_any_of3_auto<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, any_first_type_id: i32, any_second_type_id: i32, any_third_type_id: i32, default_any_first: fn() -> C, default_any_second: fn() -> D, default_any_third: fn() -> E) -> Query<TableErasedPairWithAnyOf3<A, B, C, D, E>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let any_first_component_id = table_erased_world_component_id_for_type<R, M>(world, any_first_type_id);
+    let any_second_component_id = table_erased_world_component_id_for_type<R, M>(world, any_second_type_id);
+    let any_third_component_id = table_erased_world_component_id_for_type<R, M>(world, any_third_type_id);
+    return table_erased_world_query_pair_with_any_of3<A, B, C, D, E, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, any_first_component_id, any_first_type_id, any_second_component_id, any_second_type_id, any_third_component_id, any_third_type_id, default_any_first, default_any_second, default_any_third);
 }
 
 fn table_erased_world_query_triple_with<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, with_component_id: i32) -> Query<TableErasedTriple<A, B, C>> {
@@ -3373,11 +3465,13 @@ const TABLE_ERASED_POS_TYPE: i32 = 301;
 const TABLE_ERASED_VEL_TYPE: i32 = 302;
 const TABLE_ERASED_MARKER_TYPE: i32 = 303;
 const TABLE_ERASED_TAG_TYPE: i32 = 304;
+const TABLE_ERASED_AUX_TYPE: i32 = 305;
 
 struct TableErasedPos { x: i32, y: i32 }
 struct TableErasedVel { x: i32, y: i32 }
 struct TableErasedMarker { value: i32 }
 struct TableErasedTag { value: i32 }
+struct TableErasedAux { value: i32 }
 struct TableErasedTime { tick: i32 }
 struct TableErasedEvent { amount: i32 }
 
@@ -3387,6 +3481,7 @@ fn table_erased_pos_default() -> TableErasedPos { return TableErasedPos { x: 0, 
 fn table_erased_vel_default() -> TableErasedVel { return TableErasedVel { x: 0, y: 0 }; }
 fn table_erased_marker_default() -> TableErasedMarker { return TableErasedMarker { value: 0 }; }
 fn table_erased_tag_default() -> TableErasedTag { return TableErasedTag { value: 0 }; }
+fn table_erased_aux_default() -> TableErasedAux { return TableErasedAux { value: 0 }; }
 fn table_erased_vel_marker_pair_default() -> TableErasedPairValue<TableErasedVel, TableErasedMarker> { return TableErasedPairValue<TableErasedVel, TableErasedMarker> { first: table_erased_vel_default(), second: table_erased_marker_default() }; }
 fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErasedEvent> { return table_erased_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default()); }
 
@@ -3394,6 +3489,7 @@ fn table_erased_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedPos;
 fn table_erased_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedVel; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedMarker; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag; let boxed = unsafe { Box::from_raw(typed) }; }
+fn table_erased_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedAux; let boxed = unsafe { Box::from_raw(typed) }; }
 
 @test "table erased world stores heterogeneous values by archetype row"() {
     let w0 = table_erased_test_world_new();
@@ -4190,8 +4286,11 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     let w15 = table_erased_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w14, e3, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 300 });
     let w16 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w15, e4, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 40, y: 0 });
     let w17 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w16, e4, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 400 });
+    let (w18, aux) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_AUX_TYPE, table_erased_aux_drop);
+    let w19 = table_erased_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w18, e2, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 2000 });
+    let w20 = table_erased_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w19, e4, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 4000 });
 
-    let pos_any = table_erased_world_query_with_any_of2_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);
+    let pos_any = table_erased_world_query_with_any_of2_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);
     if len(pos_any.items) != 2 { panic(11800); };
     let tag_present: i32 = 0;
     let marker_present: i32 = 0;
@@ -4208,7 +4307,7 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if marker_present != 1 { panic(11802); };
     if pos_sum != 4 { panic(11803); };
 
-    let pos_vel_any = table_erased_world_query_pair_with_any_of2_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);
+    let pos_vel_any = table_erased_world_query_pair_with_any_of2_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);
     if len(pos_vel_any.items) != 1 { panic(11804); };
     if pos_vel_any.items[0].entity.id != e3.id { panic(11805); };
     if pos_vel_any.items[0].first.x != 3 { panic(11806); };
@@ -4217,7 +4316,52 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pos_vel_any.items[0].any_second.has_value != true { panic(11809); };
     if pos_vel_any.items[0].any_second.value.value != 300 { panic(11810); };
 
-    let any_with_pair = table_erased_world_query_any_of3_with_optional_pair_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedVel, TableErasedMarker, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_tag_default, table_erased_vel_marker_pair_default);
+    let pos_any3 = table_erased_world_query_with_any_of3_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedAux, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_AUX_TYPE, table_erased_tag_default, table_erased_marker_default, table_erased_aux_default);
+    if len(pos_any3.items) != 3 { panic(12620); };
+    let any3_tag_present: i32 = 0;
+    let any3_marker_present: i32 = 0;
+    let any3_aux_present: i32 = 0;
+    let any3_pos_sum: i32 = 0;
+    let any3_aux_sum: i32 = 0;
+    let m: i64 = 0;
+    let any3_count = len(pos_any3.items) as i64;
+    while m < any3_count {
+        any3_pos_sum = any3_pos_sum + pos_any3.items[m].value.x;
+        if pos_any3.items[m].any_first.has_value { any3_tag_present = any3_tag_present + 1; };
+        if pos_any3.items[m].any_second.has_value { any3_marker_present = any3_marker_present + 1; };
+        if pos_any3.items[m].any_third.has_value { any3_aux_present = any3_aux_present + 1; any3_aux_sum = any3_aux_sum + pos_any3.items[m].any_third.value.value; };
+        m = m + 1;
+    }
+    if any3_tag_present != 1 { panic(12621); };
+    if any3_marker_present != 1 { panic(12622); };
+    if any3_aux_present != 1 { panic(12623); };
+    if any3_pos_sum != 6 { panic(12624); };
+    if any3_aux_sum != 2000 { panic(12625); };
+
+    let pos_vel_any3 = table_erased_world_query_pair_with_any_of3_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedMarker, TableErasedAux, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_AUX_TYPE, table_erased_tag_default, table_erased_marker_default, table_erased_aux_default);
+    if len(pos_vel_any3.items) != 2 { panic(12626); };
+    let pair_any3_marker_present: i32 = 0;
+    let pair_any3_aux_present: i32 = 0;
+    let pair_any3_first_sum: i32 = 0;
+    let pair_any3_second_sum: i32 = 0;
+    let pair_any3_aux_sum: i32 = 0;
+    let n: i64 = 0;
+    let pair_any3_count = len(pos_vel_any3.items) as i64;
+    while n < pair_any3_count {
+        if pos_vel_any3.items[n].any_first.has_value { panic(12627); };
+        if pos_vel_any3.items[n].any_second.has_value { pair_any3_marker_present = pair_any3_marker_present + 1; };
+        if pos_vel_any3.items[n].any_third.has_value { pair_any3_aux_present = pair_any3_aux_present + 1; pair_any3_aux_sum = pair_any3_aux_sum + pos_vel_any3.items[n].any_third.value.value; };
+        pair_any3_first_sum = pair_any3_first_sum + pos_vel_any3.items[n].first.x;
+        pair_any3_second_sum = pair_any3_second_sum + pos_vel_any3.items[n].second.x;
+        n = n + 1;
+    }
+    if pair_any3_marker_present != 1 { panic(12628); };
+    if pair_any3_aux_present != 1 { panic(12629); };
+    if pair_any3_first_sum != 5 { panic(12630); };
+    if pair_any3_second_sum != 50 { panic(12631); };
+    if pair_any3_aux_sum != 2000 { panic(12632); };
+
+    let any_with_pair = table_erased_world_query_any_of3_with_optional_pair_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedVel, TableErasedMarker, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_tag_default, table_erased_vel_marker_pair_default);
     if len(any_with_pair.items) != 4 { panic(12300); };
     if any_with_pair.items[0].entity.id != e1.id { panic(12301); };
     if any_with_pair.items[0].first.has_value != true { panic(12302); };
@@ -4240,7 +4384,7 @@ fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag;
     if pair_vel_sum != 30 { panic(12306); };
     if pair_marker_sum != 300 { panic(12307); };
 
-    let any4 = table_erased_world_query_any_of4_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default);
+    let any4 = table_erased_world_query_any_of4_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default);
     if len(any4.items) != 4 { panic(12600); };
     if any4.items[0].entity.id != e1.id { panic(12601); };
     if any4.items[0].first.has_value != true { panic(12602); };
