@@ -22,12 +22,14 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Fix Sla function pointer values so systems can be stored and passed as `fn(World) -> World`; regression: `test_unit_fn_ptr_value.sla`.
 - [x] Fix Sla top-level scalar constant codegen so command tags like `const KIND: i32 = 1` work without illegal numeric SA `@const` output; regression: `test_unit_top_level_numeric_const.sla`.
 - [x] Keep Sla compiler `@derive(...)` support language-neutral: arbitrary derive names parse as annotations, with no Bevy/ECS keyword semantics in Zig; regression: `test_unit_derive_component.sla`.
+- [x] Complete language-neutral `@derive(copy, eq, ord, hash, debug)` semantic expansion for plain value structs in `sa_plugin_sla`: copy structs use field-wise copy, `eq`/`ord` gate struct comparison operators, and `hash(value)` / `debug(value)` support derived structs. Verification: `zig build test`, `SA_PLUGIN_DEV=1 sa sla test tests/test_unit_derive_semantics.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_unit_derive_component.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_unit_struct_field_copy_not_move.sla`, and `SA_PLUGIN_DEV=1 sa sla test tests/test_unit_field_compare_and_nested_len.sla` pass after dev plugin reinstall.
 - [x] Remove compiler-bound ECS derive metadata and `@component(storage = ...)`; move `component_type_id`, `component_storage_kind`, `resource_type_id`, `message_type_id`, and `event_type_id` to ordinary `sla_ecs` `impl` methods.
 - [x] Fix expanded relative `.sai` / `.sal` contract import resolution after `.sla` import expansion; regression fixture: `tests/import_fixtures/nested/uses_contract.sla`.
 - [x] Fix Sla global scalar const call-argument cleanup across loop branches so call args like `matches(i, GLOBAL_MARKER)` do not leave active temporaries at branch merge. Regression: `test_unit_global_const_call_arg_cleanup.sla`; dev plugin reinstalled.
 - [x] Rebuild and reinstall the Sla plugin after generic impl protocol and function pointer fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Rebuild and reinstall the Sla plugin after top-level scalar constant codegen fix: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Rebuild and reinstall the Sla plugin after language-neutral derive annotation and contract import resolver fixes: `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
+- [x] Rebuild and reinstall the Sla plugin after `@derive(copy, eq, ord, hash, debug)` semantic expansion: `/home/vscode/projects/sci/tools/install.sh --no-shell` and `SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plugin_sla`.
 - [x] Audit current source tree after resumed work: current tree contains `lib/*.sla` and `examples/*.sla`; old `src/*.sla` prototypes are not present on disk.
 
 ## Phase 2: Bevy-Style Core Runtime
