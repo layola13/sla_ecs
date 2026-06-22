@@ -65,6 +65,10 @@ fn table_erased_relationship_commands_param_detach_all_related<R, M>(param: Tabl
     return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_detach_all_related<R, M>(param.commands, relationship_kind_id, target) };
 }
 
+fn table_erased_relationship_commands_param_despawn_related<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, relationship_kind_id: i32, target: Entity) -> TableErasedRelationshipCommandsParam<R, M> {
+    return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_despawn_related<R, M>(param.commands, relationship_kind_id, target) };
+}
+
 fn table_erased_relationship_commands_param_replace_related<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, relationship_kind_id: i32, target: Entity, related: Vec<Entity>) -> TableErasedRelationshipCommandsParam<R, M> {
     return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_replace_related<R, M>(param.commands, relationship_kind_id, target, related) };
 }
@@ -215,6 +219,12 @@ fn table_erased_relationship_param_detach_commands_system(param: TableErasedRela
     return table_erased_relationship_commands_param_detach_all_related<TableErasedTime, TableErasedEvent>(param, target_entry.kind_id, target_entry.target);
 }
 
+fn table_erased_relationship_param_despawn_related_commands_system(param: TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent> {
+    if len(param.world.relationships.targets) <= 0 { return param; };
+    let target_entry = param.world.relationships.targets[0];
+    return table_erased_relationship_commands_param_despawn_related<TableErasedTime, TableErasedEvent>(param, target_entry.kind_id, target_entry.target);
+}
+
 fn table_erased_relationship_param_writer_system(writer: MessageWriter<TableErasedEvent>) -> MessageWriter<TableErasedEvent> {
     let writer1 = message_writer_send<TableErasedEvent>(writer, TableErasedEvent { amount: 2 });
     return message_writer_send<TableErasedEvent>(writer1, TableErasedEvent { amount: 3 });
@@ -315,4 +325,22 @@ fn table_erased_relationship_param_reader_resmut_system(param: TableErasedRelati
     let w3 = table_erased_relationship_run_commands_system<TableErasedTime, TableErasedEvent>(w3e, table_erased_relationship_param_detach_commands_system);
     if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w3, detach_kind.id, detach_root) != 0 { panic(12548); };
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w3, detach_first) != true { panic(12549); };
+}
+
+@test "table erased relationship commands param despawns related sources only"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w1, true, false);
+    let (w3, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let (w4, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let (w5, grandchild) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let w6 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 88, y: 0 });
+    let w7 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w6, kind.id, child, root);
+    let w8 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w7, kind.id, grandchild, child);
+    let w9 = table_erased_relationship_run_commands_system<TableErasedTime, TableErasedEvent>(w8, table_erased_relationship_param_despawn_related_commands_system);
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, root) != true { panic(12550); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, child) != false { panic(12551); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w9, grandchild) != false { panic(12552); };
+    if table_erased_relationship_world_has<TableErasedTime, TableErasedEvent>(w9, child, position.id) != false { panic(12553); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w9, kind.id, root) != 0 { panic(12554); };
 }

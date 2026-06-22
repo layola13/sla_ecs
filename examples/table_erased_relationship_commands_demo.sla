@@ -46,6 +46,23 @@ fn table_erased_relationship_commands_demo() -> i32 {
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, child) != true { panic(12335); };
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, second) != false { panic(12340); };
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w7, third) != false { panic(12341); };
+
+    let dw0 = table_erased_relationship_test_world_new();
+    let (dw1, dposition) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(dw0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (dw2, dkind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(dw1, true, false);
+    let dc0 = table_erased_relationship_commands_test_commands_new();
+    let (dw3, dc1, droot) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(dw2, dc0);
+    let (dw4, dc2, dchild) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(dw3, dc1, dkind.id, droot);
+    let (dw5, dc3, dgrandchild) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(dw4, dc2, dkind.id, dchild);
+    let dc4 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(dc3, dchild, dposition.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 61, y: 0 });
+    let dc5 = table_erased_relationship_commands_despawn_related<TableErasedTime, TableErasedEvent>(dc4, dkind.id, droot);
+    let (dw6, dc6) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(dw5, dc5);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(dc6) != 0 { panic(12346); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(dw6, droot) != true { panic(12347); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(dw6, dchild) != false { panic(12348); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(dw6, dgrandchild) != false { panic(12349); };
+    if table_erased_relationship_world_has<TableErasedTime, TableErasedEvent>(dw6, dchild, dposition.id) != false { panic(12371); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(dw6, dkind.id, droot) != 0 { panic(12372); };
     return 2;
 }
 
