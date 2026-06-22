@@ -18,7 +18,16 @@ struct EntityMapGet<T> {
     value: T,
 }
 
+struct UniqueEntityVec {
+    values: Vec<Entity>,
+}
+
 impl EntitySet {
+    fn iter_len(&self) -> i64 { return len(self.values) as i64; }
+    fn iter_at(&self, index: i64) -> Entity { return self.values[index]; }
+}
+
+impl UniqueEntityVec {
     fn iter_len(&self) -> i64 { return len(self.values) as i64; }
     fn iter_at(&self, index: i64) -> Entity { return self.values[index]; }
 }
@@ -190,6 +199,149 @@ fn entity_set_difference(left: EntitySet, right: EntitySet) -> EntitySet {
 
 fn entity_set_symmetric_difference(left: EntitySet, right: EntitySet) -> EntitySet {
     return entity_set_union(entity_set_difference(left, right), entity_set_difference(right, left));
+}
+
+fn unique_entity_vec_new() -> UniqueEntityVec {
+    let values: Vec<Entity> = Vec::new();
+    return UniqueEntityVec { values: values };
+}
+
+fn unique_entity_vec_from_vec(values: Vec<Entity>) -> UniqueEntityVec {
+    let out = unique_entity_vec_new();
+    let i: i64 = 0;
+    let count = len(values) as i64;
+    while i < count {
+        out = unique_entity_vec_push(out, values[i]);
+        i = i + 1;
+    }
+    return out;
+}
+
+fn unique_entity_vec_len(values: UniqueEntityVec) -> i64 {
+    return len(values.values) as i64;
+}
+
+fn unique_entity_vec_is_empty(values: UniqueEntityVec) -> bool {
+    return len(values.values) == 0;
+}
+
+fn unique_entity_vec_slot(values: UniqueEntityVec, entity: Entity) -> i64 {
+    let i: i64 = 0;
+    let count = len(values.values) as i64;
+    while i < count {
+        if values.values[i] == entity { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn unique_entity_vec_contains(values: UniqueEntityVec, entity: Entity) -> bool {
+    return unique_entity_vec_slot(values, entity) >= 0;
+}
+
+fn unique_entity_vec_get(values: UniqueEntityVec, index: i64) -> Entity {
+    if index < 0 { return entity_placeholder(); };
+    if index >= (len(values.values) as i64) { return entity_placeholder(); };
+    return values.values[index];
+}
+
+fn unique_entity_vec_push(values: UniqueEntityVec, entity: Entity) -> UniqueEntityVec {
+    if unique_entity_vec_contains(values, entity) { return values; };
+    values.values.push(entity);
+    return values;
+}
+
+fn unique_entity_vec_push_result(values: UniqueEntityVec, entity: Entity) -> (UniqueEntityVec, bool) {
+    if unique_entity_vec_contains(values, entity) { return (values, false); };
+    values.values.push(entity);
+    return (values, true);
+}
+
+fn unique_entity_vec_insert(values: UniqueEntityVec, index: i64, entity: Entity) -> UniqueEntityVec {
+    if unique_entity_vec_contains(values, entity) { return values; };
+    let target = index + 0;
+    if target < 0 { target = 0; };
+    if target > len(values.values) { target = len(values.values); };
+    values.values.push(entity);
+    let i = (len(values.values) as i64) - 1;
+    while i > target {
+        values.values[i] = values.values[i - 1];
+        i = i - 1;
+    }
+    values.values[target] = entity;
+    return values;
+}
+
+fn unique_entity_vec_remove(values: UniqueEntityVec, entity: Entity) -> UniqueEntityVec {
+    let slot = unique_entity_vec_slot(values, entity);
+    if slot < 0 { return values; };
+    return unique_entity_vec_remove_at(values, slot);
+}
+
+fn unique_entity_vec_remove_at(values: UniqueEntityVec, index: i64) -> UniqueEntityVec {
+    let count = len(values.values) as i64;
+    if index < 0 { return values; };
+    if index >= count { return values; };
+    let last = count - 1;
+    let i = index + 0;
+    while i < last {
+        values.values[i] = values.values[i + 1];
+        i = i + 1;
+    }
+    let removed = values.values.remove(last);
+    return values;
+}
+
+fn unique_entity_vec_swap_remove_at(values: UniqueEntityVec, index: i64) -> UniqueEntityVec {
+    let count = len(values.values) as i64;
+    if index < 0 { return values; };
+    if index >= count { return values; };
+    let last = count - 1;
+    if index != last { values.values[index] = values.values[last]; };
+    let removed = values.values.remove(last);
+    return values;
+}
+
+fn unique_entity_vec_swap(values: UniqueEntityVec, left: i64, right: i64) -> UniqueEntityVec {
+    let count = len(values.values) as i64;
+    if left < 0 { return values; };
+    if right < 0 { return values; };
+    if left >= count { return values; };
+    if right >= count { return values; };
+    if left == right { return values; };
+    let tmp = values.values[left];
+    values.values[left] = values.values[right];
+    values.values[right] = tmp;
+    return values;
+}
+
+fn unique_entity_vec_truncate(values: UniqueEntityVec, new_len: i64) -> UniqueEntityVec {
+    let target = new_len + 0;
+    if target < 0 { target = 0; };
+    while (len(values.values) as i64) > target {
+        let last = (len(values.values) as i64) - 1;
+        let removed = values.values.remove(last);
+    }
+    return values;
+}
+
+fn unique_entity_vec_to_vec(values: UniqueEntityVec) -> Vec<Entity> {
+    let out: Vec<Entity> = Vec::new();
+    let i: i64 = 0;
+    let count = len(values.values) as i64;
+    while i < count {
+        out.push(values.values[i]);
+        i = i + 1;
+    }
+    return out;
+}
+
+fn unique_entity_vec_into_set(values: UniqueEntityVec) -> EntitySet {
+    return entity_set_from_vec(values.values);
+}
+
+fn unique_entity_vec_has_duplicates(values: UniqueEntityVec) -> bool {
+    return entity_set_has_duplicates(EntitySet { values: values.values });
 }
 
 fn entity_map_new<T>() -> EntityMap<T> {
@@ -378,4 +530,97 @@ fn entity_map_clear<T>(map: EntityMap<T>) -> EntityMap<T> {
 
     let empty = entity_map_clear<i32>(map2);
     if entity_map_is_empty<i32>(empty) != true { panic(21477); };
+}
+
+@test "unique entity vec preserves insertion order and rejects duplicates"() {
+    let e1 = entity_new(1, 0);
+    let e2 = entity_new(2, 0);
+    let same_e1 = entity_new(1, 0);
+    let stale_e1 = entity_new(1, 1);
+
+    let values0 = unique_entity_vec_new();
+    let (values1, inserted1) = unique_entity_vec_push_result(values0, e1);
+    let (values2, inserted2) = unique_entity_vec_push_result(values1, e2);
+    let (values3, inserted3) = unique_entity_vec_push_result(values2, same_e1);
+    let values4 = unique_entity_vec_push(values3, stale_e1);
+
+    if inserted1 != true { panic(21500); };
+    if inserted2 != true { panic(21501); };
+    if inserted3 != false { panic(21502); };
+    if unique_entity_vec_len(values4) != 3 { panic(21503); };
+    if unique_entity_vec_get(values4, 0) != e1 { panic(21504); };
+    if unique_entity_vec_get(values4, 1) != e2 { panic(21505); };
+    if unique_entity_vec_get(values4, 2) != stale_e1 { panic(21506); };
+    if unique_entity_vec_has_duplicates(values4) { panic(21507); };
+}
+
+@test "unique entity vec insert remove swap and truncate"() {
+    let e1 = entity_new(1, 0);
+    let e2 = entity_new(2, 0);
+    let e3 = entity_new(3, 0);
+    let e4 = entity_new(4, 0);
+    let e5 = entity_new(5, 0);
+
+    let values0 = unique_entity_vec_new();
+    let values1 = unique_entity_vec_push(unique_entity_vec_push(unique_entity_vec_push(values0, e1), e3), e4);
+    let values2 = unique_entity_vec_insert(values1, 1, e2);
+    let values3 = unique_entity_vec_insert(values2, 1, entity_new(3, 0));
+
+    if unique_entity_vec_len(values3) != 4 { panic(21520); };
+    if unique_entity_vec_get(values3, 0) != e1 { panic(21521); };
+    if unique_entity_vec_get(values3, 1) != e2 { panic(21522); };
+    if unique_entity_vec_get(values3, 2) != e3 { panic(21523); };
+    if unique_entity_vec_get(values3, 3) != e4 { panic(21524); };
+
+    let values4 = unique_entity_vec_remove(values3, entity_new(2, 0));
+    if unique_entity_vec_len(values4) != 3 { panic(21525); };
+    if unique_entity_vec_get(values4, 0) != e1 { panic(21526); };
+    if unique_entity_vec_get(values4, 1) != e3 { panic(21527); };
+    if unique_entity_vec_get(values4, 2) != e4 { panic(21528); };
+
+    let values5 = unique_entity_vec_insert(values4, 99, e5);
+    if unique_entity_vec_get(values5, 3) != e5 { panic(21529); };
+
+    let values6 = unique_entity_vec_swap(values5, 0, 2);
+    if unique_entity_vec_get(values6, 0) != e4 { panic(21530); };
+    if unique_entity_vec_get(values6, 2) != e1 { panic(21531); };
+
+    let values7 = unique_entity_vec_swap_remove_at(values6, 1);
+    if unique_entity_vec_len(values7) != 3 { panic(21532); };
+    if unique_entity_vec_contains(values7, e3) { panic(21533); };
+    if unique_entity_vec_has_duplicates(values7) { panic(21534); };
+
+    let values8 = unique_entity_vec_truncate(values7, 2);
+    if unique_entity_vec_len(values8) != 2 { panic(21535); };
+}
+
+@test "unique entity vec from vec and set conversion"() {
+    let e1 = entity_new(11, 0);
+    let e2 = entity_new(12, 0);
+    let e3 = entity_new(13, 0);
+    let raw: Vec<Entity> = Vec::new();
+    raw.push(e1);
+    raw.push(e2);
+    raw.push(entity_new(11, 0));
+    raw.push(e3);
+    raw.push(entity_new(12, 0));
+
+    let values = unique_entity_vec_from_vec(raw);
+    if unique_entity_vec_len(values) != 3 { panic(21550); };
+    if unique_entity_vec_get(values, 0) != e1 { panic(21551); };
+    if unique_entity_vec_get(values, 1) != e2 { panic(21552); };
+    if unique_entity_vec_get(values, 2) != e3 { panic(21553); };
+
+    let out = unique_entity_vec_to_vec(values);
+    if len(out) != 3 { panic(21554); };
+    if out[0] != e1 { panic(21555); };
+    if out[1] != e2 { panic(21556); };
+    if out[2] != e3 { panic(21557); };
+
+    let values_again = unique_entity_vec_from_vec(out);
+    let set = unique_entity_vec_into_set(values_again);
+    if entity_set_len(set) != 3 { panic(21558); };
+    if entity_set_contains(set, e1) != true { panic(21559); };
+    if entity_set_contains(set, e2) != true { panic(21560); };
+    if entity_set_contains(set, e3) != true { panic(21561); };
 }
