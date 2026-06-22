@@ -46,7 +46,7 @@ cap.
 
 ```
 lib/
-├── entity.sla        — Reusable Entity handle + allocator, generation checks, bit roundtrip
+├── entity.sla        — Reusable `@derive(copy, eq, ord, hash, debug)` Entity handle + allocator, generation checks, bit roundtrip
 ├── entity_dynamic.sla — Vec-backed dynamic entity allocator with live/stale checks
 ├── store.sla         — Generic fixed-capacity ComponentStore<T>
 ├── dyn_store.sla     — Generic Vec-backed table-style DynamicComponentStore<T>
@@ -264,7 +264,7 @@ This project required several Sla compiler fixes in `sa_plugin_sla`:
 - Top-level scalar constants such as `const KIND: i32 = 1` lower correctly by inlining scalar literals at use sites; this unblocks command kind tags.
 - Use-after-move diagnostics now include the consumed identifier name.
 - Field comparisons and nested indexed length expressions such as `len(world.archetypes[archetype_slot].entity_ids)` lower correctly, so table-row storage can use the direct Bevy-shaped expression instead of a workaround.
-- `@derive(...)` is now language-neutral in the Sla compiler: arbitrary derive names parse as annotations, but the compiler does not hard-code Bevy/ECS keywords or generate ECS metadata methods.
+- `@derive(...)` is now language-neutral in the Sla compiler: arbitrary derive names parse as annotations, but the compiler does not hard-code Bevy/ECS keywords or generate ECS metadata methods. `Entity` uses the generic `@derive(copy, eq, ord, hash, debug)` path, so small handle values can be copied, compared, hashed, ordered, and debug-rendered without hand-written field boilerplate.
 - ECS metadata lives in `sla_ecs` code. Component/resource/message/event type ids and component storage kind are ordinary static `impl` methods such as `Type::component_type_id()` and `Type::component_storage_kind()`.
 - Engine-specific `@component(storage = "SparseSet")` compiler support was removed; sparse/table storage metadata is exposed by `sla_ecs` impl methods instead.
 - Expanded relative `.sai` / `.sal` imports are resolved correctly after `.sla` import expansion, while generated `sa_std/...` imports remain global relative paths.

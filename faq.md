@@ -15,7 +15,7 @@
 - [ ] **泛型 `impl<T>` 方法不工作**:`impl<T> Foo<T> { fn m() }` 解析失败。泛型操作一律用泛型自由函数 `fn op<T>(...)`,已验证可单态化。
 - [x] **`Type::method()` 关联函数现已可用(含用户自定义)**:derive 生成的 `Type::component_type_id()` 和**手写** `impl T { fn event_type_id() -> i32 }` 都能用 `::` 调用(16:12 event_observer_demo 验证 `ObserverSpeakEvent::event_type_id()`)。此前记的"不工作"是旧状态。
 - [ ] **函数指针不能存进 struct 字段**:`struct S { f: fn(i32)->i32 }` 取用会 UndefinedCall。函数指针只能作函数参数传递。schedule 存系统已验证可行(说明有特例,注意写法)。
-- [ ] **Entity(值类型 struct)多次传参触发 UseAfterMove**:`Entity` 传给函数即被线性消费,同一 `parent`/`child` 变量连续传两次会报 UseAfterMove。codex 通行规避法:开头拆 `let pid = parent.id; let pgen = parent.gen;`,之后每次用 `entity_new(pid, pgen)` 重建。`hierarchy.sla` + 其 demo 全程用此法(已验证可靠)。
+- [x] **Entity(值类型 struct)已接入通用 derive 值语义**:`lib/entity.sla` 现在使用 `@derive(copy, eq, ord, hash, debug)`,同一 `Entity` 变量可以复制后继续使用,并可直接 `==`/`!=`/`<`/`>`、`hash(entity)`、`debug(entity)`。`entity_eq` 保留为兼容包装并改为调用派生 `==`。验证:`SA_PLUGIN_DEV=1 sa sla test lib/entity.sla`, `lib/hierarchy.sla`, `examples/hierarchy_relationship_demo.sla` 通过。旧的拆 `id/gen` 重建写法可逐步清理,但不再是新代码必需规避法。
 - [ ] **大数组字面量 + 多 struct 同文件**:曾见 `[0;64]` 级字面量在多 storage 结构体同文件时 TypeMismatch。优先用 Vec 动态存储,避免巨型固定数组。
 
 ## B. 编译器 bug 状态(sa_plugin_sla)

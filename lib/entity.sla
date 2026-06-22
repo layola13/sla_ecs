@@ -1,6 +1,7 @@
 // Entity identity and fixed-capacity allocator used by the compatibility World.
 // Dynamic worlds reuse the Entity handle but use DynamicEntityAllocator.
 
+@derive(copy, eq, ord, hash, debug)
 struct Entity {
     id: i32,
     gen: i32,
@@ -25,8 +26,7 @@ fn entity_index(entity: Entity) -> i32 { return entity.id; }
 fn entity_generation(entity: Entity) -> i32 { return entity.gen; }
 
 fn entity_eq(a: Entity, b: Entity) -> bool {
-    if a.id != b.id { return false; };
-    return a.gen == b.gen;
+    return a == b;
 }
 
 fn entity_to_bits(entity: Entity) -> i64 {
@@ -102,6 +102,21 @@ fn free_entity(a: EntityAllocator, entity: Entity) -> EntityAllocator {
     let bits = entity_to_bits(e);
     let out = entity_from_bits(bits);
     if entity_eq(e, out) != true { panic(2110); };
+}
+
+@test "entity derives value semantics"() {
+    let e = entity_new(42, 7);
+    let copied = e;
+    if copied != e { panic(2115); };
+    if e.id != 42 { panic(2116); };
+    if hash(copied) != hash(e) { panic(2117); };
+
+    let later = entity_new(42, 8);
+    if (e < later) != true { panic(2118); };
+    if (later > e) != true { panic(2119); };
+
+    let text = debug(e);
+    if len(text) == 0 { panic(2124); };
 }
 
 @test "allocator rejects stale generation"() {
