@@ -6,6 +6,7 @@ const TABLE_ERASED_REL_COMMAND_SET_RELATED: i32 = 2;
 const TABLE_ERASED_REL_COMMAND_DESPAWN: i32 = 3;
 const TABLE_ERASED_REL_COMMAND_INSERT_RESOURCE: i32 = 4;
 const TABLE_ERASED_REL_COMMAND_WRITE_MESSAGE: i32 = 5;
+const TABLE_ERASED_REL_COMMAND_SET_RELATED_AT: i32 = 6;
 
 struct TableErasedRelationshipCommand {
     kind: i32,
@@ -70,6 +71,11 @@ fn table_erased_relationship_commands_set_related<R, M>(commands: TableErasedRel
     return commands;
 }
 
+fn table_erased_relationship_commands_set_related_at<R, M>(commands: TableErasedRelationshipCommands<R, M>, relationship_kind_id: i32, source: Entity, target: Entity, index: i64) -> TableErasedRelationshipCommands<R, M> {
+    commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_SET_RELATED_AT, source, relationship_kind_id, target, 0, index));
+    return commands;
+}
+
 fn table_erased_relationship_commands_despawn<R, M>(commands: TableErasedRelationshipCommands<R, M>, entity: Entity) -> TableErasedRelationshipCommands<R, M> {
     commands.items.push(table_erased_relationship_command_new(TABLE_ERASED_REL_COMMAND_DESPAWN, entity, 0, entity_placeholder(), 0, -1));
     return commands;
@@ -96,6 +102,10 @@ fn table_erased_relationship_commands_apply_one<R, M>(world: TableErasedRelation
     };
     if command.kind == TABLE_ERASED_REL_COMMAND_SET_RELATED {
         world.relationships = relationship_world_set_related(world.relationships, command.relationship_kind_id, command.entity, command.target);
+        return world;
+    };
+    if command.kind == TABLE_ERASED_REL_COMMAND_SET_RELATED_AT {
+        world.relationships = relationship_world_set_related_at(world.relationships, command.relationship_kind_id, command.entity, command.target, command.value_index);
         return world;
     };
     if command.kind == TABLE_ERASED_REL_COMMAND_DESPAWN {
@@ -171,6 +181,26 @@ fn table_erased_relationship_commands_test_commands_new() -> TableErasedRelation
     if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c3) != 0 { panic(12320); };
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w1.table).tick != 15 { panic(12321); };
     if read.value.amount != 6 { panic(12322); };
+}
+
+@test "table erased relationship commands apply ordered relationship insertion"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w0, true, false);
+    let c0 = table_erased_relationship_commands_test_commands_new();
+    let (w2, c1, root) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w1, c0);
+    let (w3, c2, first) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w2, c1);
+    let (w4, c3, second) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w3, c2);
+    let (w5, c4, third) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w4, c3);
+    let c5 = table_erased_relationship_commands_set_related<TableErasedTime, TableErasedEvent>(c4, kind.id, first, root);
+    let c6 = table_erased_relationship_commands_set_related<TableErasedTime, TableErasedEvent>(c5, kind.id, second, root);
+    let c7 = table_erased_relationship_commands_set_related_at<TableErasedTime, TableErasedEvent>(c6, kind.id, third, root, 1);
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 0 { panic(12340); };
+    let (w6, c8) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c7);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c8) != 0 { panic(12341); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w6, kind.id, root) != 3 { panic(12342); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w6, kind.id, root, 0), first) != true { panic(12343); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w6, kind.id, root, 1), third) != true { panic(12344); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w6, kind.id, root, 2), second) != true { panic(12345); };
 }
 
 @test "table erased relationship commands preserve explicit spawn location"() {

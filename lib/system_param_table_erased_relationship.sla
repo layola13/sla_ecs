@@ -53,6 +53,10 @@ fn table_erased_relationship_commands_param_set_related<R, M>(param: TableErased
     return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_set_related<R, M>(param.commands, relationship_kind_id, source, target) };
 }
 
+fn table_erased_relationship_commands_param_set_related_at<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, relationship_kind_id: i32, source: Entity, target: Entity, index: i64) -> TableErasedRelationshipCommandsParam<R, M> {
+    return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_set_related_at<R, M>(param.commands, relationship_kind_id, source, target, index) };
+}
+
 fn table_erased_relationship_commands_param_despawn<R, M>(param: TableErasedRelationshipCommandsParam<R, M>, entity: Entity) -> TableErasedRelationshipCommandsParam<R, M> {
     return TableErasedRelationshipCommandsParam<R, M> { world: param.world, commands: table_erased_relationship_commands_despawn<R, M>(param.commands, entity) };
 }
@@ -151,6 +155,16 @@ fn table_erased_relationship_param_commands_system(param: TableErasedRelationshi
     return table_erased_relationship_commands_param_write_message<TableErasedTime, TableErasedEvent>(param4, TableErasedEvent { amount: 5 });
 }
 
+fn table_erased_relationship_param_ordered_commands_system(param: TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent> {
+    let (param1, root) = table_erased_relationship_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param);
+    let (param2, first) = table_erased_relationship_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param1);
+    let (param3, second) = table_erased_relationship_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param2);
+    let (param4, third) = table_erased_relationship_commands_param_reserve_entity<TableErasedTime, TableErasedEvent>(param3);
+    let param5 = table_erased_relationship_commands_param_set_related<TableErasedTime, TableErasedEvent>(param4, 1, first, root);
+    let param6 = table_erased_relationship_commands_param_set_related<TableErasedTime, TableErasedEvent>(param5, 1, second, root);
+    return table_erased_relationship_commands_param_set_related_at<TableErasedTime, TableErasedEvent>(param6, 1, third, root, 1);
+}
+
 fn table_erased_relationship_param_writer_system(writer: MessageWriter<TableErasedEvent>) -> MessageWriter<TableErasedEvent> {
     let writer1 = message_writer_send<TableErasedEvent>(writer, TableErasedEvent { amount: 2 });
     return message_writer_send<TableErasedEvent>(writer1, TableErasedEvent { amount: 3 });
@@ -213,4 +227,18 @@ fn table_erased_relationship_param_reader_resmut_system(param: TableErasedRelati
     if root_by.file_id != 97 { panic(12524); };
     if child_by.file_id != 98 { panic(12525); };
     if child_by.column != 7 { panic(12526); };
+}
+
+@test "table erased relationship commands param supports ordered insertion"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w0, true, false);
+    let w2 = table_erased_relationship_run_commands_system<TableErasedTime, TableErasedEvent>(w1, table_erased_relationship_param_ordered_commands_system);
+    let root = entity_new(1, w2.table.registry.entities.generations[1]);
+    let first = entity_new(2, w2.table.registry.entities.generations[2]);
+    let second = entity_new(3, w2.table.registry.entities.generations[3]);
+    let third = entity_new(4, w2.table.registry.entities.generations[4]);
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w2, kind.id, root) != 3 { panic(12540); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w2, kind.id, root, 0), first) != true { panic(12541); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w2, kind.id, root, 1), third) != true { panic(12542); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w2, kind.id, root, 2), second) != true { panic(12543); };
 }

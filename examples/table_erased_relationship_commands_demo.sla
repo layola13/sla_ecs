@@ -7,21 +7,30 @@ fn table_erased_relationship_commands_demo() -> i32 {
     let c0 = table_erased_relationship_commands_test_commands_new();
     let (w3, c1, root) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w2, c0);
     let (w4, c2, child) = table_erased_relationship_commands_spawn_related<TableErasedTime, TableErasedEvent>(w3, c1, kind.id, root);
-    let c3 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 34, y: 0 });
-    let (w5, c4) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w4, c3);
-    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c4) != 0 { panic(12330); };
-    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 1 { panic(12331); };
+    let (w4a, c2a, second) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w4, c2);
+    let (w4b, c2b, third) = table_erased_relationship_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w4a, c2a);
+    let c3 = table_erased_relationship_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2b, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 34, y: 0 });
+    let c4 = table_erased_relationship_commands_set_related<TableErasedTime, TableErasedEvent>(c3, kind.id, second, root);
+    let c5 = table_erased_relationship_commands_set_related_at<TableErasedTime, TableErasedEvent>(c4, kind.id, third, root, 1);
+    let (w5, c6) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w4b, c5);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c6) != 0 { panic(12330); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 3 { panic(12331); };
     if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, child, position.id, TABLE_ERASED_POS_TYPE).x != 34 { panic(12332); };
-    let c5 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c4, root);
-    let (w6, c6) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c5);
-    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c6) != 0 { panic(12333); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 0), child) != true { panic(12337); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 1), third) != true { panic(12338); };
+    if entity_eq(table_erased_relationship_world_source_at<TableErasedTime, TableErasedEvent>(w5, kind.id, root, 2), second) != true { panic(12339); };
+    let c7 = table_erased_relationship_commands_despawn<TableErasedTime, TableErasedEvent>(c6, root);
+    let (w6, c8) = table_erased_relationship_commands_apply<TableErasedTime, TableErasedEvent>(w5, c7);
+    if table_erased_relationship_commands_len<TableErasedTime, TableErasedEvent>(c8) != 0 { panic(12333); };
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, root) != false { panic(12334); };
     if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, child) != false { panic(12335); };
-    return 1;
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, second) != false { panic(12340); };
+    if table_erased_relationship_world_is_alive<TableErasedTime, TableErasedEvent>(w6, third) != false { panic(12341); };
+    return 3;
 }
 
 fn main() -> i32 { return table_erased_relationship_commands_demo(); }
 
 @test "table erased relationship commands demo applies ordered ECS and relation mutations"() {
-    if table_erased_relationship_commands_demo() != 1 { panic(12336); };
+    if table_erased_relationship_commands_demo() != 3 { panic(12336); };
 }
