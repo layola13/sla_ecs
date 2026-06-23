@@ -645,6 +645,18 @@ fn table_erased_run_entity_spawned_query_resource_system<R, M>(world: TableErase
     return table_erased_world_insert_resource<R, M>(world, param1.resource);
 }
 
+fn table_erased_run_removed_components_query_resource_system<R, M>(world: TableErasedWorld<R, M>, component_id: i32, since_tick: i32, run: fn(TableErasedItemQueryResourceParam<Entity, R>) -> TableErasedItemQueryResourceParam<Entity, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_removed_components<R, M>(world, component_id, since_tick);
+    let param0 = table_erased_item_query_resource_param<Entity, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_removed_components_query_resource_system_auto<R, M>(world: TableErasedWorld<R, M>, type_id: i32, since_tick: i32, run: fn(TableErasedItemQueryResourceParam<Entity, R>) -> TableErasedItemQueryResourceParam<Entity, R>) -> TableErasedWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_run_removed_components_query_resource_system<R, M>(world, component_id, since_tick, run);
+}
+
 fn table_erased_run_spawn_details_query_resource_system<R, M>(world: TableErasedWorld<R, M>, last_run_tick: i32, run: fn(TableErasedItemQueryResourceParam<TableErasedSpawnDetails, R>) -> TableErasedItemQueryResourceParam<TableErasedSpawnDetails, R>) -> TableErasedWorld<R, M> {
     let query = table_erased_world_query_spawn_details<R, M>(world, last_run_tick);
     let param0 = table_erased_item_query_resource_param<TableErasedSpawnDetails, R>(query, table_erased_world_get_resource<R, M>(world));
@@ -1949,4 +1961,43 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let w11 = table_erased_run_pair_mut_with_spawn_details_system_auto<TableErasedParamPos, TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w10, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, first_tick, table_erased_param_spawn_detail_movement_system);
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 1 { panic(12109); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w11, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 42 { panic(12110); };
+}
+
+@test "table erased system params expose removed components"() {
+    let w0 = table_erased_param_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
+    let (w4, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w3);
+    let (w5, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w4);
+    let w6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w5, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 1, y: 0 });
+    let w7 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w6, e1, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 10, y: 0 });
+    let w8 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w7, e1, marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 100 });
+    let w9 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w8, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 2, y: 0 });
+    let w10 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w9, e2, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 20, y: 0 });
+
+    let remove_since = w10.registry.change_tick;
+    let w11 = table_erased_world_increment_tick<TableErasedParamTime, TableErasedParamEvent>(w10);
+    let w12 = table_erased_world_remove_auto<TableErasedParamTime, TableErasedParamEvent>(w11, e1, TABLE_ERASED_PARAM_MARKER_TYPE);
+    let w12r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w12, TableErasedParamTime { tick: 0 });
+    let marker_removed = table_erased_run_removed_components_query_resource_system_auto<TableErasedParamTime, TableErasedParamEvent>(w12r, TABLE_ERASED_PARAM_MARKER_TYPE, remove_since, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(marker_removed).tick != 1 { panic(12920); };
+    let marker_current = table_erased_run_removed_components_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w12r, marker.id, w12r.registry.change_tick, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(marker_current).tick != 0 { panic(12921); };
+
+    let despawn_since = w12.registry.change_tick;
+    let w13 = table_erased_world_increment_tick<TableErasedParamTime, TableErasedParamEvent>(w12);
+    let w14 = table_erased_world_despawn<TableErasedParamTime, TableErasedParamEvent>(w13, e2);
+    let w14r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w14, TableErasedParamTime { tick: 0 });
+    let pos_removed = table_erased_run_removed_components_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w14r, position.id, despawn_since, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(pos_removed).tick != 1 { panic(12922); };
+    let vel_removed = table_erased_run_removed_components_query_resource_system_auto<TableErasedParamTime, TableErasedParamEvent>(w14r, TABLE_ERASED_PARAM_VEL_TYPE, despawn_since, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(vel_removed).tick != 1 { panic(12923); };
+    let marker_after_despawn = table_erased_run_removed_components_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w14r, marker.id, despawn_since, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(marker_after_despawn).tick != 0 { panic(12924); };
+
+    let w15 = table_erased_world_clear_removed_components<TableErasedParamTime, TableErasedParamEvent>(w14);
+    let w15r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w15, TableErasedParamTime { tick: 0 });
+    let removed_after_clear = table_erased_run_removed_components_query_resource_system_auto<TableErasedParamTime, TableErasedParamEvent>(w15r, TABLE_ERASED_PARAM_POS_TYPE, 0, table_erased_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(removed_after_clear).tick != 0 { panic(12925); };
 }
