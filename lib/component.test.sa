@@ -1,0 +1,348 @@
+@import "sa_std/vec.sa"
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@import "sa_std/vec.sa"
+@const SLA_FNPTR_VT_storage_kind_table = vtable { call = @sla__storage_kind_table }
+@const SLA_FNPTR_VT_storage_kind_sparse_set = vtable { call = @sla__storage_kind_sparse_set }
+@const SLA_FNPTR_VT_storage_kind_is_table = vtable { call = @sla__storage_kind_is_table }
+@const SLA_FNPTR_VT_storage_kind_is_sparse_set = vtable { call = @sla__storage_kind_is_sparse_set }
+@const SLA_FNPTR_VT_component_registry_new = vtable { call = @sla__component_registry_new }
+@const SLA_FNPTR_VT_component_info_new = vtable { call = @sla__component_info_new }
+@const SLA_FNPTR_VT_component_register_table = vtable { call = @sla__component_register_table }
+@const SLA_FNPTR_VT_component_register_sparse_set = vtable { call = @sla__component_register_sparse_set }
+@const SLA_FNPTR_VT_component_registry_get = vtable { call = @sla__component_registry_get }
+@sla__storage_kind_table() -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 8
+    store tmp_0+0, 0 as i64
+    return tmp_0
+
+@sla__storage_kind_sparse_set() -> ptr:
+L_ENTRY:
+    tmp_1 = alloc 8
+    store tmp_1+0, 1 as i64
+    return tmp_1
+
+@sla__storage_kind_is_table(^kind: ptr) -> u8:
+L_ENTRY:
+    jmp L_MATCH_CHECK_0_2
+
+L_MATCH_CHECK_0_2:
+    tmp_2 = load kind+0 as i64
+    tmp_3 = 0
+    tmp_4 = eq tmp_2, tmp_3
+    !tmp_2
+    !tmp_3
+    br tmp_4 -> L_MATCH_CASE_0_2, L_MATCH_CHECK_1_2
+
+L_MATCH_CASE_0_2:
+    !tmp_4
+    tmp_5 = 1
+    !kind
+    return tmp_5
+
+L_MATCH_CHECK_1_2:
+    !tmp_4
+    tmp_6 = load kind+0 as i64
+    tmp_7 = 1
+    tmp_8 = eq tmp_6, tmp_7
+    !tmp_6
+    !tmp_7
+    br tmp_8 -> L_MATCH_CASE_1_2, L_MATCH_NO_MATCH_1
+
+L_MATCH_CASE_1_2:
+    !tmp_8
+    tmp_9 = 0
+    !kind
+    return tmp_9
+
+L_MATCH_NO_MATCH_1:
+    !tmp_8
+    panic(1)
+
+
+@sla__storage_kind_is_sparse_set(^kind: ptr) -> u8:
+L_ENTRY:
+    jmp L_MATCH_CHECK_0_5
+
+L_MATCH_CHECK_0_5:
+    tmp_11 = load kind+0 as i64
+    tmp_12 = 0
+    tmp_13 = eq tmp_11, tmp_12
+    !tmp_11
+    !tmp_12
+    br tmp_13 -> L_MATCH_CASE_0_5, L_MATCH_CHECK_1_5
+
+L_MATCH_CASE_0_5:
+    !tmp_13
+    tmp_14 = 0
+    !kind
+    return tmp_14
+
+L_MATCH_CHECK_1_5:
+    !tmp_13
+    tmp_15 = load kind+0 as i64
+    tmp_16 = 1
+    tmp_17 = eq tmp_15, tmp_16
+    !tmp_15
+    !tmp_16
+    br tmp_17 -> L_MATCH_CASE_1_5, L_MATCH_NO_MATCH_4
+
+L_MATCH_CASE_1_5:
+    !tmp_17
+    tmp_18 = 1
+    !kind
+    return tmp_18
+
+L_MATCH_NO_MATCH_4:
+    !tmp_17
+    panic(1)
+
+
+@sla__component_registry_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_20
+    infos = tmp_20
+    tmp_21 = alloc 16
+    tmp_22 = 1
+    store tmp_21+0, tmp_22 as i32
+    !tmp_22
+    store tmp_21+8, infos as ptr
+    return tmp_21
+
+@sla__component_info_new(id: i32, storage: ptr) -> ptr:
+L_ENTRY:
+    tmp_23 = alloc 16
+    store tmp_23+0, id as i32
+    store tmp_23+8, storage as ptr
+    return tmp_23
+
+@sla__component_register_table(registry: ptr) -> ptr:
+L_ENTRY:
+    tmp_24 = load registry+0 as i32
+    id = tmp_24
+    tmp_25 = call @sla__storage_kind_table()
+    tmp_26 = call @sla__component_info_new(id, tmp_25)
+    !tmp_25
+    info = tmp_26
+    tmp_27 = 1
+    tmp_28 = add id, tmp_27
+    !tmp_27
+    store registry+0, tmp_28 as i32
+    !tmp_28
+    tmp_29 = load registry+8 as ptr
+    EXPAND VEC_PUSH tmp_29, info, 8
+    !tmp_29
+    tmp_30 = alloc 16
+    store tmp_30+0, registry as ptr
+    store tmp_30+8, info as ptr
+    !id
+    return tmp_30
+
+@sla__component_register_sparse_set(registry: ptr) -> ptr:
+L_ENTRY:
+    tmp_31 = load registry+0 as i32
+    id = tmp_31
+    tmp_32 = call @sla__storage_kind_sparse_set()
+    tmp_33 = call @sla__component_info_new(id, tmp_32)
+    !tmp_32
+    info = tmp_33
+    tmp_34 = 1
+    tmp_35 = add id, tmp_34
+    !tmp_34
+    store registry+0, tmp_35 as i32
+    !tmp_35
+    tmp_36 = load registry+8 as ptr
+    EXPAND VEC_PUSH tmp_36, info, 8
+    !tmp_36
+    tmp_37 = alloc 16
+    store tmp_37+0, registry as ptr
+    store tmp_37+8, info as ptr
+    !id
+    return tmp_37
+
+@sla__component_registry_get(registry: ptr, id: i32) -> ptr:
+L_ENTRY:
+    tmp_38 = 0
+    i = tmp_38
+    tmp_39 = load registry+8 as ptr
+    EXPAND VEC_LEN tmp_40, tmp_39
+    !tmp_39
+    tmp_41 = tmp_40 as i64
+    cnt = tmp_41
+    jmp L_WHILE_HEAD_6
+
+L_WHILE_HEAD_6:
+    tmp_42 = slt i, cnt
+    br tmp_42 -> L_WHILE_BODY_7, L_WHILE_COND_FALSE_8
+
+L_WHILE_BODY_7:
+    !tmp_42
+    tmp_43 = load registry+8 as ptr
+    EXPAND VEC_GET tmp_44, tmp_43, i
+    !tmp_43
+    tmp_45 = tmp_44 as ptr
+    info = tmp_45
+    tmp_46 = load info+0 as i32
+    tmp_47 = eq tmp_46, id
+    !tmp_46
+    br tmp_47 -> L_THEN_10, L_ELSE_11
+
+L_THEN_10:
+    !tmp_47
+    !cnt
+    !i
+    !registry
+    !id
+    return info
+
+L_ELSE_11:
+    !tmp_47
+    jmp L_MERGE_12
+
+L_MERGE_12:
+    tmp_49 = 1
+    tmp_50 = add i, tmp_49
+    !tmp_49
+    !i
+    i = tmp_50
+    !info
+    jmp L_WHILE_HEAD_6
+
+L_WHILE_COND_FALSE_8:
+    !tmp_42
+    jmp L_WHILE_EXIT_9
+
+L_WHILE_EXIT_9:
+    panic(4301)
+
+@test "component registry defaults to table and supports sparse opt in"():
+L_TEST_ENTRY_13:
+    tmp_52 = call @sla__component_registry_new()
+    reg0 = tmp_52
+    tmp_53 = call @sla__component_register_table(reg0)
+    reg1 = load tmp_53+0 as ptr
+    table_info = load tmp_53+8 as ptr
+    !tmp_53
+    tmp_54 = call @sla__component_register_sparse_set(reg1)
+    reg2 = load tmp_54+0 as ptr
+    sparse_info = load tmp_54+8 as ptr
+    !tmp_54
+    tmp_55 = load table_info+0 as i32
+    tmp_56 = 1
+    tmp_57 = ne tmp_55, tmp_56
+    !tmp_55
+    !tmp_56
+    br tmp_57 -> L_THEN_14, L_ELSE_15
+
+L_THEN_14:
+    !tmp_57
+    panic(4310)
+
+L_ELSE_15:
+    !tmp_57
+    jmp L_MERGE_16
+
+L_MERGE_16:
+    tmp_60 = load sparse_info+0 as i32
+    tmp_61 = 2
+    tmp_62 = ne tmp_60, tmp_61
+    !tmp_60
+    !tmp_61
+    br tmp_62 -> L_THEN_17, L_ELSE_18
+
+L_THEN_17:
+    !tmp_62
+    panic(4311)
+
+L_ELSE_18:
+    !tmp_62
+    jmp L_MERGE_19
+
+L_MERGE_19:
+    tmp_65 = load table_info+8 as ptr
+    tmp_66 = call @sla__storage_kind_is_table(^tmp_65)
+    tmp_67 = 1
+    tmp_68 = ne tmp_66, tmp_67
+    !tmp_66
+    !tmp_67
+    br tmp_68 -> L_THEN_20, L_ELSE_21
+
+L_THEN_20:
+    !tmp_68
+    panic(4312)
+
+L_ELSE_21:
+    !tmp_68
+    jmp L_MERGE_22
+
+L_MERGE_22:
+    tmp_71 = load sparse_info+8 as ptr
+    tmp_72 = call @sla__storage_kind_is_sparse_set(^tmp_71)
+    tmp_73 = 1
+    tmp_74 = ne tmp_72, tmp_73
+    !tmp_72
+    !tmp_73
+    br tmp_74 -> L_THEN_23, L_ELSE_24
+
+L_THEN_23:
+    !tmp_74
+    panic(4313)
+
+L_ELSE_24:
+    !tmp_74
+    jmp L_MERGE_25
+
+L_MERGE_25:
+    tmp_77 = 2
+    tmp_78 = call @sla__component_registry_get(reg2, tmp_77)
+    !tmp_77
+    again = tmp_78
+    tmp_79 = load again+0 as i32
+    tmp_80 = load sparse_info+0 as i32
+    tmp_81 = ne tmp_79, tmp_80
+    !tmp_79
+    !tmp_80
+    br tmp_81 -> L_THEN_26, L_ELSE_27
+
+L_THEN_26:
+    !tmp_81
+    panic(4314)
+
+L_ELSE_27:
+    !tmp_81
+    jmp L_MERGE_28
+
+L_MERGE_28:
+    tmp_84 = load again+8 as ptr
+    tmp_85 = call @sla__storage_kind_is_sparse_set(^tmp_84)
+    tmp_86 = 1
+    tmp_87 = ne tmp_85, tmp_86
+    !tmp_85
+    !tmp_86
+    br tmp_87 -> L_THEN_29, L_ELSE_30
+
+L_THEN_29:
+    !tmp_87
+    panic(4315)
+
+L_ELSE_30:
+    !tmp_87
+    jmp L_MERGE_31
+
+L_MERGE_31:
+    !reg0
+    !reg1
+    !reg2
+    !sparse_info
+    !again
+    !table_info
+    return
+

@@ -1,0 +1,1560 @@
+@import "sa_std/core/box.sa"
+@import "sa_std/vec.sa"
+@import "sa_std/core/box.sa"
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@import "sa_std/core/box.sa"
+@import "sa_std/vec.sa"
+@const SLA_FNPTR_VT_entity_new = vtable { call = @sla__entity_new }
+@const SLA_FNPTR_VT_entity_placeholder = vtable { call = @sla__entity_placeholder }
+@const SLA_FNPTR_VT_entity_index = vtable { call = @sla__entity_index }
+@const SLA_FNPTR_VT_entity_generation = vtable { call = @sla__entity_generation }
+@const SLA_FNPTR_VT_entity_eq = vtable { call = @sla__entity_eq }
+@const SLA_FNPTR_VT_entity_to_bits = vtable { call = @sla__entity_to_bits }
+@const SLA_FNPTR_VT_entity_from_bits = vtable { call = @sla__entity_from_bits }
+@const SLA_FNPTR_VT_allocator_new = vtable { call = @sla__allocator_new }
+@const SLA_FNPTR_VT_alloc_entity = vtable { call = @sla__alloc_entity }
+@const SLA_FNPTR_VT_allocator_id_is_free = vtable { call = @sla__allocator_id_is_free }
+@const SLA_FNPTR_VT_is_alive = vtable { call = @sla__is_alive }
+@const SLA_FNPTR_VT_free_entity = vtable { call = @sla__free_entity }
+@const SLA_FNPTR_VT_erased_observers_new = vtable { call = @sla__erased_observers_new }
+@const SLA_FNPTR_VT_erased_observer_new = vtable { call = @sla__erased_observer_new }
+@const SLA_FNPTR_VT_erased_observers_add = vtable { call = @sla__erased_observers_add }
+@const SLA_FNPTR_VT_erased_observers_count = vtable { call = @sla__erased_observers_count }
+@const SLA_FNPTR_VT_erased_observers_trigger_value = vtable { call = @sla__erased_observers_trigger_value }
+@const SLA_FNPTR_VT_erased_speak_observer = vtable { call = @sla__erased_speak_observer }
+@const SLA_FNPTR_VT_erased_explode_observer = vtable { call = @sla__erased_explode_observer }
+@const SLA_FNPTR_VT_erased_event_value_read_ErasedSpeakEvent = vtable { call = @sla__erased_event_value_read_ErasedSpeakEvent }
+@const SLA_FNPTR_VT_erased_event_value_read_ErasedExplodeEvent = vtable { call = @sla__erased_event_value_read_ErasedExplodeEvent }
+@const SLA_FNPTR_VT_erased_event_value_new_ErasedSpeakEvent = vtable { call = @sla__erased_event_value_new_ErasedSpeakEvent }
+@const SLA_FNPTR_VT_erased_observers_trigger_ErasedSpeakEvent = vtable { call = @sla__erased_observers_trigger_ErasedSpeakEvent }
+@const SLA_FNPTR_VT_ecs_box_drop_ErasedSpeakEvent = vtable { call = @sla__ecs_box_drop_ErasedSpeakEvent }
+@const SLA_FNPTR_VT_erased_event_value_new_ErasedExplodeEvent = vtable { call = @sla__erased_event_value_new_ErasedExplodeEvent }
+@const SLA_FNPTR_VT_erased_observers_trigger_entity_ErasedExplodeEvent = vtable { call = @sla__erased_observers_trigger_entity_ErasedExplodeEvent }
+@const SLA_FNPTR_VT_ecs_box_drop_ErasedExplodeEvent = vtable { call = @sla__ecs_box_drop_ErasedExplodeEvent }
+@sla__entity_new(id: i32, gen: i32) -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 8
+    store tmp_0+0, id as i32
+    store tmp_0+4, gen as i32
+    return tmp_0
+
+@sla__entity_placeholder() -> ptr:
+L_ENTRY:
+    tmp_1 = alloc 8
+    tmp_2 = 0
+    store tmp_1+0, tmp_2 as i32
+    !tmp_2
+    tmp_3 = 0
+    tmp_4 = 1
+    tmp_5 = sub tmp_3, tmp_4
+    !tmp_3
+    !tmp_4
+    store tmp_1+4, tmp_5 as i32
+    !tmp_5
+    return tmp_1
+
+@sla__entity_index(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_6 = load entity+0 as i32
+    !entity
+    return tmp_6
+
+@sla__entity_generation(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_7 = load entity+4 as i32
+    !entity
+    return tmp_7
+
+@sla__entity_eq(a: ptr, b: ptr) -> u8:
+L_ENTRY:
+    tmp_8 = load a+0 as i32
+    tmp_9 = load b+0 as i32
+    tmp_10 = eq tmp_8, tmp_9
+    tmp_11 = load a+4 as i32
+    tmp_12 = load b+4 as i32
+    tmp_13 = eq tmp_11, tmp_12
+    tmp_14 = and tmp_10, tmp_13
+    tmp_15 = or tmp_14, 0
+    return tmp_15
+
+@sla__entity_to_bits(entity: ptr) -> i64:
+L_ENTRY:
+    tmp_16 = load entity+4 as i32
+    tmp_17 = tmp_16 as i64
+    gen_part = tmp_17
+    tmp_18 = load entity+0 as i32
+    tmp_19 = tmp_18 as i64
+    id_part = tmp_19
+    tmp_20 = 4294967296
+    tmp_21 = mul gen_part, tmp_20
+    !tmp_20
+    tmp_22 = add tmp_21, id_part
+    !tmp_21
+    !entity
+    return tmp_22
+
+@sla__entity_from_bits(bits: i64) -> ptr:
+L_ENTRY:
+    tmp_23 = 4294967296
+    tmp_24 = div bits, tmp_23
+    !tmp_23
+    gen64 = tmp_24
+    tmp_25 = 4294967296
+    tmp_26 = mul gen64, tmp_25
+    !tmp_25
+    tmp_27 = sub bits, tmp_26
+    !tmp_26
+    id64 = tmp_27
+    tmp_28 = alloc 8
+    tmp_29 = id64 as i32
+    store tmp_28+0, tmp_29 as i32
+    tmp_30 = gen64 as i32
+    store tmp_28+4, tmp_30 as i32
+    !bits
+    return tmp_28
+
+@sla__allocator_new() -> ptr:
+L_ENTRY:
+    tmp_31 = alloc 24
+    tmp_32 = 1
+    store tmp_31+0, tmp_32 as i32
+    !tmp_32
+    tmp_33 = 0
+    store tmp_31+4, tmp_33 as i32
+    !tmp_33
+    tmp_34 = alloc 128
+    tmp_35 = 0
+    store tmp_34+0, tmp_35 as i64
+    store tmp_34+8, tmp_35 as i64
+    store tmp_34+16, tmp_35 as i64
+    store tmp_34+24, tmp_35 as i64
+    store tmp_34+32, tmp_35 as i64
+    store tmp_34+40, tmp_35 as i64
+    store tmp_34+48, tmp_35 as i64
+    store tmp_34+56, tmp_35 as i64
+    store tmp_34+64, tmp_35 as i64
+    store tmp_34+72, tmp_35 as i64
+    store tmp_34+80, tmp_35 as i64
+    store tmp_34+88, tmp_35 as i64
+    store tmp_34+96, tmp_35 as i64
+    store tmp_34+104, tmp_35 as i64
+    store tmp_34+112, tmp_35 as i64
+    store tmp_34+120, tmp_35 as i64
+    !tmp_35
+    store tmp_31+8, tmp_34 as ptr
+    !tmp_34
+    tmp_36 = alloc 128
+    tmp_37 = 0
+    store tmp_36+0, tmp_37 as i64
+    store tmp_36+8, tmp_37 as i64
+    store tmp_36+16, tmp_37 as i64
+    store tmp_36+24, tmp_37 as i64
+    store tmp_36+32, tmp_37 as i64
+    store tmp_36+40, tmp_37 as i64
+    store tmp_36+48, tmp_37 as i64
+    store tmp_36+56, tmp_37 as i64
+    store tmp_36+64, tmp_37 as i64
+    store tmp_36+72, tmp_37 as i64
+    store tmp_36+80, tmp_37 as i64
+    store tmp_36+88, tmp_37 as i64
+    store tmp_36+96, tmp_37 as i64
+    store tmp_36+104, tmp_37 as i64
+    store tmp_36+112, tmp_37 as i64
+    store tmp_36+120, tmp_37 as i64
+    !tmp_37
+    store tmp_31+16, tmp_36 as ptr
+    !tmp_36
+    return tmp_31
+
+@sla__alloc_entity(a: ptr) -> ptr:
+L_ENTRY:
+    tmp_38 = load a+4 as i32
+    tmp_39 = 0
+    tmp_40 = sgt tmp_38, tmp_39
+    !tmp_38
+    !tmp_39
+    br tmp_40 -> L_THEN_0, L_ELSE_1
+
+L_THEN_0:
+    !tmp_40
+    tmp_41 = load a+4 as i32
+    tmp_42 = 1
+    tmp_43 = sub tmp_41, tmp_42
+    !tmp_41
+    !tmp_42
+    next_free_count = tmp_43
+    tmp_44 = load a+16 as ptr
+    tmp_45 = mul next_free_count, 4
+    tmp_46 = ptr_add tmp_44, tmp_45
+    !tmp_45
+    tmp_47 = load tmp_46+0 as i32
+    !tmp_46
+    !tmp_44
+    id = tmp_47
+    store a+4, next_free_count as i32
+    tmp_48 = load a+16 as ptr
+    tmp_49 = mul next_free_count, 4
+    tmp_50 = ptr_add tmp_48, tmp_49
+    !tmp_49
+    tmp_51 = 0
+    store tmp_50+0, tmp_51 as i32
+    !tmp_50
+    !tmp_48
+    !tmp_51
+    tmp_52 = alloc 16
+    store tmp_52+0, a as ptr
+    tmp_53 = load a+8 as ptr
+    tmp_54 = mul id, 4
+    tmp_55 = ptr_add tmp_53, tmp_54
+    !tmp_54
+    tmp_56 = load tmp_55+0 as i32
+    !tmp_55
+    !tmp_53
+    tmp_57 = call @sla__entity_new(id, tmp_56)
+    !tmp_56
+    store tmp_52+8, tmp_57 as ptr
+    !next_free_count
+    return tmp_52
+
+L_ELSE_1:
+    !tmp_40
+    jmp L_MERGE_2
+
+L_MERGE_2:
+    tmp_59 = load a+0 as i32
+    tmp_60 = 16
+    tmp_61 = sge tmp_59, tmp_60
+    !tmp_59
+    !tmp_60
+    br tmp_61 -> L_THEN_3, L_ELSE_4
+
+L_THEN_3:
+    !tmp_61
+    panic(2001)
+
+L_ELSE_4:
+    !tmp_61
+    jmp L_MERGE_5
+
+L_MERGE_5:
+    tmp_64 = load a+0 as i32
+    id = tmp_64
+    tmp_65 = 1
+    tmp_66 = add id, tmp_65
+    !tmp_65
+    store a+0, tmp_66 as i32
+    !tmp_66
+    tmp_67 = alloc 16
+    store tmp_67+0, a as ptr
+    tmp_68 = load a+8 as ptr
+    tmp_69 = mul id, 4
+    tmp_70 = ptr_add tmp_68, tmp_69
+    !tmp_69
+    tmp_71 = load tmp_70+0 as i32
+    !tmp_70
+    !tmp_68
+    tmp_72 = call @sla__entity_new(id, tmp_71)
+    !tmp_71
+    store tmp_67+8, tmp_72 as ptr
+    return tmp_67
+
+@sla__allocator_id_is_free(a: ptr, id: i32) -> u8:
+L_ENTRY:
+    tmp_73 = 0
+    i = tmp_73
+    jmp L_WHILE_HEAD_6
+
+L_WHILE_HEAD_6:
+    tmp_74 = load a+4 as i32
+    tmp_75 = slt i, tmp_74
+    !tmp_74
+    br tmp_75 -> L_WHILE_BODY_7, L_WHILE_COND_FALSE_8
+
+L_WHILE_BODY_7:
+    !tmp_75
+    tmp_76 = load a+16 as ptr
+    tmp_77 = mul i, 4
+    tmp_78 = ptr_add tmp_76, tmp_77
+    !tmp_77
+    tmp_79 = load tmp_78+0 as i32
+    !tmp_78
+    !tmp_76
+    tmp_80 = eq tmp_79, id
+    !tmp_79
+    br tmp_80 -> L_THEN_10, L_ELSE_11
+
+L_THEN_10:
+    !tmp_80
+    tmp_81 = 1
+    !i
+    !a
+    !id
+    return tmp_81
+
+L_ELSE_11:
+    !tmp_80
+    jmp L_MERGE_12
+
+L_MERGE_12:
+    tmp_83 = 1
+    tmp_84 = add i, tmp_83
+    !tmp_83
+    !i
+    i = tmp_84
+    jmp L_WHILE_HEAD_6
+
+L_WHILE_COND_FALSE_8:
+    !tmp_75
+    jmp L_WHILE_EXIT_9
+
+L_WHILE_EXIT_9:
+    tmp_85 = 0
+    !i
+    !a
+    !id
+    return tmp_85
+
+@sla__is_alive(a: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_86 = load entity+0 as i32
+    tmp_87 = 0
+    tmp_88 = sle tmp_86, tmp_87
+    !tmp_86
+    !tmp_87
+    br tmp_88 -> L_THEN_13, L_ELSE_14
+
+L_THEN_13:
+    !tmp_88
+    tmp_89 = 0
+    !entity
+    !a
+    return tmp_89
+
+L_ELSE_14:
+    !tmp_88
+    jmp L_MERGE_15
+
+L_MERGE_15:
+    tmp_91 = load entity+0 as i32
+    tmp_92 = 16
+    tmp_93 = sge tmp_91, tmp_92
+    !tmp_91
+    !tmp_92
+    br tmp_93 -> L_THEN_16, L_ELSE_17
+
+L_THEN_16:
+    !tmp_93
+    tmp_94 = 0
+    !entity
+    !a
+    return tmp_94
+
+L_ELSE_17:
+    !tmp_93
+    jmp L_MERGE_18
+
+L_MERGE_18:
+    tmp_96 = load entity+0 as i32
+    tmp_97 = load a+0 as i32
+    tmp_98 = sge tmp_96, tmp_97
+    !tmp_96
+    !tmp_97
+    br tmp_98 -> L_THEN_19, L_ELSE_20
+
+L_THEN_19:
+    !tmp_98
+    tmp_99 = 0
+    !entity
+    !a
+    return tmp_99
+
+L_ELSE_20:
+    !tmp_98
+    jmp L_MERGE_21
+
+L_MERGE_21:
+    tmp_101 = load entity+0 as i32
+    tmp_102 = call @sla__allocator_id_is_free(a, tmp_101)
+    !tmp_101
+    br tmp_102 -> L_THEN_22, L_ELSE_23
+
+L_THEN_22:
+    !tmp_102
+    tmp_103 = 0
+    !entity
+    !a
+    return tmp_103
+
+L_ELSE_23:
+    !tmp_102
+    jmp L_MERGE_24
+
+L_MERGE_24:
+    tmp_105 = load a+8 as ptr
+    tmp_106 = load entity+0 as i32
+    tmp_107 = mul tmp_106, 4
+    tmp_108 = ptr_add tmp_105, tmp_107
+    !tmp_107
+    !tmp_106
+    tmp_109 = load tmp_108+0 as i32
+    !tmp_108
+    !tmp_105
+    tmp_110 = load entity+4 as i32
+    tmp_111 = eq tmp_109, tmp_110
+    !tmp_109
+    !tmp_110
+    !entity
+    !a
+    return tmp_111
+
+@sla__free_entity(a: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_112 = alloc 8
+    tmp_113 = load entity+0 as i32
+    store tmp_112+0, tmp_113 as i32
+    tmp_114 = load entity+4 as i32
+    store tmp_112+4, tmp_114 as i32
+    tmp_115 = call @sla__is_alive(a, tmp_112)
+    !tmp_112
+    tmp_116 = 1
+    tmp_117 = ne tmp_115, tmp_116
+    !tmp_115
+    !tmp_116
+    br tmp_117 -> L_THEN_25, L_ELSE_26
+
+L_THEN_25:
+    !tmp_117
+    !entity
+    return a
+
+L_ELSE_26:
+    !tmp_117
+    jmp L_MERGE_27
+
+L_MERGE_27:
+    tmp_119 = load a+8 as ptr
+    tmp_120 = load entity+0 as i32
+    tmp_121 = mul tmp_120, 4
+    tmp_122 = ptr_add tmp_119, tmp_121
+    !tmp_121
+    !tmp_120
+    tmp_123 = load a+8 as ptr
+    tmp_124 = load entity+0 as i32
+    tmp_125 = mul tmp_124, 4
+    tmp_126 = ptr_add tmp_123, tmp_125
+    !tmp_125
+    !tmp_124
+    tmp_127 = load tmp_126+0 as i32
+    !tmp_126
+    !tmp_123
+    tmp_128 = 1
+    tmp_129 = add tmp_127, tmp_128
+    !tmp_127
+    !tmp_128
+    store tmp_122+0, tmp_129 as i32
+    !tmp_122
+    !tmp_119
+    !tmp_129
+    tmp_130 = load a+16 as ptr
+    tmp_131 = load a+4 as i32
+    tmp_132 = mul tmp_131, 4
+    tmp_133 = ptr_add tmp_130, tmp_132
+    !tmp_132
+    !tmp_131
+    tmp_134 = load entity+0 as i32
+    store tmp_133+0, tmp_134 as i32
+    !tmp_133
+    !tmp_130
+    !tmp_134
+    tmp_135 = load a+4 as i32
+    tmp_136 = 1
+    tmp_137 = add tmp_135, tmp_136
+    !tmp_135
+    !tmp_136
+    store a+4, tmp_137 as i32
+    !tmp_137
+    !entity
+    return a
+
+@sla__erased_observers_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_138
+    observers = tmp_138
+    tmp_139 = alloc 24
+    store tmp_139+0, observers as ptr
+    tmp_140 = 0
+    store tmp_139+8, tmp_140 as i32
+    !tmp_140
+    tmp_141 = 0
+    store tmp_139+12, tmp_141 as i32
+    !tmp_141
+    tmp_142 = 0
+    tmp_143 = 1
+    tmp_144 = sub tmp_142, tmp_143
+    !tmp_142
+    !tmp_143
+    store tmp_139+16, tmp_144 as i32
+    !tmp_144
+    tmp_145 = 0
+    store tmp_139+20, tmp_145 as i32
+    !tmp_145
+    return tmp_139
+
+@sla__erased_observer_new(type_id: i32, run: ptr) -> ptr:
+L_ENTRY:
+    tmp_146 = alloc 16
+    store tmp_146+0, type_id as i32
+    store tmp_146+8, run as ptr
+    return tmp_146
+
+@sla__erased_observers_add(observers: ptr, observer: ptr) -> ptr:
+L_ENTRY:
+    tmp_147 = load observers+0 as ptr
+    EXPAND VEC_PUSH tmp_147, observer, 8
+    !tmp_147
+    !observer
+    return observers
+
+@sla__erased_observers_count(observers: ptr) -> i64:
+L_ENTRY:
+    tmp_148 = load observers+0 as ptr
+    EXPAND VEC_LEN tmp_149, tmp_148
+    !tmp_148
+    tmp_150 = tmp_149 as i64
+    !observers
+    return tmp_150
+
+@sla__erased_observers_trigger_value(observers: ptr, value: ptr, target_entity_id: i32, drop_fn: ptr) -> ptr:
+L_ENTRY:
+    tmp_151 = 0
+    i = tmp_151
+    tmp_152 = load observers+0 as ptr
+    EXPAND VEC_LEN tmp_153, tmp_152
+    !tmp_152
+    tmp_154 = tmp_153 as i64
+    cnt = tmp_154
+    jmp L_WHILE_HEAD_28
+
+L_WHILE_HEAD_28:
+    tmp_155 = slt i, cnt
+    br tmp_155 -> L_WHILE_BODY_29, L_WHILE_COND_FALSE_30
+
+L_WHILE_BODY_29:
+    !tmp_155
+    tmp_156 = load observers+0 as ptr
+    EXPAND VEC_GET tmp_157, tmp_156, i
+    !tmp_156
+    tmp_158 = tmp_157 as ptr
+    observer = tmp_158
+    tmp_159 = load observer+0 as i32
+    tmp_160 = load value+0 as i32
+    tmp_161 = eq tmp_159, tmp_160
+    !tmp_159
+    !tmp_160
+    br tmp_161 -> L_THEN_32, L_ELSE_33
+
+L_THEN_32:
+    !tmp_161
+    tmp_162 = load observer+8 as ptr
+    run = tmp_162
+    tmp_163 = load run+8 as ptr
+    tmp_164 = load tmp_163+0 as ptr
+    tmp_165 = call_indirect tmp_164(value, target_entity_id)
+    !tmp_164
+    !tmp_163
+    result = tmp_165
+    tmp_166 = load observers+8 as i32
+    tmp_167 = 1
+    tmp_168 = add tmp_166, tmp_167
+    !tmp_166
+    !tmp_167
+    store observers+8, tmp_168 as i32
+    !tmp_168
+    tmp_169 = load value+0 as i32
+    store observers+12, tmp_169 as i32
+    !tmp_169
+    store observers+16, target_entity_id as i32
+    tmp_170 = load observers+20 as i32
+    tmp_171 = add tmp_170, result
+    !tmp_170
+    store observers+20, tmp_171 as i32
+    !tmp_171
+    !run
+    !result
+    jmp L_MERGE_34
+
+L_ELSE_33:
+    !tmp_161
+    jmp L_MERGE_34
+
+L_MERGE_34:
+    tmp_173 = 1
+    tmp_174 = add i, tmp_173
+    !tmp_173
+    !i
+    i = tmp_174
+    !observer
+    jmp L_WHILE_HEAD_28
+
+L_WHILE_COND_FALSE_30:
+    !tmp_155
+    jmp L_WHILE_EXIT_31
+
+L_WHILE_EXIT_31:
+    tmp_175 = load drop_fn+8 as ptr
+    tmp_176 = load tmp_175+0 as ptr
+    tmp_177 = load value+8 as ptr
+    tmp_178 = call_indirect tmp_176(tmp_177)
+    !tmp_176
+    !tmp_175
+    !tmp_177
+    !tmp_178
+    !cnt
+    !i
+    !value
+    !target_entity_id
+    !drop_fn
+    return observers
+
+@sla__ErasedSpeakEvent_event_type_id() -> i32:
+L_ENTRY:
+    tmp_179 = 129101
+    return tmp_179
+
+@sla__ErasedExplodeEvent_event_type_id() -> i32:
+L_ENTRY:
+    tmp_180 = 129102
+    return tmp_180
+
+@sla__erased_speak_observer(value: ptr, target_entity_id: i32) -> i32:
+L_ENTRY:
+    tmp_181 = call @sla__ErasedSpeakEvent_event_type_id()
+    tmp_182 = call @sla__erased_event_value_read_ErasedSpeakEvent(value, tmp_181)
+    !tmp_181
+    event = tmp_182
+    tmp_183 = 0
+    tmp_184 = sge target_entity_id, tmp_183
+    !tmp_183
+    br tmp_184 -> L_THEN_35, L_ELSE_36
+
+L_THEN_35:
+    !tmp_184
+    tmp_185 = load event+0 as i32
+    tmp_186 = add tmp_185, target_entity_id
+    !tmp_185
+    !event
+    !value
+    return tmp_186
+
+L_ELSE_36:
+    !tmp_184
+    jmp L_MERGE_37
+
+L_MERGE_37:
+    tmp_188 = load event+0 as i32
+    !event
+    !value
+    !target_entity_id
+    return tmp_188
+
+@sla__erased_explode_observer(value: ptr, target_entity_id: i32) -> i32:
+L_ENTRY:
+    tmp_189 = call @sla__ErasedExplodeEvent_event_type_id()
+    tmp_190 = call @sla__erased_event_value_read_ErasedExplodeEvent(value, tmp_189)
+    !tmp_189
+    event = tmp_190
+    tmp_191 = load event+0 as i32
+    tmp_192 = add tmp_191, target_entity_id
+    !tmp_191
+    !event
+    !value
+    return tmp_192
+
+@sla__erased_event_value_read_ErasedSpeakEvent(value: ptr, type_id: i32) -> ptr:
+L_ENTRY:
+    tmp_193 = load value+0 as i32
+    tmp_194 = ne tmp_193, type_id
+    !tmp_193
+    br tmp_194 -> L_THEN_38, L_ELSE_39
+
+L_THEN_38:
+    !tmp_194
+    panic(12900)
+
+L_ELSE_39:
+    !tmp_194
+    jmp L_MERGE_40
+
+L_MERGE_40:
+    tmp_197 = load value+8 as ptr
+    typed = tmp_197
+    tmp_199 = load typed+0 as ptr
+    tmp_198 = tmp_199
+    !typed
+    !value
+    !type_id
+    return tmp_198
+
+@sla__erased_event_value_read_ErasedExplodeEvent(value: ptr, type_id: i32) -> ptr:
+L_ENTRY:
+    tmp_200 = load value+0 as i32
+    tmp_201 = ne tmp_200, type_id
+    !tmp_200
+    br tmp_201 -> L_THEN_41, L_ELSE_42
+
+L_THEN_41:
+    !tmp_201
+    panic(12900)
+
+L_ELSE_42:
+    !tmp_201
+    jmp L_MERGE_43
+
+L_MERGE_43:
+    tmp_204 = load value+8 as ptr
+    typed = tmp_204
+    tmp_206 = load typed+0 as ptr
+    tmp_205 = tmp_206
+    !typed
+    !value
+    !type_id
+    return tmp_205
+
+@sla__erased_event_value_new_ErasedSpeakEvent(type_id: i32, value: ptr) -> ptr:
+L_ENTRY:
+    EXPAND BOX_NEW tmp_207, value
+    boxed = tmp_207
+    EXPAND BOX_INTO_RAW tmp_208, boxed
+    raw = tmp_208
+    tmp_209 = alloc 16
+    store tmp_209+0, type_id as i32
+    store tmp_209+8, raw as ptr
+    !value
+    return tmp_209
+
+@sla__erased_observers_trigger_ErasedSpeakEvent(observers: ptr, type_id: i32, drop_fn: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_210 = call @sla__erased_event_value_new_ErasedSpeakEvent(type_id, value)
+    erased = tmp_210
+    tmp_211 = 0
+    tmp_212 = 1
+    tmp_213 = sub tmp_211, tmp_212
+    !tmp_211
+    !tmp_212
+    tmp_214 = call @sla__erased_observers_trigger_value(observers, erased, tmp_213, drop_fn)
+    !tmp_213
+    !type_id
+    !value
+    return tmp_214
+
+@sla__ecs_box_drop_ErasedSpeakEvent(raw: ptr):
+L_ENTRY:
+    typed = raw
+    EXPAND BOX_FROM_RAW tmp_216, typed
+    tmp_215 = tmp_216
+    boxed = tmp_215
+    !typed
+    !boxed
+    return
+
+@sla__erased_event_value_new_ErasedExplodeEvent(type_id: i32, value: ptr) -> ptr:
+L_ENTRY:
+    EXPAND BOX_NEW tmp_217, value
+    boxed = tmp_217
+    EXPAND BOX_INTO_RAW tmp_218, boxed
+    raw = tmp_218
+    tmp_219 = alloc 16
+    store tmp_219+0, type_id as i32
+    store tmp_219+8, raw as ptr
+    !value
+    return tmp_219
+
+@sla__erased_observers_trigger_entity_ErasedExplodeEvent(observers: ptr, entity: ptr, type_id: i32, drop_fn: ptr, value: ptr) -> ptr:
+L_ENTRY:
+    tmp_220 = call @sla__erased_event_value_new_ErasedExplodeEvent(type_id, value)
+    erased = tmp_220
+    tmp_221 = load entity+0 as i32
+    tmp_222 = call @sla__erased_observers_trigger_value(observers, erased, tmp_221, drop_fn)
+    !tmp_221
+    !entity
+    !type_id
+    !value
+    return tmp_222
+
+@sla__ecs_box_drop_ErasedExplodeEvent(raw: ptr):
+L_ENTRY:
+    typed = raw
+    EXPAND BOX_FROM_RAW tmp_224, typed
+    tmp_223 = tmp_224
+    boxed = tmp_223
+    !typed
+    !boxed
+    return
+
+@test "entity placeholder is never allocated"():
+L_TEST_ENTRY_44:
+    tmp_225 = call @sla__entity_placeholder()
+    placeholder = tmp_225
+    tmp_226 = call @sla__allocator_new()
+    a = tmp_226
+    tmp_227 = call @sla__alloc_entity(a)
+    a1 = load tmp_227+0 as ptr
+    e1 = load tmp_227+8 as ptr
+    !tmp_227
+    tmp_228 = load placeholder+0 as i32
+    tmp_229 = load e1+0 as i32
+    tmp_230 = eq tmp_228, tmp_229
+    !tmp_228
+    !tmp_229
+    br tmp_230 -> L_THEN_45, L_ELSE_46
+
+L_THEN_45:
+    !tmp_230
+    panic(2100)
+
+L_ELSE_46:
+    !tmp_230
+    jmp L_MERGE_47
+
+L_MERGE_47:
+    tmp_233 = alloc 8
+    tmp_234 = load placeholder+0 as i32
+    store tmp_233+0, tmp_234 as i32
+    tmp_235 = load placeholder+4 as i32
+    store tmp_233+4, tmp_235 as i32
+    tmp_236 = call @sla__is_alive(a1, tmp_233)
+    !tmp_233
+    tmp_237 = 0
+    tmp_238 = ne tmp_236, tmp_237
+    !tmp_236
+    !tmp_237
+    br tmp_238 -> L_THEN_48, L_ELSE_49
+
+L_THEN_48:
+    !tmp_238
+    panic(2101)
+
+L_ELSE_49:
+    !tmp_238
+    jmp L_MERGE_50
+
+L_MERGE_50:
+    !a
+    !placeholder
+    !e1
+    !a1
+    return
+
+@test "entity bit roundtrip"():
+L_TEST_ENTRY_51:
+    tmp_241 = 42
+    tmp_242 = 7
+    tmp_243 = call @sla__entity_new(tmp_241, tmp_242)
+    !tmp_241
+    !tmp_242
+    e = tmp_243
+    tmp_244 = alloc 8
+    tmp_245 = load e+0 as i32
+    store tmp_244+0, tmp_245 as i32
+    tmp_246 = load e+4 as i32
+    store tmp_244+4, tmp_246 as i32
+    tmp_247 = call @sla__entity_to_bits(tmp_244)
+    !tmp_244
+    bits = tmp_247
+    tmp_248 = call @sla__entity_from_bits(bits)
+    out = tmp_248
+    tmp_249 = alloc 8
+    tmp_250 = load e+0 as i32
+    store tmp_249+0, tmp_250 as i32
+    tmp_251 = load e+4 as i32
+    store tmp_249+4, tmp_251 as i32
+    tmp_252 = alloc 8
+    tmp_253 = load out+0 as i32
+    store tmp_252+0, tmp_253 as i32
+    tmp_254 = load out+4 as i32
+    store tmp_252+4, tmp_254 as i32
+    tmp_255 = call @sla__entity_eq(tmp_249, tmp_252)
+    !tmp_249
+    !tmp_252
+    tmp_256 = 1
+    tmp_257 = ne tmp_255, tmp_256
+    !tmp_255
+    !tmp_256
+    br tmp_257 -> L_THEN_52, L_ELSE_53
+
+L_THEN_52:
+    !tmp_257
+    panic(2110)
+
+L_ELSE_53:
+    !tmp_257
+    jmp L_MERGE_54
+
+L_MERGE_54:
+    !out
+    !bits
+    !e
+    return
+
+@test "entity derives value semantics"():
+L_TEST_ENTRY_55:
+    tmp_260 = 42
+    tmp_261 = 7
+    tmp_262 = call @sla__entity_new(tmp_260, tmp_261)
+    !tmp_260
+    !tmp_261
+    e = tmp_262
+    copied = alloc 8
+    tmp_263 = load e+0 as i32
+    store copied+0, tmp_263 as i32
+    tmp_264 = load e+4 as i32
+    store copied+4, tmp_264 as i32
+    tmp_265 = load copied+0 as i32
+    tmp_266 = load e+0 as i32
+    tmp_267 = eq tmp_265, tmp_266
+    tmp_268 = load copied+4 as i32
+    tmp_269 = load e+4 as i32
+    tmp_270 = eq tmp_268, tmp_269
+    tmp_271 = and tmp_267, tmp_270
+    tmp_272 = ne tmp_271, 1
+    br tmp_272 -> L_THEN_56, L_ELSE_57
+
+L_THEN_56:
+    !tmp_272
+    panic(2115)
+
+L_ELSE_57:
+    !tmp_272
+    jmp L_MERGE_58
+
+L_MERGE_58:
+    tmp_275 = load e+0 as i32
+    tmp_276 = 42
+    tmp_277 = ne tmp_275, tmp_276
+    !tmp_275
+    !tmp_276
+    br tmp_277 -> L_THEN_59, L_ELSE_60
+
+L_THEN_59:
+    !tmp_277
+    panic(2116)
+
+L_ELSE_60:
+    !tmp_277
+    jmp L_MERGE_61
+
+L_MERGE_61:
+    tmp_280 = 1469598103934665603
+    tmp_281 = load copied+0 as i32
+    tmp_282 = tmp_281 as u64
+    tmp_283 = xor tmp_280, tmp_282
+    tmp_284 = mul tmp_283, 1099511628211
+    tmp_285 = load copied+4 as i32
+    tmp_286 = tmp_285 as u64
+    tmp_287 = xor tmp_284, tmp_286
+    tmp_288 = mul tmp_287, 1099511628211
+    tmp_289 = 1469598103934665603
+    tmp_290 = load e+0 as i32
+    tmp_291 = tmp_290 as u64
+    tmp_292 = xor tmp_289, tmp_291
+    tmp_293 = mul tmp_292, 1099511628211
+    tmp_294 = load e+4 as i32
+    tmp_295 = tmp_294 as u64
+    tmp_296 = xor tmp_293, tmp_295
+    tmp_297 = mul tmp_296, 1099511628211
+    tmp_298 = ne tmp_288, tmp_297
+    !tmp_288
+    !tmp_297
+    br tmp_298 -> L_THEN_62, L_ELSE_63
+
+L_THEN_62:
+    !tmp_298
+    panic(2117)
+
+L_ELSE_63:
+    !tmp_298
+    jmp L_MERGE_64
+
+L_MERGE_64:
+    tmp_301 = 42
+    tmp_302 = 8
+    tmp_303 = call @sla__entity_new(tmp_301, tmp_302)
+    !tmp_301
+    !tmp_302
+    later = tmp_303
+    tmp_304 = load e+0 as i32
+    tmp_305 = load later+0 as i32
+    tmp_306 = slt tmp_304, tmp_305
+    tmp_307 = eq tmp_304, tmp_305
+    tmp_308 = load e+4 as i32
+    tmp_309 = load later+4 as i32
+    tmp_310 = slt tmp_308, tmp_309
+    tmp_311 = eq tmp_308, tmp_309
+    tmp_312 = and tmp_307, tmp_310
+    tmp_313 = or tmp_306, tmp_312
+    tmp_314 = and tmp_307, tmp_311
+    tmp_315 = or tmp_313, 0
+    tmp_316 = 1
+    tmp_317 = ne tmp_315, tmp_316
+    !tmp_315
+    !tmp_316
+    br tmp_317 -> L_THEN_65, L_ELSE_66
+
+L_THEN_65:
+    !tmp_317
+    panic(2118)
+
+L_ELSE_66:
+    !tmp_317
+    jmp L_MERGE_67
+
+L_MERGE_67:
+    tmp_320 = load later+0 as i32
+    tmp_321 = load e+0 as i32
+    tmp_322 = sgt tmp_320, tmp_321
+    tmp_323 = eq tmp_320, tmp_321
+    tmp_324 = load later+4 as i32
+    tmp_325 = load e+4 as i32
+    tmp_326 = sgt tmp_324, tmp_325
+    tmp_327 = eq tmp_324, tmp_325
+    tmp_328 = and tmp_323, tmp_326
+    tmp_329 = or tmp_322, tmp_328
+    tmp_330 = and tmp_323, tmp_327
+    tmp_331 = or tmp_329, 0
+    tmp_332 = 1
+    tmp_333 = ne tmp_331, tmp_332
+    !tmp_331
+    !tmp_332
+    br tmp_333 -> L_THEN_68, L_ELSE_69
+
+L_THEN_68:
+    !tmp_333
+    panic(2119)
+
+L_ELSE_69:
+    !tmp_333
+    jmp L_MERGE_70
+
+L_MERGE_70:
+    EXPAND FORMAT_BEGIN tmp_336, 128
+    @const SLA_STR_0 = utf8:"Entity"
+    tmp_337 = &SLA_STR_0
+    EXPAND FORMAT_PUSH_BYTES tmp_338, tmp_336, tmp_337, 6
+    !tmp_337
+    @const SLA_STR_1 = utf8:" { "
+    tmp_339 = &SLA_STR_1
+    EXPAND FORMAT_PUSH_BYTES tmp_340, tmp_336, tmp_339, 3
+    !tmp_339
+    @const SLA_STR_2 = utf8:"id"
+    tmp_341 = &SLA_STR_2
+    EXPAND FORMAT_PUSH_BYTES tmp_342, tmp_336, tmp_341, 2
+    !tmp_341
+    @const SLA_STR_3 = utf8:": "
+    tmp_343 = &SLA_STR_3
+    EXPAND FORMAT_PUSH_BYTES tmp_344, tmp_336, tmp_343, 2
+    !tmp_343
+    tmp_345 = load e+0 as i32
+    EXPAND FORMAT_PUSH_I64 tmp_346, tmp_336, tmp_345
+    @const SLA_STR_4 = utf8:", "
+    tmp_347 = &SLA_STR_4
+    EXPAND FORMAT_PUSH_BYTES tmp_348, tmp_336, tmp_347, 2
+    !tmp_347
+    @const SLA_STR_5 = utf8:"gen"
+    tmp_349 = &SLA_STR_5
+    EXPAND FORMAT_PUSH_BYTES tmp_350, tmp_336, tmp_349, 3
+    !tmp_349
+    @const SLA_STR_6 = utf8:": "
+    tmp_351 = &SLA_STR_6
+    EXPAND FORMAT_PUSH_BYTES tmp_352, tmp_336, tmp_351, 2
+    !tmp_351
+    tmp_353 = load e+4 as i32
+    EXPAND FORMAT_PUSH_I64 tmp_354, tmp_336, tmp_353
+    @const SLA_STR_7 = utf8:" }"
+    tmp_355 = &SLA_STR_7
+    EXPAND FORMAT_PUSH_BYTES tmp_356, tmp_336, tmp_355, 2
+    !tmp_355
+    text = tmp_336
+    EXPAND STRING_BUF_AS_STR tmp_357, text
+    EXPAND STRING_LEN tmp_358, tmp_357
+    !tmp_357
+    tmp_359 = 0
+    tmp_360 = eq tmp_358, tmp_359
+    !tmp_358
+    !tmp_359
+    br tmp_360 -> L_THEN_71, L_ELSE_72
+
+L_THEN_71:
+    !tmp_360
+    panic(2124)
+
+L_ELSE_72:
+    !tmp_360
+    jmp L_MERGE_73
+
+L_MERGE_73:
+    EXPAND STRING_BUF_FREE text
+    !copied
+    !e
+    !later
+    return
+
+@test "allocator rejects stale generation"():
+L_TEST_ENTRY_74:
+    tmp_363 = call @sla__allocator_new()
+    a0 = tmp_363
+    tmp_364 = call @sla__alloc_entity(a0)
+    a1 = load tmp_364+0 as ptr
+    e1 = load tmp_364+8 as ptr
+    !tmp_364
+    tmp_365 = alloc 8
+    tmp_366 = load e1+0 as i32
+    store tmp_365+0, tmp_366 as i32
+    tmp_367 = load e1+4 as i32
+    store tmp_365+4, tmp_367 as i32
+    tmp_368 = call @sla__free_entity(a1, tmp_365)
+    !tmp_365
+    a2 = tmp_368
+    tmp_369 = load e1+0 as i32
+    tmp_370 = load e1+4 as i32
+    tmp_371 = call @sla__entity_new(tmp_369, tmp_370)
+    !tmp_369
+    !tmp_370
+    stale = tmp_371
+    tmp_372 = load e1+0 as i32
+    tmp_373 = load e1+4 as i32
+    tmp_374 = 1
+    tmp_375 = add tmp_373, tmp_374
+    !tmp_373
+    !tmp_374
+    tmp_376 = call @sla__entity_new(tmp_372, tmp_375)
+    !tmp_372
+    !tmp_375
+    fabricated = tmp_376
+    tmp_377 = alloc 8
+    tmp_378 = load stale+0 as i32
+    store tmp_377+0, tmp_378 as i32
+    tmp_379 = load stale+4 as i32
+    store tmp_377+4, tmp_379 as i32
+    tmp_380 = call @sla__is_alive(a2, tmp_377)
+    !tmp_377
+    tmp_381 = 0
+    tmp_382 = ne tmp_380, tmp_381
+    !tmp_380
+    !tmp_381
+    br tmp_382 -> L_THEN_75, L_ELSE_76
+
+L_THEN_75:
+    !tmp_382
+    panic(2120)
+
+L_ELSE_76:
+    !tmp_382
+    jmp L_MERGE_77
+
+L_MERGE_77:
+    tmp_385 = alloc 8
+    tmp_386 = load fabricated+0 as i32
+    store tmp_385+0, tmp_386 as i32
+    tmp_387 = load fabricated+4 as i32
+    store tmp_385+4, tmp_387 as i32
+    tmp_388 = call @sla__is_alive(a2, tmp_385)
+    !tmp_385
+    tmp_389 = 0
+    tmp_390 = ne tmp_388, tmp_389
+    !tmp_388
+    !tmp_389
+    br tmp_390 -> L_THEN_78, L_ELSE_79
+
+L_THEN_78:
+    !tmp_390
+    panic(2121)
+
+L_ELSE_79:
+    !tmp_390
+    jmp L_MERGE_80
+
+L_MERGE_80:
+    tmp_393 = call @sla__alloc_entity(a2)
+    a3 = load tmp_393+0 as ptr
+    e2 = load tmp_393+8 as ptr
+    !tmp_393
+    tmp_394 = alloc 8
+    tmp_395 = load e2+0 as i32
+    store tmp_394+0, tmp_395 as i32
+    tmp_396 = load e2+4 as i32
+    store tmp_394+4, tmp_396 as i32
+    tmp_397 = alloc 8
+    tmp_398 = load fabricated+0 as i32
+    store tmp_397+0, tmp_398 as i32
+    tmp_399 = load fabricated+4 as i32
+    store tmp_397+4, tmp_399 as i32
+    tmp_400 = call @sla__entity_eq(tmp_394, tmp_397)
+    !tmp_394
+    !tmp_397
+    tmp_401 = 1
+    tmp_402 = ne tmp_400, tmp_401
+    !tmp_400
+    !tmp_401
+    br tmp_402 -> L_THEN_81, L_ELSE_82
+
+L_THEN_81:
+    !tmp_402
+    panic(2122)
+
+L_ELSE_82:
+    !tmp_402
+    jmp L_MERGE_83
+
+L_MERGE_83:
+    tmp_405 = alloc 8
+    tmp_406 = load e2+0 as i32
+    store tmp_405+0, tmp_406 as i32
+    tmp_407 = load e2+4 as i32
+    store tmp_405+4, tmp_407 as i32
+    tmp_408 = call @sla__is_alive(a3, tmp_405)
+    !tmp_405
+    tmp_409 = 1
+    tmp_410 = ne tmp_408, tmp_409
+    !tmp_408
+    !tmp_409
+    br tmp_410 -> L_THEN_84, L_ELSE_85
+
+L_THEN_84:
+    !tmp_410
+    panic(2123)
+
+L_ELSE_85:
+    !tmp_410
+    jmp L_MERGE_86
+
+L_MERGE_86:
+    !e2
+    !a0
+    !a2
+    !fabricated
+    !stale
+    !e1
+    !a3
+    !a1
+    return
+
+@test "entity index generation accessors"():
+L_TEST_ENTRY_87:
+    tmp_413 = 5
+    tmp_414 = 3
+    tmp_415 = call @sla__entity_new(tmp_413, tmp_414)
+    !tmp_413
+    !tmp_414
+    e = tmp_415
+    tmp_416 = alloc 8
+    tmp_417 = load e+0 as i32
+    store tmp_416+0, tmp_417 as i32
+    tmp_418 = load e+4 as i32
+    store tmp_416+4, tmp_418 as i32
+    tmp_419 = call @sla__entity_index(tmp_416)
+    !tmp_416
+    tmp_420 = 5
+    tmp_421 = ne tmp_419, tmp_420
+    !tmp_419
+    !tmp_420
+    br tmp_421 -> L_THEN_88, L_ELSE_89
+
+L_THEN_88:
+    !tmp_421
+    panic(2130)
+
+L_ELSE_89:
+    !tmp_421
+    jmp L_MERGE_90
+
+L_MERGE_90:
+    tmp_424 = alloc 8
+    tmp_425 = load e+0 as i32
+    store tmp_424+0, tmp_425 as i32
+    tmp_426 = load e+4 as i32
+    store tmp_424+4, tmp_426 as i32
+    tmp_427 = call @sla__entity_generation(tmp_424)
+    !tmp_424
+    tmp_428 = 3
+    tmp_429 = ne tmp_427, tmp_428
+    !tmp_427
+    !tmp_428
+    br tmp_429 -> L_THEN_91, L_ELSE_92
+
+L_THEN_91:
+    !tmp_429
+    panic(2131)
+
+L_ELSE_92:
+    !tmp_429
+    jmp L_MERGE_93
+
+L_MERGE_93:
+    !e
+    return
+
+@test "erased observers trigger matching event immediately"():
+L_TEST_ENTRY_94:
+    tmp_432 = call @sla__ErasedSpeakEvent_event_type_id()
+    speak_type = tmp_432
+    tmp_433 = call @sla__ErasedExplodeEvent_event_type_id()
+    explode_type = tmp_433
+    tmp_434 = 0
+    tmp_435 = sle speak_type, tmp_434
+    !tmp_434
+    br tmp_435 -> L_THEN_95, L_ELSE_96
+
+L_THEN_95:
+    !tmp_435
+    panic(12910)
+
+L_ELSE_96:
+    !tmp_435
+    jmp L_MERGE_97
+
+L_MERGE_97:
+    tmp_438 = 0
+    tmp_439 = sle explode_type, tmp_438
+    !tmp_438
+    br tmp_439 -> L_THEN_98, L_ELSE_99
+
+L_THEN_98:
+    !tmp_439
+    panic(12911)
+
+L_ELSE_99:
+    !tmp_439
+    jmp L_MERGE_100
+
+L_MERGE_100:
+    tmp_442 = eq speak_type, explode_type
+    br tmp_442 -> L_THEN_101, L_ELSE_102
+
+L_THEN_101:
+    !tmp_442
+    panic(12912)
+
+L_ELSE_102:
+    !tmp_442
+    jmp L_MERGE_103
+
+L_MERGE_103:
+    tmp_445 = call @sla__erased_observers_new()
+    observers0 = tmp_445
+    tmp_446 = alloc 16
+    store tmp_446+0, 0 as ptr
+    store tmp_446+8, &SLA_FNPTR_VT_erased_speak_observer as ptr
+    tmp_447 = call @sla__erased_observer_new(speak_type, tmp_446)
+    !tmp_446
+    tmp_448 = call @sla__erased_observers_add(observers0, tmp_447)
+    !tmp_447
+    observers1 = tmp_448
+    tmp_449 = alloc 16
+    store tmp_449+0, 0 as ptr
+    store tmp_449+8, &SLA_FNPTR_VT_erased_explode_observer as ptr
+    tmp_450 = call @sla__erased_observer_new(explode_type, tmp_449)
+    !tmp_449
+    tmp_451 = call @sla__erased_observers_add(observers1, tmp_450)
+    !tmp_450
+    observers2 = tmp_451
+    tmp_452 = call @sla__erased_observers_count(observers2)
+    tmp_453 = 2
+    tmp_454 = ne tmp_452, tmp_453
+    !tmp_452
+    !tmp_453
+    br tmp_454 -> L_THEN_104, L_ELSE_105
+
+L_THEN_104:
+    !tmp_454
+    panic(12913)
+
+L_ELSE_105:
+    !tmp_454
+    jmp L_MERGE_106
+
+L_MERGE_106:
+    tmp_457 = alloc 16
+    store tmp_457+0, 0 as ptr
+    store tmp_457+8, &SLA_FNPTR_VT_ecs_box_drop_ErasedSpeakEvent as ptr
+    tmp_458 = alloc 4
+    tmp_459 = 5
+    store tmp_458+0, tmp_459 as i32
+    !tmp_459
+    tmp_460 = call @sla__erased_observers_trigger_ErasedSpeakEvent(observers2, speak_type, tmp_457, tmp_458)
+    !tmp_457
+    !tmp_458
+    observers3 = tmp_460
+    tmp_461 = load observers3+8 as i32
+    tmp_462 = 1
+    tmp_463 = ne tmp_461, tmp_462
+    !tmp_461
+    !tmp_462
+    br tmp_463 -> L_THEN_107, L_ELSE_108
+
+L_THEN_107:
+    !tmp_463
+    panic(12914)
+
+L_ELSE_108:
+    !tmp_463
+    jmp L_MERGE_109
+
+L_MERGE_109:
+    tmp_466 = load observers3+20 as i32
+    tmp_467 = 5
+    tmp_468 = ne tmp_466, tmp_467
+    !tmp_466
+    !tmp_467
+    br tmp_468 -> L_THEN_110, L_ELSE_111
+
+L_THEN_110:
+    !tmp_468
+    panic(12915)
+
+L_ELSE_111:
+    !tmp_468
+    jmp L_MERGE_112
+
+L_MERGE_112:
+    tmp_471 = load observers3+12 as i32
+    tmp_472 = ne tmp_471, speak_type
+    !tmp_471
+    br tmp_472 -> L_THEN_113, L_ELSE_114
+
+L_THEN_113:
+    !tmp_472
+    panic(12916)
+
+L_ELSE_114:
+    !tmp_472
+    jmp L_MERGE_115
+
+L_MERGE_115:
+    tmp_475 = load observers3+16 as i32
+    tmp_476 = 0
+    tmp_477 = 1
+    tmp_478 = sub tmp_476, tmp_477
+    !tmp_476
+    !tmp_477
+    tmp_479 = ne tmp_475, tmp_478
+    !tmp_475
+    !tmp_478
+    br tmp_479 -> L_THEN_116, L_ELSE_117
+
+L_THEN_116:
+    !tmp_479
+    panic(12917)
+
+L_ELSE_117:
+    !tmp_479
+    jmp L_MERGE_118
+
+L_MERGE_118:
+    !speak_type
+    !observers0
+    !explode_type
+    !observers1
+    !observers2
+    !observers3
+    return
+
+@test "erased observers support targeted entity events"():
+L_TEST_ENTRY_119:
+    tmp_482 = call @sla__ErasedExplodeEvent_event_type_id()
+    explode_type = tmp_482
+    tmp_483 = call @sla__erased_observers_new()
+    observers0 = tmp_483
+    tmp_484 = alloc 16
+    store tmp_484+0, 0 as ptr
+    store tmp_484+8, &SLA_FNPTR_VT_erased_explode_observer as ptr
+    tmp_485 = call @sla__erased_observer_new(explode_type, tmp_484)
+    !tmp_484
+    tmp_486 = call @sla__erased_observers_add(observers0, tmp_485)
+    !tmp_485
+    observers1 = tmp_486
+    tmp_487 = 9
+    tmp_488 = 1
+    tmp_489 = call @sla__entity_new(tmp_487, tmp_488)
+    !tmp_487
+    !tmp_488
+    entity = tmp_489
+    tmp_490 = alloc 8
+    tmp_491 = load entity+0 as i32
+    store tmp_490+0, tmp_491 as i32
+    tmp_492 = load entity+4 as i32
+    store tmp_490+4, tmp_492 as i32
+    tmp_493 = alloc 16
+    store tmp_493+0, 0 as ptr
+    store tmp_493+8, &SLA_FNPTR_VT_ecs_box_drop_ErasedExplodeEvent as ptr
+    tmp_494 = alloc 4
+    tmp_495 = 4
+    store tmp_494+0, tmp_495 as i32
+    !tmp_495
+    tmp_496 = call @sla__erased_observers_trigger_entity_ErasedExplodeEvent(observers1, tmp_490, explode_type, tmp_493, tmp_494)
+    !tmp_490
+    !tmp_493
+    !tmp_494
+    observers2 = tmp_496
+    tmp_497 = load observers2+8 as i32
+    tmp_498 = 1
+    tmp_499 = ne tmp_497, tmp_498
+    !tmp_497
+    !tmp_498
+    br tmp_499 -> L_THEN_120, L_ELSE_121
+
+L_THEN_120:
+    !tmp_499
+    panic(12920)
+
+L_ELSE_121:
+    !tmp_499
+    jmp L_MERGE_122
+
+L_MERGE_122:
+    tmp_502 = load observers2+16 as i32
+    tmp_503 = 9
+    tmp_504 = ne tmp_502, tmp_503
+    !tmp_502
+    !tmp_503
+    br tmp_504 -> L_THEN_123, L_ELSE_124
+
+L_THEN_123:
+    !tmp_504
+    panic(12921)
+
+L_ELSE_124:
+    !tmp_504
+    jmp L_MERGE_125
+
+L_MERGE_125:
+    tmp_507 = load observers2+20 as i32
+    tmp_508 = 13
+    tmp_509 = ne tmp_507, tmp_508
+    !tmp_507
+    !tmp_508
+    br tmp_509 -> L_THEN_126, L_ELSE_127
+
+L_THEN_126:
+    !tmp_509
+    panic(12922)
+
+L_ELSE_127:
+    !tmp_509
+    jmp L_MERGE_128
+
+L_MERGE_128:
+    !observers0
+    !observers1
+    !explode_type
+    !entity
+    !observers2
+    return
+

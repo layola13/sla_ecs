@@ -1,0 +1,1506 @@
+@import "sa_std/vec.sa"
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@import "sa_std/vec.sa"
+@const SLA_FNPTR_VT_entity_new = vtable { call = @sla__entity_new }
+@const SLA_FNPTR_VT_entity_placeholder = vtable { call = @sla__entity_placeholder }
+@const SLA_FNPTR_VT_entity_index = vtable { call = @sla__entity_index }
+@const SLA_FNPTR_VT_entity_generation = vtable { call = @sla__entity_generation }
+@const SLA_FNPTR_VT_entity_eq = vtable { call = @sla__entity_eq }
+@const SLA_FNPTR_VT_entity_to_bits = vtable { call = @sla__entity_to_bits }
+@const SLA_FNPTR_VT_entity_from_bits = vtable { call = @sla__entity_from_bits }
+@const SLA_FNPTR_VT_allocator_new = vtable { call = @sla__allocator_new }
+@const SLA_FNPTR_VT_alloc_entity = vtable { call = @sla__alloc_entity }
+@const SLA_FNPTR_VT_allocator_id_is_free = vtable { call = @sla__allocator_id_is_free }
+@const SLA_FNPTR_VT_is_alive = vtable { call = @sla__is_alive }
+@const SLA_FNPTR_VT_free_entity = vtable { call = @sla__free_entity }
+@const SLA_FNPTR_VT_dyn_allocator_new = vtable { call = @sla__dyn_allocator_new }
+@const SLA_FNPTR_VT_dyn_alloc_entity = vtable { call = @sla__dyn_alloc_entity }
+@const SLA_FNPTR_VT_dyn_is_alive = vtable { call = @sla__dyn_is_alive }
+@const SLA_FNPTR_VT_dyn_free_entity = vtable { call = @sla__dyn_free_entity }
+@sla__entity_new(id: i32, gen: i32) -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 8
+    store tmp_0+0, id as i32
+    store tmp_0+4, gen as i32
+    return tmp_0
+
+@sla__entity_placeholder() -> ptr:
+L_ENTRY:
+    tmp_1 = alloc 8
+    tmp_2 = 0
+    store tmp_1+0, tmp_2 as i32
+    !tmp_2
+    tmp_3 = 0
+    tmp_4 = 1
+    tmp_5 = sub tmp_3, tmp_4
+    !tmp_3
+    !tmp_4
+    store tmp_1+4, tmp_5 as i32
+    !tmp_5
+    return tmp_1
+
+@sla__entity_index(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_6 = load entity+0 as i32
+    !entity
+    return tmp_6
+
+@sla__entity_generation(entity: ptr) -> i32:
+L_ENTRY:
+    tmp_7 = load entity+4 as i32
+    !entity
+    return tmp_7
+
+@sla__entity_eq(a: ptr, b: ptr) -> u8:
+L_ENTRY:
+    tmp_8 = load a+0 as i32
+    tmp_9 = load b+0 as i32
+    tmp_10 = ne tmp_8, tmp_9
+    !tmp_8
+    !tmp_9
+    br tmp_10 -> L_THEN_0, L_ELSE_1
+
+L_THEN_0:
+    !tmp_10
+    tmp_11 = 0
+    !b
+    !a
+    return tmp_11
+
+L_ELSE_1:
+    !tmp_10
+    jmp L_MERGE_2
+
+L_MERGE_2:
+    tmp_13 = load a+4 as i32
+    tmp_14 = load b+4 as i32
+    tmp_15 = eq tmp_13, tmp_14
+    !tmp_13
+    !tmp_14
+    !b
+    !a
+    return tmp_15
+
+@sla__entity_to_bits(entity: ptr) -> i64:
+L_ENTRY:
+    tmp_16 = load entity+4 as i32
+    tmp_17 = tmp_16 as i64
+    gen_part = tmp_17
+    tmp_18 = load entity+0 as i32
+    tmp_19 = tmp_18 as i64
+    id_part = tmp_19
+    tmp_20 = 4294967296
+    tmp_21 = mul gen_part, tmp_20
+    !tmp_20
+    tmp_22 = add tmp_21, id_part
+    !tmp_21
+    !entity
+    return tmp_22
+
+@sla__entity_from_bits(bits: i64) -> ptr:
+L_ENTRY:
+    tmp_23 = 4294967296
+    tmp_24 = div bits, tmp_23
+    !tmp_23
+    gen64 = tmp_24
+    tmp_25 = 4294967296
+    tmp_26 = mul gen64, tmp_25
+    !tmp_25
+    tmp_27 = sub bits, tmp_26
+    !tmp_26
+    id64 = tmp_27
+    tmp_28 = alloc 8
+    tmp_29 = id64 as i32
+    store tmp_28+0, tmp_29 as i32
+    tmp_30 = gen64 as i32
+    store tmp_28+4, tmp_30 as i32
+    !bits
+    return tmp_28
+
+@sla__allocator_new() -> ptr:
+L_ENTRY:
+    tmp_31 = alloc 24
+    tmp_32 = 1
+    store tmp_31+0, tmp_32 as i32
+    !tmp_32
+    tmp_33 = 0
+    store tmp_31+4, tmp_33 as i32
+    !tmp_33
+    tmp_34 = alloc 128
+    tmp_35 = 0
+    store tmp_34+0, tmp_35 as i64
+    store tmp_34+8, tmp_35 as i64
+    store tmp_34+16, tmp_35 as i64
+    store tmp_34+24, tmp_35 as i64
+    store tmp_34+32, tmp_35 as i64
+    store tmp_34+40, tmp_35 as i64
+    store tmp_34+48, tmp_35 as i64
+    store tmp_34+56, tmp_35 as i64
+    store tmp_34+64, tmp_35 as i64
+    store tmp_34+72, tmp_35 as i64
+    store tmp_34+80, tmp_35 as i64
+    store tmp_34+88, tmp_35 as i64
+    store tmp_34+96, tmp_35 as i64
+    store tmp_34+104, tmp_35 as i64
+    store tmp_34+112, tmp_35 as i64
+    store tmp_34+120, tmp_35 as i64
+    !tmp_35
+    store tmp_31+8, tmp_34 as ptr
+    !tmp_34
+    tmp_36 = alloc 128
+    tmp_37 = 0
+    store tmp_36+0, tmp_37 as i64
+    store tmp_36+8, tmp_37 as i64
+    store tmp_36+16, tmp_37 as i64
+    store tmp_36+24, tmp_37 as i64
+    store tmp_36+32, tmp_37 as i64
+    store tmp_36+40, tmp_37 as i64
+    store tmp_36+48, tmp_37 as i64
+    store tmp_36+56, tmp_37 as i64
+    store tmp_36+64, tmp_37 as i64
+    store tmp_36+72, tmp_37 as i64
+    store tmp_36+80, tmp_37 as i64
+    store tmp_36+88, tmp_37 as i64
+    store tmp_36+96, tmp_37 as i64
+    store tmp_36+104, tmp_37 as i64
+    store tmp_36+112, tmp_37 as i64
+    store tmp_36+120, tmp_37 as i64
+    !tmp_37
+    store tmp_31+16, tmp_36 as ptr
+    !tmp_36
+    return tmp_31
+
+@sla__alloc_entity(a: ptr) -> ptr:
+L_ENTRY:
+    tmp_38 = load a+4 as i32
+    tmp_39 = 0
+    tmp_40 = sgt tmp_38, tmp_39
+    !tmp_38
+    !tmp_39
+    br tmp_40 -> L_THEN_3, L_ELSE_4
+
+L_THEN_3:
+    !tmp_40
+    tmp_41 = load a+4 as i32
+    tmp_42 = 1
+    tmp_43 = sub tmp_41, tmp_42
+    !tmp_41
+    !tmp_42
+    next_free_count = tmp_43
+    tmp_44 = load a+16 as ptr
+    tmp_45 = mul next_free_count, 4
+    tmp_46 = ptr_add tmp_44, tmp_45
+    !tmp_45
+    tmp_47 = load tmp_46+0 as i32
+    !tmp_46
+    !tmp_44
+    id = tmp_47
+    store a+4, next_free_count as i32
+    tmp_48 = load a+16 as ptr
+    tmp_49 = mul next_free_count, 4
+    tmp_50 = ptr_add tmp_48, tmp_49
+    !tmp_49
+    tmp_51 = 0
+    store tmp_50+0, tmp_51 as i32
+    !tmp_50
+    !tmp_48
+    !tmp_51
+    tmp_52 = alloc 16
+    store tmp_52+0, a as ptr
+    tmp_53 = load a+8 as ptr
+    tmp_54 = mul id, 4
+    tmp_55 = ptr_add tmp_53, tmp_54
+    !tmp_54
+    tmp_56 = load tmp_55+0 as i32
+    !tmp_55
+    !tmp_53
+    tmp_57 = call @sla__entity_new(id, tmp_56)
+    !tmp_56
+    store tmp_52+8, tmp_57 as ptr
+    !next_free_count
+    return tmp_52
+
+L_ELSE_4:
+    !tmp_40
+    jmp L_MERGE_5
+
+L_MERGE_5:
+    tmp_59 = load a+0 as i32
+    tmp_60 = 16
+    tmp_61 = sge tmp_59, tmp_60
+    !tmp_59
+    !tmp_60
+    br tmp_61 -> L_THEN_6, L_ELSE_7
+
+L_THEN_6:
+    !tmp_61
+    panic(2001)
+
+L_ELSE_7:
+    !tmp_61
+    jmp L_MERGE_8
+
+L_MERGE_8:
+    tmp_64 = load a+0 as i32
+    id = tmp_64
+    tmp_65 = 1
+    tmp_66 = add id, tmp_65
+    !tmp_65
+    store a+0, tmp_66 as i32
+    !tmp_66
+    tmp_67 = alloc 16
+    store tmp_67+0, a as ptr
+    tmp_68 = load a+8 as ptr
+    tmp_69 = mul id, 4
+    tmp_70 = ptr_add tmp_68, tmp_69
+    !tmp_69
+    tmp_71 = load tmp_70+0 as i32
+    !tmp_70
+    !tmp_68
+    tmp_72 = call @sla__entity_new(id, tmp_71)
+    !tmp_71
+    store tmp_67+8, tmp_72 as ptr
+    return tmp_67
+
+@sla__allocator_id_is_free(a: ptr, id: i32) -> u8:
+L_ENTRY:
+    tmp_73 = 0
+    i = tmp_73
+    jmp L_WHILE_HEAD_9
+
+L_WHILE_HEAD_9:
+    tmp_74 = load a+4 as i32
+    tmp_75 = slt i, tmp_74
+    !tmp_74
+    br tmp_75 -> L_WHILE_BODY_10, L_WHILE_COND_FALSE_11
+
+L_WHILE_BODY_10:
+    !tmp_75
+    tmp_76 = load a+16 as ptr
+    tmp_77 = mul i, 4
+    tmp_78 = ptr_add tmp_76, tmp_77
+    !tmp_77
+    tmp_79 = load tmp_78+0 as i32
+    !tmp_78
+    !tmp_76
+    tmp_80 = eq tmp_79, id
+    !tmp_79
+    br tmp_80 -> L_THEN_13, L_ELSE_14
+
+L_THEN_13:
+    !tmp_80
+    tmp_81 = 1
+    !i
+    !a
+    !id
+    return tmp_81
+
+L_ELSE_14:
+    !tmp_80
+    jmp L_MERGE_15
+
+L_MERGE_15:
+    tmp_83 = 1
+    tmp_84 = add i, tmp_83
+    !tmp_83
+    !i
+    i = tmp_84
+    jmp L_WHILE_HEAD_9
+
+L_WHILE_COND_FALSE_11:
+    !tmp_75
+    jmp L_WHILE_EXIT_12
+
+L_WHILE_EXIT_12:
+    tmp_85 = 0
+    !i
+    !a
+    !id
+    return tmp_85
+
+@sla__is_alive(a: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_86 = load entity+0 as i32
+    tmp_87 = 0
+    tmp_88 = sle tmp_86, tmp_87
+    !tmp_86
+    !tmp_87
+    br tmp_88 -> L_THEN_16, L_ELSE_17
+
+L_THEN_16:
+    !tmp_88
+    tmp_89 = 0
+    !entity
+    !a
+    return tmp_89
+
+L_ELSE_17:
+    !tmp_88
+    jmp L_MERGE_18
+
+L_MERGE_18:
+    tmp_91 = load entity+0 as i32
+    tmp_92 = 16
+    tmp_93 = sge tmp_91, tmp_92
+    !tmp_91
+    !tmp_92
+    br tmp_93 -> L_THEN_19, L_ELSE_20
+
+L_THEN_19:
+    !tmp_93
+    tmp_94 = 0
+    !entity
+    !a
+    return tmp_94
+
+L_ELSE_20:
+    !tmp_93
+    jmp L_MERGE_21
+
+L_MERGE_21:
+    tmp_96 = load entity+0 as i32
+    tmp_97 = load a+0 as i32
+    tmp_98 = sge tmp_96, tmp_97
+    !tmp_96
+    !tmp_97
+    br tmp_98 -> L_THEN_22, L_ELSE_23
+
+L_THEN_22:
+    !tmp_98
+    tmp_99 = 0
+    !entity
+    !a
+    return tmp_99
+
+L_ELSE_23:
+    !tmp_98
+    jmp L_MERGE_24
+
+L_MERGE_24:
+    tmp_101 = load entity+0 as i32
+    tmp_102 = call @sla__allocator_id_is_free(a, tmp_101)
+    !tmp_101
+    br tmp_102 -> L_THEN_25, L_ELSE_26
+
+L_THEN_25:
+    !tmp_102
+    tmp_103 = 0
+    !entity
+    !a
+    return tmp_103
+
+L_ELSE_26:
+    !tmp_102
+    jmp L_MERGE_27
+
+L_MERGE_27:
+    tmp_105 = load a+8 as ptr
+    tmp_106 = load entity+0 as i32
+    tmp_107 = mul tmp_106, 4
+    tmp_108 = ptr_add tmp_105, tmp_107
+    !tmp_107
+    !tmp_106
+    tmp_109 = load tmp_108+0 as i32
+    !tmp_108
+    !tmp_105
+    tmp_110 = load entity+4 as i32
+    tmp_111 = eq tmp_109, tmp_110
+    !tmp_109
+    !tmp_110
+    !entity
+    !a
+    return tmp_111
+
+@sla__free_entity(a: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_112 = alloc 8
+    tmp_113 = load entity+0 as i32
+    store tmp_112+0, tmp_113 as i32
+    tmp_114 = load entity+4 as i32
+    store tmp_112+4, tmp_114 as i32
+    tmp_115 = call @sla__is_alive(a, tmp_112)
+    !tmp_112
+    tmp_116 = 1
+    tmp_117 = ne tmp_115, tmp_116
+    !tmp_115
+    !tmp_116
+    br tmp_117 -> L_THEN_28, L_ELSE_29
+
+L_THEN_28:
+    !tmp_117
+    !entity
+    return a
+
+L_ELSE_29:
+    !tmp_117
+    jmp L_MERGE_30
+
+L_MERGE_30:
+    tmp_119 = load a+8 as ptr
+    tmp_120 = load entity+0 as i32
+    tmp_121 = mul tmp_120, 4
+    tmp_122 = ptr_add tmp_119, tmp_121
+    !tmp_121
+    !tmp_120
+    tmp_123 = load a+8 as ptr
+    tmp_124 = load entity+0 as i32
+    tmp_125 = mul tmp_124, 4
+    tmp_126 = ptr_add tmp_123, tmp_125
+    !tmp_125
+    !tmp_124
+    tmp_127 = load tmp_126+0 as i32
+    !tmp_126
+    !tmp_123
+    tmp_128 = 1
+    tmp_129 = add tmp_127, tmp_128
+    !tmp_127
+    !tmp_128
+    store tmp_122+0, tmp_129 as i32
+    !tmp_122
+    !tmp_119
+    !tmp_129
+    tmp_130 = load a+16 as ptr
+    tmp_131 = load a+4 as i32
+    tmp_132 = mul tmp_131, 4
+    tmp_133 = ptr_add tmp_130, tmp_132
+    !tmp_132
+    !tmp_131
+    tmp_134 = load entity+0 as i32
+    store tmp_133+0, tmp_134 as i32
+    !tmp_133
+    !tmp_130
+    !tmp_134
+    tmp_135 = load a+4 as i32
+    tmp_136 = 1
+    tmp_137 = add tmp_135, tmp_136
+    !tmp_135
+    !tmp_136
+    store a+4, tmp_137 as i32
+    !tmp_137
+    !entity
+    return a
+
+@sla__dyn_allocator_new() -> ptr:
+L_ENTRY:
+    EXPAND VEC_NEW tmp_138
+    free_ids = tmp_138
+    EXPAND VEC_NEW tmp_139
+    generations = tmp_139
+    EXPAND VEC_NEW tmp_140
+    occupied = tmp_140
+    tmp_141 = 0
+    EXPAND VEC_PUSH generations, tmp_141, 8
+    !tmp_141
+    tmp_142 = 0
+    EXPAND VEC_PUSH occupied, tmp_142, 8
+    !tmp_142
+    tmp_143 = alloc 24
+    store tmp_143+0, free_ids as ptr
+    store tmp_143+8, generations as ptr
+    store tmp_143+16, occupied as ptr
+    return tmp_143
+
+@sla__dyn_alloc_entity(a: ptr) -> ptr:
+L_ENTRY:
+    tmp_144 = load a+0 as ptr
+    EXPAND VEC_LEN tmp_145, tmp_144
+    !tmp_144
+    tmp_146 = tmp_145 as i64
+    free_len = tmp_146
+    tmp_147 = 0
+    tmp_148 = sgt free_len, tmp_147
+    !tmp_147
+    br tmp_148 -> L_THEN_31, L_ELSE_32
+
+L_THEN_31:
+    !tmp_148
+    tmp_149 = 1
+    tmp_150 = sub free_len, tmp_149
+    !tmp_149
+    slot = tmp_150
+    tmp_151 = load a+0 as ptr
+    EXPAND VEC_REMOVE tmp_152, tmp_153, tmp_151, slot, 8
+    br tmp_152 -> L_VEC_REMOVE_OK_34, L_VEC_REMOVE_OOB_35
+
+L_VEC_REMOVE_OOB_35:
+    panic(86)
+
+L_VEC_REMOVE_OK_34:
+    !tmp_152
+    tmp_154 = tmp_153 as i32
+    id = tmp_154
+    tmp_155 = load a+16 as ptr
+    tmp_156 = 1
+    tmp_157 = &tmp_155
+    tmp_158 = load tmp_157+Vec_len as u64
+    tmp_159 = ult id, tmp_158
+    br tmp_159 -> L_VEC_INDEX_ASSIGN_OK_36, L_VEC_INDEX_ASSIGN_OOB_37
+
+L_VEC_INDEX_ASSIGN_OOB_37:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_36:
+    !tmp_159
+    tmp_160 = load tmp_157+Vec_ptr as ptr
+    tmp_161 = mul id, 8
+    tmp_162 = ptr_add tmp_160, tmp_161
+    store tmp_162+0, tmp_156 as u64
+    !tmp_162
+    !tmp_161
+    !tmp_160
+    !tmp_158
+    !tmp_157
+    !tmp_156
+    !tmp_155
+    tmp_163 = alloc 16
+    store tmp_163+0, a as ptr
+    tmp_164 = load a+8 as ptr
+    EXPAND VEC_GET tmp_165, tmp_164, id
+    !tmp_164
+    tmp_166 = tmp_165 as i32
+    tmp_167 = call @sla__entity_new(id, tmp_166)
+    !tmp_166
+    store tmp_163+8, tmp_167 as ptr
+    !slot
+    !free_len
+    return tmp_163
+
+L_ELSE_32:
+    !tmp_148
+    jmp L_MERGE_33
+
+L_MERGE_33:
+    tmp_169 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_170, tmp_169
+    !tmp_169
+    tmp_171 = tmp_170 as i32
+    id = tmp_171
+    tmp_172 = load a+8 as ptr
+    tmp_173 = 0
+    EXPAND VEC_PUSH tmp_172, tmp_173, 8
+    !tmp_173
+    !tmp_172
+    tmp_174 = load a+16 as ptr
+    tmp_175 = 1
+    EXPAND VEC_PUSH tmp_174, tmp_175, 8
+    !tmp_175
+    !tmp_174
+    tmp_176 = alloc 16
+    store tmp_176+0, a as ptr
+    tmp_177 = 0
+    tmp_178 = call @sla__entity_new(id, tmp_177)
+    !tmp_177
+    store tmp_176+8, tmp_178 as ptr
+    !free_len
+    return tmp_176
+
+@sla__dyn_is_alive(a: ptr, entity: ptr) -> u8:
+L_ENTRY:
+    tmp_179 = load entity+0 as i32
+    tmp_180 = 0
+    tmp_181 = sle tmp_179, tmp_180
+    !tmp_179
+    !tmp_180
+    br tmp_181 -> L_THEN_38, L_ELSE_39
+
+L_THEN_38:
+    !tmp_181
+    tmp_182 = 0
+    !entity
+    !a
+    return tmp_182
+
+L_ELSE_39:
+    !tmp_181
+    jmp L_MERGE_40
+
+L_MERGE_40:
+    tmp_184 = load entity+0 as i32
+    tmp_185 = tmp_184 as i64
+    idx = tmp_185
+    tmp_186 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_187, tmp_186
+    !tmp_186
+    tmp_188 = tmp_187 as i64
+    tmp_189 = sge idx, tmp_188
+    br tmp_189 -> L_THEN_41, L_ELSE_42
+
+L_THEN_41:
+    !tmp_189
+    tmp_190 = 0
+    !idx
+    !entity
+    !a
+    return tmp_190
+
+L_ELSE_42:
+    !tmp_189
+    jmp L_MERGE_43
+
+L_MERGE_43:
+    tmp_192 = load a+16 as ptr
+    EXPAND VEC_GET tmp_193, tmp_192, idx
+    !tmp_192
+    tmp_194 = tmp_193 as u8
+    tmp_195 = 1
+    tmp_196 = ne tmp_194, tmp_195
+    !tmp_194
+    !tmp_195
+    br tmp_196 -> L_THEN_44, L_ELSE_45
+
+L_THEN_44:
+    !tmp_196
+    tmp_197 = 0
+    !idx
+    !entity
+    !a
+    return tmp_197
+
+L_ELSE_45:
+    !tmp_196
+    jmp L_MERGE_46
+
+L_MERGE_46:
+    tmp_199 = load a+8 as ptr
+    EXPAND VEC_GET tmp_200, tmp_199, idx
+    !tmp_199
+    tmp_201 = tmp_200 as i32
+    tmp_202 = load entity+4 as i32
+    tmp_203 = eq tmp_201, tmp_202
+    !tmp_201
+    !tmp_202
+    !entity
+    !a
+    return tmp_203
+
+@sla__dyn_free_entity(a: ptr, entity: ptr) -> ptr:
+L_ENTRY:
+    tmp_204 = alloc 8
+    tmp_205 = load entity+0 as i32
+    store tmp_204+0, tmp_205 as i32
+    tmp_206 = load entity+4 as i32
+    store tmp_204+4, tmp_206 as i32
+    tmp_207 = call @sla__dyn_is_alive(a, tmp_204)
+    !tmp_204
+    tmp_208 = 1
+    tmp_209 = ne tmp_207, tmp_208
+    !tmp_207
+    !tmp_208
+    br tmp_209 -> L_THEN_47, L_ELSE_48
+
+L_THEN_47:
+    !tmp_209
+    !entity
+    return a
+
+L_ELSE_48:
+    !tmp_209
+    jmp L_MERGE_49
+
+L_MERGE_49:
+    tmp_211 = load entity+0 as i32
+    tmp_212 = tmp_211 as i64
+    idx = tmp_212
+    tmp_213 = load a+8 as ptr
+    EXPAND VEC_GET tmp_214, tmp_213, idx
+    !tmp_213
+    tmp_215 = tmp_214 as i32
+    tmp_216 = 1
+    tmp_217 = add tmp_215, tmp_216
+    !tmp_215
+    !tmp_216
+    next_gen = tmp_217
+    tmp_218 = load a+8 as ptr
+    tmp_219 = &tmp_218
+    tmp_220 = load tmp_219+Vec_len as u64
+    tmp_221 = ult idx, tmp_220
+    br tmp_221 -> L_VEC_INDEX_ASSIGN_OK_50, L_VEC_INDEX_ASSIGN_OOB_51
+
+L_VEC_INDEX_ASSIGN_OOB_51:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_50:
+    !tmp_221
+    tmp_222 = load tmp_219+Vec_ptr as ptr
+    tmp_223 = mul idx, 8
+    tmp_224 = ptr_add tmp_222, tmp_223
+    store tmp_224+0, next_gen as u64
+    !tmp_224
+    !tmp_223
+    !tmp_222
+    !tmp_220
+    !tmp_219
+    !tmp_218
+    tmp_225 = load a+16 as ptr
+    tmp_226 = 0
+    tmp_227 = &tmp_225
+    tmp_228 = load tmp_227+Vec_len as u64
+    tmp_229 = ult idx, tmp_228
+    br tmp_229 -> L_VEC_INDEX_ASSIGN_OK_52, L_VEC_INDEX_ASSIGN_OOB_53
+
+L_VEC_INDEX_ASSIGN_OOB_53:
+    panic(87)
+
+L_VEC_INDEX_ASSIGN_OK_52:
+    !tmp_229
+    tmp_230 = load tmp_227+Vec_ptr as ptr
+    tmp_231 = mul idx, 8
+    tmp_232 = ptr_add tmp_230, tmp_231
+    store tmp_232+0, tmp_226 as u64
+    !tmp_232
+    !tmp_231
+    !tmp_230
+    !tmp_228
+    !tmp_227
+    !tmp_226
+    !tmp_225
+    tmp_233 = load a+0 as ptr
+    tmp_234 = load entity+0 as i32
+    EXPAND VEC_PUSH tmp_233, tmp_234, 8
+    !tmp_234
+    !tmp_233
+    !idx
+    !next_gen
+    !entity
+    return a
+
+@test "entity placeholder is never allocated"():
+L_TEST_ENTRY_54:
+    tmp_235 = call @sla__entity_placeholder()
+    placeholder = tmp_235
+    tmp_236 = call @sla__allocator_new()
+    a = tmp_236
+    tmp_237 = call @sla__alloc_entity(a)
+    a1 = load tmp_237+0 as ptr
+    e1 = load tmp_237+8 as ptr
+    !tmp_237
+    tmp_238 = load placeholder+0 as i32
+    tmp_239 = load e1+0 as i32
+    tmp_240 = eq tmp_238, tmp_239
+    !tmp_238
+    !tmp_239
+    br tmp_240 -> L_THEN_55, L_ELSE_56
+
+L_THEN_55:
+    !tmp_240
+    panic(2100)
+
+L_ELSE_56:
+    !tmp_240
+    jmp L_MERGE_57
+
+L_MERGE_57:
+    tmp_243 = alloc 8
+    tmp_244 = load placeholder+0 as i32
+    store tmp_243+0, tmp_244 as i32
+    tmp_245 = load placeholder+4 as i32
+    store tmp_243+4, tmp_245 as i32
+    tmp_246 = call @sla__is_alive(a1, tmp_243)
+    !tmp_243
+    tmp_247 = 0
+    tmp_248 = ne tmp_246, tmp_247
+    !tmp_246
+    !tmp_247
+    br tmp_248 -> L_THEN_58, L_ELSE_59
+
+L_THEN_58:
+    !tmp_248
+    panic(2101)
+
+L_ELSE_59:
+    !tmp_248
+    jmp L_MERGE_60
+
+L_MERGE_60:
+    !a
+    !placeholder
+    !e1
+    !a1
+    return
+
+@test "entity bit roundtrip"():
+L_TEST_ENTRY_61:
+    tmp_251 = 42
+    tmp_252 = 7
+    tmp_253 = call @sla__entity_new(tmp_251, tmp_252)
+    !tmp_251
+    !tmp_252
+    e = tmp_253
+    tmp_254 = alloc 8
+    tmp_255 = load e+0 as i32
+    store tmp_254+0, tmp_255 as i32
+    tmp_256 = load e+4 as i32
+    store tmp_254+4, tmp_256 as i32
+    tmp_257 = call @sla__entity_to_bits(tmp_254)
+    !tmp_254
+    bits = tmp_257
+    tmp_258 = call @sla__entity_from_bits(bits)
+    out = tmp_258
+    tmp_259 = alloc 8
+    tmp_260 = load e+0 as i32
+    store tmp_259+0, tmp_260 as i32
+    tmp_261 = load e+4 as i32
+    store tmp_259+4, tmp_261 as i32
+    tmp_262 = alloc 8
+    tmp_263 = load out+0 as i32
+    store tmp_262+0, tmp_263 as i32
+    tmp_264 = load out+4 as i32
+    store tmp_262+4, tmp_264 as i32
+    tmp_265 = call @sla__entity_eq(tmp_259, tmp_262)
+    !tmp_259
+    !tmp_262
+    tmp_266 = 1
+    tmp_267 = ne tmp_265, tmp_266
+    !tmp_265
+    !tmp_266
+    br tmp_267 -> L_THEN_62, L_ELSE_63
+
+L_THEN_62:
+    !tmp_267
+    panic(2110)
+
+L_ELSE_63:
+    !tmp_267
+    jmp L_MERGE_64
+
+L_MERGE_64:
+    !out
+    !bits
+    !e
+    return
+
+@test "entity derives value semantics"():
+L_TEST_ENTRY_65:
+    tmp_270 = 42
+    tmp_271 = 7
+    tmp_272 = call @sla__entity_new(tmp_270, tmp_271)
+    !tmp_270
+    !tmp_271
+    e = tmp_272
+    copied = alloc 8
+    tmp_273 = load e+0 as i32
+    store copied+0, tmp_273 as i32
+    tmp_274 = load e+4 as i32
+    store copied+4, tmp_274 as i32
+    tmp_275 = load copied+0 as i32
+    tmp_276 = load e+0 as i32
+    tmp_277 = eq tmp_275, tmp_276
+    tmp_278 = load copied+4 as i32
+    tmp_279 = load e+4 as i32
+    tmp_280 = eq tmp_278, tmp_279
+    tmp_281 = and tmp_277, tmp_280
+    tmp_282 = ne tmp_281, 1
+    br tmp_282 -> L_THEN_66, L_ELSE_67
+
+L_THEN_66:
+    !tmp_282
+    panic(2115)
+
+L_ELSE_67:
+    !tmp_282
+    jmp L_MERGE_68
+
+L_MERGE_68:
+    tmp_285 = load e+0 as i32
+    tmp_286 = 42
+    tmp_287 = ne tmp_285, tmp_286
+    !tmp_285
+    !tmp_286
+    br tmp_287 -> L_THEN_69, L_ELSE_70
+
+L_THEN_69:
+    !tmp_287
+    panic(2116)
+
+L_ELSE_70:
+    !tmp_287
+    jmp L_MERGE_71
+
+L_MERGE_71:
+    tmp_290 = 1469598103934665603
+    tmp_291 = load copied+0 as i32
+    tmp_292 = tmp_291 as u64
+    tmp_293 = xor tmp_290, tmp_292
+    tmp_294 = mul tmp_293, 1099511628211
+    tmp_295 = load copied+4 as i32
+    tmp_296 = tmp_295 as u64
+    tmp_297 = xor tmp_294, tmp_296
+    tmp_298 = mul tmp_297, 1099511628211
+    tmp_299 = 1469598103934665603
+    tmp_300 = load e+0 as i32
+    tmp_301 = tmp_300 as u64
+    tmp_302 = xor tmp_299, tmp_301
+    tmp_303 = mul tmp_302, 1099511628211
+    tmp_304 = load e+4 as i32
+    tmp_305 = tmp_304 as u64
+    tmp_306 = xor tmp_303, tmp_305
+    tmp_307 = mul tmp_306, 1099511628211
+    tmp_308 = ne tmp_298, tmp_307
+    !tmp_298
+    !tmp_307
+    br tmp_308 -> L_THEN_72, L_ELSE_73
+
+L_THEN_72:
+    !tmp_308
+    panic(2117)
+
+L_ELSE_73:
+    !tmp_308
+    jmp L_MERGE_74
+
+L_MERGE_74:
+    tmp_311 = 42
+    tmp_312 = 8
+    tmp_313 = call @sla__entity_new(tmp_311, tmp_312)
+    !tmp_311
+    !tmp_312
+    later = tmp_313
+    tmp_314 = load e+0 as i32
+    tmp_315 = load later+0 as i32
+    tmp_316 = slt tmp_314, tmp_315
+    tmp_317 = eq tmp_314, tmp_315
+    tmp_318 = load e+4 as i32
+    tmp_319 = load later+4 as i32
+    tmp_320 = slt tmp_318, tmp_319
+    tmp_321 = eq tmp_318, tmp_319
+    tmp_322 = and tmp_317, tmp_320
+    tmp_323 = or tmp_316, tmp_322
+    tmp_324 = and tmp_317, tmp_321
+    tmp_325 = or tmp_323, 0
+    tmp_326 = 1
+    tmp_327 = ne tmp_325, tmp_326
+    !tmp_325
+    !tmp_326
+    br tmp_327 -> L_THEN_75, L_ELSE_76
+
+L_THEN_75:
+    !tmp_327
+    panic(2118)
+
+L_ELSE_76:
+    !tmp_327
+    jmp L_MERGE_77
+
+L_MERGE_77:
+    tmp_330 = load later+0 as i32
+    tmp_331 = load e+0 as i32
+    tmp_332 = sgt tmp_330, tmp_331
+    tmp_333 = eq tmp_330, tmp_331
+    tmp_334 = load later+4 as i32
+    tmp_335 = load e+4 as i32
+    tmp_336 = sgt tmp_334, tmp_335
+    tmp_337 = eq tmp_334, tmp_335
+    tmp_338 = and tmp_333, tmp_336
+    tmp_339 = or tmp_332, tmp_338
+    tmp_340 = and tmp_333, tmp_337
+    tmp_341 = or tmp_339, 0
+    tmp_342 = 1
+    tmp_343 = ne tmp_341, tmp_342
+    !tmp_341
+    !tmp_342
+    br tmp_343 -> L_THEN_78, L_ELSE_79
+
+L_THEN_78:
+    !tmp_343
+    panic(2119)
+
+L_ELSE_79:
+    !tmp_343
+    jmp L_MERGE_80
+
+L_MERGE_80:
+    EXPAND FORMAT_BEGIN tmp_346, 128
+    @const SLA_STR_0 = utf8:"Entity"
+    tmp_347 = &SLA_STR_0
+    EXPAND FORMAT_PUSH_BYTES tmp_348, tmp_346, tmp_347, 6
+    !tmp_347
+    @const SLA_STR_1 = utf8:" { "
+    tmp_349 = &SLA_STR_1
+    EXPAND FORMAT_PUSH_BYTES tmp_350, tmp_346, tmp_349, 3
+    !tmp_349
+    @const SLA_STR_2 = utf8:"id"
+    tmp_351 = &SLA_STR_2
+    EXPAND FORMAT_PUSH_BYTES tmp_352, tmp_346, tmp_351, 2
+    !tmp_351
+    @const SLA_STR_3 = utf8:": "
+    tmp_353 = &SLA_STR_3
+    EXPAND FORMAT_PUSH_BYTES tmp_354, tmp_346, tmp_353, 2
+    !tmp_353
+    tmp_355 = load e+0 as i32
+    EXPAND FORMAT_PUSH_I64 tmp_356, tmp_346, tmp_355
+    @const SLA_STR_4 = utf8:", "
+    tmp_357 = &SLA_STR_4
+    EXPAND FORMAT_PUSH_BYTES tmp_358, tmp_346, tmp_357, 2
+    !tmp_357
+    @const SLA_STR_5 = utf8:"gen"
+    tmp_359 = &SLA_STR_5
+    EXPAND FORMAT_PUSH_BYTES tmp_360, tmp_346, tmp_359, 3
+    !tmp_359
+    @const SLA_STR_6 = utf8:": "
+    tmp_361 = &SLA_STR_6
+    EXPAND FORMAT_PUSH_BYTES tmp_362, tmp_346, tmp_361, 2
+    !tmp_361
+    tmp_363 = load e+4 as i32
+    EXPAND FORMAT_PUSH_I64 tmp_364, tmp_346, tmp_363
+    @const SLA_STR_7 = utf8:" }"
+    tmp_365 = &SLA_STR_7
+    EXPAND FORMAT_PUSH_BYTES tmp_366, tmp_346, tmp_365, 2
+    !tmp_365
+    text = tmp_346
+    EXPAND STRING_BUF_AS_STR tmp_367, text
+    EXPAND STRING_LEN tmp_368, tmp_367
+    !tmp_367
+    tmp_369 = 0
+    tmp_370 = eq tmp_368, tmp_369
+    !tmp_368
+    !tmp_369
+    br tmp_370 -> L_THEN_81, L_ELSE_82
+
+L_THEN_81:
+    !tmp_370
+    panic(2124)
+
+L_ELSE_82:
+    !tmp_370
+    jmp L_MERGE_83
+
+L_MERGE_83:
+    EXPAND STRING_BUF_FREE text
+    !copied
+    !e
+    !later
+    return
+
+@test "allocator rejects stale generation"():
+L_TEST_ENTRY_84:
+    tmp_373 = call @sla__allocator_new()
+    a0 = tmp_373
+    tmp_374 = call @sla__alloc_entity(a0)
+    a1 = load tmp_374+0 as ptr
+    e1 = load tmp_374+8 as ptr
+    !tmp_374
+    tmp_375 = alloc 8
+    tmp_376 = load e1+0 as i32
+    store tmp_375+0, tmp_376 as i32
+    tmp_377 = load e1+4 as i32
+    store tmp_375+4, tmp_377 as i32
+    tmp_378 = call @sla__free_entity(a1, tmp_375)
+    !tmp_375
+    a2 = tmp_378
+    tmp_379 = load e1+0 as i32
+    tmp_380 = load e1+4 as i32
+    tmp_381 = call @sla__entity_new(tmp_379, tmp_380)
+    !tmp_379
+    !tmp_380
+    stale = tmp_381
+    tmp_382 = load e1+0 as i32
+    tmp_383 = load e1+4 as i32
+    tmp_384 = 1
+    tmp_385 = add tmp_383, tmp_384
+    !tmp_383
+    !tmp_384
+    tmp_386 = call @sla__entity_new(tmp_382, tmp_385)
+    !tmp_382
+    !tmp_385
+    fabricated = tmp_386
+    tmp_387 = alloc 8
+    tmp_388 = load stale+0 as i32
+    store tmp_387+0, tmp_388 as i32
+    tmp_389 = load stale+4 as i32
+    store tmp_387+4, tmp_389 as i32
+    tmp_390 = call @sla__is_alive(a2, tmp_387)
+    !tmp_387
+    tmp_391 = 0
+    tmp_392 = ne tmp_390, tmp_391
+    !tmp_390
+    !tmp_391
+    br tmp_392 -> L_THEN_85, L_ELSE_86
+
+L_THEN_85:
+    !tmp_392
+    panic(2120)
+
+L_ELSE_86:
+    !tmp_392
+    jmp L_MERGE_87
+
+L_MERGE_87:
+    tmp_395 = alloc 8
+    tmp_396 = load fabricated+0 as i32
+    store tmp_395+0, tmp_396 as i32
+    tmp_397 = load fabricated+4 as i32
+    store tmp_395+4, tmp_397 as i32
+    tmp_398 = call @sla__is_alive(a2, tmp_395)
+    !tmp_395
+    tmp_399 = 0
+    tmp_400 = ne tmp_398, tmp_399
+    !tmp_398
+    !tmp_399
+    br tmp_400 -> L_THEN_88, L_ELSE_89
+
+L_THEN_88:
+    !tmp_400
+    panic(2121)
+
+L_ELSE_89:
+    !tmp_400
+    jmp L_MERGE_90
+
+L_MERGE_90:
+    tmp_403 = call @sla__alloc_entity(a2)
+    a3 = load tmp_403+0 as ptr
+    e2 = load tmp_403+8 as ptr
+    !tmp_403
+    tmp_404 = alloc 8
+    tmp_405 = load e2+0 as i32
+    store tmp_404+0, tmp_405 as i32
+    tmp_406 = load e2+4 as i32
+    store tmp_404+4, tmp_406 as i32
+    tmp_407 = alloc 8
+    tmp_408 = load fabricated+0 as i32
+    store tmp_407+0, tmp_408 as i32
+    tmp_409 = load fabricated+4 as i32
+    store tmp_407+4, tmp_409 as i32
+    tmp_410 = call @sla__entity_eq(tmp_404, tmp_407)
+    !tmp_404
+    !tmp_407
+    tmp_411 = 1
+    tmp_412 = ne tmp_410, tmp_411
+    !tmp_410
+    !tmp_411
+    br tmp_412 -> L_THEN_91, L_ELSE_92
+
+L_THEN_91:
+    !tmp_412
+    panic(2122)
+
+L_ELSE_92:
+    !tmp_412
+    jmp L_MERGE_93
+
+L_MERGE_93:
+    tmp_415 = alloc 8
+    tmp_416 = load e2+0 as i32
+    store tmp_415+0, tmp_416 as i32
+    tmp_417 = load e2+4 as i32
+    store tmp_415+4, tmp_417 as i32
+    tmp_418 = call @sla__is_alive(a3, tmp_415)
+    !tmp_415
+    tmp_419 = 1
+    tmp_420 = ne tmp_418, tmp_419
+    !tmp_418
+    !tmp_419
+    br tmp_420 -> L_THEN_94, L_ELSE_95
+
+L_THEN_94:
+    !tmp_420
+    panic(2123)
+
+L_ELSE_95:
+    !tmp_420
+    jmp L_MERGE_96
+
+L_MERGE_96:
+    !e2
+    !a0
+    !a2
+    !fabricated
+    !stale
+    !e1
+    !a3
+    !a1
+    return
+
+@test "entity index generation accessors"():
+L_TEST_ENTRY_97:
+    tmp_423 = 5
+    tmp_424 = 3
+    tmp_425 = call @sla__entity_new(tmp_423, tmp_424)
+    !tmp_423
+    !tmp_424
+    e = tmp_425
+    tmp_426 = alloc 8
+    tmp_427 = load e+0 as i32
+    store tmp_426+0, tmp_427 as i32
+    tmp_428 = load e+4 as i32
+    store tmp_426+4, tmp_428 as i32
+    tmp_429 = call @sla__entity_index(tmp_426)
+    !tmp_426
+    tmp_430 = 5
+    tmp_431 = ne tmp_429, tmp_430
+    !tmp_429
+    !tmp_430
+    br tmp_431 -> L_THEN_98, L_ELSE_99
+
+L_THEN_98:
+    !tmp_431
+    panic(2130)
+
+L_ELSE_99:
+    !tmp_431
+    jmp L_MERGE_100
+
+L_MERGE_100:
+    tmp_434 = alloc 8
+    tmp_435 = load e+0 as i32
+    store tmp_434+0, tmp_435 as i32
+    tmp_436 = load e+4 as i32
+    store tmp_434+4, tmp_436 as i32
+    tmp_437 = call @sla__entity_generation(tmp_434)
+    !tmp_434
+    tmp_438 = 3
+    tmp_439 = ne tmp_437, tmp_438
+    !tmp_437
+    !tmp_438
+    br tmp_439 -> L_THEN_101, L_ELSE_102
+
+L_THEN_101:
+    !tmp_439
+    panic(2131)
+
+L_ELSE_102:
+    !tmp_439
+    jmp L_MERGE_103
+
+L_MERGE_103:
+    !e
+    return
+
+@test "dynamic allocator grows beyond fixed capacity"():
+L_TEST_ENTRY_104:
+    tmp_442 = call @sla__dyn_allocator_new()
+    a = tmp_442
+    tmp_443 = 0
+    i = tmp_443
+    jmp L_WHILE_HEAD_105
+
+L_WHILE_HEAD_105:
+    tmp_444 = 20
+    tmp_445 = slt i, tmp_444
+    !tmp_444
+    br tmp_445 -> L_WHILE_BODY_106, L_WHILE_COND_FALSE_107
+
+L_WHILE_BODY_106:
+    !tmp_445
+    tmp_446 = call @sla__dyn_alloc_entity(a)
+    next_a = load tmp_446+0 as ptr
+    entity = load tmp_446+8 as ptr
+    !tmp_446
+    !a
+    a = next_a
+    tmp_447 = load entity+0 as i32
+    tmp_448 = 1
+    tmp_449 = add i, tmp_448
+    !tmp_448
+    tmp_450 = ne tmp_447, tmp_449
+    !tmp_447
+    !tmp_449
+    br tmp_450 -> L_THEN_109, L_ELSE_110
+
+L_THEN_109:
+    !tmp_450
+    panic(2150)
+
+L_ELSE_110:
+    !tmp_450
+    jmp L_MERGE_111
+
+L_MERGE_111:
+    tmp_453 = alloc 8
+    tmp_454 = load entity+0 as i32
+    store tmp_453+0, tmp_454 as i32
+    tmp_455 = load entity+4 as i32
+    store tmp_453+4, tmp_455 as i32
+    tmp_456 = call @sla__dyn_is_alive(a, tmp_453)
+    !tmp_453
+    tmp_457 = 1
+    tmp_458 = ne tmp_456, tmp_457
+    !tmp_456
+    !tmp_457
+    br tmp_458 -> L_THEN_112, L_ELSE_113
+
+L_THEN_112:
+    !tmp_458
+    panic(2151)
+
+L_ELSE_113:
+    !tmp_458
+    jmp L_MERGE_114
+
+L_MERGE_114:
+    tmp_461 = 1
+    tmp_462 = add i, tmp_461
+    !tmp_461
+    !i
+    i = tmp_462
+    !entity
+    jmp L_WHILE_HEAD_105
+
+L_WHILE_COND_FALSE_107:
+    !tmp_445
+    jmp L_WHILE_EXIT_108
+
+L_WHILE_EXIT_108:
+    tmp_463 = load a+8 as ptr
+    EXPAND VEC_LEN tmp_464, tmp_463
+    !tmp_463
+    tmp_465 = 21
+    tmp_466 = ne tmp_464, tmp_465
+    !tmp_464
+    !tmp_465
+    br tmp_466 -> L_THEN_115, L_ELSE_116
+
+L_THEN_115:
+    !tmp_466
+    panic(2152)
+
+L_ELSE_116:
+    !tmp_466
+    jmp L_MERGE_117
+
+L_MERGE_117:
+    !a
+    !i
+    return
+
+@test "dynamic allocator rejects fabricated next generation before reuse"():
+L_TEST_ENTRY_118:
+    tmp_469 = call @sla__dyn_allocator_new()
+    a0 = tmp_469
+    tmp_470 = call @sla__dyn_alloc_entity(a0)
+    a1 = load tmp_470+0 as ptr
+    e1 = load tmp_470+8 as ptr
+    !tmp_470
+    tmp_471 = alloc 8
+    tmp_472 = load e1+0 as i32
+    store tmp_471+0, tmp_472 as i32
+    tmp_473 = load e1+4 as i32
+    store tmp_471+4, tmp_473 as i32
+    tmp_474 = call @sla__dyn_free_entity(a1, tmp_471)
+    !tmp_471
+    a2 = tmp_474
+    tmp_475 = load e1+0 as i32
+    tmp_476 = load e1+4 as i32
+    tmp_477 = 1
+    tmp_478 = add tmp_476, tmp_477
+    !tmp_476
+    !tmp_477
+    tmp_479 = call @sla__entity_new(tmp_475, tmp_478)
+    !tmp_475
+    !tmp_478
+    fake = tmp_479
+    tmp_480 = alloc 8
+    tmp_481 = load e1+0 as i32
+    store tmp_480+0, tmp_481 as i32
+    tmp_482 = load e1+4 as i32
+    store tmp_480+4, tmp_482 as i32
+    tmp_483 = call @sla__dyn_is_alive(a2, tmp_480)
+    !tmp_480
+    tmp_484 = 0
+    tmp_485 = ne tmp_483, tmp_484
+    !tmp_483
+    !tmp_484
+    br tmp_485 -> L_THEN_119, L_ELSE_120
+
+L_THEN_119:
+    !tmp_485
+    panic(2160)
+
+L_ELSE_120:
+    !tmp_485
+    jmp L_MERGE_121
+
+L_MERGE_121:
+    tmp_488 = alloc 8
+    tmp_489 = load fake+0 as i32
+    store tmp_488+0, tmp_489 as i32
+    tmp_490 = load fake+4 as i32
+    store tmp_488+4, tmp_490 as i32
+    tmp_491 = call @sla__dyn_is_alive(a2, tmp_488)
+    !tmp_488
+    tmp_492 = 0
+    tmp_493 = ne tmp_491, tmp_492
+    !tmp_491
+    !tmp_492
+    br tmp_493 -> L_THEN_122, L_ELSE_123
+
+L_THEN_122:
+    !tmp_493
+    panic(2161)
+
+L_ELSE_123:
+    !tmp_493
+    jmp L_MERGE_124
+
+L_MERGE_124:
+    tmp_496 = call @sla__dyn_alloc_entity(a2)
+    a3 = load tmp_496+0 as ptr
+    e2 = load tmp_496+8 as ptr
+    !tmp_496
+    tmp_497 = alloc 8
+    tmp_498 = load e2+0 as i32
+    store tmp_497+0, tmp_498 as i32
+    tmp_499 = load e2+4 as i32
+    store tmp_497+4, tmp_499 as i32
+    tmp_500 = alloc 8
+    tmp_501 = load fake+0 as i32
+    store tmp_500+0, tmp_501 as i32
+    tmp_502 = load fake+4 as i32
+    store tmp_500+4, tmp_502 as i32
+    tmp_503 = call @sla__entity_eq(tmp_497, tmp_500)
+    !tmp_497
+    !tmp_500
+    tmp_504 = 1
+    tmp_505 = ne tmp_503, tmp_504
+    !tmp_503
+    !tmp_504
+    br tmp_505 -> L_THEN_125, L_ELSE_126
+
+L_THEN_125:
+    !tmp_505
+    panic(2162)
+
+L_ELSE_126:
+    !tmp_505
+    jmp L_MERGE_127
+
+L_MERGE_127:
+    tmp_508 = alloc 8
+    tmp_509 = load e2+0 as i32
+    store tmp_508+0, tmp_509 as i32
+    tmp_510 = load e2+4 as i32
+    store tmp_508+4, tmp_510 as i32
+    tmp_511 = call @sla__dyn_is_alive(a3, tmp_508)
+    !tmp_508
+    tmp_512 = 1
+    tmp_513 = ne tmp_511, tmp_512
+    !tmp_511
+    !tmp_512
+    br tmp_513 -> L_THEN_128, L_ELSE_129
+
+L_THEN_128:
+    !tmp_513
+    panic(2163)
+
+L_ELSE_129:
+    !tmp_513
+    jmp L_MERGE_130
+
+L_MERGE_130:
+    !e2
+    !a0
+    !fake
+    !a2
+    !e1
+    !a3
+    !a1
+    return
+
