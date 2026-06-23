@@ -149,7 +149,7 @@ struct TableErasedAnyOf4<A, B, C, D> {
     fourth: TableErasedOptional<D>,
 }
 
-@expand_tuple(5, 5, T) {
+@expand_tuple(5, 6, T) {
 struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
     entity: Entity,
 @each(T) {
@@ -2792,7 +2792,7 @@ fn table_erased_world_query_any_of4_auto<A, B, C, D, R, M>(world: TableErasedWor
     return table_erased_world_query_any_of4<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
 }
 
-@expand_tuple(5, 5, T) {
+@expand_tuple(5, 6, T) {
 fn table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { component_id_$I: i32, type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
     let query = query_new<TableErasedAnyOf$N<@join(T, ", ") { $T }>>();
     let i: i64 = 0;
@@ -5125,4 +5125,22 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if any5_marker_sum != 300 { panic(12659); };
     if any5_tag_sum != 410 { panic(12660); };
     if any5_extra_sum != 3000 { panic(12661); };
+
+    let any6 = table_erased_world_query_any_of6_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra, TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default, table_erased_aux_default, table_erased_extra_default);
+    if len(any6.items) != 4 { panic(12662); };
+    let any6_aux_present: i32 = 0;
+    let any6_extra_present: i32 = 0;
+    let any6_aux_sum: i32 = 0;
+    let any6_extra_sum: i32 = 0;
+    let r: i64 = 0;
+    let any6_count = len(any6.items) as i64;
+    while r < any6_count {
+        if any6.items[r].value_4.has_value { any6_aux_present = any6_aux_present + 1; any6_aux_sum = any6_aux_sum + any6.items[r].value_4.value.value; };
+        if any6.items[r].value_5.has_value { any6_extra_present = any6_extra_present + 1; any6_extra_sum = any6_extra_sum + any6.items[r].value_5.value.value; };
+        r = r + 1;
+    }
+    if any6_aux_present != 2 { panic(12663); };
+    if any6_extra_present != 1 { panic(12664); };
+    if any6_aux_sum != 6000 { panic(12665); };
+    if any6_extra_sum != 3000 { panic(12666); };
 }

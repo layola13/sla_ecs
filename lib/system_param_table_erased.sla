@@ -773,6 +773,22 @@ fn table_erased_run_any_of4_query_resource_system_auto<A, B, C, D, R, M>(world: 
     return table_erased_run_any_of4_query_resource_system<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth, run);
 }
 
+@expand_tuple(5, 6, T) {
+fn table_erased_run_any_of$N_query_resource_system<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { component_id_$I: i32, type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { component_id_$I, type_id_$I }, @join(T, ", ") { default_$I });
+    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>(query, table_erased_world_get_resource<R, M>(world));
+    let param1 = run(param0);
+    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+}
+
+fn table_erased_run_any_of$N_query_resource_system_auto<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedWorld<R, M> {
+@each(T) {
+    let component_id_$I = table_erased_world_component_id_for_type<R, M>(world, type_id_$I);
+}
+    return table_erased_run_any_of$N_query_resource_system<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { component_id_$I, type_id_$I }, @join(T, ", ") { default_$I }, run);
+}
+}
+
 fn table_erased_run_any_of3_with_optional_pair_query_resource_system<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, pair_first_component_id: i32, pair_first_type_id: i32, pair_second_component_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>) -> TableErasedWorld<R, M> {
     let query = table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, pair_first_component_id, pair_first_type_id, pair_second_component_id, pair_second_type_id, default_first, default_second, default_third, default_pair);
     let param0 = table_erased_item_query_resource_param<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>, R>(query, table_erased_world_get_resource<R, M>(world));
@@ -1375,6 +1391,28 @@ fn table_erased_param_anyof4_marker_velocity_pos_tag_count_system(param: TableEr
     return table_erased_item_query_resource_param<TableErasedAnyOf4<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: first_present * 10000 + second_present * 1000 + third_present * 100 + fourth_present * 10 + first_missing });
 }
 
+fn table_erased_param_anyof6_marker_velocity_pos_tag_aux_extra_count_system(param: TableErasedItemQueryResourceParam<TableErasedAnyOf6<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamAux, TableErasedParamExtra>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf6<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamAux, TableErasedParamExtra>, TableErasedParamTime> {
+    let first_present: i32 = 0;
+    let first_missing: i32 = 0;
+    let second_present: i32 = 0;
+    let third_present: i32 = 0;
+    let fourth_present: i32 = 0;
+    let fifth_present: i32 = 0;
+    let sixth_present: i32 = 0;
+    let i: i64 = 0;
+    let cnt = len(param.query.items) as i64;
+    while i < cnt {
+        if param.query.items[i].value_0.has_value { first_present = first_present + 1; } else { first_missing = first_missing + 1; };
+        if param.query.items[i].value_1.has_value { second_present = second_present + 1; };
+        if param.query.items[i].value_2.has_value { third_present = third_present + 1; };
+        if param.query.items[i].value_3.has_value { fourth_present = fourth_present + 1; };
+        if param.query.items[i].value_4.has_value { fifth_present = fifth_present + 1; };
+        if param.query.items[i].value_5.has_value { sixth_present = sixth_present + 1; };
+        i = i + 1;
+    }
+    return table_erased_item_query_resource_param<TableErasedAnyOf6<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamAux, TableErasedParamExtra>, TableErasedParamTime>(param.query, TableErasedParamTime { tick: first_present * 1000000 + second_present * 100000 + third_present * 10000 + fourth_present * 1000 + fifth_present * 100 + sixth_present * 10 + first_missing });
+}
+
 fn table_erased_param_anyof3_optional_pair_count_system(param: TableErasedItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamVel, TableErasedParamMarker>, TableErasedParamTime>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf3WithOptionalPair<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamVel, TableErasedParamMarker>, TableErasedParamTime> {
     let pair_present: i32 = 0;
     let pair_vel_sum: i32 = 0;
@@ -1835,7 +1873,7 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c14, ce2, c_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 56 { panic(12046); };
 }
 
-@test "table erased anyof4 query resource system param"() {
+@test "table erased anyof6 query resource system param"() {
     let w0 = table_erased_param_world_new();
     let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
     let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
@@ -1853,9 +1891,15 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let w14 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w13, e4, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 4, y: 0 });
     let w15 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w14, e4, marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 400 });
     let w16 = table_erased_world_insert<TableErasedParamTag, TableErasedParamTime, TableErasedParamEvent>(w15, e4, tag.id, TABLE_ERASED_PARAM_TAG_TYPE, TableErasedParamTag { value: 4000 });
-    let w16r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w16, TableErasedParamTime { tick: 0 });
+    let (w16a, aux) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16, TABLE_ERASED_PARAM_AUX_TYPE, table_erased_param_aux_drop);
+    let w16b = table_erased_world_insert<TableErasedParamAux, TableErasedParamTime, TableErasedParamEvent>(w16a, e1, aux.id, TABLE_ERASED_PARAM_AUX_TYPE, TableErasedParamAux { value: 100 });
+    let (w16c, extra) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16b, TABLE_ERASED_PARAM_EXTRA_TYPE, table_erased_param_extra_drop);
+    let w16d = table_erased_world_insert<TableErasedParamExtra, TableErasedParamTime, TableErasedParamEvent>(w16c, e2, extra.id, TABLE_ERASED_PARAM_EXTRA_TYPE, TableErasedParamExtra { value: 200 });
+    let w16r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w16d, TableErasedParamTime { tick: 0 });
     let w17 = table_erased_run_any_of4_query_resource_system_auto<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamTime, TableErasedParamEvent>(w16r, TABLE_ERASED_PARAM_MARKER_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_TAG_TYPE, table_erased_param_marker_default, table_erased_param_vel_default, table_erased_param_pos_default, table_erased_param_tag_default, table_erased_param_anyof4_marker_velocity_pos_tag_count_system);
     if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w17).tick != 22222 { panic(12620); };
+    let w18 = table_erased_run_any_of6_query_resource_system_auto<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamAux, TableErasedParamExtra, TableErasedParamTime, TableErasedParamEvent>(w16r, TABLE_ERASED_PARAM_MARKER_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_TAG_TYPE, TABLE_ERASED_PARAM_AUX_TYPE, TABLE_ERASED_PARAM_EXTRA_TYPE, table_erased_param_marker_default, table_erased_param_vel_default, table_erased_param_pos_default, table_erased_param_tag_default, table_erased_param_aux_default, table_erased_param_extra_default, table_erased_param_anyof6_marker_velocity_pos_tag_aux_extra_count_system);
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w18).tick != 2222112 { panic(12621); };
 }
 
 @test "table erased system params expose spawned and spawn details"() {
