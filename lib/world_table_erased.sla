@@ -182,6 +182,16 @@ struct TableErasedWithAnyOf4<A, B, C, D, E> {
     any_fourth: TableErasedOptional<E>,
 }
 
+@expand_tuple(5, 6, T) {
+struct TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }> {
+    entity: Entity,
+    value: A,
+@each(T) {
+    any_$I: TableErasedOptional<$T>,
+}
+}
+}
+
 struct TableErasedPairWithAnyOf2<A, B, C, D> {
     entity: Entity,
     first: A,
@@ -2979,6 +2989,37 @@ fn table_erased_world_query_with_any_of4_auto<A, B, C, D, E, R, M>(world: TableE
     return table_erased_world_query_with_any_of4<A, B, C, D, E, R, M>(world, required_component_id, required_type_id, any_first_component_id, any_first_type_id, any_second_component_id, any_second_type_id, any_third_component_id, any_third_type_id, any_fourth_component_id, any_fourth_type_id, default_any_first, default_any_second, default_any_third, default_any_fourth);
 }
 
+@expand_tuple(5, 6, T) {
+fn table_erased_world_query_with_any_of$N<A, @join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, required_component_id: i32, required_type_id: i32, @join(T, ", ") { any_component_id_$I: i32, any_type_id_$I: i32 }, @join(T, ", ") { default_any_$I: fn() -> $T }) -> Query<TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }>> {
+    let query = query_new<TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }>>();
+    let base = table_erased_world_query<A, R, M>(world, required_component_id, required_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        let include = false;
+@each(T) {
+        let any_$I = table_erased_optional_none<$T>(default_any_$I);
+        if table_erased_world_has<R, M>(world, item.entity, any_component_id_$I) {
+            any_$I = table_erased_optional_some<$T>(table_erased_world_get<$T, R, M>(world, item.entity, any_component_id_$I, any_type_id_$I));
+            include = true;
+        };
+}
+        if include { query.items.push(TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }> { entity: item.entity, value: item.value, @join(T, ", ") { any_$I: any_$I } }); };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_with_any_of$N_auto<A, @join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, required_type_id: i32, @join(T, ", ") { any_type_id_$I: i32 }, @join(T, ", ") { default_any_$I: fn() -> $T }) -> Query<TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }>> {
+    let required_component_id = table_erased_world_component_id_for_type<R, M>(world, required_type_id);
+@each(T) {
+    let any_component_id_$I = table_erased_world_component_id_for_type<R, M>(world, any_type_id_$I);
+}
+    return table_erased_world_query_with_any_of$N<A, @join(T, ", ") { $T }, R, M>(world, required_component_id, required_type_id, @join(T, ", ") { any_component_id_$I, any_type_id_$I }, @join(T, ", ") { default_any_$I });
+}
+}
+
 fn table_erased_world_query_pair_with_any_of2<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, any_first_component_id: i32, any_first_type_id: i32, any_second_component_id: i32, any_second_type_id: i32, default_any_first: fn() -> C, default_any_second: fn() -> D) -> Query<TableErasedPairWithAnyOf2<A, B, C, D>> {
     let query = query_new<TableErasedPairWithAnyOf2<A, B, C, D>>();
     let base = table_erased_world_query_pair<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
@@ -3963,6 +4004,7 @@ const TABLE_ERASED_MARKER_TYPE: i32 = 303;
 const TABLE_ERASED_TAG_TYPE: i32 = 304;
 const TABLE_ERASED_AUX_TYPE: i32 = 305;
 const TABLE_ERASED_EXTRA_TYPE: i32 = 306;
+const TABLE_ERASED_MORE_TYPE: i32 = 307;
 
 struct TableErasedPos { x: i32, y: i32 }
 struct TableErasedVel { x: i32, y: i32 }
@@ -3970,6 +4012,7 @@ struct TableErasedMarker { value: i32 }
 struct TableErasedTag { value: i32 }
 struct TableErasedAux { value: i32 }
 struct TableErasedExtra { value: i32 }
+struct TableErasedMore { value: i32 }
 struct TableErasedTime { tick: i32 }
 struct TableErasedEvent { amount: i32 }
 
@@ -3981,6 +4024,7 @@ fn table_erased_marker_default() -> TableErasedMarker { return TableErasedMarker
 fn table_erased_tag_default() -> TableErasedTag { return TableErasedTag { value: 0 }; }
 fn table_erased_aux_default() -> TableErasedAux { return TableErasedAux { value: 0 }; }
 fn table_erased_extra_default() -> TableErasedExtra { return TableErasedExtra { value: 0 }; }
+fn table_erased_more_default() -> TableErasedMore { return TableErasedMore { value: 0 }; }
 fn table_erased_vel_marker_pair_default() -> TableErasedPairValue<TableErasedVel, TableErasedMarker> { return TableErasedPairValue<TableErasedVel, TableErasedMarker> { first: table_erased_vel_default(), second: table_erased_marker_default() }; }
 fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErasedEvent> { return table_erased_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default()); }
 
@@ -3990,6 +4034,7 @@ fn table_erased_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedM
 fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedAux; let boxed = unsafe { Box::from_raw(typed) }; }
 fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedExtra; let boxed = unsafe { Box::from_raw(typed) }; }
+fn table_erased_more_drop(raw: *u8) -> void { let typed = raw as *TableErasedMore; let boxed = unsafe { Box::from_raw(typed) }; }
 
 @test "table erased world stores heterogeneous values by archetype row"() {
     let w0 = table_erased_test_world_new();
@@ -4917,6 +4962,8 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     let w20 = table_erased_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w19, e4, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 4000 });
     let (w21, extra) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_EXTRA_TYPE, table_erased_extra_drop);
     let w22 = table_erased_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w21, e3, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 3000 });
+    let (w23, more) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_MORE_TYPE, table_erased_more_drop);
+    let w24 = table_erased_world_insert<TableErasedMore, TableErasedTime, TableErasedEvent>(w23, e2, more.id, TABLE_ERASED_MORE_TYPE, TableErasedMore { value: 20000 });
 
     let pos_any = table_erased_world_query_with_any_of2_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);
     if len(pos_any.items) != 2 { panic(11800); };
@@ -5010,6 +5057,35 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if any4_nested_aux_present != 1 { panic(12636); };
     if any4_nested_extra_present != 1 { panic(12637); };
     if any4_nested_extra_sum != 3000 { panic(12638); };
+
+    let pos_any6 = table_erased_world_query_with_any_of6_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedAux, TableErasedExtra, TableErasedVel, TableErasedMore, TableErasedTime, TableErasedEvent>(w24, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MORE_TYPE, table_erased_tag_default, table_erased_marker_default, table_erased_aux_default, table_erased_extra_default, table_erased_vel_default, table_erased_more_default);
+    if len(pos_any6.items) != 3 { panic(12667); };
+    let any6_with_tag_present: i32 = 0;
+    let any6_with_marker_present: i32 = 0;
+    let any6_with_aux_present: i32 = 0;
+    let any6_with_extra_present: i32 = 0;
+    let any6_with_vel_present: i32 = 0;
+    let any6_with_more_present: i32 = 0;
+    let any6_with_pos_sum: i32 = 0;
+    let s: i64 = 0;
+    let any6_with_count = len(pos_any6.items) as i64;
+    while s < any6_with_count {
+        any6_with_pos_sum = any6_with_pos_sum + pos_any6.items[s].value.x;
+        if pos_any6.items[s].any_0.has_value { any6_with_tag_present = any6_with_tag_present + 1; };
+        if pos_any6.items[s].any_1.has_value { any6_with_marker_present = any6_with_marker_present + 1; };
+        if pos_any6.items[s].any_2.has_value { any6_with_aux_present = any6_with_aux_present + 1; };
+        if pos_any6.items[s].any_3.has_value { any6_with_extra_present = any6_with_extra_present + 1; };
+        if pos_any6.items[s].any_4.has_value { any6_with_vel_present = any6_with_vel_present + 1; };
+        if pos_any6.items[s].any_5.has_value { any6_with_more_present = any6_with_more_present + 1; };
+        s = s + 1;
+    }
+    if any6_with_tag_present != 1 { panic(12668); };
+    if any6_with_marker_present != 1 { panic(12669); };
+    if any6_with_aux_present != 1 { panic(12670); };
+    if any6_with_extra_present != 1 { panic(12671); };
+    if any6_with_vel_present != 2 { panic(12672); };
+    if any6_with_more_present != 1 { panic(12673); };
+    if any6_with_pos_sum != 6 { panic(12674); };
 
     let pos_vel_any4 = table_erased_world_query_pair_with_any_of4_auto<TableErasedPos, TableErasedVel, TableErasedTag, TableErasedMarker, TableErasedAux, TableErasedExtra, TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, table_erased_tag_default, table_erased_marker_default, table_erased_aux_default, table_erased_extra_default);
     if len(pos_vel_any4.items) != 2 { panic(12639); };
