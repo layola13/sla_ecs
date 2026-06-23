@@ -13,30 +13,15 @@ struct TableErasedDemoEvent { amount: i32 }
 fn table_erased_demo_time_default() -> TableErasedDemoTime { return TableErasedDemoTime { tick: 0 }; }
 fn table_erased_demo_event_default() -> TableErasedDemoEvent { return TableErasedDemoEvent { amount: 0 }; }
 
-fn table_erased_demo_position_drop(raw: *u8) -> void {
-    let typed = raw as *TableErasedDemoPosition;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn table_erased_demo_velocity_drop(raw: *u8) -> void {
-    let typed = raw as *TableErasedDemoVelocity;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn table_erased_demo_marker_drop(raw: *u8) -> void {
-    let typed = raw as *TableErasedDemoMarker;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 fn table_erased_demo_world_new() -> TableErasedWorld<TableErasedDemoTime, TableErasedDemoEvent> {
     return table_erased_world_new<TableErasedDemoTime, TableErasedDemoEvent>(table_erased_demo_time_default(), table_erased_demo_event_default());
 }
 
 fn table_erased_world_demo() -> i32 {
     let w0 = table_erased_demo_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedDemoTime, TableErasedDemoEvent>(w0, TABLE_ERASED_DEMO_POSITION, table_erased_demo_position_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedDemoTime, TableErasedDemoEvent>(w1, TABLE_ERASED_DEMO_VELOCITY, table_erased_demo_velocity_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedDemoTime, TableErasedDemoEvent>(w2, TABLE_ERASED_DEMO_MARKER, table_erased_demo_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedDemoTime, TableErasedDemoEvent>(w0, TABLE_ERASED_DEMO_POSITION, ecs_box_drop<TableErasedDemoPosition>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedDemoTime, TableErasedDemoEvent>(w1, TABLE_ERASED_DEMO_VELOCITY, ecs_box_drop<TableErasedDemoVelocity>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedDemoTime, TableErasedDemoEvent>(w2, TABLE_ERASED_DEMO_MARKER, ecs_box_drop<TableErasedDemoMarker>);
     let (w4, first) = table_erased_world_spawn<TableErasedDemoTime, TableErasedDemoEvent>(w3);
     let (w5, second) = table_erased_world_spawn<TableErasedDemoTime, TableErasedDemoEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedDemoPosition, TableErasedDemoTime, TableErasedDemoEvent>(w5, first, position.id, TABLE_ERASED_DEMO_POSITION, TableErasedDemoPosition { x: 2, y: 0 });

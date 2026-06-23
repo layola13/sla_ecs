@@ -13,21 +13,6 @@ struct ErasedPipeEvent { amount: i32 }
 fn erased_pipe_time_default() -> ErasedPipeTime { return ErasedPipeTime { tick: 0 }; }
 fn erased_pipe_event_default() -> ErasedPipeEvent { return ErasedPipeEvent { amount: 0 }; }
 
-fn erased_pipe_position_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedPipePosition;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_pipe_velocity_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedPipeVelocity;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_pipe_marker_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedPipeMarker;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 fn erased_pipe_world_new() -> RegistryErasedWorld<ErasedPipeTime, ErasedPipeEvent> {
     return registry_erased_world_new<ErasedPipeTime, ErasedPipeEvent>(erased_pipe_time_default(), erased_pipe_event_default());
 }
@@ -60,9 +45,9 @@ fn erased_pipe_resource_system(world: RegistryErasedWorld<ErasedPipeTime, Erased
 
 fn registry_erased_schedule_commands_demo() -> i32 {
     let w0 = erased_pipe_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedPipeTime, ErasedPipeEvent>(w0, ERASED_PIPE_POSITION, erased_pipe_position_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedPipeTime, ErasedPipeEvent>(w1, ERASED_PIPE_VELOCITY, erased_pipe_velocity_drop);
-    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedPipeTime, ErasedPipeEvent>(w2, ERASED_PIPE_MARKER, erased_pipe_marker_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedPipeTime, ErasedPipeEvent>(w0, ERASED_PIPE_POSITION, ecs_box_drop<ErasedPipePosition>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedPipeTime, ErasedPipeEvent>(w1, ERASED_PIPE_VELOCITY, ecs_box_drop<ErasedPipeVelocity>);
+    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedPipeTime, ErasedPipeEvent>(w2, ERASED_PIPE_MARKER, ecs_box_drop<ErasedPipeMarker>);
     let spawn_access = registry_erased_access_write_messages(registry_erased_access_write_component(registry_erased_access_write_component(registry_erased_system_access_none(), position.id), velocity.id));
     let move_access = registry_erased_access_read_component(registry_erased_access_write_component(registry_erased_system_access_none(), position.id), velocity.id);
     let resource_access = registry_erased_access_write_resource(registry_erased_system_access_none());

@@ -1019,14 +1019,6 @@ fn table_erased_param_more_default() -> TableErasedParamMore { return TableErase
 fn table_erased_param_bonus_default() -> TableErasedParamBonus { return TableErasedParamBonus { value: 0 }; }
 fn table_erased_param_vel_marker_pair_default() -> TableErasedPairValue<TableErasedParamVel, TableErasedParamMarker> { return TableErasedPairValue<TableErasedParamVel, TableErasedParamMarker> { first: table_erased_param_vel_default(), second: table_erased_param_marker_default() }; }
 fn table_erased_param_world_new() -> TableErasedWorld<TableErasedParamTime, TableErasedParamEvent> { return table_erased_world_new<TableErasedParamTime, TableErasedParamEvent>(table_erased_param_time_default(), table_erased_param_event_default()); }
-fn table_erased_param_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamTag; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamAux; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamExtra; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_more_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamMore; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamBonus; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_param_movement_system(query: Query<TableErasedPairMut<TableErasedParamPos, TableErasedParamVel>>) -> Query<TableErasedPairMut<TableErasedParamPos, TableErasedParamVel>> {
     let i: i64 = 0;
@@ -1574,8 +1566,8 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased pair query system param writes back"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
     let (w3, entity) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w3, entity, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 8, y: 0 });
     let w5 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w4, entity, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
@@ -1605,8 +1597,8 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased commands writer reader and filtered params"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, selected) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, selected) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let w3 = table_erased_run_commands_system<TableErasedParamTime, TableErasedParamEvent>(w2, table_erased_param_commands_system);
     let w4 = table_erased_run_message_writer_system<TableErasedParamTime, TableErasedParamEvent>(w3, table_erased_param_writer_system);
     let w5 = table_erased_run_without_query_resource_system_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w4, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_count_query_system);
@@ -1624,9 +1616,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased single optional single and populated system params"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (w3, marker) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (w4, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w3);
     let w5 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w4, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
     let w6 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w5, e1, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 3, y: 0 });
@@ -1654,9 +1646,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased system params expose query inspection"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (w3, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_TAG_TYPE, table_erased_param_tag_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (w3, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_TAG_TYPE, ecs_box_drop<TableErasedParamTag>);
     let (w4, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w3);
     let (w5, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w5, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1679,8 +1671,8 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased with added changed query resource params"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, marker) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, marker) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (w3, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w2);
     let (w4, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w3);
     let w5 = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w4, TableErasedParamTime { tick: 0 });
@@ -1703,9 +1695,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased filtered pair mut system params"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (w4, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w3);
     let (w5, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w5, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1713,14 +1705,14 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let w8 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w7, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 40, y: 0 });
     let w9 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w8, e2, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 8, y: 0 });
     let w10 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w9, e2, marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 1 });
-    let (w10a, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10, TABLE_ERASED_PARAM_TAG_TYPE, table_erased_param_tag_drop);
-    let (w10b, aux) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10a, TABLE_ERASED_PARAM_AUX_TYPE, table_erased_param_aux_drop);
+    let (w10a, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10, TABLE_ERASED_PARAM_TAG_TYPE, ecs_box_drop<TableErasedParamTag>);
+    let (w10b, aux) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10a, TABLE_ERASED_PARAM_AUX_TYPE, ecs_box_drop<TableErasedParamAux>);
     let w10c = table_erased_world_insert<TableErasedParamAux, TableErasedParamTime, TableErasedParamEvent>(w10b, e1, aux.id, TABLE_ERASED_PARAM_AUX_TYPE, TableErasedParamAux { value: 100 });
-    let (w10d, extra) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10c, TABLE_ERASED_PARAM_EXTRA_TYPE, table_erased_param_extra_drop);
+    let (w10d, extra) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10c, TABLE_ERASED_PARAM_EXTRA_TYPE, ecs_box_drop<TableErasedParamExtra>);
     let w10e = table_erased_world_insert<TableErasedParamExtra, TableErasedParamTime, TableErasedParamEvent>(w10d, e2, extra.id, TABLE_ERASED_PARAM_EXTRA_TYPE, TableErasedParamExtra { value: 200 });
-    let (w10f, more) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10e, TABLE_ERASED_PARAM_MORE_TYPE, table_erased_param_more_drop);
+    let (w10f, more) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10e, TABLE_ERASED_PARAM_MORE_TYPE, ecs_box_drop<TableErasedParamMore>);
     let w10g = table_erased_world_insert<TableErasedParamMore, TableErasedParamTime, TableErasedParamEvent>(w10f, e2, more.id, TABLE_ERASED_PARAM_MORE_TYPE, TableErasedParamMore { value: 300 });
-    let (w10h, bonus) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10g, TABLE_ERASED_PARAM_BONUS_TYPE, table_erased_param_bonus_drop);
+    let (w10h, bonus) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w10g, TABLE_ERASED_PARAM_BONUS_TYPE, ecs_box_drop<TableErasedParamBonus>);
     let w10i = table_erased_world_insert<TableErasedParamBonus, TableErasedParamTime, TableErasedParamEvent>(w10h, e1, bonus.id, TABLE_ERASED_PARAM_BONUS_TYPE, TableErasedParamBonus { value: 400 });
     let w10r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w10i, TableErasedParamTime { tick: 0 });
     let w10entities = table_erased_run_entity_query_resource_system<TableErasedParamTime, TableErasedParamEvent>(w10r, table_erased_param_entity_count_system);
@@ -1824,9 +1816,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w16and, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 15 { panic(12061); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w16and, e2, position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 56 { panic(12062); };
     let o0 = table_erased_param_world_new();
-    let (o1, o_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (o2, o_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (o3, o_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(o2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (o1, o_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (o2, o_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(o1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (o3, o_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(o2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (o4, oe1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(o3);
     let (o5, oe2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(o4);
     let o6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o5, oe1, o_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1838,9 +1830,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o11, oe1, o_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12040); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(o11, oe2, o_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 48 { panic(12041); };
     let u0 = table_erased_param_world_new();
-    let (u1, u_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (u2, u_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (u3, u_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(u2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (u1, u_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (u2, u_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(u1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (u3, u_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(u2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (u4, ue1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(u3);
     let (u5, ue2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(u4);
     let u6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u5, ue1, u_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1852,9 +1844,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u11, ue1, u_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12048); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(u11, ue2, u_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 40 { panic(12049); };
     let a0 = table_erased_param_world_new();
-    let (a1, a_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (a2, a_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (a3, a_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(a2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (a1, a_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (a2, a_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(a1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (a3, a_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(a2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (a4, ae1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(a3);
     let (a5, ae2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(a4);
     let a6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a5, ae1, a_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1866,9 +1858,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a11, ae1, a_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 7 { panic(12043); };
     if table_erased_world_get<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(a11, ae2, a_position.id, TABLE_ERASED_PARAM_POS_TYPE).x != 48 { panic(12044); };
     let c0 = table_erased_param_world_new();
-    let (c1, c_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (c2, c_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (c3, c_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(c2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
+    let (c1, c_position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (c2, c_velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(c1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (c3, c_marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(c2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
     let (c4, ce1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(c3);
     let (c5, ce2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(c4);
     let c6 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(c5, ce1, c_position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 4, y: 0 });
@@ -1894,10 +1886,10 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased anyof6 query resource system param"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, table_erased_param_marker_drop);
-    let (w4, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w3, TABLE_ERASED_PARAM_TAG_TYPE, table_erased_param_tag_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedParamTime, TableErasedParamEvent>(w2, TABLE_ERASED_PARAM_MARKER_TYPE, ecs_box_drop<TableErasedParamMarker>);
+    let (w4, tag) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w3, TABLE_ERASED_PARAM_TAG_TYPE, ecs_box_drop<TableErasedParamTag>);
     let (w5, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w4);
     let (w6, e2) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w5);
     let (w7, e3) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w6);
@@ -1910,9 +1902,9 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let w14 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w13, e4, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 4, y: 0 });
     let w15 = table_erased_world_insert<TableErasedParamMarker, TableErasedParamTime, TableErasedParamEvent>(w14, e4, marker.id, TABLE_ERASED_PARAM_MARKER_TYPE, TableErasedParamMarker { value: 400 });
     let w16 = table_erased_world_insert<TableErasedParamTag, TableErasedParamTime, TableErasedParamEvent>(w15, e4, tag.id, TABLE_ERASED_PARAM_TAG_TYPE, TableErasedParamTag { value: 4000 });
-    let (w16a, aux) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16, TABLE_ERASED_PARAM_AUX_TYPE, table_erased_param_aux_drop);
+    let (w16a, aux) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16, TABLE_ERASED_PARAM_AUX_TYPE, ecs_box_drop<TableErasedParamAux>);
     let w16b = table_erased_world_insert<TableErasedParamAux, TableErasedParamTime, TableErasedParamEvent>(w16a, e1, aux.id, TABLE_ERASED_PARAM_AUX_TYPE, TableErasedParamAux { value: 100 });
-    let (w16c, extra) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16b, TABLE_ERASED_PARAM_EXTRA_TYPE, table_erased_param_extra_drop);
+    let (w16c, extra) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w16b, TABLE_ERASED_PARAM_EXTRA_TYPE, ecs_box_drop<TableErasedParamExtra>);
     let w16d = table_erased_world_insert<TableErasedParamExtra, TableErasedParamTime, TableErasedParamEvent>(w16c, e2, extra.id, TABLE_ERASED_PARAM_EXTRA_TYPE, TableErasedParamExtra { value: 200 });
     let w16r = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w16d, TableErasedParamTime { tick: 0 });
     let w17 = table_erased_run_any_of4_query_resource_system_auto<TableErasedParamMarker, TableErasedParamVel, TableErasedParamPos, TableErasedParamTag, TableErasedParamTime, TableErasedParamEvent>(w16r, TABLE_ERASED_PARAM_MARKER_TYPE, TABLE_ERASED_PARAM_VEL_TYPE, TABLE_ERASED_PARAM_POS_TYPE, TABLE_ERASED_PARAM_TAG_TYPE, table_erased_param_marker_default, table_erased_param_vel_default, table_erased_param_pos_default, table_erased_param_tag_default, table_erased_param_anyof4_marker_velocity_pos_tag_count_system);
@@ -1923,8 +1915,8 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
 
 @test "table erased system params expose spawned and spawn details"() {
     let w0 = table_erased_param_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, table_erased_param_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, table_erased_param_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w1, TABLE_ERASED_PARAM_VEL_TYPE, ecs_box_drop<TableErasedParamVel>);
     let (w3, e1) = table_erased_world_spawn<TableErasedParamTime, TableErasedParamEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w3, e1, position.id, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: 1, y: 0 });
     let w5 = table_erased_world_insert<TableErasedParamVel, TableErasedParamTime, TableErasedParamEvent>(w4, e1, velocity.id, TABLE_ERASED_PARAM_VEL_TYPE, TableErasedParamVel { x: 10, y: 0 });

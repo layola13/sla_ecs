@@ -21,11 +21,6 @@ fn table_erased_param_demo_vel_default() -> TableErasedParamDemoVel { return Tab
 fn table_erased_param_demo_marker_default() -> TableErasedParamDemoMarker { return TableErasedParamDemoMarker { value: 0 }; }
 fn table_erased_param_demo_aux_default() -> TableErasedParamDemoAux { return TableErasedParamDemoAux { value: 0 }; }
 fn table_erased_param_demo_extra_default() -> TableErasedParamDemoExtra { return TableErasedParamDemoExtra { value: 0 }; }
-fn table_erased_param_demo_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_demo_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_demo_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_demo_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoAux; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_param_demo_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedParamDemoExtra; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_param_demo_world_new() -> TableErasedWorld<TableErasedParamDemoTime, TableErasedParamDemoEvent> {
     return table_erased_world_new<TableErasedParamDemoTime, TableErasedParamDemoEvent>(table_erased_param_demo_time_default(), table_erased_param_demo_event_default());
@@ -155,11 +150,11 @@ fn table_erased_param_demo_resource_adapter(world: TableErasedWorld<TableErasedP
 
 fn table_erased_system_param_demo() -> i32 {
     let w0 = table_erased_param_demo_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w0, TABLE_ERASED_PARAM_DEMO_POS_TYPE, table_erased_param_demo_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w1, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, table_erased_param_demo_vel_drop);
-    let (w3, marker) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w2, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, table_erased_param_demo_marker_drop);
-    let (w3a, aux) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, table_erased_param_demo_aux_drop);
-    let (w3b, extra) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3a, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, table_erased_param_demo_extra_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w0, TABLE_ERASED_PARAM_DEMO_POS_TYPE, ecs_box_drop<TableErasedParamDemoPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w1, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, ecs_box_drop<TableErasedParamDemoVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w2, TABLE_ERASED_PARAM_DEMO_MARKER_TYPE, ecs_box_drop<TableErasedParamDemoMarker>);
+    let (w3a, aux) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3, TABLE_ERASED_PARAM_DEMO_AUX_TYPE, ecs_box_drop<TableErasedParamDemoAux>);
+    let (w3b, extra) = table_erased_world_register_table<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3a, TABLE_ERASED_PARAM_DEMO_EXTRA_TYPE, ecs_box_drop<TableErasedParamDemoExtra>);
     let (w4, entity) = table_erased_world_spawn<TableErasedParamDemoTime, TableErasedParamDemoEvent>(w3b);
     let w5 = table_erased_world_insert<TableErasedParamDemoPos, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w4, entity, position.id, TABLE_ERASED_PARAM_DEMO_POS_TYPE, TableErasedParamDemoPos { x: 5, y: 0 });
     let w6 = table_erased_world_insert<TableErasedParamDemoVel, TableErasedParamDemoTime, TableErasedParamDemoEvent>(w5, entity, velocity.id, TABLE_ERASED_PARAM_DEMO_VEL_TYPE, TableErasedParamDemoVel { x: 4, y: 0 });

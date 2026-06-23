@@ -2,6 +2,7 @@
 // This is the Bevy-shaped resource owner: a world can hold at most one value
 // for each resource type, while different resource types coexist in one store.
 @import "world_dynamic.sla"
+@import "box_drop.sla"
 @import "sa_std/core/box.sa"
 
 struct ErasedResourceValue {
@@ -160,9 +161,6 @@ impl ErasedResourceScore {
     fn resource_type_id() -> i32 { return 123102; }
 }
 
-fn erased_resource_time_drop(raw: *u8) -> void { let typed = raw as *ErasedResourceTime; let boxed = unsafe { Box::from_raw(typed) }; }
-fn erased_resource_score_drop(raw: *u8) -> void { let typed = raw as *ErasedResourceScore; let boxed = unsafe { Box::from_raw(typed) }; }
-
 @test "erased resources store multiple unique resources by type"() {
     let time_type = ErasedResourceTime::resource_type_id();
     let score_type = ErasedResourceScore::resource_type_id();
@@ -170,8 +168,8 @@ fn erased_resource_score_drop(raw: *u8) -> void { let typed = raw as *ErasedReso
     if score_type <= 0 { panic(12311); };
     if time_type == score_type { panic(12312); };
     let r0 = erased_resources_new();
-    let r1 = erased_resources_insert<ErasedResourceTime>(r0, time_type, erased_resource_time_drop, ErasedResourceTime { tick: 1 });
-    let r2 = erased_resources_insert<ErasedResourceScore>(r1, score_type, erased_resource_score_drop, ErasedResourceScore { value: 7 });
+    let r1 = erased_resources_insert<ErasedResourceTime>(r0, time_type, ecs_box_drop<ErasedResourceTime>, ErasedResourceTime { tick: 1 });
+    let r2 = erased_resources_insert<ErasedResourceScore>(r1, score_type, ecs_box_drop<ErasedResourceScore>, ErasedResourceScore { value: 7 });
     if erased_resources_count(r2) != 2 { panic(12313); };
     if erased_resources_has(r2, time_type) != true { panic(12314); };
     if erased_resources_has(r2, score_type) != true { panic(12315); };
@@ -183,11 +181,11 @@ fn erased_resource_score_drop(raw: *u8) -> void { let typed = raw as *ErasedReso
     let time_type = ErasedResourceTime::resource_type_id();
     let score_type = ErasedResourceScore::resource_type_id();
     let r0 = erased_resources_new();
-    let r1 = erased_resources_insert<ErasedResourceTime>(r0, time_type, erased_resource_time_drop, ErasedResourceTime { tick: 1 });
-    let r2 = erased_resources_insert<ErasedResourceScore>(r1, score_type, erased_resource_score_drop, ErasedResourceScore { value: 7 });
+    let r1 = erased_resources_insert<ErasedResourceTime>(r0, time_type, ecs_box_drop<ErasedResourceTime>, ErasedResourceTime { tick: 1 });
+    let r2 = erased_resources_insert<ErasedResourceScore>(r1, score_type, ecs_box_drop<ErasedResourceScore>, ErasedResourceScore { value: 7 });
     let before = r2.change_tick;
     let r3 = erased_resources_increment_tick(r2);
-    let r4 = erased_resources_insert<ErasedResourceTime>(r3, time_type, erased_resource_time_drop, ErasedResourceTime { tick: 3 });
+    let r4 = erased_resources_insert<ErasedResourceTime>(r3, time_type, ecs_box_drop<ErasedResourceTime>, ErasedResourceTime { tick: 3 });
     if erased_resources_added_since(r4, time_type, before) != false { panic(12320); };
     if erased_resources_changed_since(r4, time_type, before) != true { panic(12321); };
     if erased_resources_changed_since(r4, score_type, before) != false { panic(12322); };

@@ -19,11 +19,6 @@ struct ParityTeSpawnEvent { amount: i32 }
 fn parity_te_time_default() -> ParityTeTime { return ParityTeTime { tick: 0 }; }
 fn parity_te_event_default() -> ParityTeSpawnEvent { return ParityTeSpawnEvent { amount: 0 }; }
 
-fn parity_te_position_drop(raw: *u8) -> void { let typed = raw as *ParityTePosition; let boxed = unsafe { Box::from_raw(typed) }; }
-fn parity_te_velocity_drop(raw: *u8) -> void { let typed = raw as *ParityTeVelocity; let boxed = unsafe { Box::from_raw(typed) }; }
-fn parity_te_health_drop(raw: *u8) -> void { let typed = raw as *ParityTeHealth; let boxed = unsafe { Box::from_raw(typed) }; }
-fn parity_te_frozen_drop(raw: *u8) -> void { let typed = raw as *ParityTeFrozen; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn parity_te_world_new() -> TableErasedWorld<ParityTeTime, ParityTeSpawnEvent> {
     return table_erased_world_new<ParityTeTime, ParityTeSpawnEvent>(parity_te_time_default(), parity_te_event_default());
 }
@@ -66,10 +61,10 @@ fn parity_te_time_system(world: TableErasedWorld<ParityTeTime, ParityTeSpawnEven
 
 fn parity_te_demo() -> i32 {
     let w0 = parity_te_world_new();
-    let (w1, position) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w0, PARITY_TE_POSITION, parity_te_position_drop);
-    let (w2, velocity) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w1, PARITY_TE_VELOCITY, parity_te_velocity_drop);
-    let (w3, health) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w2, PARITY_TE_HEALTH, parity_te_health_drop);
-    let (w4, frozen) = table_erased_world_register_sparse_set<ParityTeTime, ParityTeSpawnEvent>(w3, PARITY_TE_FROZEN, parity_te_frozen_drop);
+    let (w1, position) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w0, PARITY_TE_POSITION, ecs_box_drop<ParityTePosition>);
+    let (w2, velocity) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w1, PARITY_TE_VELOCITY, ecs_box_drop<ParityTeVelocity>);
+    let (w3, health) = table_erased_world_register_table<ParityTeTime, ParityTeSpawnEvent>(w2, PARITY_TE_HEALTH, ecs_box_drop<ParityTeHealth>);
+    let (w4, frozen) = table_erased_world_register_sparse_set<ParityTeTime, ParityTeSpawnEvent>(w3, PARITY_TE_FROZEN, ecs_box_drop<ParityTeFrozen>);
 
     let spawn_access = table_erased_access_write_messages(table_erased_access_write_component(table_erased_access_write_component(table_erased_access_write_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id), health.id), frozen.id));
     let move_access = table_erased_access_read_component(table_erased_access_read_component(table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id), health.id), frozen.id);

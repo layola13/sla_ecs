@@ -14,9 +14,6 @@ impl DerivedResourceScore {
     fn resource_type_id() -> i32 { return 124102; }
 }
 
-fn derived_resource_time_drop(raw: *u8) -> void { let typed = raw as *DerivedResourceTime; let boxed = unsafe { Box::from_raw(typed) }; }
-fn derived_resource_score_drop(raw: *u8) -> void { let typed = raw as *DerivedResourceScore; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn resource_derive_multi_demo() -> i32 {
     let time_type = DerivedResourceTime::resource_type_id();
     let score_type = DerivedResourceScore::resource_type_id();
@@ -25,11 +22,11 @@ fn resource_derive_multi_demo() -> i32 {
     if time_type == score_type { panic(12402); };
 
     let resources0 = erased_resources_new();
-    let resources1 = erased_resources_insert<DerivedResourceTime>(resources0, time_type, derived_resource_time_drop, DerivedResourceTime { tick: 2 });
-    let resources2 = erased_resources_insert<DerivedResourceScore>(resources1, score_type, derived_resource_score_drop, DerivedResourceScore { value: 40 });
+    let resources1 = erased_resources_insert<DerivedResourceTime>(resources0, time_type, ecs_box_drop<DerivedResourceTime>, DerivedResourceTime { tick: 2 });
+    let resources2 = erased_resources_insert<DerivedResourceScore>(resources1, score_type, ecs_box_drop<DerivedResourceScore>, DerivedResourceScore { value: 40 });
     let before = resources2.change_tick;
     let resources3 = erased_resources_increment_tick(resources2);
-    let resources4 = erased_resources_insert<DerivedResourceTime>(resources3, time_type, derived_resource_time_drop, DerivedResourceTime { tick: 5 });
+    let resources4 = erased_resources_insert<DerivedResourceTime>(resources3, time_type, ecs_box_drop<DerivedResourceTime>, DerivedResourceTime { tick: 5 });
     let score_mut = erased_resources_res_mut<DerivedResourceScore>(resources4, score_type);
     let resources5 = erased_resources_res_mut_write<DerivedResourceScore>(resources4, score_type, score_mut, DerivedResourceScore { value: 42 });
     if erased_resources_added_since(resources5, time_type, before) != false { panic(12403); };

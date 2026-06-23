@@ -2,6 +2,7 @@
 // Component payloads are type-erased boxed values stored inside archetype table
 // columns and aligned by entity row.
 @import "world_registry_erased.sla"
+@import "box_drop.sla"
 
 struct TableErasedColumnDef {
     component_id: i32,
@@ -3131,20 +3132,11 @@ fn table_erased_bonus_default() -> TableErasedBonus { return TableErasedBonus { 
 fn table_erased_vel_marker_pair_default() -> TableErasedPairValue<TableErasedVel, TableErasedMarker> { return TableErasedPairValue<TableErasedVel, TableErasedMarker> { first: table_erased_vel_default(), second: table_erased_marker_default() }; }
 fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErasedEvent> { return table_erased_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default()); }
 
-fn table_erased_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_tag_drop(raw: *u8) -> void { let typed = raw as *TableErasedTag; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_aux_drop(raw: *u8) -> void { let typed = raw as *TableErasedAux; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedExtra; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_more_drop(raw: *u8) -> void { let typed = raw as *TableErasedMore; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBonus; let boxed = unsafe { Box::from_raw(typed) }; }
-
 @test "table erased world stores heterogeneous values by archetype row"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let (w5, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 10, y: 0 });
@@ -3161,9 +3153,9 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased world pair query writeback and cleanup"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let (w5, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
@@ -3197,8 +3189,8 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased query get single and get many preserve entity order"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w3, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 10, y: 0 });
     let w5 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 1, y: 0 });
@@ -3581,8 +3573,8 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased high k query combinations preserve entity order"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w3, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 10, y: 0 });
     let w5 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 1, y: 0 });
@@ -3742,9 +3734,9 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased pair mut without filter excludes marker archetypes"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let (w5, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let w6 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -3957,8 +3949,8 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased spawned filter and spawn details"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w3, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
     let w5 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 10, y: 0 });
@@ -4044,10 +4036,10 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
 
 @test "table erased anyof nested in tuple query data"() {
     let w0 = table_erased_test_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
-    let (w4, tag) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, tag) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
     let (w5, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let (w6, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w5);
     let (w7, e3) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w6);
@@ -4061,14 +4053,14 @@ fn table_erased_bonus_drop(raw: *u8) -> void { let typed = raw as *TableErasedBo
     let w15 = table_erased_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w14, e3, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 300 });
     let w16 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w15, e4, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 40, y: 0 });
     let w17 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w16, e4, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 400 });
-    let (w18, aux) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_AUX_TYPE, table_erased_aux_drop);
+    let (w18, aux) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_AUX_TYPE, ecs_box_drop<TableErasedAux>);
     let w19 = table_erased_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w18, e2, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 2000 });
     let w20 = table_erased_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w19, e4, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 4000 });
-    let (w21, extra) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_EXTRA_TYPE, table_erased_extra_drop);
+    let (w21, extra) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w20, TABLE_ERASED_EXTRA_TYPE, ecs_box_drop<TableErasedExtra>);
     let w22 = table_erased_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w21, e3, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 3000 });
-    let (w23, more) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_MORE_TYPE, table_erased_more_drop);
+    let (w23, more) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_MORE_TYPE, ecs_box_drop<TableErasedMore>);
     let w24 = table_erased_world_insert<TableErasedMore, TableErasedTime, TableErasedEvent>(w23, e2, more.id, TABLE_ERASED_MORE_TYPE, TableErasedMore { value: 20000 });
-    let (w25, bonus) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w24, TABLE_ERASED_BONUS_TYPE, table_erased_bonus_drop);
+    let (w25, bonus) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w24, TABLE_ERASED_BONUS_TYPE, ecs_box_drop<TableErasedBonus>);
     let w26 = table_erased_world_insert<TableErasedBonus, TableErasedTime, TableErasedEvent>(w25, e3, bonus.id, TABLE_ERASED_BONUS_TYPE, TableErasedBonus { value: 30000 });
 
     let pos_any = table_erased_world_query_with_any_of2_auto<TableErasedPos, TableErasedTag, TableErasedMarker, TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_tag_default, table_erased_marker_default);

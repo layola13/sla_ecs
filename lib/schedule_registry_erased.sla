@@ -154,16 +154,6 @@ struct ErasedScheduleEvent { amount: i32 }
 fn erased_schedule_time_default() -> ErasedScheduleTime { return ErasedScheduleTime { tick: 0 }; }
 fn erased_schedule_event_default() -> ErasedScheduleEvent { return ErasedScheduleEvent { amount: 0 }; }
 
-fn erased_schedule_pos_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedSchedulePos;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_schedule_vel_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedScheduleVel;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 fn erased_schedule_world_new() -> RegistryErasedWorld<ErasedScheduleTime, ErasedScheduleEvent> {
     return registry_erased_world_new<ErasedScheduleTime, ErasedScheduleEvent>(erased_schedule_time_default(), erased_schedule_event_default());
 }
@@ -190,8 +180,8 @@ fn erased_schedule_message_system(world: RegistryErasedWorld<ErasedScheduleTime,
 
 @test "registry erased schedule runs systems in order"() {
     let w0 = erased_schedule_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedScheduleTime, ErasedScheduleEvent>(w0, ERASED_SCHEDULE_POS_TYPE, erased_schedule_pos_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedScheduleTime, ErasedScheduleEvent>(w1, ERASED_SCHEDULE_VEL_TYPE, erased_schedule_vel_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedScheduleTime, ErasedScheduleEvent>(w0, ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<ErasedSchedulePos>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedScheduleTime, ErasedScheduleEvent>(w1, ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<ErasedScheduleVel>);
     let (w3, entity) = registry_erased_world_spawn<ErasedScheduleTime, ErasedScheduleEvent>(w2);
     let w4 = registry_erased_world_insert<ErasedSchedulePos, ErasedScheduleTime, ErasedScheduleEvent>(w3, entity, position.id, ERASED_SCHEDULE_POS_TYPE, ErasedSchedulePos { x: 3, y: 0 });
     let w5 = registry_erased_world_insert<ErasedScheduleVel, ErasedScheduleTime, ErasedScheduleEvent>(w4, entity, velocity.id, ERASED_SCHEDULE_VEL_TYPE, ErasedScheduleVel { x: 4, y: 0 });

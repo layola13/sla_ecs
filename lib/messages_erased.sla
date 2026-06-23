@@ -2,6 +2,7 @@
 // Each message type has an independent append-only channel and readers keep
 // their own cursor per channel, matching Bevy's Messages<T> semantics.
 @import "messages.sla"
+@import "box_drop.sla"
 @import "sa_std/core/box.sa"
 
 struct ErasedMessageValue {
@@ -151,8 +152,6 @@ impl ErasedSpawnMessage {
     fn message_type_id() -> i32 { return 127102; }
 }
 
-fn erased_damage_message_drop(raw: *u8) -> void { let typed = raw as *ErasedDamageMessage; let boxed = unsafe { Box::from_raw(typed) }; }
-fn erased_spawn_message_drop(raw: *u8) -> void { let typed = raw as *ErasedSpawnMessage; let boxed = unsafe { Box::from_raw(typed) }; }
 fn erased_damage_default() -> ErasedDamageMessage { return ErasedDamageMessage { amount: 0 }; }
 fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { entity_id: 0 }; }
 
@@ -163,9 +162,9 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     if spawn_type <= 0 { panic(12711); };
     if damage_type == spawn_type { panic(12712); };
     let messages0 = erased_messages_new();
-    let messages1 = erased_messages_write<ErasedDamageMessage>(messages0, damage_type, erased_damage_message_drop, ErasedDamageMessage { amount: 5 });
-    let messages2 = erased_messages_write<ErasedSpawnMessage>(messages1, spawn_type, erased_spawn_message_drop, ErasedSpawnMessage { entity_id: 9 });
-    let messages3 = erased_messages_write<ErasedDamageMessage>(messages2, damage_type, erased_damage_message_drop, ErasedDamageMessage { amount: 7 });
+    let messages1 = erased_messages_write<ErasedDamageMessage>(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 5 });
+    let messages2 = erased_messages_write<ErasedSpawnMessage>(messages1, spawn_type, ecs_box_drop<ErasedSpawnMessage>, ErasedSpawnMessage { entity_id: 9 });
+    let messages3 = erased_messages_write<ErasedDamageMessage>(messages2, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 7 });
     if erased_messages_channel_count(messages3) != 2 { panic(12713); };
     if erased_messages_channel_len(messages3, damage_type) != 2 { panic(12714); };
     if erased_messages_channel_len(messages3, spawn_type) != 1 { panic(12715); };
@@ -182,7 +181,7 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
 @test "erased message writer batches and readers advance independently"() {
     let damage_type = ErasedDamageMessage::message_type_id();
     let messages0 = erased_messages_new();
-    let writer0 = erased_message_writer_new(damage_type, erased_damage_message_drop);
+    let writer0 = erased_message_writer_new(damage_type, ecs_box_drop<ErasedDamageMessage>);
     let writer1 = erased_message_writer_send<ErasedDamageMessage>(writer0, ErasedDamageMessage { amount: 3 });
     let writer2 = erased_message_writer_send<ErasedDamageMessage>(writer1, ErasedDamageMessage { amount: 4 });
     let messages1 = erased_messages_apply_writer(messages0, writer2);

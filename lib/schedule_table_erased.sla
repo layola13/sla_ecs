@@ -198,8 +198,6 @@ struct TableErasedScheduleEvent { amount: i32 }
 fn table_erased_schedule_time_default() -> TableErasedScheduleTime { return TableErasedScheduleTime { tick: 0 }; }
 fn table_erased_schedule_event_default() -> TableErasedScheduleEvent { return TableErasedScheduleEvent { amount: 0 }; }
 fn table_erased_schedule_world_new() -> TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent> { return table_erased_world_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_time_default(), table_erased_schedule_event_default()); }
-fn table_erased_schedule_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedSchedulePos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_schedule_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedScheduleVel; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_schedule_move_system(world: TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent>) -> TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent> {
     let q = table_erased_world_query_pair_mut_first_auto<TableErasedSchedulePos, TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(world, TABLE_ERASED_SCHEDULE_POS_TYPE, TABLE_ERASED_SCHEDULE_VEL_TYPE);
@@ -223,8 +221,8 @@ fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedSched
 
 @test "table erased schedule runs systems in order"() {
     let w0 = table_erased_schedule_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, table_erased_schedule_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, table_erased_schedule_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
     let (w3, entity) = table_erased_world_spawn<TableErasedScheduleTime, TableErasedScheduleEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w3, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE, TableErasedSchedulePos { x: 3, y: 0 });
     let w5 = table_erased_world_insert<TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(w4, entity, velocity.id, TABLE_ERASED_SCHEDULE_VEL_TYPE, TableErasedScheduleVel { x: 4, y: 0 });
@@ -249,8 +247,8 @@ fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedSched
 
 @test "table erased planned schedule runs by parallel batches"() {
     let w0 = table_erased_schedule_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, table_erased_schedule_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, table_erased_schedule_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
     let (w3, entity) = table_erased_world_spawn<TableErasedScheduleTime, TableErasedScheduleEvent>(w2);
     let w4 = table_erased_world_insert<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w3, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE, TableErasedSchedulePos { x: 3, y: 0 });
     let w5 = table_erased_world_insert<TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(w4, entity, velocity.id, TABLE_ERASED_SCHEDULE_VEL_TYPE, TableErasedScheduleVel { x: 4, y: 0 });
@@ -285,8 +283,8 @@ fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedSched
 
 @test "table erased schedule access can be declared by component type metadata"() {
     let w0 = table_erased_schedule_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, table_erased_schedule_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, table_erased_schedule_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
     let move_access = table_erased_access_read_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_access_write_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_system_access_none(), TABLE_ERASED_SCHEDULE_POS_TYPE), TABLE_ERASED_SCHEDULE_VEL_TYPE);
     let read_position = table_erased_access_read_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, table_erased_system_access_none(), TABLE_ERASED_SCHEDULE_POS_TYPE);
     let s0 = table_erased_schedule_default<TableErasedScheduleTime, TableErasedScheduleEvent>();

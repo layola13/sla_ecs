@@ -27,8 +27,6 @@ impl TableErasedLifecycleEvent {
     fn event_type_id() -> i32 { return TABLE_ERASED_LIFECYCLE_EVENT_TYPE; }
 }
 
-fn table_erased_lifecycle_event_drop(raw: *u8) -> void { let typed = raw as *TableErasedLifecycleEvent; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn table_erased_observer_world_new<R, M>(default_r: R, default_m: M) -> TableErasedObserverWorld<R, M> {
     return TableErasedObserverWorld<R, M> { table: table_erased_world_new<R, M>(default_r, default_m), observers: erased_observers_new() };
 }
@@ -64,7 +62,7 @@ fn table_erased_observer_world_spawn_with_location<R, M>(world: TableErasedObser
 
 fn table_erased_observer_world_trigger_lifecycle<R, M>(world: TableErasedObserverWorld<R, M>, kind: i32, entity: Entity, component_id: i32, type_id: i32) -> TableErasedObserverWorld<R, M> {
     let event = TableErasedLifecycleEvent { kind: kind, entity_id: entity.id, component_id: component_id, type_id: type_id };
-    world.observers = erased_observers_trigger_entity<TableErasedLifecycleEvent>(world.observers, entity, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_event_drop, event);
+    world.observers = erased_observers_trigger_entity<TableErasedLifecycleEvent>(world.observers, entity, TableErasedLifecycleEvent::event_type_id(), ecs_box_drop<TableErasedLifecycleEvent>, event);
     return world;
 }
 
@@ -176,8 +174,6 @@ impl TableErasedObserverPing {
     fn event_type_id() -> i32 { return 141101; }
 }
 
-fn table_erased_observer_ping_drop(raw: *u8) -> void { let typed = raw as *TableErasedObserverPing; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let event = erased_event_value_read<TableErasedObserverPing>(value, TableErasedObserverPing::event_type_id());
     if target_entity_id >= 0 { return event.amount + target_entity_id; };
@@ -187,7 +183,7 @@ fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i
 @test "table erased observer world triggers add insert replace remove despawn"() {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
-    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
     let (w3, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 3, y: 0 });
     if w4.observers.trigger_count != 2 { panic(14110); };
@@ -207,8 +203,8 @@ fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i
 @test "table erased observer world triggers component removes before despawn"() {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
-    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w4, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
     let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, entity, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 5, y: 0 });
@@ -224,7 +220,7 @@ fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
     let (w2, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w1);
-    let w3 = table_erased_observer_world_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(w2, entity, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 4 });
+    let w3 = table_erased_observer_world_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(w2, entity, TableErasedObserverPing::event_type_id(), ecs_box_drop<TableErasedObserverPing>, TableErasedObserverPing { amount: 4 });
     if w3.observers.trigger_count != 1 { panic(14130); };
     if w3.observers.last_entity_id != entity.id { panic(14131); };
     if w3.observers.result_sum != entity.id + 4 { panic(14132); };

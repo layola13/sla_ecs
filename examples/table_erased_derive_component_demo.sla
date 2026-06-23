@@ -31,9 +31,6 @@ struct TableErasedDerivedEvent { amount: i32 }
 
 fn table_erased_derive_time_default() -> TableErasedDerivedTime { return TableErasedDerivedTime { tick: 0 }; }
 fn table_erased_derive_event_default() -> TableErasedDerivedEvent { return TableErasedDerivedEvent { amount: 0 }; }
-fn table_erased_derive_position_drop(raw: *u8) -> void { let typed = raw as *TableErasedDerivedPosition; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_derive_velocity_drop(raw: *u8) -> void { let typed = raw as *TableErasedDerivedVelocity; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_derive_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedDerivedMarker; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_derive_world_new() -> TableErasedWorld<TableErasedDerivedTime, TableErasedDerivedEvent> {
     return table_erased_world_new<TableErasedDerivedTime, TableErasedDerivedEvent>(table_erased_derive_time_default(), table_erased_derive_event_default());
@@ -51,9 +48,9 @@ fn table_erased_derive_component_demo() -> i32 {
     if TableErasedDerivedMarker::component_storage_kind() != 1 { panic(12212); };
 
     let w0 = table_erased_derive_world_new();
-    let (w1, position_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w0, position_type, table_erased_derive_position_drop);
-    let (w2, velocity_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w1, velocity_type, table_erased_derive_velocity_drop);
-    let (w3, marker_info) = table_erased_world_register_sparse_set<TableErasedDerivedTime, TableErasedDerivedEvent>(w2, marker_type, table_erased_derive_marker_drop);
+    let (w1, position_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w0, position_type, ecs_box_drop<TableErasedDerivedPosition>);
+    let (w2, velocity_info) = table_erased_world_register_table<TableErasedDerivedTime, TableErasedDerivedEvent>(w1, velocity_type, ecs_box_drop<TableErasedDerivedVelocity>);
+    let (w3, marker_info) = table_erased_world_register_sparse_set<TableErasedDerivedTime, TableErasedDerivedEvent>(w2, marker_type, ecs_box_drop<TableErasedDerivedMarker>);
     if table_erased_world_component_id_for_type<TableErasedDerivedTime, TableErasedDerivedEvent>(w3, position_type) != position_info.id { panic(12205); };
     if table_erased_world_component_id_for_type<TableErasedDerivedTime, TableErasedDerivedEvent>(w3, velocity_type) != velocity_info.id { panic(12206); };
     if table_erased_world_component_id_for_type<TableErasedDerivedTime, TableErasedDerivedEvent>(w3, marker_type) != marker_info.id { panic(12213); };

@@ -14,9 +14,6 @@ impl ObserverExplodeEvent {
     fn event_type_id() -> i32 { return 130102; }
 }
 
-fn observer_speak_event_drop(raw: *u8) -> void { let typed = raw as *ObserverSpeakEvent; let boxed = unsafe { Box::from_raw(typed) }; }
-fn observer_explode_event_drop(raw: *u8) -> void { let typed = raw as *ObserverExplodeEvent; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn observer_speak(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let event = erased_event_value_read<ObserverSpeakEvent>(value, ObserverSpeakEvent::event_type_id());
     if target_entity_id >= 0 { return event.code + target_entity_id; };
@@ -37,11 +34,11 @@ fn event_observer_demo() -> i32 {
     let observers0 = erased_observers_new();
     let observers1 = erased_observers_add(observers0, erased_observer_new(speak_type, observer_speak));
     let observers2 = erased_observers_add(observers1, erased_observer_new(explode_type, observer_explode));
-    let observers3 = erased_observers_trigger<ObserverSpeakEvent>(observers2, speak_type, observer_speak_event_drop, ObserverSpeakEvent { code: 4 });
+    let observers3 = erased_observers_trigger<ObserverSpeakEvent>(observers2, speak_type, ecs_box_drop<ObserverSpeakEvent>, ObserverSpeakEvent { code: 4 });
     if observers3.trigger_count != 1 { panic(13003); };
     if observers3.result_sum != 4 { panic(13004); };
     let entity = entity_new(6, 1);
-    let observers4 = erased_observers_trigger_entity<ObserverExplodeEvent>(observers3, entity, explode_type, observer_explode_event_drop, ObserverExplodeEvent { damage: 9 });
+    let observers4 = erased_observers_trigger_entity<ObserverExplodeEvent>(observers3, entity, explode_type, ecs_box_drop<ObserverExplodeEvent>, ObserverExplodeEvent { damage: 9 });
     if observers4.trigger_count != 2 { panic(13005); };
     if observers4.last_entity_id != 6 { panic(13006); };
     return observers4.result_sum;

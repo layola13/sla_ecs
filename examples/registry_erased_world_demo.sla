@@ -13,30 +13,15 @@ struct ErasedDemoEvent { amount: i32 }
 fn erased_demo_time_default() -> ErasedDemoTime { return ErasedDemoTime { tick: 0 }; }
 fn erased_demo_event_default() -> ErasedDemoEvent { return ErasedDemoEvent { amount: 0 }; }
 
-fn erased_demo_position_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedDemoPosition;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_demo_velocity_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedDemoVelocity;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_demo_marker_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedDemoMarker;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 fn erased_demo_world_new() -> RegistryErasedWorld<ErasedDemoTime, ErasedDemoEvent> {
     return registry_erased_world_new<ErasedDemoTime, ErasedDemoEvent>(erased_demo_time_default(), erased_demo_event_default());
 }
 
 fn registry_erased_world_demo() -> i32 {
     let w0 = erased_demo_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedDemoTime, ErasedDemoEvent>(w0, ERASED_DEMO_POSITION, erased_demo_position_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedDemoTime, ErasedDemoEvent>(w1, ERASED_DEMO_VELOCITY, erased_demo_velocity_drop);
-    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedDemoTime, ErasedDemoEvent>(w2, ERASED_DEMO_MARKER, erased_demo_marker_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedDemoTime, ErasedDemoEvent>(w0, ERASED_DEMO_POSITION, ecs_box_drop<ErasedDemoPosition>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedDemoTime, ErasedDemoEvent>(w1, ERASED_DEMO_VELOCITY, ecs_box_drop<ErasedDemoVelocity>);
+    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedDemoTime, ErasedDemoEvent>(w2, ERASED_DEMO_MARKER, ecs_box_drop<ErasedDemoMarker>);
     let (w4, first) = registry_erased_world_spawn<ErasedDemoTime, ErasedDemoEvent>(w3);
     let (w5, second) = registry_erased_world_spawn<ErasedDemoTime, ErasedDemoEvent>(w4);
     let w6 = registry_erased_world_insert<ErasedDemoPosition, ErasedDemoTime, ErasedDemoEvent>(w5, first, position.id, ERASED_DEMO_POSITION, ErasedDemoPosition { x: 2, y: 0 });

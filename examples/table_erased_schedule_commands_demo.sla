@@ -13,10 +13,6 @@ struct TableErasedPipeEvent { amount: i32 }
 fn table_erased_pipe_time_default() -> TableErasedPipeTime { return TableErasedPipeTime { tick: 0 }; }
 fn table_erased_pipe_event_default() -> TableErasedPipeEvent { return TableErasedPipeEvent { amount: 0 }; }
 
-fn table_erased_pipe_position_drop(raw: *u8) -> void { let typed = raw as *TableErasedPipePosition; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_pipe_velocity_drop(raw: *u8) -> void { let typed = raw as *TableErasedPipeVelocity; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_pipe_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedPipeMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn table_erased_pipe_world_new() -> TableErasedWorld<TableErasedPipeTime, TableErasedPipeEvent> {
     return table_erased_world_new<TableErasedPipeTime, TableErasedPipeEvent>(table_erased_pipe_time_default(), table_erased_pipe_event_default());
 }
@@ -49,9 +45,9 @@ fn table_erased_pipe_resource_system(world: TableErasedWorld<TableErasedPipeTime
 
 fn table_erased_schedule_commands_demo() -> i32 {
     let w0 = table_erased_pipe_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedPipeTime, TableErasedPipeEvent>(w0, TABLE_ERASED_PIPE_POSITION, table_erased_pipe_position_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedPipeTime, TableErasedPipeEvent>(w1, TABLE_ERASED_PIPE_VELOCITY, table_erased_pipe_velocity_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedPipeTime, TableErasedPipeEvent>(w2, TABLE_ERASED_PIPE_MARKER, table_erased_pipe_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedPipeTime, TableErasedPipeEvent>(w0, TABLE_ERASED_PIPE_POSITION, ecs_box_drop<TableErasedPipePosition>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedPipeTime, TableErasedPipeEvent>(w1, TABLE_ERASED_PIPE_VELOCITY, ecs_box_drop<TableErasedPipeVelocity>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedPipeTime, TableErasedPipeEvent>(w2, TABLE_ERASED_PIPE_MARKER, ecs_box_drop<TableErasedPipeMarker>);
     let spawn_access = table_erased_access_write_messages(table_erased_access_write_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id));
     let move_access = table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id);
     let resource_access = table_erased_access_write_resource(table_erased_system_access_none());

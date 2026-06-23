@@ -5,6 +5,7 @@
 @import "resource.sla"
 @import "messages.sla"
 @import "query_dynamic.sla"
+@import "box_drop.sla"
 @import "sa_std/core/box.sa"
 
 struct ErasedComponentValue {
@@ -379,26 +380,11 @@ fn erased_test_world_new() -> RegistryErasedWorld<ErasedTestTime, ErasedTestEven
     return registry_erased_world_new<ErasedTestTime, ErasedTestEvent>(erased_test_time_default(), erased_test_event_default());
 }
 
-fn erased_test_pos_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedTestPos;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_test_vel_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedTestVel;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_test_marker_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedTestMarker;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 @test "registry erased world stores multiple concrete component types"() {
     let w0 = erased_test_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w0, ERASED_TEST_POS_TYPE, erased_test_pos_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w1, ERASED_TEST_VEL_TYPE, erased_test_vel_drop);
-    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedTestTime, ErasedTestEvent>(w2, ERASED_TEST_MARKER_TYPE, erased_test_marker_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w0, ERASED_TEST_POS_TYPE, ecs_box_drop<ErasedTestPos>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w1, ERASED_TEST_VEL_TYPE, ecs_box_drop<ErasedTestVel>);
+    let (w3, marker) = registry_erased_world_register_sparse_set<ErasedTestTime, ErasedTestEvent>(w2, ERASED_TEST_MARKER_TYPE, ecs_box_drop<ErasedTestMarker>);
     let (w4, e1) = registry_erased_world_spawn<ErasedTestTime, ErasedTestEvent>(w3);
     let (w5, e2) = registry_erased_world_spawn<ErasedTestTime, ErasedTestEvent>(w4);
     let w6 = registry_erased_world_insert<ErasedTestPos, ErasedTestTime, ErasedTestEvent>(w5, e1, position.id, ERASED_TEST_POS_TYPE, ErasedTestPos { x: 1, y: 0 });
@@ -422,8 +408,8 @@ fn erased_test_marker_drop(raw: *u8) -> void {
 
 @test "registry erased world pair query writeback and cleanup"() {
     let w0 = erased_test_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w0, ERASED_TEST_POS_TYPE, erased_test_pos_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w1, ERASED_TEST_VEL_TYPE, erased_test_vel_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w0, ERASED_TEST_POS_TYPE, ecs_box_drop<ErasedTestPos>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedTestTime, ErasedTestEvent>(w1, ERASED_TEST_VEL_TYPE, ecs_box_drop<ErasedTestVel>);
     let (w3, entity) = registry_erased_world_spawn<ErasedTestTime, ErasedTestEvent>(w2);
     let w4 = registry_erased_world_insert<ErasedTestPos, ErasedTestTime, ErasedTestEvent>(w3, entity, position.id, ERASED_TEST_POS_TYPE, ErasedTestPos { x: 2, y: 0 });
     let w5 = registry_erased_world_insert<ErasedTestVel, ErasedTestTime, ErasedTestEvent>(w4, entity, velocity.id, ERASED_TEST_VEL_TYPE, ErasedTestVel { x: 5, y: 0 });

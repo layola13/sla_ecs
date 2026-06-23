@@ -128,14 +128,10 @@ fn table_erased_cmd_event_default() -> TableErasedCmdEvent { return TableErasedC
 fn table_erased_cmd_world_new() -> TableErasedWorld<TableErasedCmdTime, TableErasedCmdEvent> { return table_erased_world_new<TableErasedCmdTime, TableErasedCmdEvent>(table_erased_cmd_time_default(), table_erased_cmd_event_default()); }
 fn table_erased_cmd_commands_new() -> TableErasedCommands<TableErasedCmdTime, TableErasedCmdEvent> { return table_erased_commands_new<TableErasedCmdTime, TableErasedCmdEvent>(); }
 
-fn table_erased_cmd_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedCmdPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_cmd_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedCmdVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_cmd_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedCmdMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-
 @test "table erased commands defer heterogeneous insertions and migrate rows"() {
     let w0 = table_erased_cmd_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, table_erased_cmd_pos_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w1, TABLE_ERASED_CMD_VEL_TYPE, table_erased_cmd_vel_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, ecs_box_drop<TableErasedCmdPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w1, TABLE_ERASED_CMD_VEL_TYPE, ecs_box_drop<TableErasedCmdVel>);
     let c0 = table_erased_cmd_commands_new();
     let (w3, c1, entity) = table_erased_commands_reserve_entity<TableErasedCmdTime, TableErasedCmdEvent>(w2, c0);
     let empty_group = table_erased_world_entity_archetype_id<TableErasedCmdTime, TableErasedCmdEvent>(w3, entity);
@@ -153,8 +149,8 @@ fn table_erased_cmd_marker_drop(raw: *u8) -> void { let typed = raw as *TableEra
 
 @test "table erased commands replace resource message and despawn"() {
     let w0 = table_erased_cmd_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, table_erased_cmd_pos_drop);
-    let (w2, marker) = table_erased_world_register_sparse_set<TableErasedCmdTime, TableErasedCmdEvent>(w1, TABLE_ERASED_CMD_MARKER_TYPE, table_erased_cmd_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, ecs_box_drop<TableErasedCmdPos>);
+    let (w2, marker) = table_erased_world_register_sparse_set<TableErasedCmdTime, TableErasedCmdEvent>(w1, TABLE_ERASED_CMD_MARKER_TYPE, ecs_box_drop<TableErasedCmdMarker>);
     let c0 = table_erased_cmd_commands_new();
     let (w3, c1, entity) = table_erased_commands_reserve_entity<TableErasedCmdTime, TableErasedCmdEvent>(w2, c0);
     let c2 = table_erased_commands_insert<TableErasedCmdPos, TableErasedCmdTime, TableErasedCmdEvent>(c1, entity, position.id, TABLE_ERASED_CMD_POS_TYPE, TableErasedCmdPos { x: 5, y: 0 });
@@ -181,7 +177,7 @@ fn table_erased_cmd_marker_drop(raw: *u8) -> void { let typed = raw as *TableEra
 
 @test "table erased commands auto insert by component type metadata"() {
     let w0 = table_erased_cmd_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, table_erased_cmd_pos_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, ecs_box_drop<TableErasedCmdPos>);
     let c0 = table_erased_cmd_commands_new();
     let (w2, c1, entity) = table_erased_commands_reserve_entity<TableErasedCmdTime, TableErasedCmdEvent>(w1, c0);
     let c2 = table_erased_commands_insert_auto<TableErasedCmdPos, TableErasedCmdTime, TableErasedCmdEvent>(w2, c1, entity, TABLE_ERASED_CMD_POS_TYPE, TableErasedCmdPos { x: 14, y: 0 });
@@ -194,7 +190,7 @@ fn table_erased_cmd_marker_drop(raw: *u8) -> void { let typed = raw as *TableEra
 
 @test "table erased commands preserve explicit spawn location"() {
     let w0 = table_erased_cmd_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, table_erased_cmd_pos_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedCmdTime, TableErasedCmdEvent>(w0, TABLE_ERASED_CMD_POS_TYPE, ecs_box_drop<TableErasedCmdPos>);
     let c0 = table_erased_cmd_commands_new();
     let loc = table_erased_spawn_location_new(91, 24, 6);
     let (w2, c1, entity) = table_erased_commands_reserve_entity_with_location<TableErasedCmdTime, TableErasedCmdEvent>(w1, c0, loc);

@@ -12,9 +12,6 @@ struct TableErasedAutoEvent { amount: i32 }
 
 fn table_erased_auto_time_default() -> TableErasedAutoTime { return TableErasedAutoTime { tick: 0 }; }
 fn table_erased_auto_event_default() -> TableErasedAutoEvent { return TableErasedAutoEvent { amount: 0 }; }
-fn table_erased_auto_position_drop(raw: *u8) -> void { let typed = raw as *TableErasedAutoPosition; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_auto_velocity_drop(raw: *u8) -> void { let typed = raw as *TableErasedAutoVelocity; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_auto_marker_drop(raw: *u8) -> void { let typed = raw as *TableErasedAutoMarker; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn table_erased_auto_world_new() -> TableErasedWorld<TableErasedAutoTime, TableErasedAutoEvent> {
     return table_erased_world_new<TableErasedAutoTime, TableErasedAutoEvent>(table_erased_auto_time_default(), table_erased_auto_event_default());
@@ -40,9 +37,9 @@ fn table_erased_auto_movement_adapter(world: TableErasedWorld<TableErasedAutoTim
 
 fn table_erased_auto_metadata_demo() -> i32 {
     let w0 = table_erased_auto_world_new();
-    let (w1, position) = table_erased_world_register_table<TableErasedAutoTime, TableErasedAutoEvent>(w0, TABLE_ERASED_AUTO_POSITION, table_erased_auto_position_drop);
-    let (w2, velocity) = table_erased_world_register_table<TableErasedAutoTime, TableErasedAutoEvent>(w1, TABLE_ERASED_AUTO_VELOCITY, table_erased_auto_velocity_drop);
-    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedAutoTime, TableErasedAutoEvent>(w2, TABLE_ERASED_AUTO_MARKER, table_erased_auto_marker_drop);
+    let (w1, position) = table_erased_world_register_table<TableErasedAutoTime, TableErasedAutoEvent>(w0, TABLE_ERASED_AUTO_POSITION, ecs_box_drop<TableErasedAutoPosition>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedAutoTime, TableErasedAutoEvent>(w1, TABLE_ERASED_AUTO_VELOCITY, ecs_box_drop<TableErasedAutoVelocity>);
+    let (w3, marker) = table_erased_world_register_sparse_set<TableErasedAutoTime, TableErasedAutoEvent>(w2, TABLE_ERASED_AUTO_MARKER, ecs_box_drop<TableErasedAutoMarker>);
     if table_erased_world_component_id_for_type<TableErasedAutoTime, TableErasedAutoEvent>(w3, TABLE_ERASED_AUTO_POSITION) != position.id { panic(12100); };
     if table_erased_world_component_id_for_type<TableErasedAutoTime, TableErasedAutoEvent>(w3, TABLE_ERASED_AUTO_VELOCITY) != velocity.id { panic(12101); };
     if table_erased_world_component_id_for_type<TableErasedAutoTime, TableErasedAutoEvent>(w3, TABLE_ERASED_AUTO_MARKER) != marker.id { panic(12102); };

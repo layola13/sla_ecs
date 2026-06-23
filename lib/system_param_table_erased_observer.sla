@@ -1095,7 +1095,7 @@ fn table_erased_observer_param_commands_system(param: TableErasedObserverCommand
     let param2 = table_erased_observer_commands_param_insert_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(param1, entity, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 12, y: 0 });
     let param3 = table_erased_observer_commands_param_insert_resource<TableErasedTime, TableErasedEvent>(param2, TableErasedTime { tick: 7 });
     let param4 = table_erased_observer_commands_param_write_message<TableErasedTime, TableErasedEvent>(param3, TableErasedEvent { amount: 4 });
-    return table_erased_observer_commands_param_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(param4, entity, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 5 });
+    return table_erased_observer_commands_param_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(param4, entity, TableErasedObserverPing::event_type_id(), ecs_box_drop<TableErasedObserverPing>, TableErasedObserverPing { amount: 5 });
 }
 
 fn table_erased_observer_param_writer_system(writer: MessageWriter<TableErasedEvent>) -> MessageWriter<TableErasedEvent> {
@@ -1605,13 +1605,13 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if len(param.world.table.archetypes[0].entity_ids) <= 0 { return param; };
     let entity_id = param.world.table.archetypes[0].entity_ids[0];
     let entity = entity_new(entity_id, param.world.table.registry.entities.generations[entity_id]);
-    return table_erased_observer_event_trigger_param_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(param, entity, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 9 });
+    return table_erased_observer_event_trigger_param_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(param, entity, TableErasedObserverPing::event_type_id(), ecs_box_drop<TableErasedObserverPing>, TableErasedObserverPing { amount: 9 });
 }
 
 @test "table erased observer pair mut param writes back"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w3, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 8, y: 0 });
     let w5 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, entity, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
@@ -1638,7 +1638,7 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
     let w2 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w1, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
-    let (w3, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w3, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
     let w4 = table_erased_observer_run_commands_system<TableErasedTime, TableErasedEvent>(w3, table_erased_observer_param_commands_system);
     let query = table_erased_world_query<TableErasedPos, TableErasedTime, TableErasedEvent>(w4.table, position.id, TABLE_ERASED_POS_TYPE);
     let read = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w4.table, message_reader_new(), table_erased_event_default());
@@ -1656,8 +1656,8 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 @test "table erased observer explicit event and filtered query params"() {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
-    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w3, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w3, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_observer_run_event_trigger_system<TableErasedTime, TableErasedEvent>(w4, table_erased_observer_param_direct_event_system);
     let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
@@ -1671,9 +1671,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer single optional single and populated system params"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
     let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 3, y: 0 });
@@ -1701,8 +1701,8 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer with added changed query resource params"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w3, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let (w4, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w4.table, TableErasedTime { tick: 0 }), observers: w4.observers };
@@ -1725,9 +1725,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer filtered pair mut system params"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let (w5, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1735,14 +1735,14 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 40, y: 0 });
     let w9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 8, y: 0 });
     let w10 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w9, e2, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
-    let (w10a, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
-    let (w10b, aux) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10a, TABLE_ERASED_AUX_TYPE, table_erased_aux_drop);
+    let (w10a, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let (w10b, aux) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10a, TABLE_ERASED_AUX_TYPE, ecs_box_drop<TableErasedAux>);
     let w10c = table_erased_observer_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w10b, e1, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 100 });
-    let (w10d, extra) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10c, TABLE_ERASED_EXTRA_TYPE, table_erased_extra_drop);
+    let (w10d, extra) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10c, TABLE_ERASED_EXTRA_TYPE, ecs_box_drop<TableErasedExtra>);
     let w10e = table_erased_observer_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w10d, e2, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 200 });
-    let (w10f, more) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10e, TABLE_ERASED_MORE_TYPE, table_erased_more_drop);
+    let (w10f, more) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10e, TABLE_ERASED_MORE_TYPE, ecs_box_drop<TableErasedMore>);
     let w10g = table_erased_observer_world_insert<TableErasedMore, TableErasedTime, TableErasedEvent>(w10f, e2, more.id, TABLE_ERASED_MORE_TYPE, TableErasedMore { value: 300 });
-    let (w10h, bonus) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10g, TABLE_ERASED_BONUS_TYPE, table_erased_bonus_drop);
+    let (w10h, bonus) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w10g, TABLE_ERASED_BONUS_TYPE, ecs_box_drop<TableErasedBonus>);
     let w10i = table_erased_observer_world_insert<TableErasedBonus, TableErasedTime, TableErasedEvent>(w10h, e1, bonus.id, TABLE_ERASED_BONUS_TYPE, TableErasedBonus { value: 400 });
     let w10r = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w10i.table, TableErasedTime { tick: 0 }), observers: w10i.observers };
     let w10entities = table_erased_observer_run_entity_query_resource_system<TableErasedTime, TableErasedEvent>(w10r, table_erased_observer_param_entity_count_system);
@@ -1846,9 +1846,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w16and, e1, position.id, TABLE_ERASED_POS_TYPE).x != 15 { panic(14478); };
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w16and, e2, position.id, TABLE_ERASED_POS_TYPE).x != 56 { panic(14479); };
     let o0 = table_erased_observer_test_world_new();
-    let (o1, o_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(o0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (o2, o_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(o1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (o3, o_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(o2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (o1, o_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(o0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (o2, o_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(o1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (o3, o_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(o2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (o4, oe1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(o3);
     let (o5, oe2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(o4);
     let o6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(o5, oe1, o_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1860,9 +1860,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(o11, oe1, o_position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14457); };
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(o11, oe2, o_position.id, TABLE_ERASED_POS_TYPE).x != 48 { panic(14458); };
     let u0 = table_erased_observer_test_world_new();
-    let (u1, u_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(u0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (u2, u_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(u1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (u3, u_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(u2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (u1, u_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(u0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (u2, u_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(u1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (u3, u_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(u2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (u4, ue1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(u3);
     let (u5, ue2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(u4);
     let u6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(u5, ue1, u_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1874,9 +1874,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(u11, ue1, u_position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14465); };
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(u11, ue2, u_position.id, TABLE_ERASED_POS_TYPE).x != 40 { panic(14466); };
     let a0 = table_erased_observer_test_world_new();
-    let (a1, a_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(a0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (a2, a_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(a1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (a3, a_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(a2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (a1, a_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(a0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (a2, a_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(a1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (a3, a_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(a2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (a4, ae1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(a3);
     let (a5, ae2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(a4);
     let a6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(a5, ae1, a_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1888,9 +1888,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(a11, ae1, a_position.id, TABLE_ERASED_POS_TYPE).x != 7 { panic(14460); };
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(a11, ae2, a_position.id, TABLE_ERASED_POS_TYPE).x != 48 { panic(14461); };
     let c0 = table_erased_observer_test_world_new();
-    let (c1, c_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(c0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (c2, c_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(c1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (c3, c_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(c2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
+    let (c1, c_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(c0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (c2, c_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(c1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (c3, c_marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(c2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
     let (c4, ce1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(c3);
     let (c5, ce2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(c4);
     let c6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c5, ce1, c_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1916,10 +1916,10 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer anyof6 query resource system param"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, table_erased_marker_drop);
-    let (w4, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_observer_world_register_sparse_set<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
     let (w5, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let (w6, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w5);
     let (w7, e3) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w6);
@@ -1932,9 +1932,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w14 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w13, e4, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
     let w15 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w14, e4, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 400 });
     let w16 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w15, e4, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 4000 });
-    let (w16a, aux) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w16, TABLE_ERASED_AUX_TYPE, table_erased_aux_drop);
+    let (w16a, aux) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w16, TABLE_ERASED_AUX_TYPE, ecs_box_drop<TableErasedAux>);
     let w16b = table_erased_observer_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w16a, e1, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 100 });
-    let (w16c, extra) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w16b, TABLE_ERASED_EXTRA_TYPE, table_erased_extra_drop);
+    let (w16c, extra) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w16b, TABLE_ERASED_EXTRA_TYPE, ecs_box_drop<TableErasedExtra>);
     let w16d = table_erased_observer_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w16c, e2, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 200 });
     let w16r = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w16d.table, TableErasedTime { tick: 0 }), observers: w16d.observers };
     let w17 = table_erased_observer_run_any_of4_query_resource_system_auto<TableErasedMarker, TableErasedVel, TableErasedPos, TableErasedTag, TableErasedTime, TableErasedEvent>(w16r, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_POS_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_pos_default, table_erased_tag_default, table_erased_observer_param_anyof4_marker_velocity_pos_tag_count_system);
@@ -1945,9 +1945,9 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer system params expose query inspection"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
-    let (w3, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_TAG_TYPE, table_erased_tag_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
     let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let (w5, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
     let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 4, y: 0 });
@@ -1970,8 +1970,8 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
 
 @test "table erased observer system params expose spawned and spawn details"() {
     let w0 = table_erased_observer_test_world_new();
-    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w3, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
     let w4 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w3, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
     let w5 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w4, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 10, y: 0 });

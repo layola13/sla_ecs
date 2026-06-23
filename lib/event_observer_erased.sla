@@ -2,6 +2,7 @@
 // Events are reactive: triggering an event immediately invokes all observers
 // registered for that event type, unlike Messages<T> reader-driven channels.
 @import "entity.sla"
+@import "box_drop.sla"
 @import "sa_std/vec.sa"
 @import "sa_std/core/box.sa"
 
@@ -96,9 +97,6 @@ impl ErasedExplodeEvent {
     fn event_type_id() -> i32 { return 129102; }
 }
 
-fn erased_speak_event_drop(raw: *u8) -> void { let typed = raw as *ErasedSpeakEvent; let boxed = unsafe { Box::from_raw(typed) }; }
-fn erased_explode_event_drop(raw: *u8) -> void { let typed = raw as *ErasedExplodeEvent; let boxed = unsafe { Box::from_raw(typed) }; }
-
 fn erased_speak_observer(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let event = erased_event_value_read<ErasedSpeakEvent>(value, ErasedSpeakEvent::event_type_id());
     if target_entity_id >= 0 { return event.code + target_entity_id; };
@@ -120,7 +118,7 @@ fn erased_explode_observer(value: ErasedEventValue, target_entity_id: i32) -> i3
     let observers1 = erased_observers_add(observers0, erased_observer_new(speak_type, erased_speak_observer));
     let observers2 = erased_observers_add(observers1, erased_observer_new(explode_type, erased_explode_observer));
     if erased_observers_count(observers2) != 2 { panic(12913); };
-    let observers3 = erased_observers_trigger<ErasedSpeakEvent>(observers2, speak_type, erased_speak_event_drop, ErasedSpeakEvent { code: 5 });
+    let observers3 = erased_observers_trigger<ErasedSpeakEvent>(observers2, speak_type, ecs_box_drop<ErasedSpeakEvent>, ErasedSpeakEvent { code: 5 });
     if observers3.trigger_count != 1 { panic(12914); };
     if observers3.result_sum != 5 { panic(12915); };
     if observers3.last_event_type_id != speak_type { panic(12916); };
@@ -132,7 +130,7 @@ fn erased_explode_observer(value: ErasedEventValue, target_entity_id: i32) -> i3
     let observers0 = erased_observers_new();
     let observers1 = erased_observers_add(observers0, erased_observer_new(explode_type, erased_explode_observer));
     let entity = entity_new(9, 1);
-    let observers2 = erased_observers_trigger_entity<ErasedExplodeEvent>(observers1, entity, explode_type, erased_explode_event_drop, ErasedExplodeEvent { damage: 4 });
+    let observers2 = erased_observers_trigger_entity<ErasedExplodeEvent>(observers1, entity, explode_type, ecs_box_drop<ErasedExplodeEvent>, ErasedExplodeEvent { damage: 4 });
     if observers2.trigger_count != 1 { panic(12920); };
     if observers2.last_entity_id != 9 { panic(12921); };
     if observers2.result_sum != 13 { panic(12922); };

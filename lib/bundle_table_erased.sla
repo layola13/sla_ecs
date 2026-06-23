@@ -99,15 +99,12 @@ struct TableErasedBundleEvent { amount: i32 }
 fn table_erased_bundle_time_default() -> TableErasedBundleTime { return TableErasedBundleTime { tick: 0 }; }
 fn table_erased_bundle_event_default() -> TableErasedBundleEvent { return TableErasedBundleEvent { amount: 0 }; }
 fn table_erased_bundle_world_new() -> TableErasedWorld<TableErasedBundleTime, TableErasedBundleEvent> { return table_erased_world_new<TableErasedBundleTime, TableErasedBundleEvent>(table_erased_bundle_time_default(), table_erased_bundle_event_default()); }
-fn table_erased_bundle_pos_drop(raw: *u8) -> void { let typed = raw as *TableErasedBundlePos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_bundle_vel_drop(raw: *u8) -> void { let typed = raw as *TableErasedBundleVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn table_erased_bundle_player_drop(raw: *u8) -> void { let typed = raw as *TableErasedBundlePlayer; let boxed = unsafe { Box::from_raw(typed) }; }
 
 @test "table erased bundle spawns and inserts component sets"() {
     let w0 = table_erased_bundle_world_new();
-    let (w1, position) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w0, TABLE_ERASED_BUNDLE_POS_TYPE, 0, table_erased_bundle_pos_drop);
-    let (w2, velocity) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w1, TABLE_ERASED_BUNDLE_VEL_TYPE, 0, table_erased_bundle_vel_drop);
-    let (w3, player) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w2, TABLE_ERASED_BUNDLE_PLAYER_TYPE, 1, table_erased_bundle_player_drop);
+    let (w1, position) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w0, TABLE_ERASED_BUNDLE_POS_TYPE, 0, ecs_box_drop<TableErasedBundlePos>);
+    let (w2, velocity) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w1, TABLE_ERASED_BUNDLE_VEL_TYPE, 0, ecs_box_drop<TableErasedBundleVel>);
+    let (w3, player) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w2, TABLE_ERASED_BUNDLE_PLAYER_TYPE, 1, ecs_box_drop<TableErasedBundlePlayer>);
     let bundle = table_erased_bundle3_new<TableErasedBundlePlayer, TableErasedBundlePos, TableErasedBundleVel>(TABLE_ERASED_BUNDLE_PLAYER_TYPE, TableErasedBundlePlayer { team: 7 }, TABLE_ERASED_BUNDLE_POS_TYPE, TableErasedBundlePos { x: 1, y: 0 }, TABLE_ERASED_BUNDLE_VEL_TYPE, TableErasedBundleVel { x: 2, y: 0 });
     let (w4, entity) = table_erased_world_spawn_bundle3<TableErasedBundleTime, TableErasedBundleEvent>(w3, bundle);
     if table_erased_world_has<TableErasedBundleTime, TableErasedBundleEvent>(w4, entity, position.id) != true { panic(12510); };
@@ -121,9 +118,9 @@ fn table_erased_bundle_player_drop(raw: *u8) -> void { let typed = raw as *Table
 
 @test "table erased bundle insert preserves existing components"() {
     let w0 = table_erased_bundle_world_new();
-    let (w1, position) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w0, TABLE_ERASED_BUNDLE_POS_TYPE, 0, table_erased_bundle_pos_drop);
-    let (w2, velocity) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w1, TABLE_ERASED_BUNDLE_VEL_TYPE, 0, table_erased_bundle_vel_drop);
-    let (w3, player) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w2, TABLE_ERASED_BUNDLE_PLAYER_TYPE, 1, table_erased_bundle_player_drop);
+    let (w1, position) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w0, TABLE_ERASED_BUNDLE_POS_TYPE, 0, ecs_box_drop<TableErasedBundlePos>);
+    let (w2, velocity) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w1, TABLE_ERASED_BUNDLE_VEL_TYPE, 0, ecs_box_drop<TableErasedBundleVel>);
+    let (w3, player) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w2, TABLE_ERASED_BUNDLE_PLAYER_TYPE, 1, ecs_box_drop<TableErasedBundlePlayer>);
     let (w4, entity) = table_erased_world_spawn<TableErasedBundleTime, TableErasedBundleEvent>(w3);
     let w5 = table_erased_world_insert_auto<TableErasedBundlePos, TableErasedBundleTime, TableErasedBundleEvent>(w4, entity, TABLE_ERASED_BUNDLE_POS_TYPE, TableErasedBundlePos { x: 5, y: 0 });
     let bundle = table_erased_bundle2_new<TableErasedBundleVel, TableErasedBundlePlayer>(TABLE_ERASED_BUNDLE_VEL_TYPE, TableErasedBundleVel { x: 4, y: 0 }, TABLE_ERASED_BUNDLE_PLAYER_TYPE, TableErasedBundlePlayer { team: 3 });

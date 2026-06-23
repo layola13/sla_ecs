@@ -223,7 +223,7 @@ fn table_erased_observer_schedule_trigger_ping_system(world: TableErasedObserver
     let q = table_erased_world_query_pair_mut_first_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(world.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
     if len(q.items) <= 0 { return world; };
     let target = q.items[0].first.entity;
-    return table_erased_observer_world_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(world, target, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 4 });
+    return table_erased_observer_world_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(world, target, TableErasedObserverPing::event_type_id(), ecs_box_drop<TableErasedObserverPing>, TableErasedObserverPing { amount: 4 });
 }
 
 fn table_erased_observer_schedule_read_observers_system(world: TableErasedObserverWorld<TableErasedTime, TableErasedEvent>) -> TableErasedObserverWorld<TableErasedTime, TableErasedEvent> {
@@ -239,8 +239,8 @@ fn table_erased_observer_schedule_message_system(world: TableErasedObserverWorld
 @test "table erased observer schedule runs systems in order"() {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
-    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w4, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 6, y: 0 });
     let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, entity, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 5, y: 0 });
@@ -287,8 +287,8 @@ fn table_erased_observer_schedule_message_system(world: TableErasedObserverWorld
 @test "table erased observer planned schedule and type access declarations"() {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
-    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
-    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, table_erased_vel_drop);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w3, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
     let (w4, entity) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
     let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, entity, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 2, y: 0 });

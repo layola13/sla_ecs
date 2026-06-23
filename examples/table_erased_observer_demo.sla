@@ -4,12 +4,12 @@ fn table_erased_observer_demo() -> i32 {
     let w0 = table_erased_observer_test_world_new();
     let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
     let w2 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w1, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_score);
-    let (w3, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_POS_TYPE, table_erased_pos_drop);
+    let (w3, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
     let c0 = table_erased_observer_commands_test_new();
     let (w4, c1, entity) = table_erased_observer_commands_reserve_entity<TableErasedTime, TableErasedEvent>(w3, c0);
     let c2 = table_erased_observer_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c1, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
     let c3 = table_erased_observer_commands_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(c2, entity, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
-    let c4 = table_erased_observer_commands_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(c3, entity, TableErasedObserverPing::event_type_id(), table_erased_observer_ping_drop, TableErasedObserverPing { amount: 3 });
+    let c4 = table_erased_observer_commands_trigger_entity<TableErasedObserverPing, TableErasedTime, TableErasedEvent>(c3, entity, TableErasedObserverPing::event_type_id(), ecs_box_drop<TableErasedObserverPing>, TableErasedObserverPing { amount: 3 });
     let c5 = table_erased_observer_commands_insert_resource<TableErasedTime, TableErasedEvent>(c4, TableErasedTime { tick: 4 });
     let c6 = table_erased_observer_commands_write_message<TableErasedTime, TableErasedEvent>(c5, TableErasedEvent { amount: 8 });
     let (w5, c7) = table_erased_observer_commands_apply<TableErasedTime, TableErasedEvent>(w4, c6);

@@ -134,21 +134,6 @@ struct ErasedCmdEvent { amount: i32 }
 fn erased_cmd_time_default() -> ErasedCmdTime { return ErasedCmdTime { tick: 0 }; }
 fn erased_cmd_event_default() -> ErasedCmdEvent { return ErasedCmdEvent { amount: 0 }; }
 
-fn erased_cmd_pos_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedCmdPos;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_cmd_vel_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedCmdVel;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
-fn erased_cmd_marker_drop(raw: *u8) -> void {
-    let typed = raw as *ErasedCmdMarker;
-    let boxed = unsafe { Box::from_raw(typed) };
-}
-
 fn erased_cmd_world_new() -> RegistryErasedWorld<ErasedCmdTime, ErasedCmdEvent> {
     return registry_erased_world_new<ErasedCmdTime, ErasedCmdEvent>(erased_cmd_time_default(), erased_cmd_event_default());
 }
@@ -159,8 +144,8 @@ fn erased_cmd_commands_new() -> RegistryErasedCommands<ErasedCmdTime, ErasedCmdE
 
 @test "registry erased commands defer heterogeneous insertions until apply"() {
     let w0 = erased_cmd_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w0, ERASED_CMD_POS_TYPE, erased_cmd_pos_drop);
-    let (w2, velocity) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w1, ERASED_CMD_VEL_TYPE, erased_cmd_vel_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w0, ERASED_CMD_POS_TYPE, ecs_box_drop<ErasedCmdPos>);
+    let (w2, velocity) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w1, ERASED_CMD_VEL_TYPE, ecs_box_drop<ErasedCmdVel>);
     let c0 = erased_cmd_commands_new();
     let (w3, c1, entity) = registry_erased_commands_reserve_entity<ErasedCmdTime, ErasedCmdEvent>(w2, c0);
     let c2 = registry_erased_commands_insert<ErasedCmdPos, ErasedCmdTime, ErasedCmdEvent>(c1, entity, position.id, ERASED_CMD_POS_TYPE, ErasedCmdPos { x: 3, y: 0 });
@@ -178,8 +163,8 @@ fn erased_cmd_commands_new() -> RegistryErasedCommands<ErasedCmdTime, ErasedCmdE
 
 @test "registry erased commands replace resource message and despawn in order"() {
     let w0 = erased_cmd_world_new();
-    let (w1, position) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w0, ERASED_CMD_POS_TYPE, erased_cmd_pos_drop);
-    let (w2, marker) = registry_erased_world_register_sparse_set<ErasedCmdTime, ErasedCmdEvent>(w1, ERASED_CMD_MARKER_TYPE, erased_cmd_marker_drop);
+    let (w1, position) = registry_erased_world_register_table<ErasedCmdTime, ErasedCmdEvent>(w0, ERASED_CMD_POS_TYPE, ecs_box_drop<ErasedCmdPos>);
+    let (w2, marker) = registry_erased_world_register_sparse_set<ErasedCmdTime, ErasedCmdEvent>(w1, ERASED_CMD_MARKER_TYPE, ecs_box_drop<ErasedCmdMarker>);
     let c0 = erased_cmd_commands_new();
     let (w3, c1, entity) = registry_erased_commands_reserve_entity<ErasedCmdTime, ErasedCmdEvent>(w2, c0);
     let c2 = registry_erased_commands_insert<ErasedCmdPos, ErasedCmdTime, ErasedCmdEvent>(c1, entity, position.id, ERASED_CMD_POS_TYPE, ErasedCmdPos { x: 5, y: 0 });
