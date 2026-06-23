@@ -11,6 +11,11 @@ struct TableErasedRelationshipQueryResourceParam<R> {
     resource: R,
 }
 
+struct TableErasedRelationshipItemQueryResourceParam<I, R> {
+    query: Query<I>,
+    resource: R,
+}
+
 struct TableErasedRelationshipResMutMessageReadParam<R, M> {
     resource: ResMut<R>,
     read: MessageRead<M>,
@@ -93,6 +98,14 @@ fn table_erased_relationship_query_resource_param<R>(related: RelationshipEntity
     return TableErasedRelationshipQueryResourceParam<R> { related: related, resource: resource };
 }
 
+fn table_erased_relationship_item_query_resource_param<I, R>(query: Query<I>, resource: R) -> TableErasedRelationshipItemQueryResourceParam<I, R> {
+    return TableErasedRelationshipItemQueryResourceParam<I, R> { query: query, resource: resource };
+}
+
+fn table_erased_relationship_item_query_resource_count<I, R>(param: TableErasedRelationshipItemQueryResourceParam<I, R>) -> i64 {
+    return len(param.query.items) as i64;
+}
+
 fn table_erased_relationship_resmut_message_read_param<R, M>(resource: ResMut<R>, read: MessageRead<M>) -> TableErasedRelationshipResMutMessageReadParam<R, M> {
     return TableErasedRelationshipResMutMessageReadParam<R, M> { resource: resource, read: read };
 }
@@ -122,6 +135,19 @@ fn table_erased_relationship_run_relation_resource_system<R, M>(world: TableEras
     let param1 = run(param0);
     world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
     return world;
+}
+
+fn table_erased_relationship_run_removed_components_query_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, since_tick: i32, run: fn(TableErasedRelationshipItemQueryResourceParam<Entity, R>) -> TableErasedRelationshipItemQueryResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    let query = table_erased_relationship_world_removed_components<R, M>(world, component_id, since_tick);
+    let param0 = table_erased_relationship_item_query_resource_param<Entity, R>(query, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    return world;
+}
+
+fn table_erased_relationship_run_removed_components_query_resource_system_auto<R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, since_tick: i32, run: fn(TableErasedRelationshipItemQueryResourceParam<Entity, R>) -> TableErasedRelationshipItemQueryResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    return table_erased_relationship_run_removed_components_query_resource_system<R, M>(world, component_id, since_tick, run);
 }
 
 fn table_erased_relationship_run_commands_system<R, M>(world: TableErasedRelationshipWorld<R, M>, run: fn(TableErasedRelationshipCommandsParam<R, M>) -> TableErasedRelationshipCommandsParam<R, M>) -> TableErasedRelationshipWorld<R, M> {
@@ -165,6 +191,10 @@ fn table_erased_relationship_param_movement_system(query: Query<TableErasedPairM
 
 fn table_erased_relationship_param_count_system(param: TableErasedRelationshipQueryResourceParam<TableErasedTime>) -> TableErasedRelationshipQueryResourceParam<TableErasedTime> {
     return table_erased_relationship_query_resource_param<TableErasedTime>(param.related, TableErasedTime { tick: len(param.related.items) as i32 });
+}
+
+fn table_erased_relationship_param_entity_count_system(param: TableErasedRelationshipItemQueryResourceParam<Entity, TableErasedTime>) -> TableErasedRelationshipItemQueryResourceParam<Entity, TableErasedTime> {
+    return table_erased_relationship_item_query_resource_param<Entity, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 });
 }
 
 fn table_erased_relationship_param_commands_system(param: TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipCommandsParam<TableErasedTime, TableErasedEvent> {
@@ -268,6 +298,48 @@ fn table_erased_relationship_param_reader_resmut_system(param: TableErasedRelati
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w9.table).tick != 5 { panic(12510); };
     if read1.value.amount != 2 { panic(12511); };
     if reader2.cursor != 2 { panic(12512); };
+}
+
+@test "table erased relationship system params expose removed components"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w3, true, false);
+    let (w5, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let (w6, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let (w7, other) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let w8 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let w9 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w8, child, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 100 });
+    let w10 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, other, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w11 = table_erased_relationship_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w10, other, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 20, y: 0 });
+    let w12 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w11, kind.id, child, root);
+
+    let remove_since = w12.table.registry.change_tick;
+    let w13 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w12.table), relationships: w12.relationships };
+    let w14 = table_erased_relationship_world_remove_auto<TableErasedTime, TableErasedEvent>(w13, child, TABLE_ERASED_MARKER_TYPE);
+    let w14r = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w14.table, TableErasedTime { tick: 0 }), relationships: w14.relationships };
+    let marker_removed = table_erased_relationship_run_removed_components_query_resource_system_auto<TableErasedTime, TableErasedEvent>(w14r, TABLE_ERASED_MARKER_TYPE, remove_since, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(marker_removed.table).tick != 1 { panic(12560); };
+    let marker_current = table_erased_relationship_run_removed_components_query_resource_system<TableErasedTime, TableErasedEvent>(w14r, marker.id, w14r.table.registry.change_tick, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(marker_current.table).tick != 0 { panic(12561); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w14, kind.id, root) != 1 { panic(12562); };
+
+    let despawn_since = w14.table.registry.change_tick;
+    let w15 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w14.table), relationships: w14.relationships };
+    let w16 = table_erased_relationship_world_despawn<TableErasedTime, TableErasedEvent>(w15, other);
+    let w16r = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w16.table, TableErasedTime { tick: 0 }), relationships: w16.relationships };
+    let pos_removed = table_erased_relationship_run_removed_components_query_resource_system<TableErasedTime, TableErasedEvent>(w16r, position.id, despawn_since, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(pos_removed.table).tick != 1 { panic(12563); };
+    let vel_removed = table_erased_relationship_run_removed_components_query_resource_system_auto<TableErasedTime, TableErasedEvent>(w16r, TABLE_ERASED_VEL_TYPE, despawn_since, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(vel_removed.table).tick != 1 { panic(12564); };
+    let marker_after_despawn = table_erased_relationship_run_removed_components_query_resource_system<TableErasedTime, TableErasedEvent>(w16r, marker.id, despawn_since, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(marker_after_despawn.table).tick != 0 { panic(12565); };
+
+    let w17 = table_erased_relationship_world_clear_removed_components<TableErasedTime, TableErasedEvent>(w16);
+    let w17r = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w17.table, TableErasedTime { tick: 0 }), relationships: w17.relationships };
+    let removed_after_clear = table_erased_relationship_run_removed_components_query_resource_system_auto<TableErasedTime, TableErasedEvent>(w17r, TABLE_ERASED_POS_TYPE, 0, table_erased_relationship_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(removed_after_clear.table).tick != 0 { panic(12566); };
 }
 
 @test "table erased relationship commands param applies relation resources and messages"() {

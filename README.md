@@ -71,7 +71,7 @@ lib/
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
 ├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup, `Query<Entity>`, query `count`/`is_empty`/`contains`, `single`/`get`/ordered `get_many`/`get_many_unique`/`iter_many` helpers including Bevy-shaped pair-mut `single_mut`/`get_mut`/`get_many_mut`/`get_many_unique_mut`/`iter_many_mut`/`iter_many_unique_mut` aliases and pair-mut `as_readonly` projection, generated K=2..10 query combinations, query filters, binary `Or`/`And` filters, `Spawned` filters, `RemovedComponents`-style removal tracking, `SpawnDetails::spawned_by` metadata, `Option`/`Has` query data, direct generated `AnyOf` query data up to six branches with legacy `first`/`second`/`third`/`fourth` fields preserved through `$ORD`, generated nested `WithAnyOf` query data up to six branches, generated nested pair `AnyOf` query data up to six branches, and optional tuple query data
-├── world_table_erased_relationship.sla — TableErasedWorld + RelationshipWorld wrapper with synchronized entity allocation and linked despawn
+├── world_table_erased_relationship.sla — TableErasedWorld + RelationshipWorld wrapper with synchronized entity allocation, linked despawn, and delegated removed-component tracking helpers
 ├── world_table_erased_observer.sla — TableErasedWorld + erased observer wrapper with component lifecycle and targeted entity events
 ├── bundle_table_erased.sla — TableErasedWorld component bundle constructors plus spawn/insert helpers
 ├── commands_registry_erased.sla — RegistryErasedWorld deferred Commands carrying erased payloads
@@ -80,7 +80,7 @@ lib/
 ├── commands_table_erased_relationship.sla — Ordered table-erased component + indexed/remove/detach/replace/despawn-related relationship/resource/message commands
 ├── commands_table_erased_observer.sla — Deferred table-erased observer commands with lifecycle/event triggering during apply
 ├── schedule_table_erased_relationship.sla — TableErasedRelationshipWorld Schedule with component/relationship access tracking and batch planning
-├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/Commands/ResMut/message system-param adapters
+├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/RemovedComponents/Commands/ResMut/message system-param adapters
 ├── schedule_table_erased_observer.sla — TableErasedObserverWorld Schedule with component/event access tracking and batch planning
 ├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters, including generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
 ├── schedule_table_erased.sla — TableErasedWorld Schedule with type-id access tracking and parallel batch planning
