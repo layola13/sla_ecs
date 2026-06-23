@@ -80,7 +80,7 @@ lib/
 ├── commands_table_erased_relationship.sla — Ordered table-erased component + indexed/remove/detach/replace/despawn-related relationship/resource/message commands
 ├── commands_table_erased_observer.sla — Deferred table-erased observer commands with lifecycle/event triggering during apply
 ├── schedule_table_erased_relationship.sla — TableErasedRelationshipWorld Schedule with component/relationship access tracking and batch planning
-├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/RemovedComponents/Commands/ResMut/message system-param adapters
+├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/RemovedComponents/Commands/ResMut/message system-param adapters, including MessageReader/MessageWriter ParamSet batching
 ├── schedule_table_erased_observer.sla — TableErasedObserverWorld Schedule with component/event access tracking and batch planning
 ├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters, including MessageReader/MessageWriter ParamSet batching and generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
 ├── schedule_table_erased.sla — TableErasedWorld Schedule with type-id access tracking and parallel batch planning
