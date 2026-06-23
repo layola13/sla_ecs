@@ -196,85 +196,16 @@ struct TableErasedAnyOf3WithOptionalPair<A, B, C, D, E> {
     pair: TableErasedOptional<TableErasedPairValue<D, E>>,
 }
 
-struct TableErasedCombination2<T> {
-    first: T,
-    second: T,
+@expand_tuple(2, 10, C) {
+struct TableErasedCombination$N<T> {
+@each(C) {
+    $ORD: T,
+}
+}
 }
 
-struct TableErasedCombination3<T> {
-    first: T,
-    second: T,
-    third: T,
-}
-
-struct TableErasedCombination4<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-}
-
-struct TableErasedCombination5<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-}
-
-struct TableErasedCombination6<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-    sixth: T,
-}
-
-struct TableErasedCombination7<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-    sixth: T,
-    seventh: T,
-}
-
-struct TableErasedCombination8<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-    sixth: T,
-    seventh: T,
-    eighth: T,
-}
-
-struct TableErasedCombination9<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-    sixth: T,
-    seventh: T,
-    eighth: T,
-    ninth: T,
-}
-
-struct TableErasedCombination10<T> {
-    first: T,
-    second: T,
-    third: T,
-    fourth: T,
-    fifth: T,
-    sixth: T,
-    seventh: T,
-    eighth: T,
-    ninth: T,
-    tenth: T,
+struct TableErasedIndexCombination {
+    indices: Vec<i64>,
 }
 
 struct TableErasedPairMut<A, B> {
@@ -677,702 +608,100 @@ fn table_erased_query_pair_mut_iter_many_unique_mut<A, B>(query: Query<TableEras
     return table_erased_query_pair_mut_iter_many_unique<A, B>(query, entities);
 }
 
-fn table_erased_query_combinations2<T>(query: Query<T>) -> Query<TableErasedCombination2<T>> {
-    let result = query_new<TableErasedCombination2<T>>();
+fn table_erased_index_combination_copy(current: Vec<i64>) -> TableErasedIndexCombination {
+    let indices: Vec<i64> = Vec::new();
     let i: i64 = 0;
-    let cnt = len(query.items) as i64;
+    let cnt = len(current) as i64;
     while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            result.items.push(TableErasedCombination2<T> { first: query.items[i], second: query.items[j] });
-            j = j + 1;
-        }
+        indices.push(current[i]);
         i = i + 1;
     }
-    return result;
+    return TableErasedIndexCombination { indices: indices };
 }
 
-fn table_erased_query_pair_mut_combinations2<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination2<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination2<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(11937); };
-            result.items.push(TableErasedCombination2<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j] });
-            j = j + 1;
-        }
-        i = i + 1;
+fn table_erased_index_combinations(count: i64, k: i64) -> Query<TableErasedIndexCombination> {
+    let result = query_new<TableErasedIndexCombination>();
+    if k <= 0 { return result; };
+    if k > count { return result; };
+
+    let current: Vec<i64> = Vec::new();
+    let init: i64 = 0;
+    while init < k {
+        current.push(init);
+        init = init + 1;
     }
-    return result;
-}
 
-fn table_erased_query_combinations3<T>(query: Query<T>) -> Query<TableErasedCombination3<T>> {
-    let result = query_new<TableErasedCombination3<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                result.items.push(TableErasedCombination3<T> { first: query.items[i], second: query.items[j], third: query.items[k] });
-                k = k + 1;
+    let active = true;
+    while active {
+        result.items.push(table_erased_index_combination_copy(current));
+
+        let scan = k - 1;
+        let found_index: i64 = -1;
+        while scan >= 0 {
+            let max_value = count - k + scan;
+            if current[scan] < max_value {
+                found_index = scan;
+                scan = -1;
+            } else {
+                scan = scan - 1;
+            };
+        }
+
+        if found_index < 0 {
+            active = false;
+        } else {
+            current[found_index] = current[found_index] + 1;
+            let fill = found_index + 1;
+            while fill < k {
+                current[fill] = current[fill - 1] + 1;
+                fill = fill + 1;
             }
-            j = j + 1;
-        }
-        i = i + 1;
+        };
     }
     return result;
 }
 
-fn table_erased_query_pair_mut_combinations3<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination3<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination3<TableErasedPairMut<A, B>>>();
+fn table_erased_pair_mut_indices_distinct<A, B>(query: Query<TableErasedPairMut<A, B>>, indices: Vec<i64>) -> bool {
     let i: i64 = 0;
-    let cnt = len(query.items) as i64;
+    let cnt = len(indices) as i64;
     while i < cnt {
         let j = i + 1;
         while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(11952); };
-                if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(11953); };
-                if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(11954); };
-                result.items.push(TableErasedCombination3<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k] });
-                k = k + 1;
-            }
+            if entity_eq(query.items[indices[i]].first.entity, query.items[indices[j]].first.entity) { return false; };
             j = j + 1;
         }
         i = i + 1;
     }
-    return result;
-}
-
-fn table_erased_query_combinations4<T>(query: Query<T>) -> Query<TableErasedCombination4<T>> {
-    let result = query_new<TableErasedCombination4<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    result.items.push(TableErasedCombination4<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l] });
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations4<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination4<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination4<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12150); };
-                    if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12151); };
-                    if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12152); };
-                    if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12153); };
-                    if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12154); };
-                    if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12155); };
-                    result.items.push(TableErasedCombination4<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l] });
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_combinations5<T>(query: Query<T>) -> Query<TableErasedCombination5<T>> {
-    let result = query_new<TableErasedCombination5<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        result.items.push(TableErasedCombination5<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m] });
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations5<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination5<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination5<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12200); };
-                        if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12201); };
-                        if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12202); };
-                        if entity_eq(query.items[i].first.entity, query.items[m].first.entity) { panic(12203); };
-                        if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12204); };
-                        if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12205); };
-                        if entity_eq(query.items[j].first.entity, query.items[m].first.entity) { panic(12206); };
-                        if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12207); };
-                        if entity_eq(query.items[k].first.entity, query.items[m].first.entity) { panic(12208); };
-                        if entity_eq(query.items[l].first.entity, query.items[m].first.entity) { panic(12209); };
-                        result.items.push(TableErasedCombination5<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m] });
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_combinations6<T>(query: Query<T>) -> Query<TableErasedCombination6<T>> {
-    let result = query_new<TableErasedCombination6<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            result.items.push(TableErasedCombination6<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n] });
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations6<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination6<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination6<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12210); };
-                            if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12211); };
-                            if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12212); };
-                            if entity_eq(query.items[i].first.entity, query.items[m].first.entity) { panic(12213); };
-                            if entity_eq(query.items[i].first.entity, query.items[n].first.entity) { panic(12214); };
-                            if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12215); };
-                            if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12216); };
-                            if entity_eq(query.items[j].first.entity, query.items[m].first.entity) { panic(12217); };
-                            if entity_eq(query.items[j].first.entity, query.items[n].first.entity) { panic(12218); };
-                            if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12219); };
-                            if entity_eq(query.items[k].first.entity, query.items[m].first.entity) { panic(12220); };
-                            if entity_eq(query.items[k].first.entity, query.items[n].first.entity) { panic(12221); };
-                            if entity_eq(query.items[l].first.entity, query.items[m].first.entity) { panic(12222); };
-                            if entity_eq(query.items[l].first.entity, query.items[n].first.entity) { panic(12223); };
-                            if entity_eq(query.items[m].first.entity, query.items[n].first.entity) { panic(12224); };
-                            result.items.push(TableErasedCombination6<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n] });
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_combinations7<T>(query: Query<T>) -> Query<TableErasedCombination7<T>> {
-    let result = query_new<TableErasedCombination7<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                result.items.push(TableErasedCombination7<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o] });
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations7<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination7<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination7<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12310); };
-                                if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12311); };
-                                if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12312); };
-                                if entity_eq(query.items[i].first.entity, query.items[m].first.entity) { panic(12313); };
-                                if entity_eq(query.items[i].first.entity, query.items[n].first.entity) { panic(12314); };
-                                if entity_eq(query.items[i].first.entity, query.items[o].first.entity) { panic(12315); };
-                                if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12316); };
-                                if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12317); };
-                                if entity_eq(query.items[j].first.entity, query.items[m].first.entity) { panic(12318); };
-                                if entity_eq(query.items[j].first.entity, query.items[n].first.entity) { panic(12319); };
-                                if entity_eq(query.items[j].first.entity, query.items[o].first.entity) { panic(12320); };
-                                if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12321); };
-                                if entity_eq(query.items[k].first.entity, query.items[m].first.entity) { panic(12322); };
-                                if entity_eq(query.items[k].first.entity, query.items[n].first.entity) { panic(12323); };
-                                if entity_eq(query.items[k].first.entity, query.items[o].first.entity) { panic(12324); };
-                                if entity_eq(query.items[l].first.entity, query.items[m].first.entity) { panic(12325); };
-                                if entity_eq(query.items[l].first.entity, query.items[n].first.entity) { panic(12326); };
-                                if entity_eq(query.items[l].first.entity, query.items[o].first.entity) { panic(12327); };
-                                if entity_eq(query.items[m].first.entity, query.items[n].first.entity) { panic(12328); };
-                                if entity_eq(query.items[m].first.entity, query.items[o].first.entity) { panic(12329); };
-                                if entity_eq(query.items[n].first.entity, query.items[o].first.entity) { panic(12330); };
-                                result.items.push(TableErasedCombination7<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o] });
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_combinations8<T>(query: Query<T>) -> Query<TableErasedCombination8<T>> {
-    let result = query_new<TableErasedCombination8<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    result.items.push(TableErasedCombination8<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p] });
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations8<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination8<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination8<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    if entity_eq(query.items[i].first.entity, query.items[j].first.entity) { panic(12410); };
-                                    if entity_eq(query.items[i].first.entity, query.items[k].first.entity) { panic(12411); };
-                                    if entity_eq(query.items[i].first.entity, query.items[l].first.entity) { panic(12412); };
-                                    if entity_eq(query.items[i].first.entity, query.items[m].first.entity) { panic(12413); };
-                                    if entity_eq(query.items[i].first.entity, query.items[n].first.entity) { panic(12414); };
-                                    if entity_eq(query.items[i].first.entity, query.items[o].first.entity) { panic(12415); };
-                                    if entity_eq(query.items[i].first.entity, query.items[p].first.entity) { panic(12416); };
-                                    if entity_eq(query.items[j].first.entity, query.items[k].first.entity) { panic(12417); };
-                                    if entity_eq(query.items[j].first.entity, query.items[l].first.entity) { panic(12418); };
-                                    if entity_eq(query.items[j].first.entity, query.items[m].first.entity) { panic(12419); };
-                                    if entity_eq(query.items[j].first.entity, query.items[n].first.entity) { panic(12420); };
-                                    if entity_eq(query.items[j].first.entity, query.items[o].first.entity) { panic(12421); };
-                                    if entity_eq(query.items[j].first.entity, query.items[p].first.entity) { panic(12422); };
-                                    if entity_eq(query.items[k].first.entity, query.items[l].first.entity) { panic(12423); };
-                                    if entity_eq(query.items[k].first.entity, query.items[m].first.entity) { panic(12424); };
-                                    if entity_eq(query.items[k].first.entity, query.items[n].first.entity) { panic(12425); };
-                                    if entity_eq(query.items[k].first.entity, query.items[o].first.entity) { panic(12426); };
-                                    if entity_eq(query.items[k].first.entity, query.items[p].first.entity) { panic(12427); };
-                                    if entity_eq(query.items[l].first.entity, query.items[m].first.entity) { panic(12428); };
-                                    if entity_eq(query.items[l].first.entity, query.items[n].first.entity) { panic(12429); };
-                                    if entity_eq(query.items[l].first.entity, query.items[o].first.entity) { panic(12430); };
-                                    if entity_eq(query.items[l].first.entity, query.items[p].first.entity) { panic(12431); };
-                                    if entity_eq(query.items[m].first.entity, query.items[n].first.entity) { panic(12432); };
-                                    if entity_eq(query.items[m].first.entity, query.items[o].first.entity) { panic(12433); };
-                                    if entity_eq(query.items[m].first.entity, query.items[p].first.entity) { panic(12434); };
-                                    if entity_eq(query.items[n].first.entity, query.items[o].first.entity) { panic(12435); };
-                                    if entity_eq(query.items[n].first.entity, query.items[p].first.entity) { panic(12436); };
-                                    if entity_eq(query.items[o].first.entity, query.items[p].first.entity) { panic(12437); };
-                                    result.items.push(TableErasedCombination8<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p] });
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_distinct9(e0: Entity, e1: Entity, e2: Entity, e3: Entity, e4: Entity, e5: Entity, e6: Entity, e7: Entity, e8: Entity) -> bool {
-    if entity_eq(e0, e1) { return false; };
-    if entity_eq(e0, e2) { return false; };
-    if entity_eq(e0, e3) { return false; };
-    if entity_eq(e0, e4) { return false; };
-    if entity_eq(e0, e5) { return false; };
-    if entity_eq(e0, e6) { return false; };
-    if entity_eq(e0, e7) { return false; };
-    if entity_eq(e0, e8) { return false; };
-    if entity_eq(e1, e2) { return false; };
-    if entity_eq(e1, e3) { return false; };
-    if entity_eq(e1, e4) { return false; };
-    if entity_eq(e1, e5) { return false; };
-    if entity_eq(e1, e6) { return false; };
-    if entity_eq(e1, e7) { return false; };
-    if entity_eq(e1, e8) { return false; };
-    if entity_eq(e2, e3) { return false; };
-    if entity_eq(e2, e4) { return false; };
-    if entity_eq(e2, e5) { return false; };
-    if entity_eq(e2, e6) { return false; };
-    if entity_eq(e2, e7) { return false; };
-    if entity_eq(e2, e8) { return false; };
-    if entity_eq(e3, e4) { return false; };
-    if entity_eq(e3, e5) { return false; };
-    if entity_eq(e3, e6) { return false; };
-    if entity_eq(e3, e7) { return false; };
-    if entity_eq(e3, e8) { return false; };
-    if entity_eq(e4, e5) { return false; };
-    if entity_eq(e4, e6) { return false; };
-    if entity_eq(e4, e7) { return false; };
-    if entity_eq(e4, e8) { return false; };
-    if entity_eq(e5, e6) { return false; };
-    if entity_eq(e5, e7) { return false; };
-    if entity_eq(e5, e8) { return false; };
-    if entity_eq(e6, e7) { return false; };
-    if entity_eq(e6, e8) { return false; };
-    if entity_eq(e7, e8) { return false; };
     return true;
 }
 
-fn table_erased_distinct10(e0: Entity, e1: Entity, e2: Entity, e3: Entity, e4: Entity, e5: Entity, e6: Entity, e7: Entity, e8: Entity, e9: Entity) -> bool {
-    if !table_erased_distinct9(e0, e1, e2, e3, e4, e5, e6, e7, e8) { return false; };
-    if entity_eq(e9, e0) { return false; };
-    if entity_eq(e9, e1) { return false; };
-    if entity_eq(e9, e2) { return false; };
-    if entity_eq(e9, e3) { return false; };
-    if entity_eq(e9, e4) { return false; };
-    if entity_eq(e9, e5) { return false; };
-    if entity_eq(e9, e6) { return false; };
-    if entity_eq(e9, e7) { return false; };
-    if entity_eq(e9, e8) { return false; };
-    return true;
-}
-
-fn table_erased_query_combinations9<T>(query: Query<T>) -> Query<TableErasedCombination9<T>> {
-    let result = query_new<TableErasedCombination9<T>>();
+@expand_tuple(2, 10, C) {
+fn table_erased_query_combinations$N<T>(query: Query<T>) -> Query<TableErasedCombination$N<T>> {
+    let result = query_new<TableErasedCombination$N<T>>();
+    let index_combinations = table_erased_index_combinations(len(query.items) as i64, $N);
     let i: i64 = 0;
-    let cnt = len(query.items) as i64;
+    let cnt = len(index_combinations.items) as i64;
     while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    let q = p + 1;
-                                    while q < cnt {
-                                        result.items.push(TableErasedCombination9<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p], ninth: query.items[q] });
-                                        q = q + 1;
-                                    }
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
+        let indices = index_combinations.items[i].indices;
+        result.items.push(TableErasedCombination$N<T> { @join(C, ", ") { $ORD: query.items[indices[$I]] } });
         i = i + 1;
     }
     return result;
 }
 
-fn table_erased_query_pair_mut_combinations9<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination9<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination9<TableErasedPairMut<A, B>>>();
+fn table_erased_query_pair_mut_combinations$N<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination$N<TableErasedPairMut<A, B>>> {
+    let result = query_new<TableErasedCombination$N<TableErasedPairMut<A, B>>>();
+    let index_combinations = table_erased_index_combinations(len(query.items) as i64, $N);
     let i: i64 = 0;
-    let cnt = len(query.items) as i64;
+    let cnt = len(index_combinations.items) as i64;
     while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    let q = p + 1;
-                                    while q < cnt {
-                                        if !table_erased_distinct9(query.items[i].first.entity, query.items[j].first.entity, query.items[k].first.entity, query.items[l].first.entity, query.items[m].first.entity, query.items[n].first.entity, query.items[o].first.entity, query.items[p].first.entity, query.items[q].first.entity) { panic(12510); };
-                                        result.items.push(TableErasedCombination9<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p], ninth: query.items[q] });
-                                        q = q + 1;
-                                    }
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
+        let indices = index_combinations.items[i].indices;
+        if table_erased_pair_mut_indices_distinct<A, B>(query, indices) != true { panic(12512); };
+        result.items.push(TableErasedCombination$N<TableErasedPairMut<A, B>> { @join(C, ", ") { $ORD: query.items[indices[$I]] } });
         i = i + 1;
     }
     return result;
 }
-
-fn table_erased_query_combinations10<T>(query: Query<T>) -> Query<TableErasedCombination10<T>> {
-    let result = query_new<TableErasedCombination10<T>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    let q = p + 1;
-                                    while q < cnt {
-                                        let r = q + 1;
-                                        while r < cnt {
-                                            result.items.push(TableErasedCombination10<T> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p], ninth: query.items[q], tenth: query.items[r] });
-                                            r = r + 1;
-                                        }
-                                        q = q + 1;
-                                    }
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
-}
-
-fn table_erased_query_pair_mut_combinations10<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedCombination10<TableErasedPairMut<A, B>>> {
-    let result = query_new<TableErasedCombination10<TableErasedPairMut<A, B>>>();
-    let i: i64 = 0;
-    let cnt = len(query.items) as i64;
-    while i < cnt {
-        let j = i + 1;
-        while j < cnt {
-            let k = j + 1;
-            while k < cnt {
-                let l = k + 1;
-                while l < cnt {
-                    let m = l + 1;
-                    while m < cnt {
-                        let n = m + 1;
-                        while n < cnt {
-                            let o = n + 1;
-                            while o < cnt {
-                                let p = o + 1;
-                                while p < cnt {
-                                    let q = p + 1;
-                                    while q < cnt {
-                                        let r = q + 1;
-                                        while r < cnt {
-                                            if !table_erased_distinct10(query.items[i].first.entity, query.items[j].first.entity, query.items[k].first.entity, query.items[l].first.entity, query.items[m].first.entity, query.items[n].first.entity, query.items[o].first.entity, query.items[p].first.entity, query.items[q].first.entity, query.items[r].first.entity) { panic(12511); };
-                                            result.items.push(TableErasedCombination10<TableErasedPairMut<A, B>> { first: query.items[i], second: query.items[j], third: query.items[k], fourth: query.items[l], fifth: query.items[m], sixth: query.items[n], seventh: query.items[o], eighth: query.items[p], ninth: query.items[q], tenth: query.items[r] });
-                                            r = r + 1;
-                                        }
-                                        q = q + 1;
-                                    }
-                                    p = p + 1;
-                                }
-                                o = o + 1;
-                            }
-                            n = n + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    return result;
 }
 
 fn table_erased_world_def_slot<R, M>(world: TableErasedWorld<R, M>, component_id: i32) -> i64 {
