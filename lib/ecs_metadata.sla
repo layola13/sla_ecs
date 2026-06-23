@@ -50,6 +50,11 @@ struct EcsRelationshipMetadata {
     allow_self: bool,
 }
 
+fn ecs_box_drop<T>(raw: *u8) -> void {
+    let typed = raw as *T;
+    let boxed = unsafe { Box::from_raw(typed) };
+}
+
 fn ecs_stable_type_id(kind: i32, namespace_id: i32, local_id: i32) -> EcsStableTypeId {
     if kind <= 0 { panic(14500); };
     if namespace_id <= 0 { panic(14501); };
@@ -253,12 +258,6 @@ struct EcsMetaWorldEvent { amount: i32 }
 fn ecs_meta_time_default() -> EcsMetaTime { return EcsMetaTime { tick: 0 }; }
 fn ecs_meta_world_event_default() -> EcsMetaWorldEvent { return EcsMetaWorldEvent { amount: 0 }; }
 fn ecs_meta_damage_default() -> EcsMetaDamage { return EcsMetaDamage { amount: 0 }; }
-fn ecs_meta_pos_drop(raw: *u8) -> void { let typed = raw as *EcsMetaPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn ecs_meta_vel_drop(raw: *u8) -> void { let typed = raw as *EcsMetaVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn ecs_meta_marker_drop(raw: *u8) -> void { let typed = raw as *EcsMetaMarker; let boxed = unsafe { Box::from_raw(typed) }; }
-fn ecs_meta_time_drop(raw: *u8) -> void { let typed = raw as *EcsMetaTime; let boxed = unsafe { Box::from_raw(typed) }; }
-fn ecs_meta_damage_drop(raw: *u8) -> void { let typed = raw as *EcsMetaDamage; let boxed = unsafe { Box::from_raw(typed) }; }
-fn ecs_meta_ping_drop(raw: *u8) -> void { let typed = raw as *EcsMetaPing; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let event = erased_event_value_read<EcsMetaPing>(value, ecs_stable_type_id(ECS_METADATA_KIND_EVENT, 145, 1).type_id);
@@ -270,9 +269,9 @@ fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let position_id = ecs_stable_type_id(ECS_METADATA_KIND_COMPONENT, 145, 1);
     let velocity_id = ecs_stable_type_id(ECS_METADATA_KIND_COMPONENT, 145, 2);
     let marker_id = ecs_stable_type_id(ECS_METADATA_KIND_COMPONENT, 145, 3);
-    let position = ecs_component_table(position_id.type_id, ecs_meta_pos_drop);
-    let velocity = ecs_component_table(velocity_id.type_id, ecs_meta_vel_drop);
-    let marker = ecs_component_sparse_set(marker_id.type_id, ecs_meta_marker_drop);
+    let position = ecs_component_table(position_id.type_id, ecs_box_drop<EcsMetaPos>);
+    let velocity = ecs_component_table(velocity_id.type_id, ecs_box_drop<EcsMetaVel>);
+    let marker = ecs_component_sparse_set(marker_id.type_id, ecs_box_drop<EcsMetaMarker>);
     if position_id.type_id == velocity_id.type_id { panic(14570); };
     if position.storage_kind != ECS_METADATA_STORAGE_TABLE { panic(14571); };
     if marker.storage_kind != ECS_METADATA_STORAGE_SPARSE_SET { panic(14572); };
@@ -296,9 +295,9 @@ fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let time_id = ecs_stable_type_id(ECS_METADATA_KIND_RESOURCE, 145, 1);
     let damage_id = ecs_stable_type_id(ECS_METADATA_KIND_MESSAGE, 145, 1);
     let ping_id = ecs_stable_type_id(ECS_METADATA_KIND_EVENT, 145, 1);
-    let time_meta = ecs_resource_metadata(time_id.type_id, ecs_meta_time_drop);
-    let damage_meta = ecs_message_metadata(damage_id.type_id, ecs_meta_damage_drop);
-    let ping_meta = ecs_event_metadata(ping_id.type_id, ecs_meta_ping_drop);
+    let time_meta = ecs_resource_metadata(time_id.type_id, ecs_box_drop<EcsMetaTime>);
+    let damage_meta = ecs_message_metadata(damage_id.type_id, ecs_box_drop<EcsMetaDamage>);
+    let ping_meta = ecs_event_metadata(ping_id.type_id, ecs_box_drop<EcsMetaPing>);
     let resources0 = erased_resources_new();
     let resources1 = ecs_erased_resources_insert<EcsMetaTime>(resources0, time_meta, EcsMetaTime { tick: 3 });
     let before = resources1.change_tick;
@@ -338,9 +337,9 @@ fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
 }
 
 @test "ecs metadata table erased relationship and observer adapters"() {
-    let position = ecs_component_table(ecs_stable_type_id(ECS_METADATA_KIND_COMPONENT, 145, 11).type_id, ecs_meta_pos_drop);
+    let position = ecs_component_table(ecs_stable_type_id(ECS_METADATA_KIND_COMPONENT, 145, 11).type_id, ecs_box_drop<EcsMetaPos>);
     let child_meta = ecs_relationship_many(ecs_stable_type_id(ECS_METADATA_KIND_RELATIONSHIP, 145, 11).type_id, true, false);
-    let ping_meta = ecs_event_metadata(ecs_stable_type_id(ECS_METADATA_KIND_EVENT, 145, 1).type_id, ecs_meta_ping_drop);
+    let ping_meta = ecs_event_metadata(ecs_stable_type_id(ECS_METADATA_KIND_EVENT, 145, 1).type_id, ecs_box_drop<EcsMetaPing>);
     let rw0 = table_erased_relationship_world_new<EcsMetaTime, EcsMetaWorldEvent>(ecs_meta_time_default(), ecs_meta_world_event_default());
     let (rw1, pos_info) = ecs_table_erased_relationship_register_component<EcsMetaTime, EcsMetaWorldEvent>(rw0, position);
     let (rw2, child_kind) = ecs_table_erased_relationship_register_metadata<EcsMetaTime, EcsMetaWorldEvent>(rw1, child_meta);

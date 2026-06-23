@@ -47,11 +47,6 @@ impl MetadataDemoChildOf {
 fn metadata_demo_time_default() -> MetadataDemoTime { return MetadataDemoTime { tick: 0 }; }
 fn metadata_demo_world_event_default() -> MetadataDemoWorldEvent { return MetadataDemoWorldEvent { amount: 0 }; }
 fn metadata_demo_damage_default() -> MetadataDemoDamage { return MetadataDemoDamage { amount: 0 }; }
-fn metadata_demo_pos_drop(raw: *u8) -> void { let typed = raw as *MetadataDemoPos; let boxed = unsafe { Box::from_raw(typed) }; }
-fn metadata_demo_vel_drop(raw: *u8) -> void { let typed = raw as *MetadataDemoVel; let boxed = unsafe { Box::from_raw(typed) }; }
-fn metadata_demo_time_drop(raw: *u8) -> void { let typed = raw as *MetadataDemoTime; let boxed = unsafe { Box::from_raw(typed) }; }
-fn metadata_demo_damage_drop(raw: *u8) -> void { let typed = raw as *MetadataDemoDamage; let boxed = unsafe { Box::from_raw(typed) }; }
-fn metadata_demo_ping_drop(raw: *u8) -> void { let typed = raw as *MetadataDemoPing; let boxed = unsafe { Box::from_raw(typed) }; }
 
 fn metadata_demo_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let event = erased_event_value_read<MetadataDemoPing>(value, MetadataDemoPing::event_type_id());
@@ -60,11 +55,11 @@ fn metadata_demo_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i
 }
 
 fn ecs_metadata_descriptor_demo() -> i32 {
-    let pos_meta = ecs_component_table(MetadataDemoPos::component_type_id(), metadata_demo_pos_drop);
-    let vel_meta = ecs_component_table(MetadataDemoVel::component_type_id(), metadata_demo_vel_drop);
-    let time_meta = ecs_resource_metadata(MetadataDemoTime::resource_type_id(), metadata_demo_time_drop);
-    let damage_meta = ecs_message_metadata(MetadataDemoDamage::message_type_id(), metadata_demo_damage_drop);
-    let ping_meta = ecs_event_metadata(MetadataDemoPing::event_type_id(), metadata_demo_ping_drop);
+    let pos_meta = ecs_component_table(MetadataDemoPos::component_type_id(), ecs_box_drop<MetadataDemoPos>);
+    let vel_meta = ecs_component_table(MetadataDemoVel::component_type_id(), ecs_box_drop<MetadataDemoVel>);
+    let time_meta = ecs_resource_metadata(MetadataDemoTime::resource_type_id(), ecs_box_drop<MetadataDemoTime>);
+    let damage_meta = ecs_message_metadata(MetadataDemoDamage::message_type_id(), ecs_box_drop<MetadataDemoDamage>);
+    let ping_meta = ecs_event_metadata(MetadataDemoPing::event_type_id(), ecs_box_drop<MetadataDemoPing>);
     let child_meta = ecs_relationship_many(MetadataDemoChildOf::relationship_type_id(), true, false);
 
     let w0 = table_erased_relationship_world_new<MetadataDemoTime, MetadataDemoWorldEvent>(metadata_demo_time_default(), metadata_demo_world_event_default());
