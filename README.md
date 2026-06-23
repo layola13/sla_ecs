@@ -82,9 +82,9 @@ lib/
 ├── schedule_table_erased_relationship.sla — TableErasedRelationshipWorld Schedule with component/relationship access tracking and batch planning
 ├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/RemovedComponents/Commands/ResMut/message system-param adapters
 ├── schedule_table_erased_observer.sla — TableErasedObserverWorld Schedule with component/event access tracking and batch planning
-├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters, including generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
+├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters, including MessageReader/MessageWriter ParamSet batching and generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
 ├── schedule_table_erased.sla — TableErasedWorld Schedule with type-id access tracking and parallel batch planning
-├── system_param_table_erased.sla — TableErasedWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/resource/Commands/ResMut/message system-param adapters, including type-id helpers and generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
+├── system_param_table_erased.sla — TableErasedWorld entity/filter/query-data/query-inspection/RemovedComponents/Single/Populated/resource/Commands/ResMut/message system-param adapters, including MessageReader/MessageWriter ParamSet batching, type-id helpers, and generated direct `AnyOf2..6`, `WithAnyOf2..6`, and `PairWithAnyOf2..6` runners
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T>, MessageWriter<T>, and reader cursor
 ├── messages_erased.sla — Type-erased multi-message channels keyed by `message_type_id()` impl metadata
