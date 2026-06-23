@@ -17,6 +17,11 @@ struct TableErasedObserverMessageReaderWriterParamSet<M> {
     writer: MessageWriter<M>,
 }
 
+struct TableErasedObserverPairMutReadonlyPairParamSet<A, B> {
+    mut_query: Query<TableErasedPairMut<A, B>>,
+    read_query: Query<TableErasedPair<A, B>>,
+}
+
 struct TableErasedObserverCommandsParam<R, M> {
     world: TableErasedObserverWorld<R, M>,
     commands: TableErasedObserverCommands<R, M>,
@@ -61,6 +66,10 @@ fn table_erased_observer_resmut_message_read_param<R, M>(resource: ResMut<R>, re
 
 fn table_erased_observer_message_reader_writer_param_set<M>(read: MessageRead<M>, writer: MessageWriter<M>) -> TableErasedObserverMessageReaderWriterParamSet<M> {
     return TableErasedObserverMessageReaderWriterParamSet<M> { read: read, writer: writer };
+}
+
+fn table_erased_observer_pair_mut_readonly_pair_param_set<A, B>(mut_query: Query<TableErasedPairMut<A, B>>, read_query: Query<TableErasedPair<A, B>>) -> TableErasedObserverPairMutReadonlyPairParamSet<A, B> {
+    return TableErasedObserverPairMutReadonlyPairParamSet<A, B> { mut_query: mut_query, read_query: read_query };
 }
 
 fn table_erased_observer_commands_param_new<R, M>(world: TableErasedObserverWorld<R, M>) -> TableErasedObserverCommandsParam<R, M> {
@@ -230,6 +239,20 @@ fn table_erased_observer_run_pair_mut_system_auto<A, B, R, M>(world: TableErased
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
     return table_erased_observer_run_pair_mut_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
+}
+
+fn table_erased_observer_run_pair_mut_readonly_pair_param_set_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedObserverPairMutReadonlyPairParamSet<A, B>) -> TableErasedObserverPairMutReadonlyPairParamSet<A, B>) -> TableErasedObserverWorld<R, M> {
+    let mut_query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id);
+    let read_query = table_erased_world_query_pair<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id);
+    let param0 = table_erased_observer_pair_mut_readonly_pair_param_set<A, B>(mut_query, read_query);
+    let param1 = run(param0);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, param1.mut_query);
+}
+
+fn table_erased_observer_run_pair_mut_readonly_pair_param_set_system_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, run: fn(TableErasedObserverPairMutReadonlyPairParamSet<A, B>) -> TableErasedObserverPairMutReadonlyPairParamSet<A, B>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    return table_erased_observer_run_pair_mut_readonly_pair_param_set_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
 }
 
 fn table_erased_observer_run_pair_mut_system_with<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, with_component_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedObserverWorld<R, M> {
@@ -1204,6 +1227,23 @@ fn table_erased_observer_pair_mut_populated_resource_system(param: TableErasedOb
     return table_erased_observer_populated_query_resource_param<TableErasedPairMut<TableErasedPos, TableErasedVel>, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 * 1000 + sum });
 }
 
+fn table_erased_observer_pair_mut_readonly_pair_param_set_system(param: TableErasedObserverPairMutReadonlyPairParamSet<TableErasedPos, TableErasedVel>) -> TableErasedObserverPairMutReadonlyPairParamSet<TableErasedPos, TableErasedVel> {
+    let read_sum: i32 = 0;
+    let ri: i64 = 0;
+    let read_cnt = len(param.read_query.items) as i64;
+    while ri < read_cnt {
+        read_sum = read_sum + param.read_query.items[ri].first.x;
+        ri = ri + 1;
+    }
+    let wi: i64 = 0;
+    let write_cnt = len(param.mut_query.items) as i64;
+    while wi < write_cnt {
+        param.mut_query.items[wi].first.value = TableErasedPos { x: param.mut_query.items[wi].first.value.x + param.mut_query.items[wi].second.x + read_sum, y: param.mut_query.items[wi].first.value.y };
+        wi = wi + 1;
+    }
+    return table_erased_observer_pair_mut_readonly_pair_param_set<TableErasedPos, TableErasedVel>(param.mut_query, param.read_query);
+}
+
 fn table_erased_observer_param_entity_count_system(param: TableErasedObserverItemQueryResourceParam<Entity, TableErasedTime>) -> TableErasedObserverItemQueryResourceParam<Entity, TableErasedTime> {
     return table_erased_observer_item_query_resource_param<Entity, TableErasedTime>(param.query, TableErasedTime { tick: len(param.query.items) as i32 });
 }
@@ -1656,6 +1696,24 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     let w6 = table_erased_observer_run_pair_mut_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w5, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_observer_param_movement_system);
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, entity, position.id, TABLE_ERASED_POS_TYPE).x != 12 { panic(14400); };
     if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w6.table, entity, position.id, before - 1) != true { panic(14401); };
+}
+
+@test "table erased observer ParamSet permits conflicting pair read and pair mut"() {
+    let w0 = table_erased_observer_test_world_new();
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let (w4, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let w5 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 6, y: 0 });
+    let w6 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 2, y: 0 });
+    let w7 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 21, y: 0 });
+    let w8 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w7, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
+    let before = w8.table.registry.change_tick;
+    let w9 = table_erased_observer_run_pair_mut_readonly_pair_param_set_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w8, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_observer_pair_mut_readonly_pair_param_set_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e1, position.id, TABLE_ERASED_POS_TYPE).x != 35 { panic(14402); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e2, position.id, TABLE_ERASED_POS_TYPE).x != 52 { panic(14403); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w9.table, e2, position.id, before - 1) != true { panic(14404); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w9.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != 2 { panic(14405); };
 }
 
 @test "table erased observer resource message writer and reader params"() {
