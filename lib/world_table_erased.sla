@@ -624,6 +624,18 @@ fn table_erased_query_pair_mut_get_mut<A, B>(query: Query<TableErasedPairMut<A, 
     return table_erased_query_pair_mut_get<A, B>(query, entity);
 }
 
+fn table_erased_query_pair_mut_as_readonly<A, B>(query: Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPair<A, B>> {
+    let result = query_new<TableErasedPair<A, B>>();
+    let i: i64 = 0;
+    let cnt = len(query.items) as i64;
+    while i < cnt {
+        let item = query.items[i];
+        result.items.push(TableErasedPair<A, B> { entity: item.first.entity, first: item.first.value, second: item.second });
+        i = i + 1;
+    }
+    return result;
+}
+
 fn table_erased_query_pair_mut_get_many<A, B>(query: Query<TableErasedPairMut<A, B>>, entities: Vec<Entity>) -> Query<TableErasedPairMut<A, B>> {
     if table_erased_entity_vec_has_duplicate(entities) { panic(11913); };
     let result = query_new<TableErasedPairMut<A, B>>();
@@ -3409,6 +3421,17 @@ fn table_erased_world_query_pair_mut_first_auto<A, B, R, M>(world: TableErasedWo
     return table_erased_world_query_pair_mut_first<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
 }
 
+fn table_erased_world_query_pair_mut_first_as_readonly<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
+    let query = table_erased_world_query_pair_mut_first<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
+    return table_erased_query_pair_mut_as_readonly<A, B>(query);
+}
+
+fn table_erased_world_query_pair_mut_first_as_readonly_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32) -> Query<TableErasedPair<A, B>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    return table_erased_world_query_pair_mut_first_as_readonly<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
+}
+
 fn table_erased_world_query_pair_mut_first_count<R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, second_component_id: i32) -> i64 {
     return table_erased_world_query_pair_count<R, M>(world, first_component_id, second_component_id);
 }
@@ -4253,6 +4276,19 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if table_erased_world_query_pair_mut_first_is_empty_auto<TableErasedTime, TableErasedEvent>(w14, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) { panic(12765); };
     if table_erased_world_query_pair_mut_first_contains_auto<TableErasedTime, TableErasedEvent>(w14, e1, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != true { panic(12766); };
     if table_erased_world_query_pair_mut_first_contains_auto<TableErasedTime, TableErasedEvent>(w_iter2, e_missing, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) { panic(12767); };
+    let readonly_movers = table_erased_query_pair_mut_as_readonly<TableErasedPos, TableErasedVel>(all_movers);
+    if len(readonly_movers.items) != 4 { panic(12868); };
+    if readonly_movers.items[0].entity.id != e1.id { panic(12869); };
+    if readonly_movers.items[0].first.x != 10 { panic(12870); };
+    if readonly_movers.items[0].second.x != 1 { panic(12871); };
+    let readonly_iter_movers = table_erased_query_pair_iter_many<TableErasedPos, TableErasedVel>(readonly_movers, iter_order);
+    if len(readonly_iter_movers.items) != 3 { panic(12872); };
+    if readonly_iter_movers.items[0].entity.id != e3.id { panic(12873); };
+    if readonly_iter_movers.items[2].entity.id != e3.id { panic(12874); };
+    let readonly_movers_auto = table_erased_world_query_pair_mut_first_as_readonly_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w14, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE);
+    if len(readonly_movers_auto.items) != 4 { panic(12875); };
+    if readonly_movers_auto.items[3].entity.id != e4.id { panic(12876); };
+    if readonly_movers_auto.items[3].first.x != 40 { panic(12877); };
     let query_mover_get = table_erased_query_pair_mut_get<TableErasedPos, TableErasedVel>(all_movers, e1);
     if query_mover_get.first.value.x != 10 { panic(11929); };
     if query_mover_get.second.x != 1 { panic(11930); };
