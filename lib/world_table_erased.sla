@@ -128,25 +128,13 @@ struct TableErasedPairHasSecond<A, B> {
     second_has: bool,
 }
 
-struct TableErasedAnyOf2<A, B> {
+@expand_tuple(2, 4, T) {
+struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
     entity: Entity,
-    first: TableErasedOptional<A>,
-    second: TableErasedOptional<B>,
+@each(T) {
+    $ORD: TableErasedOptional<$T>,
 }
-
-struct TableErasedAnyOf3<A, B, C> {
-    entity: Entity,
-    first: TableErasedOptional<A>,
-    second: TableErasedOptional<B>,
-    third: TableErasedOptional<C>,
 }
-
-struct TableErasedAnyOf4<A, B, C, D> {
-    entity: Entity,
-    first: TableErasedOptional<A>,
-    second: TableErasedOptional<B>,
-    third: TableErasedOptional<C>,
-    fourth: TableErasedOptional<D>,
 }
 
 @expand_tuple(5, 6, T) {
@@ -2711,8 +2699,9 @@ fn table_erased_world_query_pair_has_second_auto<A, B, R, M>(world: TableErasedW
     return table_erased_world_query_pair_has_second<A, B, R, M>(world, first_component_id, first_type_id, second_component_id);
 }
 
-fn table_erased_world_query_any_of2<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B) -> Query<TableErasedAnyOf2<A, B>> {
-    let query = query_new<TableErasedAnyOf2<A, B>>();
+@expand_tuple(2, 4, T) {
+fn table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { $ORD_component_id: i32, $ORD_type_id: i32 }, @join(T, ", ") { default_$ORD: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
+    let query = query_new<TableErasedAnyOf$N<@join(T, ", ") { $T }>>();
     let i: i64 = 0;
     let cnt = len(world.locations) as i64;
     while i < cnt {
@@ -2720,14 +2709,15 @@ fn table_erased_world_query_any_of2<A, B, R, M>(world: TableErasedWorld<R, M>, f
         let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
         if table_erased_world_is_alive<R, M>(world, entity) {
             let include = false;
-            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
+@each(T) {
+            if table_erased_world_has<R, M>(world, entity, $ORD_component_id) { include = true; };
+}
             if include {
-                let first = table_erased_optional_none<A>(default_first);
-                let second = table_erased_optional_none<B>(default_second);
-                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
-                query.items.push(TableErasedAnyOf2<A, B> { entity: entity, first: first, second: second });
+@each(T) {
+                let $ORD = table_erased_optional_none<$T>(default_$ORD);
+                if table_erased_world_has<R, M>(world, entity, $ORD_component_id) { $ORD = table_erased_optional_some<$T>(table_erased_world_get<$T, R, M>(world, entity, $ORD_component_id, $ORD_type_id)); };
+}
+                query.items.push(TableErasedAnyOf$N<@join(T, ", ") { $T }> { entity: entity, @join(T, ", ") { $ORD: $ORD } });
             };
         };
         i = i + 1;
@@ -2735,82 +2725,12 @@ fn table_erased_world_query_any_of2<A, B, R, M>(world: TableErasedWorld<R, M>, f
     return query;
 }
 
-fn table_erased_world_query_any_of2_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B) -> Query<TableErasedAnyOf2<A, B>> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    return table_erased_world_query_any_of2<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second);
+fn table_erased_world_query_any_of$N_auto<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { $ORD_type_id: i32 }, @join(T, ", ") { default_$ORD: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
+@each(T) {
+    let $ORD_component_id = table_erased_world_component_id_for_type<R, M>(world, $ORD_type_id);
 }
-
-fn table_erased_world_query_any_of3<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C) -> Query<TableErasedAnyOf3<A, B, C>> {
-    let query = query_new<TableErasedAnyOf3<A, B, C>>();
-    let i: i64 = 0;
-    let cnt = len(world.locations) as i64;
-    while i < cnt {
-        let entity_id = world.locations[i].entity_id;
-        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
-        if table_erased_world_is_alive<R, M>(world, entity) {
-            let include = false;
-            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, third_component_id) { include = true; };
-            if include {
-                let first = table_erased_optional_none<A>(default_first);
-                let second = table_erased_optional_none<B>(default_second);
-                let third = table_erased_optional_none<C>(default_third);
-                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, third_component_id) { third = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, entity, third_component_id, third_type_id)); };
-                query.items.push(TableErasedAnyOf3<A, B, C> { entity: entity, first: first, second: second, third: third });
-            };
-        };
-        i = i + 1;
-    }
-    return query;
+    return table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { $ORD_component_id, $ORD_type_id }, @join(T, ", ") { default_$ORD });
 }
-
-fn table_erased_world_query_any_of3_auto<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C) -> Query<TableErasedAnyOf3<A, B, C>> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
-    return table_erased_world_query_any_of3<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third);
-}
-
-fn table_erased_world_query_any_of4<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D) -> Query<TableErasedAnyOf4<A, B, C, D>> {
-    let query = query_new<TableErasedAnyOf4<A, B, C, D>>();
-    let i: i64 = 0;
-    let cnt = len(world.locations) as i64;
-    while i < cnt {
-        let entity_id = world.locations[i].entity_id;
-        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
-        if table_erased_world_is_alive<R, M>(world, entity) {
-            let include = false;
-            if table_erased_world_has<R, M>(world, entity, first_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, second_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, third_component_id) { include = true; };
-            if table_erased_world_has<R, M>(world, entity, fourth_component_id) { include = true; };
-            if include {
-                let first = table_erased_optional_none<A>(default_first);
-                let second = table_erased_optional_none<B>(default_second);
-                let third = table_erased_optional_none<C>(default_third);
-                let fourth = table_erased_optional_none<D>(default_fourth);
-                if table_erased_world_has<R, M>(world, entity, first_component_id) { first = table_erased_optional_some<A>(table_erased_world_get<A, R, M>(world, entity, first_component_id, first_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, second_component_id) { second = table_erased_optional_some<B>(table_erased_world_get<B, R, M>(world, entity, second_component_id, second_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, third_component_id) { third = table_erased_optional_some<C>(table_erased_world_get<C, R, M>(world, entity, third_component_id, third_type_id)); };
-                if table_erased_world_has<R, M>(world, entity, fourth_component_id) { fourth = table_erased_optional_some<D>(table_erased_world_get<D, R, M>(world, entity, fourth_component_id, fourth_type_id)); };
-                query.items.push(TableErasedAnyOf4<A, B, C, D> { entity: entity, first: first, second: second, third: third, fourth: fourth });
-            };
-        };
-        i = i + 1;
-    }
-    return query;
-}
-
-fn table_erased_world_query_any_of4_auto<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D) -> Query<TableErasedAnyOf4<A, B, C, D>> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
-    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world, fourth_type_id);
-    return table_erased_world_query_any_of4<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
 }
 
 @expand_tuple(5, 6, T) {

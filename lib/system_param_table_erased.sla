@@ -731,46 +731,20 @@ fn table_erased_run_pair_has_second_query_resource_system_auto<A, B, R, M>(world
     return table_erased_run_pair_has_second_query_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, run);
 }
 
-fn table_erased_run_any_of2_query_resource_system<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedWorld<R, M> {
-    let query = table_erased_world_query_any_of2<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second);
-    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf2<A, B>, R>(query, table_erased_world_get_resource<R, M>(world));
+@expand_tuple(2, 4, T) {
+fn table_erased_run_any_of$N_query_resource_system<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { $ORD_component_id: i32, $ORD_type_id: i32 }, @join(T, ", ") { default_$ORD: fn() -> $T }, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedWorld<R, M> {
+    let query = table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { $ORD_component_id, $ORD_type_id }, @join(T, ", ") { default_$ORD });
+    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>(query, table_erased_world_get_resource<R, M>(world));
     let param1 = run(param0);
     return table_erased_world_insert_resource<R, M>(world, param1.resource);
 }
 
-fn table_erased_run_any_of2_query_resource_system_auto<A, B, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf2<A, B>, R>) -> TableErasedWorld<R, M> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    return table_erased_run_any_of2_query_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, default_first, default_second, run);
+fn table_erased_run_any_of$N_query_resource_system_auto<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { $ORD_type_id: i32 }, @join(T, ", ") { default_$ORD: fn() -> $T }, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf$N<@join(T, ", ") { $T }>, R>) -> TableErasedWorld<R, M> {
+@each(T) {
+    let $ORD_component_id = table_erased_world_component_id_for_type<R, M>(world, $ORD_type_id);
 }
-
-fn table_erased_run_any_of3_query_resource_system<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf3<A, B, C>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf3<A, B, C>, R>) -> TableErasedWorld<R, M> {
-    let query = table_erased_world_query_any_of3<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third);
-    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf3<A, B, C>, R>(query, table_erased_world_get_resource<R, M>(world));
-    let param1 = run(param0);
-    return table_erased_world_insert_resource<R, M>(world, param1.resource);
+    return table_erased_run_any_of$N_query_resource_system<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { $ORD_component_id, $ORD_type_id }, @join(T, ", ") { default_$ORD }, run);
 }
-
-fn table_erased_run_any_of3_query_resource_system_auto<A, B, C, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf3<A, B, C>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf3<A, B, C>, R>) -> TableErasedWorld<R, M> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
-    return table_erased_run_any_of3_query_resource_system<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, default_first, default_second, default_third, run);
-}
-
-fn table_erased_run_any_of4_query_resource_system<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedWorld<R, M> {
-    let query = table_erased_world_query_any_of4<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
-    let param0 = table_erased_item_query_resource_param<TableErasedAnyOf4<A, B, C, D>, R>(query, table_erased_world_get_resource<R, M>(world));
-    let param1 = run(param0);
-    return table_erased_world_insert_resource<R, M>(world, param1.resource);
-}
-
-fn table_erased_run_any_of4_query_resource_system_auto<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_fourth: fn() -> D, run: fn(TableErasedItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedItemQueryResourceParam<TableErasedAnyOf4<A, B, C, D>, R>) -> TableErasedWorld<R, M> {
-    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
-    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
-    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
-    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world, fourth_type_id);
-    return table_erased_run_any_of4_query_resource_system<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth, run);
 }
 
 @expand_tuple(5, 6, T) {
