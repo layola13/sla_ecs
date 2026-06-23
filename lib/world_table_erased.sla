@@ -149,6 +149,15 @@ struct TableErasedAnyOf4<A, B, C, D> {
     fourth: TableErasedOptional<D>,
 }
 
+@expand_tuple(5, 5, T) {
+struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
+    entity: Entity,
+@each(T) {
+    value_$I: TableErasedOptional<$T>,
+}
+}
+}
+
 struct TableErasedWithAnyOf2<A, B, C> {
     entity: Entity,
     value: A,
@@ -2783,6 +2792,40 @@ fn table_erased_world_query_any_of4_auto<A, B, C, D, R, M>(world: TableErasedWor
     return table_erased_world_query_any_of4<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, default_first, default_second, default_third, default_fourth);
 }
 
+@expand_tuple(5, 5, T) {
+fn table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { component_id_$I: i32, type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
+    let query = query_new<TableErasedAnyOf$N<@join(T, ", ") { $T }>>();
+    let i: i64 = 0;
+    let cnt = len(world.locations) as i64;
+    while i < cnt {
+        let entity_id = world.locations[i].entity_id;
+        let entity = entity_new(entity_id, world.registry.entities.generations[entity_id]);
+        if table_erased_world_is_alive<R, M>(world, entity) {
+            let include = false;
+@each(T) {
+            if table_erased_world_has<R, M>(world, entity, component_id_$I) { include = true; };
+}
+            if include {
+@each(T) {
+                let value_$I = table_erased_optional_none<$T>(default_$I);
+                if table_erased_world_has<R, M>(world, entity, component_id_$I) { value_$I = table_erased_optional_some<$T>(table_erased_world_get<$T, R, M>(world, entity, component_id_$I, type_id_$I)); };
+}
+                query.items.push(TableErasedAnyOf$N<@join(T, ", ") { $T }> { entity: entity, @join(T, ", ") { value_$I: value_$I } });
+            };
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_any_of$N_auto<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
+@each(T) {
+    let component_id_$I = table_erased_world_component_id_for_type<R, M>(world, type_id_$I);
+}
+    return table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world, @join(T, ", ") { component_id_$I, type_id_$I }, @join(T, ", ") { default_$I });
+}
+}
+
 fn table_erased_world_query_any_of3_with_optional_pair<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, pair_first_component_id: i32, pair_first_type_id: i32, pair_second_component_id: i32, pair_second_type_id: i32, default_first: fn() -> A, default_second: fn() -> B, default_third: fn() -> C, default_pair: fn() -> TableErasedPairValue<D, E>) -> Query<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>> {
     let query = query_new<TableErasedAnyOf3WithOptionalPair<A, B, C, D, E>>();
     let i: i64 = 0;
@@ -5043,4 +5086,43 @@ fn table_erased_extra_drop(raw: *u8) -> void { let typed = raw as *TableErasedEx
     if any4_vel_sum != 90 { panic(12611); };
     if any4_marker_sum != 300 { panic(12612); };
     if any4_tag_sum != 410 { panic(12613); };
+
+    let any5 = table_erased_world_query_any_of5_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedExtra, TableErasedTime, TableErasedEvent>(w22, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_EXTRA_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default, table_erased_extra_default);
+    if len(any5.items) != 4 { panic(12645); };
+    if any5.items[0].entity.id != e1.id { panic(12646); };
+    if any5.items[0].value_0.has_value != true { panic(12647); };
+    if any5.items[0].value_1.has_value { panic(12648); };
+    if any5.items[0].value_2.has_value { panic(12649); };
+    if any5.items[0].value_3.has_value != true { panic(12650); };
+    if any5.items[0].value_4.has_value { panic(12651); };
+    let any5_pos_present: i32 = 0;
+    let any5_vel_present: i32 = 0;
+    let any5_marker_present: i32 = 0;
+    let any5_tag_present: i32 = 0;
+    let any5_extra_present: i32 = 0;
+    let any5_pos_sum: i32 = 0;
+    let any5_vel_sum: i32 = 0;
+    let any5_marker_sum: i32 = 0;
+    let any5_tag_sum: i32 = 0;
+    let any5_extra_sum: i32 = 0;
+    let q: i64 = 0;
+    let any5_count = len(any5.items) as i64;
+    while q < any5_count {
+        if any5.items[q].value_0.has_value { any5_pos_present = any5_pos_present + 1; any5_pos_sum = any5_pos_sum + any5.items[q].value_0.value.x; };
+        if any5.items[q].value_1.has_value { any5_vel_present = any5_vel_present + 1; any5_vel_sum = any5_vel_sum + any5.items[q].value_1.value.x; };
+        if any5.items[q].value_2.has_value { any5_marker_present = any5_marker_present + 1; any5_marker_sum = any5_marker_sum + any5.items[q].value_2.value.value; };
+        if any5.items[q].value_3.has_value { any5_tag_present = any5_tag_present + 1; any5_tag_sum = any5_tag_sum + any5.items[q].value_3.value.value; };
+        if any5.items[q].value_4.has_value { any5_extra_present = any5_extra_present + 1; any5_extra_sum = any5_extra_sum + any5.items[q].value_4.value.value; };
+        q = q + 1;
+    }
+    if any5_pos_present != 3 { panic(12652); };
+    if any5_vel_present != 3 { panic(12653); };
+    if any5_marker_present != 1 { panic(12654); };
+    if any5_tag_present != 2 { panic(12655); };
+    if any5_extra_present != 1 { panic(12656); };
+    if any5_pos_sum != 6 { panic(12657); };
+    if any5_vel_sum != 90 { panic(12658); };
+    if any5_marker_sum != 300 { panic(12659); };
+    if any5_tag_sum != 410 { panic(12660); };
+    if any5_extra_sum != 3000 { panic(12661); };
 }
