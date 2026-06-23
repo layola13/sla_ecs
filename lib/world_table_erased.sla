@@ -45,6 +45,12 @@ struct TableErasedSpawnDetails {
     spawned_by_value: TableErasedSpawnLocation,
 }
 
+struct TableErasedRemovedComponent {
+    entity: Entity,
+    component_id: i32,
+    tick: i32,
+}
+
 struct TableErasedWorld<R, M> {
     registry: RegistryWorld,
     component_defs: Vec<TableErasedColumnDef>,
@@ -52,6 +58,7 @@ struct TableErasedWorld<R, M> {
     locations: Vec<TableErasedLocation>,
     spawn_ticks: Vec<i32>,
     spawn_locations: Vec<TableErasedSpawnLocation>,
+    removed_components: Vec<TableErasedRemovedComponent>,
     resource: ResourceSlot<R>,
     messages: Messages<M>,
     resource_added_tick: i32,
@@ -314,6 +321,10 @@ fn table_erased_spawn_location_new(file_id: i32, line: i32, column: i32) -> Tabl
 
 fn table_erased_spawn_details_new(entity: Entity, spawn_tick: i32, last_run_tick: i32, this_run_tick: i32, spawned_by: TableErasedSpawnLocation) -> TableErasedSpawnDetails {
     return TableErasedSpawnDetails { entity: entity, spawn_tick_value: spawn_tick, last_run_tick: last_run_tick, this_run_tick: this_run_tick, spawned_by_value: spawned_by };
+}
+
+fn table_erased_removed_component_new(entity: Entity, component_id: i32, tick: i32) -> TableErasedRemovedComponent {
+    return TableErasedRemovedComponent { entity: entity, component_id: component_id, tick: tick };
 }
 
 fn table_erased_entity_vec_has_duplicate(entities: Vec<Entity>) -> bool {
@@ -759,6 +770,7 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
     let locations: Vec<TableErasedLocation> = Vec::new();
     let spawn_ticks: Vec<i32> = Vec::new();
     let spawn_locations: Vec<TableErasedSpawnLocation> = Vec::new();
+    let removed_components: Vec<TableErasedRemovedComponent> = Vec::new();
     let world = TableErasedWorld<R, M> {
         registry: registry_world_new(),
         component_defs: component_defs,
@@ -766,6 +778,7 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
         locations: locations,
         spawn_ticks: spawn_ticks,
         spawn_locations: spawn_locations,
+        removed_components: removed_components,
         resource: resource_slot_new<R>(default_r),
         messages: messages_new<M>(default_m),
         resource_added_tick: 0,
@@ -872,6 +885,25 @@ fn table_erased_world_has<R, M>(world: TableErasedWorld<R, M>, entity: Entity, c
 
 fn table_erased_world_has_type<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32) -> bool {
     return table_erased_world_has<R, M>(world, entity, table_erased_world_component_id_for_type<R, M>(world, type_id));
+}
+
+fn table_erased_world_record_removed<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32) -> TableErasedWorld<R, M> {
+    world.removed_components.push(table_erased_removed_component_new(entity, component_id, world.registry.change_tick));
+    return world;
+}
+
+fn table_erased_world_record_removed_current_row<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> TableErasedWorld<R, M> {
+    if entity.id >= (len(world.locations) as i32) { return world; };
+    let location = world.locations[entity.id];
+    if location.archetype_id < 0 { return world; };
+    let archetype_slot = location.archetype_id as i64;
+    let c: i64 = 0;
+    let cnt = len(world.archetypes[archetype_slot].columns) as i64;
+    while c < cnt {
+        world = table_erased_world_record_removed<R, M>(world, entity, world.archetypes[archetype_slot].columns[c].component_id);
+        c = c + 1;
+    }
+    return world;
 }
 
 fn table_erased_world_entity_archetype_id<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> i32 {
@@ -1099,6 +1131,7 @@ fn table_erased_world_insert_auto<T, R, M>(world: TableErasedWorld<R, M>, entity
 
 fn table_erased_world_remove<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32) -> TableErasedWorld<R, M> {
     if table_erased_world_has<R, M>(world, entity, component_id) != true { return world; };
+    world = table_erased_world_record_removed<R, M>(world, entity, component_id);
     world = table_erased_world_drop_value<R, M>(world, entity, component_id);
     world.registry = registry_world_remove_component(world.registry, entity, component_id);
     let signature = table_erased_world_signature_for_entity<R, M>(world, entity);
@@ -1114,6 +1147,7 @@ fn table_erased_world_remove_auto<R, M>(world: TableErasedWorld<R, M>, entity: E
 
 fn table_erased_world_despawn<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> TableErasedWorld<R, M> {
     if table_erased_world_is_alive<R, M>(world, entity) != true { return world; };
+    world = table_erased_world_record_removed_current_row<R, M>(world, entity);
     world = table_erased_world_drop_row<R, M>(world, entity);
     world = table_erased_world_detach_no_drop<R, M>(world, entity);
     world.registry = registry_world_despawn(world.registry, entity);
@@ -1156,6 +1190,31 @@ fn table_erased_world_added_since_auto<R, M>(world: TableErasedWorld<R, M>, enti
 fn table_erased_world_changed_since_auto<R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, tick: i32) -> bool {
     let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
     return table_erased_world_changed_since<R, M>(world, entity, component_id, tick);
+}
+
+fn table_erased_world_removed_components<R, M>(world: TableErasedWorld<R, M>, component_id: i32, since_tick: i32) -> Query<Entity> {
+    let query = query_new<Entity>();
+    let i: i64 = 0;
+    let cnt = len(world.removed_components) as i64;
+    while i < cnt {
+        let removed = world.removed_components[i];
+        if removed.component_id == component_id {
+            if removed.tick > since_tick { query.items.push(removed.entity); };
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_removed_components_auto<R, M>(world: TableErasedWorld<R, M>, type_id: i32, since_tick: i32) -> Query<Entity> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world, type_id);
+    return table_erased_world_removed_components<R, M>(world, component_id, since_tick);
+}
+
+fn table_erased_world_clear_removed_components<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> {
+    let removed_components: Vec<TableErasedRemovedComponent> = Vec::new();
+    world.removed_components = removed_components;
+    return world;
 }
 
 fn table_erased_world_query<T, R, M>(world: TableErasedWorld<R, M>, component_id: i32, type_id: i32) -> Query<EntityItem<T>> {
@@ -3185,6 +3244,54 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     let event = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w16, message_reader_new(), table_erased_event_default());
     if time.tick != 2 { panic(11637); };
     if event.value.amount != 6 { panic(11638); };
+}
+
+@test "table erased world tracks removed components"() {
+    let w0 = table_erased_test_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, tag) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let (w5, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let (w6, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let w7 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let w8 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w7, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 10, y: 0 });
+    let w9 = table_erased_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w8, e1, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 100 });
+    let w10 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w11 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w10, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 20, y: 0 });
+    let w12 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w11, e2, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 200 });
+    let replace_before = w12.registry.change_tick;
+    let w13 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 3, y: 0 });
+    let replaced_removed = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w13, position.id, replace_before - 1);
+    if len(replaced_removed.items) != 0 { panic(12900); };
+
+    let remove_since = w13.registry.change_tick;
+    let w14 = table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w13);
+    let w15 = table_erased_world_remove_auto<TableErasedTime, TableErasedEvent>(w14, e1, TABLE_ERASED_MARKER_TYPE);
+    let removed_marker = table_erased_world_removed_components_auto<TableErasedTime, TableErasedEvent>(w15, TABLE_ERASED_MARKER_TYPE, remove_since);
+    if len(removed_marker.items) != 1 { panic(12901); };
+    if removed_marker.items[0].id != e1.id { panic(12902); };
+    let removed_marker_current = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w15, marker.id, w15.registry.change_tick);
+    if len(removed_marker_current.items) != 0 { panic(12903); };
+
+    let despawn_since = w15.registry.change_tick;
+    let w16 = table_erased_world_increment_tick<TableErasedTime, TableErasedEvent>(w15);
+    let w17 = table_erased_world_despawn<TableErasedTime, TableErasedEvent>(w16, e2);
+    let removed_pos = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w17, position.id, despawn_since);
+    let removed_vel = table_erased_world_removed_components_auto<TableErasedTime, TableErasedEvent>(w17, TABLE_ERASED_VEL_TYPE, despawn_since);
+    let removed_tag = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w17, tag.id, despawn_since);
+    let removed_marker_after_despawn = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w17, marker.id, despawn_since);
+    if len(removed_pos.items) != 1 { panic(12904); };
+    if removed_pos.items[0].id != e2.id { panic(12905); };
+    if len(removed_vel.items) != 1 { panic(12906); };
+    if removed_vel.items[0].id != e2.id { panic(12907); };
+    if len(removed_tag.items) != 1 { panic(12908); };
+    if removed_tag.items[0].id != e2.id { panic(12909); };
+    if len(removed_marker_after_despawn.items) != 0 { panic(12910); };
+
+    let w18 = table_erased_world_clear_removed_components<TableErasedTime, TableErasedEvent>(w17);
+    let removed_after_clear = table_erased_world_removed_components<TableErasedTime, TableErasedEvent>(w18, position.id, 0);
+    if len(removed_after_clear.items) != 0 { panic(12911); };
 }
 
 @test "table erased query get single and get many preserve entity order"() {
