@@ -70,7 +70,7 @@ lib/
 ├── world_registry_typed.sla — Registry-bound typed A/B value owner and queries
 ├── world_registry_store.sla — Registry-owned arbitrary homogeneous typed value columns with joins
 ├── world_registry_erased.sla — Registry-owned type-erased heterogeneous component columns
-├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup, `Query<Entity>`, query `count`/`is_empty`/`contains`, `single`/`get`/ordered `get_many`/`get_many_unique`/`iter_many` helpers including Bevy-shaped pair-mut `single_mut`/`get_mut`/`get_many_mut`/`get_many_unique_mut`/`iter_many_mut`/`iter_many_unique_mut` aliases and pair-mut `as_readonly` projection, K=2..10 query combinations, query filters, binary `Or`/`And` filters, `Spawned` filters, `SpawnDetails::spawned_by` metadata, `Option`/`Has` query data, direct generated `AnyOf` query data up to six branches, generated nested `WithAnyOf` query data up to six branches, nested pair `AnyOf` query data up to four branches, and optional tuple query data
+├── world_table_erased.sla — Archetype table-row type-erased heterogeneous component storage with type-id metadata lookup, `Query<Entity>`, query `count`/`is_empty`/`contains`, `single`/`get`/ordered `get_many`/`get_many_unique`/`iter_many` helpers including Bevy-shaped pair-mut `single_mut`/`get_mut`/`get_many_mut`/`get_many_unique_mut`/`iter_many_mut`/`iter_many_unique_mut` aliases and pair-mut `as_readonly` projection, K=2..10 query combinations, query filters, binary `Or`/`And` filters, `Spawned` filters, `SpawnDetails::spawned_by` metadata, `Option`/`Has` query data, direct generated `AnyOf` query data up to six branches, generated nested `WithAnyOf` query data up to six branches, generated nested pair `AnyOf` query data up to six branches, and optional tuple query data
 ├── world_table_erased_relationship.sla — TableErasedWorld + RelationshipWorld wrapper with synchronized entity allocation and linked despawn
 ├── world_table_erased_observer.sla — TableErasedWorld + erased observer wrapper with component lifecycle and targeted entity events
 ├── bundle_table_erased.sla — TableErasedWorld component bundle constructors plus spawn/insert helpers
@@ -82,9 +82,9 @@ lib/
 ├── schedule_table_erased_relationship.sla — TableErasedRelationshipWorld Schedule with component/relationship access tracking and batch planning
 ├── system_param_table_erased_relationship.sla — TableErasedRelationshipWorld query/relationship/Commands/ResMut/message system-param adapters
 ├── schedule_table_erased_observer.sla — TableErasedObserverWorld Schedule with component/event access tracking and batch planning
-├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters
+├── system_param_table_erased_observer.sla — TableErasedObserverWorld entity/filter/query-data/query-inspection/Single/Populated/Commands/ResMut/message/event-trigger system-param adapters, including generated `PairWithAnyOf5/6` runners
 ├── schedule_table_erased.sla — TableErasedWorld Schedule with type-id access tracking and parallel batch planning
-├── system_param_table_erased.sla — TableErasedWorld entity/filter/query-data/query-inspection/Single/Populated/resource/Commands/ResMut/message system-param adapters, including type-id helpers
+├── system_param_table_erased.sla — TableErasedWorld entity/filter/query-data/query-inspection/Single/Populated/resource/Commands/ResMut/message system-param adapters, including type-id helpers and generated `PairWithAnyOf5/6` runners
 ├── resource.sla      — Generic ResourceSlot<T>
 ├── messages.sla      — Generic fixed-capacity Messages<T>, MessageWriter<T>, and reader cursor
 ├── messages_erased.sla — Type-erased multi-message channels keyed by `message_type_id()` impl metadata
