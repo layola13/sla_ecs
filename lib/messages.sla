@@ -36,6 +36,19 @@ struct MessageWrite<T> {
     id: i64,
 }
 
+struct MessageDrain<T> {
+    messages: Messages<T>,
+    count: i64,
+    ids: [i64; 16],
+    values: [T; 16],
+}
+
+struct MessageDrainItems<T> {
+    count: i64,
+    ids: [i64; 16],
+    values: [T; 16],
+}
+
 struct MessageMut<T> {
     index: i64,
     value: T,
@@ -201,6 +214,44 @@ fn messages_update<T>(messages: Messages<T>) -> Messages<T> {
     messages.count = write;
     messages.current_start_id = messages.next_id;
     return messages;
+}
+
+fn messages_update_drain<T>(messages: Messages<T>, default_value: T) -> MessageDrain<T> {
+    let read: i64 = 0;
+    let write: i64 = 0;
+    let drained_count: i64 = 0;
+    let drained_ids = [-1; 16];
+    let drained_values = [default_value; 16];
+    while read < messages.count {
+        if messages.ids[read] < messages.current_start_id {
+            drained_ids[drained_count] = messages.ids[read];
+            drained_values[drained_count] = messages.values[read];
+            drained_count = drained_count + 1;
+        } else {
+            messages.ids[write] = messages.ids[read];
+            messages.values[write] = messages.values[read];
+            write = write + 1;
+        };
+        read = read + 1;
+    }
+    messages.count = write;
+    messages.current_start_id = messages.next_id;
+    return MessageDrain<T> { messages: messages, count: drained_count, ids: drained_ids, values: drained_values };
+}
+
+fn messages_drain<T>(messages: Messages<T>, default_value: T) -> MessageDrain<T> {
+    let i: i64 = 0;
+    let drained_ids = [-1; 16];
+    let drained_values = [default_value; 16];
+    while i < messages.count {
+        drained_ids[i] = messages.ids[i];
+        drained_values[i] = messages.values[i];
+        i = i + 1;
+    }
+    let drained_count = messages.count;
+    messages.count = 0;
+    messages.current_start_id = messages.next_id;
+    return MessageDrain<T> { messages: messages, count: drained_count, ids: drained_ids, values: drained_values };
 }
 
 fn messages_current_update_len<T>(messages: Messages<T>) -> i64 {
@@ -544,4 +595,60 @@ fn test_damage_default() -> TestDamageMessage {
     let m7 = messages_update<TestDamageMessage>(m6);
     if messages_len<TestDamageMessage>(m7) != 0 { panic(2518); };
     if messages_reader_missed<TestDamageMessage>(m7, message_reader_new()) != 3 { panic(2519); };
+}
+
+@test "messages update drain returns older buffer and keeps current"() {
+    let m0 = test_damage_messages_new();
+    let m1 = messages_update<TestDamageMessage>(m0);
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 1 });
+    let m3 = messages_update<TestDamageMessage>(m2);
+    let m4 = messages_write<TestDamageMessage>(m3, TestDamageMessage { amount: 2 });
+    let m5 = messages_write<TestDamageMessage>(m4, TestDamageMessage { amount: 3 });
+
+    let d1 = messages_update_drain<TestDamageMessage>(m5, test_damage_default());
+    if d1.count != 1 { panic(2520); };
+    if d1.ids[0] != 0 { panic(2521); };
+    if d1.values[0].amount != 1 { panic(2522); };
+    if messages_len<TestDamageMessage>(d1.messages) != 2 { panic(2523); };
+    if messages_current_update_len<TestDamageMessage>(d1.messages) != 0 { panic(2524); };
+    let kept1 = messages_get_message<TestDamageMessage>(d1.messages, message_id_new(1), test_damage_default());
+    let kept2 = messages_get_message<TestDamageMessage>(d1.messages, message_id_new(2), test_damage_default());
+    if kept1.value.amount != 2 { panic(2525); };
+    if kept2.value.amount != 3 { panic(2526); };
+
+    let d2 = messages_update_drain<TestDamageMessage>(d1.messages, test_damage_default());
+    if d2.count != 2 { panic(2527); };
+    if d2.ids[0] != 1 { panic(2528); };
+    if d2.ids[1] != 2 { panic(2529); };
+    if d2.values[0].amount != 2 { panic(2530); };
+    if d2.values[1].amount != 3 { panic(2531); };
+    if messages_len<TestDamageMessage>(d2.messages) != 0 { panic(2532); };
+    if messages_reader_missed<TestDamageMessage>(d2.messages, message_reader_new()) != 3 { panic(2533); };
+}
+
+@test "messages drain returns all retained messages and clears"() {
+    let m0 = test_damage_messages_new();
+    let m1 = messages_update<TestDamageMessage>(m0);
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 1 });
+    let m3 = messages_update<TestDamageMessage>(m2);
+    let m4 = messages_write<TestDamageMessage>(m3, TestDamageMessage { amount: 2 });
+    let m5 = messages_write<TestDamageMessage>(m4, TestDamageMessage { amount: 3 });
+
+    let drained = messages_drain<TestDamageMessage>(m5, test_damage_default());
+    if drained.count != 3 { panic(2534); };
+    if drained.ids[0] != 0 { panic(2535); };
+    if drained.ids[1] != 1 { panic(2536); };
+    if drained.ids[2] != 2 { panic(2537); };
+    if drained.values[0].amount != 1 { panic(2538); };
+    if drained.values[1].amount != 2 { panic(2539); };
+    if drained.values[2].amount != 3 { panic(2540); };
+    if messages_len<TestDamageMessage>(drained.messages) != 0 { panic(2541); };
+    if drained.messages.next_id != 3 { panic(2542); };
+    if drained.messages.current_start_id != 3 { panic(2543); };
+    if messages_reader_missed<TestDamageMessage>(drained.messages, message_reader_new()) != 3 { panic(2544); };
+
+    let after = messages_write<TestDamageMessage>(drained.messages, TestDamageMessage { amount: 4 });
+    let read_after = messages_read_next_with_id<TestDamageMessage>(after, MessageReader { cursor: 3 }, test_damage_default());
+    if read_after.id != 3 { panic(2545); };
+    if read_after.value.amount != 4 { panic(2546); };
 }

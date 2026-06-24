@@ -3166,6 +3166,18 @@ fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, 
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
 fn table_erased_world_update_messages<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.messages = messages_update<M>(world.messages); return world; }
 fn table_erased_world_current_update_message_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_current_update_len<M>(world.messages); }
+fn table_erased_world_update_messages_drain<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageDrainItems<M>) {
+    let drained = messages_update_drain<M>(world.messages, default_value);
+    let items = MessageDrainItems<M> { count: drained.count, ids: drained.ids, values: drained.values };
+    world.messages = drained.messages;
+    return (world, items);
+}
+fn table_erased_world_drain_messages<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageDrainItems<M>) {
+    let drained = messages_drain<M>(world.messages, default_value);
+    let items = MessageDrainItems<M> { count: drained.count, ids: drained.ids, values: drained.values };
+    world.messages = drained.messages;
+    return (world, items);
+}
 
 const TABLE_ERASED_POS_TYPE: i32 = 301;
 const TABLE_ERASED_VEL_TYPE: i32 = 302;
@@ -3311,6 +3323,34 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
 
     let w7 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w6);
     if messages_len<TableErasedEvent>(w7.messages) != 0 { panic(11664); };
+}
+
+@test "table erased world message drains return retained buffers"() {
+    let w0 = table_erased_test_world_new();
+    let w1 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0);
+    let w2 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w1, TableErasedEvent { amount: 1 });
+    let w3 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w2);
+    let w4 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w3, TableErasedEvent { amount: 2 });
+    let w5 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w4, TableErasedEvent { amount: 3 });
+
+    let (w6, drained_old) = table_erased_world_update_messages_drain<TableErasedTime, TableErasedEvent>(w5, table_erased_event_default());
+    if drained_old.count != 1 { panic(11665); };
+    if drained_old.ids[0] != 0 { panic(11666); };
+    if drained_old.values[0].amount != 1 { panic(11667); };
+    if messages_len<TableErasedEvent>(w6.messages) != 2 { panic(11668); };
+    let kept = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w6, message_id_new(1), table_erased_event_default());
+    if kept.has_value != true { panic(11669); };
+    if kept.value.amount != 2 { panic(11670); };
+
+    let (w7, drained_all) = table_erased_world_drain_messages<TableErasedTime, TableErasedEvent>(w6, table_erased_event_default());
+    if drained_all.count != 2 { panic(11671); };
+    if drained_all.ids[0] != 1 { panic(11672); };
+    if drained_all.ids[1] != 2 { panic(11673); };
+    if drained_all.values[0].amount != 2 { panic(11674); };
+    if drained_all.values[1].amount != 3 { panic(11675); };
+    if messages_len<TableErasedEvent>(w7.messages) != 0 { panic(11676); };
+    if w7.messages.next_id != 3 { panic(11677); };
+    if w7.messages.current_start_id != 3 { panic(11678); };
 }
 
 @test "table erased world tracks removed components"() {
