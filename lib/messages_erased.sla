@@ -7,12 +7,15 @@
 
 struct ErasedMessageValue {
     type_id: i32,
+    id: i64,
     raw: *u8,
 }
 
 struct ErasedMessageChannel {
     type_id: i32,
     drop_fn: fn(*u8) -> void,
+    next_id: i64,
+    current_start_id: i64,
     values: Vec<ErasedMessageValue>,
 }
 
@@ -32,10 +35,34 @@ struct ErasedMessageRead<T> {
     reader: MessageReader,
 }
 
-fn erased_message_value_new<T>(type_id: i32, value: T) -> ErasedMessageValue {
+struct ErasedMessageReadWithId<T> {
+    has_value: bool,
+    value: T,
+    id: i64,
+    reader: MessageReader,
+}
+
+struct ErasedMessageWrite {
+    messages: ErasedMessages,
+    id: i64,
+}
+
+struct ErasedMessageBatchWrite {
+    messages: ErasedMessages,
+    first_id: i64,
+    count: i64,
+}
+
+struct ErasedMessageDrain {
+    messages: ErasedMessages,
+    count: i64,
+    values: Vec<ErasedMessageValue>,
+}
+
+fn erased_message_value_new<T>(type_id: i32, id: i64, value: T) -> ErasedMessageValue {
     let boxed = Box::new(value);
     let raw = Box::into_raw(boxed) as *u8;
-    return ErasedMessageValue { type_id: type_id, raw: raw };
+    return ErasedMessageValue { type_id: type_id, id: id, raw: raw };
 }
 
 fn erased_message_value_read<T>(value: ErasedMessageValue, type_id: i32) -> T {
@@ -51,7 +78,7 @@ fn erased_messages_new() -> ErasedMessages {
 
 fn erased_message_channel_new(type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessageChannel {
     let values: Vec<ErasedMessageValue> = Vec::new();
-    return ErasedMessageChannel { type_id: type_id, drop_fn: drop_fn, values: values };
+    return ErasedMessageChannel { type_id: type_id, drop_fn: drop_fn, next_id: 0, current_start_id: 0, values: values };
 }
 
 fn erased_messages_channel_slot(messages: ErasedMessages, type_id: i32) -> i64 {
@@ -74,6 +101,21 @@ fn erased_messages_channel_len(messages: ErasedMessages, type_id: i32) -> i64 {
     return len(messages.channels[slot].values) as i64;
 }
 
+fn erased_messages_current_update_len(messages: ErasedMessages, type_id: i32) -> i64 {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return 0; };
+    let i: i64 = 0;
+    let result: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        if messages.channels[slot].values[i].id >= messages.channels[slot].current_start_id {
+            result = result + 1;
+        };
+        i = i + 1;
+    }
+    return result;
+}
+
 fn erased_messages_ensure_channel(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessages {
     let slot = erased_messages_channel_slot(messages, type_id);
     if slot >= 0 { return messages; };
@@ -81,10 +123,126 @@ fn erased_messages_ensure_channel(messages: ErasedMessages, type_id: i32, drop_f
     return messages;
 }
 
-fn erased_messages_write<T>(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> ErasedMessages {
+fn erased_messages_write_with_id<T>(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> ErasedMessageWrite {
     messages = erased_messages_ensure_channel(messages, type_id, drop_fn);
     let slot = erased_messages_channel_slot(messages, type_id);
-    messages.channels[slot].values.push(erased_message_value_new<T>(type_id, value));
+    let id = messages.channels[slot].next_id;
+    messages.channels[slot].values.push(erased_message_value_new<T>(type_id, id, value));
+    messages.channels[slot].next_id = id + 1;
+    return ErasedMessageWrite { messages: messages, id: id };
+}
+
+fn erased_messages_write<T>(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void, value: T) -> ErasedMessages {
+    let written = erased_messages_write_with_id<T>(messages, type_id, drop_fn, value);
+    return written.messages;
+}
+
+fn erased_messages_write_default<T>(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void, default_value: T) -> ErasedMessageWrite {
+    return erased_messages_write_with_id<T>(messages, type_id, drop_fn, default_value);
+}
+
+fn erased_messages_write_batch(messages: ErasedMessages, writer: ErasedMessageWriter) -> ErasedMessageBatchWrite {
+    messages = erased_messages_ensure_channel(messages, writer.type_id, writer.drop_fn);
+    let slot = erased_messages_channel_slot(messages, writer.type_id);
+    let first_id = messages.channels[slot].next_id;
+    let i: i64 = 0;
+    let cnt = len(writer.values) as i64;
+    while i < cnt {
+        let value = writer.values[i];
+        if value.type_id != writer.type_id { panic(12701); };
+        value.id = messages.channels[slot].next_id;
+        messages.channels[slot].next_id = messages.channels[slot].next_id + 1;
+        messages.channels[slot].values.push(value);
+        i = i + 1;
+    }
+    return ErasedMessageBatchWrite { messages: messages, first_id: first_id, count: cnt };
+}
+
+fn erased_message_batch_write_id_at(batch: ErasedMessageBatchWrite, index: i64) -> i64 {
+    if index < 0 { return message_id_none(); };
+    if index >= batch.count { return message_id_none(); };
+    return message_id_new(batch.first_id + index);
+}
+
+fn erased_messages_channel_next_id(messages: ErasedMessages, type_id: i32) -> i64 {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return 0; };
+    return messages.channels[slot].next_id;
+}
+
+fn erased_message_reader_current(messages: ErasedMessages, type_id: i32) -> MessageReader {
+    return MessageReader { cursor: erased_messages_channel_next_id(messages, type_id) };
+}
+
+fn erased_message_reader_current_update(messages: ErasedMessages, type_id: i32) -> MessageReader {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return MessageReader { cursor: 0 }; };
+    return MessageReader { cursor: messages.channels[slot].current_start_id };
+}
+
+fn erased_messages_len(messages: ErasedMessages, type_id: i32) -> i64 {
+    return erased_messages_channel_len(messages, type_id);
+}
+
+fn erased_messages_is_empty(messages: ErasedMessages, type_id: i32) -> bool {
+    return erased_messages_len(messages, type_id) == 0;
+}
+
+fn erased_messages_oldest_id(messages: ErasedMessages, type_id: i32) -> i64 {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return 0; };
+    if len(messages.channels[slot].values) == 0 { return messages.channels[slot].next_id; };
+    return messages.channels[slot].values[0].id;
+}
+
+fn erased_messages_reader_len(messages: ErasedMessages, type_id: i32, reader: MessageReader) -> i64 {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return 0; };
+    let i: i64 = 0;
+    let result: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        if messages.channels[slot].values[i].id >= reader.cursor {
+            result = result + 1;
+        };
+        i = i + 1;
+    }
+    return result;
+}
+
+fn erased_messages_reader_missed(messages: ErasedMessages, type_id: i32, reader: MessageReader) -> i64 {
+    let oldest = erased_messages_oldest_id(messages, type_id);
+    if reader.cursor >= oldest { return 0; };
+    return oldest - reader.cursor;
+}
+
+fn erased_messages_reader_is_empty(messages: ErasedMessages, type_id: i32, reader: MessageReader) -> bool {
+    return erased_messages_reader_len(messages, type_id, reader) == 0;
+}
+
+fn erased_messages_reader_clear(messages: ErasedMessages, type_id: i32, reader: MessageReader) -> MessageReader {
+    reader.cursor = erased_messages_channel_next_id(messages, type_id);
+    return reader;
+}
+
+fn erased_messages_update_channel(messages: ErasedMessages, type_id: i32) -> ErasedMessages {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return messages; };
+    let kept: Vec<ErasedMessageValue> = Vec::new();
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    let drop_fn = messages.channels[slot].drop_fn;
+    while i < cnt {
+        let value = messages.channels[slot].values[i];
+        if value.id >= messages.channels[slot].current_start_id {
+            kept.push(value);
+        } else {
+            drop_fn(value.raw);
+        };
+        i = i + 1;
+    }
+    messages.channels[slot].values = kept;
+    messages.channels[slot].current_start_id = messages.channels[slot].next_id;
     return messages;
 }
 
@@ -94,33 +252,52 @@ fn erased_message_writer_new(type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMe
 }
 
 fn erased_message_writer_send<T>(writer: ErasedMessageWriter, value: T) -> ErasedMessageWriter {
-    writer.values.push(erased_message_value_new<T>(writer.type_id, value));
+    writer.values.push(erased_message_value_new<T>(writer.type_id, message_id_none(), value));
     return writer;
 }
 
 fn erased_messages_apply_writer(messages: ErasedMessages, writer: ErasedMessageWriter) -> ErasedMessages {
-    messages = erased_messages_ensure_channel(messages, writer.type_id, writer.drop_fn);
-    let slot = erased_messages_channel_slot(messages, writer.type_id);
-    let i: i64 = 0;
-    let cnt = len(writer.values) as i64;
-    while i < cnt {
-        let value = writer.values[i];
-        if value.type_id != writer.type_id { panic(12701); };
-        messages.channels[slot].values.push(value);
-        i = i + 1;
-    }
-    return messages;
+    let written = erased_messages_write_batch(messages, writer);
+    return written.messages;
 }
 
 fn erased_messages_read_next<T>(messages: ErasedMessages, type_id: i32, reader: MessageReader, default_value: T) -> ErasedMessageRead<T> {
+    let read = erased_messages_read_next_with_id<T>(messages, type_id, reader, default_value);
+    return ErasedMessageRead<T> { has_value: read.has_value, value: read.value, reader: read.reader };
+}
+
+fn erased_messages_read_next_with_id<T>(messages: ErasedMessages, type_id: i32, reader: MessageReader, default_value: T) -> ErasedMessageReadWithId<T> {
     let slot = erased_messages_channel_slot(messages, type_id);
-    if slot < 0 { return ErasedMessageRead<T> { has_value: false, value: default_value, reader: reader }; };
-    if reader.cursor >= (len(messages.channels[slot].values) as i64) {
-        return ErasedMessageRead<T> { has_value: false, value: default_value, reader: reader };
-    };
-    let value = erased_message_value_read<T>(messages.channels[slot].values[reader.cursor], type_id);
-    reader.cursor = reader.cursor + 1;
-    return ErasedMessageRead<T> { has_value: true, value: value, reader: reader };
+    if slot < 0 { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        let stored = messages.channels[slot].values[i];
+        if stored.id >= reader.cursor {
+            let value = erased_message_value_read<T>(stored, type_id);
+            reader.cursor = stored.id + 1;
+            return ErasedMessageReadWithId<T> { has_value: true, value: value, id: stored.id, reader: reader };
+        };
+        i = i + 1;
+    }
+    return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader };
+}
+
+fn erased_messages_get_message<T>(messages: ErasedMessages, type_id: i32, id: i64, default_value: T) -> ErasedMessageReadWithId<T> {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    let reader = MessageReader { cursor: erased_messages_channel_next_id(messages, type_id) };
+    if slot < 0 { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        let stored = messages.channels[slot].values[i];
+        if stored.id == id {
+            let value = erased_message_value_read<T>(stored, type_id);
+            return ErasedMessageReadWithId<T> { has_value: true, value: value, id: id, reader: reader };
+        };
+        i = i + 1;
+    }
+    return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader };
 }
 
 fn erased_messages_clear_channel(messages: ErasedMessages, type_id: i32) -> ErasedMessages {
@@ -135,7 +312,62 @@ fn erased_messages_clear_channel(messages: ErasedMessages, type_id: i32) -> Eras
     }
     let values: Vec<ErasedMessageValue> = Vec::new();
     messages.channels[slot].values = values;
+    messages.channels[slot].current_start_id = messages.channels[slot].next_id;
     return messages;
+}
+
+fn erased_messages_update_drain_channel(messages: ErasedMessages, type_id: i32) -> ErasedMessageDrain {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    let drained: Vec<ErasedMessageValue> = Vec::new();
+    if slot < 0 { return ErasedMessageDrain { messages: messages, count: 0, values: drained }; };
+    let kept: Vec<ErasedMessageValue> = Vec::new();
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        let value = messages.channels[slot].values[i];
+        if value.id < messages.channels[slot].current_start_id {
+            drained.push(value);
+        } else {
+            kept.push(value);
+        };
+        i = i + 1;
+    }
+    messages.channels[slot].values = kept;
+    messages.channels[slot].current_start_id = messages.channels[slot].next_id;
+    return ErasedMessageDrain { messages: messages, count: len(drained) as i64, values: drained };
+}
+
+fn erased_messages_drain_channel(messages: ErasedMessages, type_id: i32) -> ErasedMessageDrain {
+    let slot = erased_messages_channel_slot(messages, type_id);
+    let drained: Vec<ErasedMessageValue> = Vec::new();
+    if slot < 0 { return ErasedMessageDrain { messages: messages, count: 0, values: drained }; };
+    let i: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        drained.push(messages.channels[slot].values[i]);
+        i = i + 1;
+    }
+    let kept: Vec<ErasedMessageValue> = Vec::new();
+    messages.channels[slot].values = kept;
+    messages.channels[slot].current_start_id = messages.channels[slot].next_id;
+    return ErasedMessageDrain { messages: messages, count: cnt, values: drained };
+}
+
+fn erased_message_drain_value<T>(drain: ErasedMessageDrain, index: i64, type_id: i32, default_value: T) -> ErasedMessageReadWithId<T> {
+    let reader = MessageReader { cursor: 0 };
+    if index < 0 { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    if index >= drain.count { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    let stored = drain.values[index];
+    let value = erased_message_value_read<T>(stored, type_id);
+    return ErasedMessageReadWithId<T> { has_value: true, value: value, id: stored.id, reader: reader };
+}
+
+fn erased_message_drain_drop(drain: ErasedMessageDrain, drop_fn: fn(*u8) -> void) {
+    let i: i64 = 0;
+    while i < drain.count {
+        drop_fn(drain.values[i].raw);
+        i = i + 1;
+    }
 }
 
 @derive(Message)
@@ -197,4 +429,140 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     if b1.value.amount != 3 { panic(12723); };
     let messages2 = erased_messages_clear_channel(messages1, damage_type);
     if erased_messages_channel_len(messages2, damage_type) != 0 { panic(12724); };
+}
+
+@test "erased messages use global ids and direct lookup"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let w1 = erased_messages_write_with_id<ErasedDamageMessage>(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 5 });
+    let w2 = erased_messages_write_with_id<ErasedDamageMessage>(w1.messages, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 7 });
+    if w1.id != 0 { panic(12730); };
+    if w2.id != 1 { panic(12731); };
+    if erased_messages_channel_next_id(w2.messages, damage_type) != 2 { panic(12732); };
+
+    let read1 = erased_messages_read_next_with_id<ErasedDamageMessage>(w2.messages, damage_type, message_reader_new(), erased_damage_default());
+    let read2 = erased_messages_read_next_with_id<ErasedDamageMessage>(w2.messages, damage_type, read1.reader, erased_damage_default());
+    let read3 = erased_messages_read_next_with_id<ErasedDamageMessage>(w2.messages, damage_type, read2.reader, erased_damage_default());
+    if read1.id != 0 { panic(12733); };
+    if read1.value.amount != 5 { panic(12734); };
+    if read2.id != 1 { panic(12735); };
+    if read2.value.amount != 7 { panic(12736); };
+    if read3.has_value { panic(12737); };
+    if read3.id != -1 { panic(12738); };
+
+    let found = erased_messages_get_message<ErasedDamageMessage>(w2.messages, damage_type, w1.id, erased_damage_default());
+    if found.has_value != true { panic(12739); };
+    if found.value.amount != 5 { panic(12740); };
+    let missing = erased_messages_get_message<ErasedDamageMessage>(w2.messages, damage_type, 99, erased_damage_default());
+    if missing.has_value { panic(12741); };
+}
+
+@test "erased message reader cursor survives clear"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let w1 = erased_messages_write_with_id<ErasedDamageMessage>(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 5 });
+    let read1 = erased_messages_read_next_with_id<ErasedDamageMessage>(w1.messages, damage_type, message_reader_new(), erased_damage_default());
+    if read1.reader.cursor != 1 { panic(12750); };
+    let messages1 = erased_messages_clear_channel(w1.messages, damage_type);
+    if erased_messages_channel_len(messages1, damage_type) != 0 { panic(12751); };
+    if erased_messages_reader_missed(messages1, damage_type, message_reader_new()) != 1 { panic(12752); };
+    let w2 = erased_messages_write_with_id<ErasedDamageMessage>(messages1, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 9 });
+    if w2.id != 1 { panic(12753); };
+    if erased_messages_reader_len(w2.messages, damage_type, read1.reader) != 1 { panic(12754); };
+    let read2 = erased_messages_read_next_with_id<ErasedDamageMessage>(w2.messages, damage_type, read1.reader, erased_damage_default());
+    if read2.id != 1 { panic(12755); };
+    if read2.value.amount != 9 { panic(12756); };
+
+    let current = erased_message_reader_current(w2.messages, damage_type);
+    if current.cursor != 2 { panic(12757); };
+    let w3 = erased_messages_write_with_id<ErasedDamageMessage>(w2.messages, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 11 });
+    let read_current = erased_messages_read_next_with_id<ErasedDamageMessage>(w3.messages, damage_type, current, erased_damage_default());
+    if read_current.id != 2 { panic(12758); };
+    if read_current.value.amount != 11 { panic(12759); };
+}
+
+@test "erased messages batch and default writes return ids"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let first = erased_messages_write_default<ErasedDamageMessage>(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 1 });
+    if first.id != 0 { panic(12760); };
+    let writer0 = erased_message_writer_new(damage_type, ecs_box_drop<ErasedDamageMessage>);
+    let writer1 = erased_message_writer_send<ErasedDamageMessage>(writer0, ErasedDamageMessage { amount: 3 });
+    let writer2 = erased_message_writer_send<ErasedDamageMessage>(writer1, ErasedDamageMessage { amount: 5 });
+    let batch = erased_messages_write_batch(first.messages, writer2);
+    if batch.first_id != 1 { panic(12761); };
+    if batch.count != 2 { panic(12762); };
+    if erased_message_batch_write_id_at(batch, 0) != 1 { panic(12763); };
+    if erased_message_batch_write_id_at(batch, 1) != 2 { panic(12764); };
+    if erased_message_batch_write_id_at(batch, 2) != -1 { panic(12765); };
+    if erased_messages_channel_next_id(batch.messages, damage_type) != 3 { panic(12766); };
+    let read1 = erased_messages_read_next_with_id<ErasedDamageMessage>(batch.messages, damage_type, MessageReader { cursor: 1 }, erased_damage_default());
+    let read2 = erased_messages_read_next_with_id<ErasedDamageMessage>(batch.messages, damage_type, read1.reader, erased_damage_default());
+    if read1.id != 1 { panic(12767); };
+    if read1.value.amount != 3 { panic(12768); };
+    if read2.id != 2 { panic(12769); };
+    if read2.value.amount != 5 { panic(12770); };
+}
+
+@test "erased messages update keeps current buffer and drops older"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let messages1 = erased_messages_ensure_channel(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>);
+    let messages2 = erased_messages_update_channel(messages1, damage_type);
+    let messages3 = erased_messages_write<ErasedDamageMessage>(messages2, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 1 });
+    if erased_messages_current_update_len(messages3, damage_type) != 1 { panic(12780); };
+    let messages4 = erased_messages_update_channel(messages3, damage_type);
+    if erased_messages_channel_len(messages4, damage_type) != 1 { panic(12781); };
+    if erased_messages_current_update_len(messages4, damage_type) != 0 { panic(12782); };
+    let messages5 = erased_messages_write<ErasedDamageMessage>(messages4, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 2 });
+    let messages6 = erased_messages_write<ErasedDamageMessage>(messages5, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 3 });
+    if erased_messages_channel_len(messages6, damage_type) != 3 { panic(12783); };
+    if erased_messages_current_update_len(messages6, damage_type) != 2 { panic(12784); };
+    let current_reader = erased_message_reader_current_update(messages6, damage_type);
+    let current1 = erased_messages_read_next_with_id<ErasedDamageMessage>(messages6, damage_type, current_reader, erased_damage_default());
+    let current2 = erased_messages_read_next_with_id<ErasedDamageMessage>(messages6, damage_type, current1.reader, erased_damage_default());
+    if current1.id != 1 { panic(12785); };
+    if current1.value.amount != 2 { panic(12786); };
+    if current2.id != 2 { panic(12787); };
+    if current2.value.amount != 3 { panic(12788); };
+    let messages7 = erased_messages_update_channel(messages6, damage_type);
+    if erased_messages_channel_len(messages7, damage_type) != 2 { panic(12789); };
+    if erased_messages_reader_missed(messages7, damage_type, message_reader_new()) != 1 { panic(12790); };
+    let old = erased_messages_get_message<ErasedDamageMessage>(messages7, damage_type, 0, erased_damage_default());
+    if old.has_value { panic(12791); };
+    let kept = erased_messages_get_message<ErasedDamageMessage>(messages7, damage_type, 1, erased_damage_default());
+    if kept.has_value != true { panic(12792); };
+    if kept.value.amount != 2 { panic(12793); };
+}
+
+@test "erased messages update drain and full drain return retained items"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let messages1 = erased_messages_ensure_channel(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>);
+    let messages2 = erased_messages_update_channel(messages1, damage_type);
+    let messages3 = erased_messages_write<ErasedDamageMessage>(messages2, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 1 });
+    let messages4 = erased_messages_update_channel(messages3, damage_type);
+    let messages5 = erased_messages_write<ErasedDamageMessage>(messages4, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 2 });
+    let messages6 = erased_messages_write<ErasedDamageMessage>(messages5, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 3 });
+
+    let d1 = erased_messages_update_drain_channel(messages6, damage_type);
+    if d1.count != 1 { panic(12800); };
+    let d1v = erased_message_drain_value<ErasedDamageMessage>(d1, 0, damage_type, erased_damage_default());
+    if d1v.id != 0 { panic(12801); };
+    if d1v.value.amount != 1 { panic(12802); };
+    if erased_messages_channel_len(d1.messages, damage_type) != 2 { panic(12803); };
+
+    let d2 = erased_messages_drain_channel(d1.messages, damage_type);
+    if d2.count != 2 { panic(12804); };
+    let d2v0 = erased_message_drain_value<ErasedDamageMessage>(d2, 0, damage_type, erased_damage_default());
+    let d2v1 = erased_message_drain_value<ErasedDamageMessage>(d2, 1, damage_type, erased_damage_default());
+    if d2v0.id != 1 { panic(12805); };
+    if d2v0.value.amount != 2 { panic(12806); };
+    if d2v1.id != 2 { panic(12807); };
+    if d2v1.value.amount != 3 { panic(12808); };
+    if erased_messages_channel_len(d2.messages, damage_type) != 0 { panic(12809); };
+    if erased_messages_channel_next_id(d2.messages, damage_type) != 3 { panic(12810); };
+
+    let after = erased_messages_write_with_id<ErasedDamageMessage>(d2.messages, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 4 });
+    if after.id != 3 { panic(12811); };
 }
