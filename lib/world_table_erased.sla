@@ -3164,6 +3164,8 @@ fn table_erased_world_write_message_with_id<R, M>(world: TableErasedWorld<R, M>,
 fn table_erased_world_read_message<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageRead<M> { return messages_read_next<M>(world.messages, reader, default_value); }
 fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithId<M> { return messages_read_next_with_id<M>(world.messages, reader, default_value); }
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
+fn table_erased_world_update_messages<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.messages = messages_update<M>(world.messages); return world; }
+fn table_erased_world_current_update_message_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_current_update_len<M>(world.messages); }
 
 const TABLE_ERASED_POS_TYPE: i32 = 301;
 const TABLE_ERASED_VEL_TYPE: i32 = 302;
@@ -3281,6 +3283,34 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if id3 != 2 { panic(11651); };
     if read_current.id != 2 { panic(11652); };
     if read_current.value.amount != 11 { panic(11653); };
+}
+
+@test "table erased world messages update retains one frame"() {
+    let w0 = table_erased_test_world_new();
+    let w1 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0);
+    let w2 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w1, TableErasedEvent { amount: 1 });
+    if messages_len<TableErasedEvent>(w2.messages) != 1 { panic(11654); };
+    if table_erased_world_current_update_message_len<TableErasedTime, TableErasedEvent>(w2) != 1 { panic(11655); };
+
+    let w3 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w2);
+    if messages_len<TableErasedEvent>(w3.messages) != 1 { panic(11656); };
+    if table_erased_world_current_update_message_len<TableErasedTime, TableErasedEvent>(w3) != 0 { panic(11657); };
+
+    let w4 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w3, TableErasedEvent { amount: 2 });
+    let w5 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w4, TableErasedEvent { amount: 3 });
+    if messages_len<TableErasedEvent>(w5.messages) != 3 { panic(11658); };
+    if table_erased_world_current_update_message_len<TableErasedTime, TableErasedEvent>(w5) != 2 { panic(11659); };
+
+    let w6 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w5);
+    if messages_len<TableErasedEvent>(w6.messages) != 2 { panic(11660); };
+    let dropped = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w6, message_id_new(0), table_erased_event_default());
+    if dropped.has_value { panic(11661); };
+    let kept = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w6, message_id_new(1), table_erased_event_default());
+    if kept.has_value != true { panic(11662); };
+    if kept.value.amount != 2 { panic(11663); };
+
+    let w7 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w6);
+    if messages_len<TableErasedEvent>(w7.messages) != 0 { panic(11664); };
 }
 
 @test "table erased world tracks removed components"() {

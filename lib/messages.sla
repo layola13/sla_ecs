@@ -5,6 +5,7 @@
 struct Messages<T> {
     count: i64,
     next_id: i64,
+    current_start_id: i64,
     ids: [i64; 16],
     values: [T; 16],
 }
@@ -77,6 +78,7 @@ fn messages_new<T>(default_value: T) -> Messages<T> {
     return Messages<T> {
         count: 0,
         next_id: 0,
+        current_start_id: 0,
         ids: [-1; 16],
         values: [default_value; 16],
     };
@@ -88,6 +90,10 @@ fn message_reader_new() -> MessageReader {
 
 fn message_reader_current<T>(messages: Messages<T>) -> MessageReader {
     return MessageReader { cursor: messages.next_id };
+}
+
+fn message_reader_current_update<T>(messages: Messages<T>) -> MessageReader {
+    return MessageReader { cursor: messages.current_start_id };
 }
 
 fn message_writer_new<T>() -> MessageWriter<T> {
@@ -177,7 +183,36 @@ fn messages_is_empty<T>(messages: Messages<T>) -> bool {
 
 fn messages_clear<T>(messages: Messages<T>) -> Messages<T> {
     messages.count = 0;
+    messages.current_start_id = messages.next_id;
     return messages;
+}
+
+fn messages_update<T>(messages: Messages<T>) -> Messages<T> {
+    let read: i64 = 0;
+    let write: i64 = 0;
+    while read < messages.count {
+        if messages.ids[read] >= messages.current_start_id {
+            messages.ids[write] = messages.ids[read];
+            messages.values[write] = messages.values[read];
+            write = write + 1;
+        };
+        read = read + 1;
+    }
+    messages.count = write;
+    messages.current_start_id = messages.next_id;
+    return messages;
+}
+
+fn messages_current_update_len<T>(messages: Messages<T>) -> i64 {
+    let i: i64 = 0;
+    let result: i64 = 0;
+    while i < messages.count {
+        if messages.ids[i] >= messages.current_start_id {
+            result = result + 1;
+        };
+        i = i + 1;
+    }
+    return result;
 }
 
 fn messages_reader_len<T>(messages: Messages<T>, reader: MessageReader) -> i64 {
@@ -282,6 +317,7 @@ fn test_damage_default() -> TestDamageMessage {
     let m = messages_new<TestDamageMessage>(test_damage_default());
     if m.count != 0 { panic(2390); };
     if m.next_id != 0 { panic(2450); };
+    if m.current_start_id != 0 { panic(2497); };
     if messages_len<TestDamageMessage>(m) != 0 { panic(2451); };
     if messages_is_empty<TestDamageMessage>(m) != true { panic(2452); };
 }
@@ -462,4 +498,50 @@ fn test_damage_default() -> TestDamageMessage {
     let read_current = messages_read_next_with_id<TestDamageMessage>(w3, current, test_damage_default());
     if read_current.id != 2 { panic(2495); };
     if read_current.value.amount != 11 { panic(2496); };
+}
+
+@test "messages update keeps current buffer and drops older buffer"() {
+    let m0 = test_damage_messages_new();
+    if messages_current_update_len<TestDamageMessage>(m0) != 0 { panic(2498); };
+
+    let m1 = messages_update<TestDamageMessage>(m0);
+    if messages_len<TestDamageMessage>(m1) != 0 { panic(2499); };
+    if messages_current_update_len<TestDamageMessage>(m1) != 0 { panic(2500); };
+
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 1 });
+    if messages_len<TestDamageMessage>(m2) != 1 { panic(2501); };
+    if messages_current_update_len<TestDamageMessage>(m2) != 1 { panic(2502); };
+
+    let m3 = messages_update<TestDamageMessage>(m2);
+    if messages_len<TestDamageMessage>(m3) != 1 { panic(2503); };
+    if messages_current_update_len<TestDamageMessage>(m3) != 0 { panic(2504); };
+
+    let m4 = messages_write<TestDamageMessage>(m3, TestDamageMessage { amount: 2 });
+    let m5 = messages_write<TestDamageMessage>(m4, TestDamageMessage { amount: 3 });
+    if messages_len<TestDamageMessage>(m5) != 3 { panic(2505); };
+    if messages_current_update_len<TestDamageMessage>(m5) != 2 { panic(2506); };
+
+    let current_reader = message_reader_current_update<TestDamageMessage>(m5);
+    let current1 = messages_read_next_with_id<TestDamageMessage>(m5, current_reader, test_damage_default());
+    let current2 = messages_read_next_with_id<TestDamageMessage>(m5, current1.reader, test_damage_default());
+    let current3 = messages_read_next_with_id<TestDamageMessage>(m5, current2.reader, test_damage_default());
+    if current1.id != 1 { panic(2507); };
+    if current1.value.amount != 2 { panic(2508); };
+    if current2.id != 2 { panic(2509); };
+    if current2.value.amount != 3 { panic(2510); };
+    if current3.has_value { panic(2511); };
+
+    let m6 = messages_update<TestDamageMessage>(m5);
+    if messages_len<TestDamageMessage>(m6) != 2 { panic(2512); };
+    if messages_current_update_len<TestDamageMessage>(m6) != 0 { panic(2513); };
+    if messages_reader_missed<TestDamageMessage>(m6, message_reader_new()) != 1 { panic(2514); };
+    let old = messages_get_message<TestDamageMessage>(m6, message_id_new(0), test_damage_default());
+    if old.has_value { panic(2515); };
+    let kept = messages_get_message<TestDamageMessage>(m6, message_id_new(1), test_damage_default());
+    if kept.has_value != true { panic(2516); };
+    if kept.value.amount != 2 { panic(2517); };
+
+    let m7 = messages_update<TestDamageMessage>(m6);
+    if messages_len<TestDamageMessage>(m7) != 0 { panic(2518); };
+    if messages_reader_missed<TestDamageMessage>(m7, message_reader_new()) != 3 { panic(2519); };
 }
