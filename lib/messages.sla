@@ -36,6 +36,12 @@ struct MessageWrite<T> {
     id: i64,
 }
 
+struct MessageBatchWrite<T> {
+    messages: Messages<T>,
+    first_id: i64,
+    count: i64,
+}
+
 struct MessageDrain<T> {
     messages: Messages<T>,
     count: i64,
@@ -135,14 +141,30 @@ fn messages_write<T>(messages: Messages<T>, value: T) -> Messages<T> {
     return written.messages;
 }
 
-fn messages_apply_writer<T>(messages: Messages<T>, writer: MessageWriter<T>) -> Messages<T> {
+fn messages_write_default<T>(messages: Messages<T>, default_value: T) -> MessageWrite<T> {
+    return messages_write_with_id<T>(messages, default_value);
+}
+
+fn messages_write_batch<T>(messages: Messages<T>, writer: MessageWriter<T>) -> MessageBatchWrite<T> {
     let i: i64 = 0;
     let cnt = len(writer.values) as i64;
+    let first_id = messages.next_id;
     while i < cnt {
         messages = messages_write<T>(messages, writer.values[i]);
         i = i + 1;
     }
-    return messages;
+    return MessageBatchWrite<T> { messages: messages, first_id: first_id, count: cnt };
+}
+
+fn message_batch_write_id_at<T>(batch: MessageBatchWrite<T>, index: i64) -> i64 {
+    if index < 0 { return message_id_none(); };
+    if index >= batch.count { return message_id_none(); };
+    return message_id_new(batch.first_id + index);
+}
+
+fn messages_apply_writer<T>(messages: Messages<T>, writer: MessageWriter<T>) -> Messages<T> {
+    let written = messages_write_batch<T>(messages, writer);
+    return written.messages;
 }
 
 fn messages_read_next<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageRead<T> {
@@ -409,6 +431,45 @@ fn test_damage_default() -> TestDamageMessage {
     let read2 = messages_read_next<TestDamageMessage>(m1, read1.reader, test_damage_default());
     if read1.value.amount != 3 { panic(2420); };
     if read2.value.amount != 9 { panic(2421); };
+}
+
+@test "messages write batch returns contiguous ids"() {
+    let m0 = test_damage_messages_new();
+    let first = messages_write_with_id<TestDamageMessage>(m0, TestDamageMessage { amount: 1 });
+    if first.id != 0 { panic(2547); };
+    let writer0 = message_writer_new<TestDamageMessage>();
+    let writer1 = message_writer_send<TestDamageMessage>(writer0, TestDamageMessage { amount: 3 });
+    let writer2 = message_writer_send<TestDamageMessage>(writer1, TestDamageMessage { amount: 5 });
+    let batch = messages_write_batch<TestDamageMessage>(first.messages, writer2);
+    if batch.first_id != 1 { panic(2548); };
+    if batch.count != 2 { panic(2549); };
+    if message_batch_write_id_at<TestDamageMessage>(batch, 0) != 1 { panic(2550); };
+    if message_batch_write_id_at<TestDamageMessage>(batch, 1) != 2 { panic(2551); };
+    if message_batch_write_id_at<TestDamageMessage>(batch, 2) != -1 { panic(2552); };
+    if batch.messages.next_id != 3 { panic(2553); };
+
+    let read1 = messages_read_next_with_id<TestDamageMessage>(batch.messages, MessageReader { cursor: 1 }, test_damage_default());
+    let read2 = messages_read_next_with_id<TestDamageMessage>(batch.messages, read1.reader, test_damage_default());
+    if read1.id != 1 { panic(2554); };
+    if read1.value.amount != 3 { panic(2555); };
+    if read2.id != 2 { panic(2556); };
+    if read2.value.amount != 5 { panic(2557); };
+
+    let empty_writer = message_writer_new<TestDamageMessage>();
+    let empty = messages_write_batch<TestDamageMessage>(batch.messages, empty_writer);
+    if empty.first_id != 3 { panic(2558); };
+    if empty.count != 0 { panic(2559); };
+    if empty.messages.next_id != 3 { panic(2560); };
+}
+
+@test "messages write default returns id"() {
+    let m0 = test_damage_messages_new();
+    let written = messages_write_default<TestDamageMessage>(m0, TestDamageMessage { amount: 42 });
+    if written.id != 0 { panic(2561); };
+    if written.messages.next_id != 1 { panic(2562); };
+    let found = messages_get_message<TestDamageMessage>(written.messages, written.id, test_damage_default());
+    if found.has_value != true { panic(2563); };
+    if found.value.amount != 42 { panic(2564); };
 }
 
 @test "message reader cursor advances independently"() {

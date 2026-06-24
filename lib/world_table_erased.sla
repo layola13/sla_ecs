@@ -3161,6 +3161,16 @@ fn table_erased_world_write_message_with_id<R, M>(world: TableErasedWorld<R, M>,
     world.messages = written.messages;
     return (world, written.id);
 }
+fn table_erased_world_write_default_message<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, i64) {
+    let written = messages_write_default<M>(world.messages, default_value);
+    world.messages = written.messages;
+    return (world, written.id);
+}
+fn table_erased_world_write_message_batch<R, M>(world: TableErasedWorld<R, M>, writer: MessageWriter<M>) -> (TableErasedWorld<R, M>, i64, i64) {
+    let written = messages_write_batch<M>(world.messages, writer);
+    world.messages = written.messages;
+    return (world, written.first_id, written.count);
+}
 fn table_erased_world_read_message<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageRead<M> { return messages_read_next<M>(world.messages, reader, default_value); }
 fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithId<M> { return messages_read_next_with_id<M>(world.messages, reader, default_value); }
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
@@ -3295,6 +3305,32 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if id3 != 2 { panic(11651); };
     if read_current.id != 2 { panic(11652); };
     if read_current.value.amount != 11 { panic(11653); };
+}
+
+@test "table erased world message batch and default writes expose ids"() {
+    let w0 = table_erased_test_world_new();
+    let (w1, default_id) = table_erased_world_write_default_message<TableErasedTime, TableErasedEvent>(w0, TableErasedEvent { amount: 4 });
+    if default_id != 0 { panic(11679); };
+    let writer0 = message_writer_new<TableErasedEvent>();
+    let writer1 = message_writer_send<TableErasedEvent>(writer0, TableErasedEvent { amount: 6 });
+    let writer2 = message_writer_send<TableErasedEvent>(writer1, TableErasedEvent { amount: 8 });
+    let (w2, first_id, count) = table_erased_world_write_message_batch<TableErasedTime, TableErasedEvent>(w1, writer2);
+    if first_id != 1 { panic(11680); };
+    if count != 2 { panic(11681); };
+    if w2.messages.next_id != 3 { panic(11682); };
+
+    let first = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w2, message_id_new(first_id), table_erased_event_default());
+    let second = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w2, message_id_new(first_id + 1), table_erased_event_default());
+    if first.has_value != true { panic(11683); };
+    if first.value.amount != 6 { panic(11684); };
+    if second.has_value != true { panic(11685); };
+    if second.value.amount != 8 { panic(11686); };
+
+    let empty_writer = message_writer_new<TableErasedEvent>();
+    let (w3, empty_first, empty_count) = table_erased_world_write_message_batch<TableErasedTime, TableErasedEvent>(w2, empty_writer);
+    if empty_first != 3 { panic(11687); };
+    if empty_count != 0 { panic(11688); };
+    if w3.messages.next_id != 3 { panic(11689); };
 }
 
 @test "table erased world messages update retains one frame"() {
