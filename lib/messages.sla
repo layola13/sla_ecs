@@ -87,7 +87,7 @@ fn message_reader_new() -> MessageReader {
 }
 
 fn message_reader_current<T>(messages: Messages<T>) -> MessageReader {
-    return MessageReader { cursor: messages.count };
+    return MessageReader { cursor: messages.next_id };
 }
 
 fn message_writer_new<T>() -> MessageWriter<T> {
@@ -127,22 +127,32 @@ fn messages_apply_writer<T>(messages: Messages<T>, writer: MessageWriter<T>) -> 
 }
 
 fn messages_read_next<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageRead<T> {
-    if reader.cursor >= messages.count {
-        return MessageRead<T> { has_value: false, value: default_value, reader: reader };
-    };
-    let value = messages.values[reader.cursor];
-    reader.cursor = reader.cursor + 1;
-    return MessageRead<T> { has_value: true, value: value, reader: reader };
+    let i: i64 = 0;
+    while i < messages.count {
+        let id = messages.ids[i];
+        if id >= reader.cursor {
+            let value = messages.values[i];
+            reader.cursor = id + 1;
+            return MessageRead<T> { has_value: true, value: value, reader: reader };
+        };
+        i = i + 1;
+    }
+    return MessageRead<T> { has_value: false, value: default_value, reader: reader };
 }
 
 fn messages_read_next_with_id<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageReadWithId<T> {
-    if reader.cursor >= messages.count {
-        return MessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader };
-    };
-    let value = messages.values[reader.cursor];
-    let id = message_id_new(messages.ids[reader.cursor]);
-    reader.cursor = reader.cursor + 1;
-    return MessageReadWithId<T> { has_value: true, value: value, id: id, reader: reader };
+    let i: i64 = 0;
+    while i < messages.count {
+        let stored_id = messages.ids[i];
+        if stored_id >= reader.cursor {
+            let value = messages.values[i];
+            let id = message_id_new(stored_id);
+            reader.cursor = stored_id + 1;
+            return MessageReadWithId<T> { has_value: true, value: value, id: id, reader: reader };
+        };
+        i = i + 1;
+    }
+    return MessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader };
 }
 
 fn messages_get_message<T>(messages: Messages<T>, id: i64, default_value: T) -> MessageReadWithId<T> {
@@ -171,8 +181,26 @@ fn messages_clear<T>(messages: Messages<T>) -> Messages<T> {
 }
 
 fn messages_reader_len<T>(messages: Messages<T>, reader: MessageReader) -> i64 {
-    if reader.cursor >= messages.count { return 0; };
-    return messages.count - reader.cursor;
+    let i: i64 = 0;
+    let result: i64 = 0;
+    while i < messages.count {
+        if messages.ids[i] >= reader.cursor {
+            result = result + 1;
+        };
+        i = i + 1;
+    }
+    return result;
+}
+
+fn messages_oldest_id<T>(messages: Messages<T>) -> i64 {
+    if messages.count == 0 { return messages.next_id; };
+    return messages.ids[0];
+}
+
+fn messages_reader_missed<T>(messages: Messages<T>, reader: MessageReader) -> i64 {
+    let oldest = messages_oldest_id<T>(messages);
+    if reader.cursor >= oldest { return 0; };
+    return oldest - reader.cursor;
 }
 
 fn messages_reader_is_empty<T>(messages: Messages<T>, reader: MessageReader) -> bool {
@@ -180,7 +208,7 @@ fn messages_reader_is_empty<T>(messages: Messages<T>, reader: MessageReader) -> 
 }
 
 fn messages_reader_clear<T>(reader: MessageReader, messages: Messages<T>) -> MessageReader {
-    reader.cursor = messages.count;
+    reader.cursor = messages.next_id;
     return reader;
 }
 
@@ -197,24 +225,34 @@ fn messages_mutator_clear<T>(reader: MessageReader, messages: Messages<T>) -> Me
 }
 
 fn messages_mutator_read_next<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageMutRead<T> {
-    if reader.cursor >= messages.count {
-        let item = MessageMut<T> { index: -1, value: default_value };
-        return MessageMutRead<T> { has_value: false, item: item, reader: reader };
-    };
-    let item = MessageMut<T> { index: reader.cursor, value: messages.values[reader.cursor] };
-    reader.cursor = reader.cursor + 1;
-    return MessageMutRead<T> { has_value: true, item: item, reader: reader };
+    let i: i64 = 0;
+    while i < messages.count {
+        let id = messages.ids[i];
+        if id >= reader.cursor {
+            let item = MessageMut<T> { index: i, value: messages.values[i] };
+            reader.cursor = id + 1;
+            return MessageMutRead<T> { has_value: true, item: item, reader: reader };
+        };
+        i = i + 1;
+    }
+    let item = MessageMut<T> { index: -1, value: default_value };
+    return MessageMutRead<T> { has_value: false, item: item, reader: reader };
 }
 
 fn messages_mutator_read_next_with_id<T>(messages: Messages<T>, reader: MessageReader, default_value: T) -> MessageMutReadWithId<T> {
-    if reader.cursor >= messages.count {
-        let item = MessageMut<T> { index: -1, value: default_value };
-        return MessageMutReadWithId<T> { has_value: false, item: item, id: message_id_none(), reader: reader };
-    };
-    let item = MessageMut<T> { index: reader.cursor, value: messages.values[reader.cursor] };
-    let id = message_id_new(messages.ids[reader.cursor]);
-    reader.cursor = reader.cursor + 1;
-    return MessageMutReadWithId<T> { has_value: true, item: item, id: id, reader: reader };
+    let i: i64 = 0;
+    while i < messages.count {
+        let stored_id = messages.ids[i];
+        if stored_id >= reader.cursor {
+            let item = MessageMut<T> { index: i, value: messages.values[i] };
+            let id = message_id_new(stored_id);
+            reader.cursor = stored_id + 1;
+            return MessageMutReadWithId<T> { has_value: true, item: item, id: id, reader: reader };
+        };
+        i = i + 1;
+    }
+    let item = MessageMut<T> { index: -1, value: default_value };
+    return MessageMutReadWithId<T> { has_value: false, item: item, id: message_id_none(), reader: reader };
 }
 
 fn messages_mutator_write_back<T>(messages: Messages<T>, item: MessageMut<T>) -> Messages<T> {
@@ -397,4 +435,31 @@ fn test_damage_default() -> TestDamageMessage {
     if missed.has_value { panic(2483); };
     let w2 = messages_write_with_id<TestDamageMessage>(m1, TestDamageMessage { amount: 9 });
     if w2.id != 1 { panic(2484); };
+}
+
+@test "message reader cursor is global id not physical slot"() {
+    let m0 = test_damage_messages_new();
+    let w1 = messages_write_with_id<TestDamageMessage>(m0, TestDamageMessage { amount: 5 });
+    let read1 = messages_read_next_with_id<TestDamageMessage>(w1.messages, message_reader_new(), test_damage_default());
+    if read1.id != 0 { panic(2485); };
+    if read1.reader.cursor != 1 { panic(2486); };
+
+    let m1 = messages_clear<TestDamageMessage>(w1.messages);
+    if messages_reader_len<TestDamageMessage>(m1, read1.reader) != 0 { panic(2487); };
+    if messages_reader_missed<TestDamageMessage>(m1, message_reader_new()) != 1 { panic(2488); };
+
+    let w2 = messages_write_with_id<TestDamageMessage>(m1, TestDamageMessage { amount: 9 });
+    if w2.id != 1 { panic(2489); };
+    if messages_reader_len<TestDamageMessage>(w2.messages, read1.reader) != 1 { panic(2490); };
+    let read2 = messages_read_next_with_id<TestDamageMessage>(w2.messages, read1.reader, test_damage_default());
+    if read2.has_value != true { panic(2491); };
+    if read2.id != 1 { panic(2492); };
+    if read2.value.amount != 9 { panic(2493); };
+
+    let current = message_reader_current<TestDamageMessage>(w2.messages);
+    if current.cursor != 2 { panic(2494); };
+    let w3 = messages_write<TestDamageMessage>(w2.messages, TestDamageMessage { amount: 11 });
+    let read_current = messages_read_next_with_id<TestDamageMessage>(w3, current, test_damage_default());
+    if read_current.id != 2 { panic(2495); };
+    if read_current.value.amount != 11 { panic(2496); };
 }
