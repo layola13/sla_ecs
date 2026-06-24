@@ -59,6 +59,11 @@ struct TableErasedMessageReaderWriterParamSet<M> {
     writer: MessageWriter<M>,
 }
 
+struct TableErasedMessageMutatorParam<M> {
+    messages: Messages<M>,
+    reader: MessageReader,
+}
+
 struct TableErasedPairMutReadonlyPairParamSet<A, B> {
     mut_query: Query<TableErasedPairMut<A, B>>,
     read_query: Query<TableErasedPair<A, B>>,
@@ -184,6 +189,39 @@ fn table_erased_message_reader_writer_res_mut_commands_param<R, M>(read: Message
 
 fn table_erased_message_reader_writer_param_set<M>(read: MessageRead<M>, writer: MessageWriter<M>) -> TableErasedMessageReaderWriterParamSet<M> {
     return TableErasedMessageReaderWriterParamSet<M> { read: read, writer: writer };
+}
+
+fn table_erased_message_mutator_param<M>(messages: Messages<M>, reader: MessageReader) -> TableErasedMessageMutatorParam<M> {
+    return TableErasedMessageMutatorParam<M> { messages: messages, reader: reader };
+}
+
+fn table_erased_message_mutator_len<M>(param: TableErasedMessageMutatorParam<M>) -> i64 {
+    return messages_mutator_len<M>(param.messages, param.reader);
+}
+
+fn table_erased_message_mutator_is_empty<M>(param: TableErasedMessageMutatorParam<M>) -> bool {
+    return messages_mutator_is_empty<M>(param.messages, param.reader);
+}
+
+fn table_erased_message_mutator_clear<M>(param: TableErasedMessageMutatorParam<M>) -> TableErasedMessageMutatorParam<M> {
+    param.reader = messages_mutator_clear<M>(param.reader, param.messages);
+    return param;
+}
+
+fn table_erased_message_mutator_read_next<M>(param: TableErasedMessageMutatorParam<M>, default_value: M) -> (TableErasedMessageMutatorParam<M>, MessageMutRead<M>) {
+    let read = messages_mutator_read_next<M>(param.messages, param.reader, default_value);
+    param.reader = read.reader;
+    return (param, read);
+}
+
+fn table_erased_message_mutator_write_back<M>(param: TableErasedMessageMutatorParam<M>, item: MessageMut<M>) -> TableErasedMessageMutatorParam<M> {
+    param.messages = messages_mutator_write_back<M>(param.messages, item);
+    return param;
+}
+
+fn table_erased_message_mutator_write<M>(param: TableErasedMessageMutatorParam<M>, value: M) -> TableErasedMessageMutatorParam<M> {
+    param.messages = messages_mutator_write<M>(param.messages, value);
+    return param;
 }
 
 fn table_erased_pair_mut_readonly_pair_param_set<A, B>(mut_query: Query<TableErasedPairMut<A, B>>, read_query: Query<TableErasedPair<A, B>>) -> TableErasedPairMutReadonlyPairParamSet<A, B> {
@@ -681,6 +719,17 @@ fn table_erased_run_message_reader_res_mut_system<R, M>(world: TableErasedWorld<
     return (world, param1.read.reader);
 }
 
+fn table_erased_run_populated_message_reader_res_mut_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedResMutMessageReadParam<R, M>) -> TableErasedResMutMessageReadParam<R, M>) -> (TableErasedWorld<R, M>, MessageReader, bool) {
+    if messages_reader_is_empty<M>(world.messages, reader) {
+        return (world, reader, false);
+    };
+    let read = table_erased_world_read_message<R, M>(world, reader, default_message);
+    let param0 = table_erased_resmut_message_read_param<R, M>(table_erased_world_res_mut<R, M>(world), read);
+    let param1 = run(param0);
+    world = table_erased_world_res_mut_write<R, M>(world, param1.resource, param1.resource.value);
+    return (world, param1.read.reader, true);
+}
+
 fn table_erased_run_message_reader_res_mut_commands_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedMessageReadResMutCommandsParam<R, M>) -> TableErasedMessageReadResMutCommandsParam<R, M>) -> (TableErasedWorld<R, M>, MessageReader) {
     let read = table_erased_world_read_message<R, M>(world, reader, default_message);
     let param0 = table_erased_message_read_res_mut_commands_param<R, M>(read, table_erased_world_res_mut<R, M>(world), table_erased_commands_param_new<R, M>(world));
@@ -746,6 +795,13 @@ fn table_erased_run_message_writer_system<R, M>(world: TableErasedWorld<R, M>, r
     let writer1 = run(writer0);
     world.messages = messages_apply_writer<M>(world.messages, writer1);
     return world;
+}
+
+fn table_erased_run_message_mutator_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, run: fn(TableErasedMessageMutatorParam<M>) -> TableErasedMessageMutatorParam<M>) -> (TableErasedWorld<R, M>, MessageReader) {
+    let param0 = table_erased_message_mutator_param<M>(world.messages, reader);
+    let param1 = run(param0);
+    world.messages = param1.messages;
+    return (world, param1.reader);
 }
 
 fn table_erased_run_message_reader_writer_param_set_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedMessageReaderWriterParamSet<M>) -> TableErasedMessageReaderWriterParamSet<M>) -> (TableErasedWorld<R, M>, MessageReader) {
@@ -1489,6 +1545,24 @@ fn table_erased_param_commands_system(param: TableErasedCommandsParam<TableErase
 fn table_erased_param_writer_system(writer: MessageWriter<TableErasedParamEvent>) -> MessageWriter<TableErasedParamEvent> {
     let writer1 = message_writer_send<TableErasedParamEvent>(writer, TableErasedParamEvent { amount: 2 });
     return message_writer_send<TableErasedParamEvent>(writer1, TableErasedParamEvent { amount: 8 });
+}
+
+fn table_erased_param_message_mutator_system(param: TableErasedMessageMutatorParam<TableErasedParamEvent>) -> TableErasedMessageMutatorParam<TableErasedParamEvent> {
+    let param1 = table_erased_message_mutator_write<TableErasedParamEvent>(param, TableErasedParamEvent { amount: 3 });
+    if table_erased_message_mutator_len<TableErasedParamEvent>(param1) != 3 { panic(12090); };
+    let (param2, read1) = table_erased_message_mutator_read_next<TableErasedParamEvent>(param1, table_erased_param_event_default());
+    if read1.has_value != true { panic(12091); };
+    read1.item.value.amount = read1.item.value.amount + 100;
+    let param3 = table_erased_message_mutator_write_back<TableErasedParamEvent>(param2, read1.item);
+    let (param4, read2) = table_erased_message_mutator_read_next<TableErasedParamEvent>(param3, table_erased_param_event_default());
+    if read2.has_value != true { panic(12092); };
+    read2.item.value.amount = read2.item.value.amount + 100;
+    let param5 = table_erased_message_mutator_write_back<TableErasedParamEvent>(param4, read2.item);
+    let (param6, read3) = table_erased_message_mutator_read_next<TableErasedParamEvent>(param5, table_erased_param_event_default());
+    if read3.has_value != true { panic(12093); };
+    read3.item.value.amount = read3.item.value.amount + 100;
+    let param7 = table_erased_message_mutator_write_back<TableErasedParamEvent>(param6, read3.item);
+    return table_erased_message_mutator_write<TableErasedParamEvent>(param7, TableErasedParamEvent { amount: 11 });
 }
 
 fn table_erased_param_reader_writer_param_set_system(param: TableErasedMessageReaderWriterParamSet<TableErasedParamEvent>) -> TableErasedMessageReaderWriterParamSet<TableErasedParamEvent> {
@@ -2503,6 +2577,47 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if query.items[0].value.y != 35 { panic(12726); };
     let spawned_by = table_erased_world_spawned_by<TableErasedParamTime, TableErasedParamEvent>(w3, query.items[0].entity);
     if spawned_by.file_id != 119 { panic(12727); };
+}
+
+@test "table erased message mutator reads writes modifies and advances cursor"() {
+    let w0 = table_erased_param_world_new();
+    let w1 = table_erased_world_write_message<TableErasedParamTime, TableErasedParamEvent>(w0, TableErasedParamEvent { amount: 5 });
+    let w2 = table_erased_world_write_message<TableErasedParamTime, TableErasedParamEvent>(w1, TableErasedParamEvent { amount: 7 });
+    let (w3, reader1) = table_erased_run_message_mutator_system<TableErasedParamTime, TableErasedParamEvent>(w2, message_reader_new(), table_erased_param_message_mutator_system);
+    if reader1.cursor != 3 { panic(12094); };
+
+    let check0 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, message_reader_new(), table_erased_param_event_default());
+    let check1 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check0.reader, table_erased_param_event_default());
+    let check2 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check1.reader, table_erased_param_event_default());
+    let check3 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check2.reader, table_erased_param_event_default());
+    if check0.value.amount != 105 { panic(12095); };
+    if check1.value.amount != 107 { panic(12096); };
+    if check2.value.amount != 103 { panic(12097); };
+    if check3.value.amount != 11 { panic(12098); };
+
+    let next = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, reader1, table_erased_param_event_default());
+    if next.has_value != true { panic(12099); };
+    if next.value.amount != 11 { panic(12100); };
+}
+
+@test "table erased populated message reader skips empty and runs when populated"() {
+    let w0 = table_erased_param_world_new();
+    let w1 = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w0, TableErasedParamTime { tick: 10 });
+    let (w2, reader0, ran0) = table_erased_run_populated_message_reader_res_mut_system<TableErasedParamTime, TableErasedParamEvent>(w1, message_reader_new(), table_erased_param_event_default(), table_erased_param_reader_resmut_system);
+    if ran0 { panic(12101); };
+    if reader0.cursor != 0 { panic(12102); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w2).tick != 10 { panic(12103); };
+
+    let w3 = table_erased_world_write_message<TableErasedParamTime, TableErasedParamEvent>(w2, TableErasedParamEvent { amount: 6 });
+    let (w4, reader1, ran1) = table_erased_run_populated_message_reader_res_mut_system<TableErasedParamTime, TableErasedParamEvent>(w3, reader0, table_erased_param_event_default(), table_erased_param_reader_resmut_system);
+    if ran1 != true { panic(12104); };
+    if reader1.cursor != 1 { panic(12105); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w4).tick != 16 { panic(12106); };
+
+    let (w5, reader2, ran2) = table_erased_run_populated_message_reader_res_mut_system<TableErasedParamTime, TableErasedParamEvent>(w4, reader1, table_erased_param_event_default(), table_erased_param_reader_resmut_system);
+    if ran2 { panic(12107); };
+    if reader2.cursor != 1 { panic(12108); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w5).tick != 16 { panic(12109); };
 }
 
 @test "table erased commands writer reader and filtered params"() {

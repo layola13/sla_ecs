@@ -66,6 +66,11 @@ struct TableErasedRelationshipMessageReaderWriterParamSet<M> {
     writer: MessageWriter<M>,
 }
 
+struct TableErasedRelationshipMessageMutatorParam<M> {
+    messages: Messages<M>,
+    reader: MessageReader,
+}
+
 struct TableErasedRelationshipPairMutReadonlyPairParamSet<A, B> {
     mut_query: Query<TableErasedPairMut<A, B>>,
     read_query: Query<TableErasedPair<A, B>>,
@@ -291,6 +296,30 @@ fn table_erased_relationship_message_reader_writer_param_set<M>(read: MessageRea
     return TableErasedRelationshipMessageReaderWriterParamSet<M> { read: read, writer: writer };
 }
 
+fn table_erased_relationship_message_mutator_param<M>(messages: Messages<M>, reader: MessageReader) -> TableErasedRelationshipMessageMutatorParam<M> {
+    return TableErasedRelationshipMessageMutatorParam<M> { messages: messages, reader: reader };
+}
+
+fn table_erased_relationship_message_mutator_len<M>(param: TableErasedRelationshipMessageMutatorParam<M>) -> i64 {
+    return messages_mutator_len<M>(param.messages, param.reader);
+}
+
+fn table_erased_relationship_message_mutator_read_next<M>(param: TableErasedRelationshipMessageMutatorParam<M>, default_value: M) -> (TableErasedRelationshipMessageMutatorParam<M>, MessageMutRead<M>) {
+    let read = messages_mutator_read_next<M>(param.messages, param.reader, default_value);
+    param.reader = read.reader;
+    return (param, read);
+}
+
+fn table_erased_relationship_message_mutator_write_back<M>(param: TableErasedRelationshipMessageMutatorParam<M>, item: MessageMut<M>) -> TableErasedRelationshipMessageMutatorParam<M> {
+    param.messages = messages_mutator_write_back<M>(param.messages, item);
+    return param;
+}
+
+fn table_erased_relationship_message_mutator_write<M>(param: TableErasedRelationshipMessageMutatorParam<M>, value: M) -> TableErasedRelationshipMessageMutatorParam<M> {
+    param.messages = messages_mutator_write<M>(param.messages, value);
+    return param;
+}
+
 fn table_erased_relationship_run_pair_mut_system<A, B, R, M>(world: TableErasedRelationshipWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(Query<TableErasedPairMut<A, B>>) -> Query<TableErasedPairMut<A, B>>) -> TableErasedRelationshipWorld<R, M> {
     let query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id);
     let updated = run(query);
@@ -500,6 +529,17 @@ fn table_erased_relationship_run_message_reader_res_mut_system<R, M>(world: Tabl
     return (world, param1.read.reader);
 }
 
+fn table_erased_relationship_run_populated_message_reader_res_mut_system<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedRelationshipResMutMessageReadParam<R, M>) -> TableErasedRelationshipResMutMessageReadParam<R, M>) -> (TableErasedRelationshipWorld<R, M>, MessageReader, bool) {
+    if messages_reader_is_empty<M>(world.table.messages, reader) {
+        return (world, reader, false);
+    };
+    let read = table_erased_world_read_message<R, M>(world.table, reader, default_message);
+    let param0 = table_erased_relationship_resmut_message_read_param<R, M>(table_erased_world_res_mut<R, M>(world.table), read);
+    let param1 = run(param0);
+    world.table = table_erased_world_res_mut_write<R, M>(world.table, param1.resource, param1.resource.value);
+    return (world, param1.read.reader, true);
+}
+
 fn table_erased_relationship_run_message_reader_res_mut_commands_system<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedRelationshipMessageReadResMutCommandsParam<R, M>) -> TableErasedRelationshipMessageReadResMutCommandsParam<R, M>) -> (TableErasedRelationshipWorld<R, M>, MessageReader) {
     let read = table_erased_world_read_message<R, M>(world.table, reader, default_message);
     let param0 = table_erased_relationship_message_read_res_mut_commands_param<R, M>(read, table_erased_world_res_mut<R, M>(world.table), table_erased_relationship_commands_param_new<R, M>(world));
@@ -522,6 +562,13 @@ fn table_erased_relationship_run_message_writer_system<R, M>(world: TableErasedR
     let writer1 = run(writer0);
     world.table.messages = messages_apply_writer<M>(world.table.messages, writer1);
     return world;
+}
+
+fn table_erased_relationship_run_message_mutator_system<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader, run: fn(TableErasedRelationshipMessageMutatorParam<M>) -> TableErasedRelationshipMessageMutatorParam<M>) -> (TableErasedRelationshipWorld<R, M>, MessageReader) {
+    let param0 = table_erased_relationship_message_mutator_param<M>(world.table.messages, reader);
+    let param1 = run(param0);
+    world.table.messages = param1.messages;
+    return (world, param1.reader);
 }
 
 fn table_erased_relationship_run_message_writer_commands_system<R, M>(world: TableErasedRelationshipWorld<R, M>, run: fn(TableErasedRelationshipMessageWriterCommandsParam<R, M>) -> TableErasedRelationshipMessageWriterCommandsParam<R, M>) -> TableErasedRelationshipWorld<R, M> {
@@ -806,6 +853,24 @@ fn table_erased_relationship_param_despawn_related_commands_system(param: TableE
 fn table_erased_relationship_param_writer_system(writer: MessageWriter<TableErasedEvent>) -> MessageWriter<TableErasedEvent> {
     let writer1 = message_writer_send<TableErasedEvent>(writer, TableErasedEvent { amount: 2 });
     return message_writer_send<TableErasedEvent>(writer1, TableErasedEvent { amount: 3 });
+}
+
+fn table_erased_relationship_param_message_mutator_system(param: TableErasedRelationshipMessageMutatorParam<TableErasedEvent>) -> TableErasedRelationshipMessageMutatorParam<TableErasedEvent> {
+    let param1 = table_erased_relationship_message_mutator_write<TableErasedEvent>(param, TableErasedEvent { amount: 6 });
+    if table_erased_relationship_message_mutator_len<TableErasedEvent>(param1) != 3 { panic(14930); };
+    let (param2, read1) = table_erased_relationship_message_mutator_read_next<TableErasedEvent>(param1, table_erased_event_default());
+    if read1.has_value != true { panic(14931); };
+    read1.item.value.amount = read1.item.value.amount + 300;
+    let param3 = table_erased_relationship_message_mutator_write_back<TableErasedEvent>(param2, read1.item);
+    let (param4, read2) = table_erased_relationship_message_mutator_read_next<TableErasedEvent>(param3, table_erased_event_default());
+    if read2.has_value != true { panic(14932); };
+    read2.item.value.amount = read2.item.value.amount + 300;
+    let param5 = table_erased_relationship_message_mutator_write_back<TableErasedEvent>(param4, read2.item);
+    let (param6, read3) = table_erased_relationship_message_mutator_read_next<TableErasedEvent>(param5, table_erased_event_default());
+    if read3.has_value != true { panic(14933); };
+    read3.item.value.amount = read3.item.value.amount + 300;
+    let param7 = table_erased_relationship_message_mutator_write_back<TableErasedEvent>(param6, read3.item);
+    return table_erased_relationship_message_mutator_write<TableErasedEvent>(param7, TableErasedEvent { amount: 13 });
 }
 
 fn table_erased_relationship_param_reader_resmut_system(param: TableErasedRelationshipResMutMessageReadParam<TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipResMutMessageReadParam<TableErasedTime, TableErasedEvent> {
@@ -1231,6 +1296,62 @@ fn table_erased_relationship_param_reader_writer_res_mut_commands_system(param: 
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w9.table).tick != 5 { panic(12510); };
     if read1.value.amount != 2 { panic(12511); };
     if reader2.cursor != 2 { panic(12512); };
+}
+
+@test "table erased relationship populated message reader skips empty and preserves relationships"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w0, true, false);
+    let (w2, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w1);
+    let (w3, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let w4 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w3, kind.id, child, root);
+    w4.table = table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w4.table, TableErasedTime { tick: 10 });
+    let (w5, reader0, ran0) = table_erased_relationship_run_populated_message_reader_res_mut_system<TableErasedTime, TableErasedEvent>(w4, message_reader_new(), table_erased_event_default(), table_erased_relationship_param_reader_resmut_system);
+    if ran0 { panic(14954); };
+    if reader0.cursor != 0 { panic(14955); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w5.table).tick != 10 { panic(14956); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(w5, kind.id, child), root) != true { panic(14957); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w5, kind.id, root) != 1 { panic(14958); };
+
+    let w6 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w5.table, TableErasedEvent { amount: 6 }), relationships: w5.relationships };
+    let (w7, reader1, ran1) = table_erased_relationship_run_populated_message_reader_res_mut_system<TableErasedTime, TableErasedEvent>(w6, reader0, table_erased_event_default(), table_erased_relationship_param_reader_resmut_system);
+    if ran1 != true { panic(14959); };
+    if reader1.cursor != 1 { panic(14960); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w7.table).tick != 16 { panic(14961); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(w7, kind.id, child), root) != true { panic(14962); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w7, kind.id, root) != 1 { panic(14963); };
+
+    let (w8, reader2, ran2) = table_erased_relationship_run_populated_message_reader_res_mut_system<TableErasedTime, TableErasedEvent>(w7, reader1, table_erased_event_default(), table_erased_relationship_param_reader_resmut_system);
+    if ran2 { panic(14964); };
+    if reader2.cursor != 1 { panic(14965); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w8.table).tick != 16 { panic(14966); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w8, kind.id, root) != 1 { panic(14967); };
+}
+
+@test "table erased relationship message mutator preserves relationships"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w0, true, false);
+    let (w2, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w1);
+    let (w3, child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w2);
+    let w4 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w3, kind.id, child, root);
+    let w5 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w4.table, TableErasedEvent { amount: 5 }), relationships: w4.relationships };
+    let w6 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w5.table, TableErasedEvent { amount: 7 }), relationships: w5.relationships };
+    let (w7, reader1) = table_erased_relationship_run_message_mutator_system<TableErasedTime, TableErasedEvent>(w6, message_reader_new(), table_erased_relationship_param_message_mutator_system);
+    if reader1.cursor != 3 { panic(14934); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w7, kind.id, root) != 1 { panic(14935); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(w7, kind.id, child), root) != true { panic(14936); };
+
+    let check0 = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w7.table, message_reader_new(), table_erased_event_default());
+    let check1 = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w7.table, check0.reader, table_erased_event_default());
+    let check2 = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w7.table, check1.reader, table_erased_event_default());
+    let check3 = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w7.table, check2.reader, table_erased_event_default());
+    if check0.value.amount != 305 { panic(14937); };
+    if check1.value.amount != 307 { panic(14938); };
+    if check2.value.amount != 306 { panic(14939); };
+    if check3.value.amount != 13 { panic(14940); };
+
+    let next = table_erased_world_read_message<TableErasedTime, TableErasedEvent>(w7.table, reader1, table_erased_event_default());
+    if next.has_value != true { panic(14941); };
+    if next.value.amount != 13 { panic(14942); };
 }
 
 @test "table erased relationship resmut commands param writes resource before commands apply"() {
