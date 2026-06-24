@@ -41,6 +41,19 @@ struct TableErasedMessageWriterResMutCommandsParam<R, M> {
     commands: TableErasedCommandsParam<R, M>,
 }
 
+struct TableErasedMessageReaderWriterCommandsParam<R, M> {
+    read: MessageRead<M>,
+    writer: MessageWriter<M>,
+    commands: TableErasedCommandsParam<R, M>,
+}
+
+struct TableErasedMessageReaderWriterResMutCommandsParam<R, M> {
+    read: MessageRead<M>,
+    writer: MessageWriter<M>,
+    resource: ResMut<R>,
+    commands: TableErasedCommandsParam<R, M>,
+}
+
 struct TableErasedMessageReaderWriterParamSet<M> {
     read: MessageRead<M>,
     writer: MessageWriter<M>,
@@ -118,6 +131,14 @@ fn table_erased_message_writer_commands_param<R, M>(writer: MessageWriter<M>, co
 
 fn table_erased_message_writer_res_mut_commands_param<R, M>(writer: MessageWriter<M>, resource: ResMut<R>, commands: TableErasedCommandsParam<R, M>) -> TableErasedMessageWriterResMutCommandsParam<R, M> {
     return TableErasedMessageWriterResMutCommandsParam<R, M> { writer: writer, resource: resource, commands: commands };
+}
+
+fn table_erased_message_reader_writer_commands_param<R, M>(read: MessageRead<M>, writer: MessageWriter<M>, commands: TableErasedCommandsParam<R, M>) -> TableErasedMessageReaderWriterCommandsParam<R, M> {
+    return TableErasedMessageReaderWriterCommandsParam<R, M> { read: read, writer: writer, commands: commands };
+}
+
+fn table_erased_message_reader_writer_res_mut_commands_param<R, M>(read: MessageRead<M>, writer: MessageWriter<M>, resource: ResMut<R>, commands: TableErasedCommandsParam<R, M>) -> TableErasedMessageReaderWriterResMutCommandsParam<R, M> {
+    return TableErasedMessageReaderWriterResMutCommandsParam<R, M> { read: read, writer: writer, resource: resource, commands: commands };
 }
 
 fn table_erased_message_reader_writer_param_set<M>(read: MessageRead<M>, writer: MessageWriter<M>) -> TableErasedMessageReaderWriterParamSet<M> {
@@ -533,6 +554,25 @@ fn table_erased_run_message_writer_res_mut_commands_system<R, M>(world: TableEra
     let writeback_world = table_erased_world_res_mut_write<R, M>(param1.commands.world, param1.resource, param1.resource.value);
     let (world2, cleared) = table_erased_commands_apply<R, M>(writeback_world, param1.commands.commands);
     return world2;
+}
+
+fn table_erased_run_message_reader_writer_commands_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedMessageReaderWriterCommandsParam<R, M>) -> TableErasedMessageReaderWriterCommandsParam<R, M>) -> (TableErasedWorld<R, M>, MessageReader) {
+    let read = table_erased_world_read_message<R, M>(world, reader, default_message);
+    let param0 = table_erased_message_reader_writer_commands_param<R, M>(read, message_writer_new<M>(), table_erased_commands_param_new<R, M>(world));
+    let param1 = run(param0);
+    param1.commands.world.messages = messages_apply_writer<M>(param1.commands.world.messages, param1.writer);
+    let (world2, cleared) = table_erased_commands_apply<R, M>(param1.commands.world, param1.commands.commands);
+    return (world2, param1.read.reader);
+}
+
+fn table_erased_run_message_reader_writer_res_mut_commands_system<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_message: M, run: fn(TableErasedMessageReaderWriterResMutCommandsParam<R, M>) -> TableErasedMessageReaderWriterResMutCommandsParam<R, M>) -> (TableErasedWorld<R, M>, MessageReader) {
+    let read = table_erased_world_read_message<R, M>(world, reader, default_message);
+    let param0 = table_erased_message_reader_writer_res_mut_commands_param<R, M>(read, message_writer_new<M>(), table_erased_world_res_mut<R, M>(world), table_erased_commands_param_new<R, M>(world));
+    let param1 = run(param0);
+    param1.commands.world.messages = messages_apply_writer<M>(param1.commands.world.messages, param1.writer);
+    let writeback_world = table_erased_world_res_mut_write<R, M>(param1.commands.world, param1.resource, param1.resource.value);
+    let (world2, cleared) = table_erased_commands_apply<R, M>(writeback_world, param1.commands.commands);
+    return (world2, param1.read.reader);
 }
 
 fn table_erased_run_message_writer_system<R, M>(world: TableErasedWorld<R, M>, run: fn(MessageWriter<M>) -> MessageWriter<M>) -> TableErasedWorld<R, M> {
@@ -1292,6 +1332,25 @@ fn table_erased_param_reader_writer_param_set_system(param: TableErasedMessageRe
     return table_erased_message_reader_writer_param_set<TableErasedParamEvent>(param.read, writer);
 }
 
+fn table_erased_param_reader_writer_commands_system(param: TableErasedMessageReaderWriterCommandsParam<TableErasedParamTime, TableErasedParamEvent>) -> TableErasedMessageReaderWriterCommandsParam<TableErasedParamTime, TableErasedParamEvent> {
+    let amount: i32 = 0;
+    if param.read.has_value { amount = param.read.value.amount; };
+    let writer = message_writer_send<TableErasedParamEvent>(param.writer, TableErasedParamEvent { amount: amount + 60 });
+    let (commands1, entity) = table_erased_commands_param_reserve_entity_with_location<TableErasedParamTime, TableErasedParamEvent>(param.commands, table_erased_spawn_location_new(122, 62, 30));
+    let commands2 = table_erased_commands_param_insert_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(commands1, entity, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: amount + 60, y: amount });
+    return table_erased_message_reader_writer_commands_param<TableErasedParamTime, TableErasedParamEvent>(param.read, writer, commands2);
+}
+
+fn table_erased_param_reader_writer_res_mut_commands_system(param: TableErasedMessageReaderWriterResMutCommandsParam<TableErasedParamTime, TableErasedParamEvent>) -> TableErasedMessageReaderWriterResMutCommandsParam<TableErasedParamTime, TableErasedParamEvent> {
+    let amount: i32 = 0;
+    if param.read.has_value { amount = param.read.value.amount; };
+    param.resource.value = TableErasedParamTime { tick: param.resource.value.tick + amount + 6 };
+    let writer = message_writer_send<TableErasedParamEvent>(param.writer, TableErasedParamEvent { amount: param.resource.value.tick });
+    let (commands1, entity) = table_erased_commands_param_reserve_entity_with_location<TableErasedParamTime, TableErasedParamEvent>(param.commands, table_erased_spawn_location_new(123, 63, 31));
+    let commands2 = table_erased_commands_param_insert_auto<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(commands1, entity, TABLE_ERASED_PARAM_POS_TYPE, TableErasedParamPos { x: param.resource.value.tick, y: amount });
+    return table_erased_message_reader_writer_res_mut_commands_param<TableErasedParamTime, TableErasedParamEvent>(param.read, writer, param.resource, commands2);
+}
+
 fn table_erased_param_count_query_system(param: TableErasedQueryResourceParam<TableErasedParamPos, TableErasedParamTime>) -> TableErasedQueryResourceParam<TableErasedParamPos, TableErasedParamTime> {
     return table_erased_query_resource_param<TableErasedParamPos, TableErasedParamTime>(param.query, TableErasedParamTime { tick: len(param.query.items) as i32 });
 }
@@ -2047,6 +2106,44 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     if read2.has_value != true { panic(12029); };
     if read2.value.amount != 33 { panic(12030); };
     if read3.has_value != false { panic(12031); };
+}
+
+@test "table erased message reader writer commands param writes all"() {
+    let w0 = table_erased_param_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let w2 = table_erased_world_write_message<TableErasedParamTime, TableErasedParamEvent>(w1, TableErasedParamEvent { amount: 7 });
+    let (w3, reader1) = table_erased_run_message_reader_writer_commands_system<TableErasedParamTime, TableErasedParamEvent>(w2, message_reader_new(), table_erased_param_event_default(), table_erased_param_reader_writer_commands_system);
+    if reader1.cursor != 1 { panic(12730); };
+    let read = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, reader1, table_erased_param_event_default());
+    if read.has_value != true { panic(12731); };
+    if read.value.amount != 67 { panic(12732); };
+    let query = table_erased_world_query<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w3, position.id, TABLE_ERASED_PARAM_POS_TYPE);
+    if len(query.items) != 1 { panic(12733); };
+    if query.items[0].value.x != 67 { panic(12734); };
+    if query.items[0].value.y != 7 { panic(12735); };
+    let spawned_by = table_erased_world_spawned_by<TableErasedParamTime, TableErasedParamEvent>(w3, query.items[0].entity);
+    if spawned_by.file_id != 122 { panic(12736); };
+}
+
+@test "table erased message reader writer resmut commands param writes all"() {
+    let w0 = table_erased_param_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedParamTime, TableErasedParamEvent>(w0, TABLE_ERASED_PARAM_POS_TYPE, ecs_box_drop<TableErasedParamPos>);
+    let w2 = table_erased_world_insert_resource<TableErasedParamTime, TableErasedParamEvent>(w1, TableErasedParamTime { tick: 10 });
+    let w3 = table_erased_world_write_message<TableErasedParamTime, TableErasedParamEvent>(w2, TableErasedParamEvent { amount: 8 });
+    let before = w3.registry.change_tick;
+    let (w4, reader1) = table_erased_run_message_reader_writer_res_mut_commands_system<TableErasedParamTime, TableErasedParamEvent>(w3, message_reader_new(), table_erased_param_event_default(), table_erased_param_reader_writer_res_mut_commands_system);
+    if reader1.cursor != 1 { panic(12740); };
+    if table_erased_world_get_resource<TableErasedParamTime, TableErasedParamEvent>(w4).tick != 24 { panic(12741); };
+    if table_erased_world_resource_changed_since<TableErasedParamTime, TableErasedParamEvent>(w4, before - 1) != true { panic(12742); };
+    let read = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w4, reader1, table_erased_param_event_default());
+    if read.has_value != true { panic(12743); };
+    if read.value.amount != 24 { panic(12744); };
+    let query = table_erased_world_query<TableErasedParamPos, TableErasedParamTime, TableErasedParamEvent>(w4, position.id, TABLE_ERASED_PARAM_POS_TYPE);
+    if len(query.items) != 1 { panic(12745); };
+    if query.items[0].value.x != 24 { panic(12746); };
+    if query.items[0].value.y != 8 { panic(12747); };
+    let spawned_by = table_erased_world_spawned_by<TableErasedParamTime, TableErasedParamEvent>(w4, query.items[0].entity);
+    if spawned_by.file_id != 123 { panic(12748); };
 }
 
 @test "table erased single optional single and populated system params"() {
