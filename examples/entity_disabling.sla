@@ -1,0 +1,17 @@
+@import "registry_world_support.sla"
+
+fn bevy_style_entity_disabling_demo() -> i32 {
+    let w0 = registry_world_new();
+    let (w1, position) = registry_world_register_table(w0);
+    let (w2, entity) = registry_world_spawn(w1);
+    let w3 = registry_world_insert_component(w2, entity, position.id);
+    let w4 = registry_world_despawn(w3, entity);
+    if registry_world_has_component(w4, entity, position.id) != false { panic(15093); };
+    return entity.id;
+}
+
+fn main() -> i32 { return bevy_style_entity_disabling_demo(); }
+
+@test "entity disabling demo mirrors despawned entities"() {
+    if bevy_style_entity_disabling_demo() != 1 { panic(15094); };
+}

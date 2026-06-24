@@ -1,0 +1,309 @@
+@import "sa_std/string.sa"
+@import "sa_std/string_format.sa"
+@import "sa_std/io/print.sai"
+@import "sa_std/fmt.sai"
+@import "sa_std/core/panic.sa"
+
+[MACRO] SLA_ARRAY_FILL_U8 %array_ptr, %value, %length
+    call @sa_mem_set(&%array_ptr, %value, %length)
+[END_MACRO]
+@const SLA_FNPTR_VT_state_frame_new = vtable { call = @sla__state_frame_new }
+@const SLA_FNPTR_VT_state_frame_request = vtable { call = @sla__state_frame_request }
+@const SLA_FNPTR_VT_state_frame_apply = vtable { call = @sla__state_frame_apply }
+@const SLA_FNPTR_VT_state_frame_has_pending = vtable { call = @sla__state_frame_has_pending }
+@const SLA_FNPTR_VT_state_frame_transition_count = vtable { call = @sla__state_frame_transition_count }
+@const SLA_FNPTR_VT_state_frame_current = vtable { call = @sla__state_frame_current }
+@const SLA_FNPTR_VT_state_frame_previous = vtable { call = @sla__state_frame_previous }
+@const SLA_FNPTR_VT_sla_state_demo = vtable { call = @sla__sla_state_demo }
+@const SLA_FNPTR_VT_bevy_style_state_scoped_demo = vtable { call = @sla__bevy_style_state_scoped_demo }
+@const SLA_FNPTR_VT_main = vtable { call = @main }
+@sla__state_frame_new(initial: i32) -> ptr:
+L_ENTRY:
+    tmp_0 = alloc 17
+    store tmp_0+0, initial as i32
+    store tmp_0+4, initial as i32
+    store tmp_0+8, initial as i32
+    tmp_1 = 0
+    store tmp_0+12, tmp_1 as u8
+    !tmp_1
+    tmp_2 = 0
+    store tmp_0+13, tmp_2 as i32
+    !tmp_2
+    return tmp_0
+
+@sla__state_frame_request(state: ptr, next: i32) -> ptr:
+L_ENTRY:
+    store state+8, next as i32
+    tmp_3 = 1
+    store state+12, tmp_3 as u8
+    !tmp_3
+    !next
+    return state
+
+@sla__state_frame_apply(state: ptr) -> ptr:
+L_ENTRY:
+    tmp_4 = load state+12 as u8
+    br tmp_4 -> L_THEN_0, L_ELSE_1
+
+L_THEN_0:
+    !tmp_4
+    tmp_5 = load state+0 as i32
+    store state+4, tmp_5 as i32
+    !tmp_5
+    tmp_6 = load state+8 as i32
+    store state+0, tmp_6 as i32
+    !tmp_6
+    tmp_7 = 0
+    store state+12, tmp_7 as u8
+    !tmp_7
+    tmp_8 = load state+13 as i32
+    tmp_9 = 1
+    tmp_10 = add tmp_8, tmp_9
+    !tmp_8
+    !tmp_9
+    store state+13, tmp_10 as i32
+    !tmp_10
+    jmp L_MERGE_2
+
+L_ELSE_1:
+    !tmp_4
+    jmp L_MERGE_2
+
+L_MERGE_2:
+    return state
+
+@sla__state_frame_has_pending(state: ptr) -> u8:
+L_ENTRY:
+    tmp_12 = load state+12 as u8
+    !state
+    return tmp_12
+
+@sla__state_frame_transition_count(state: ptr) -> i32:
+L_ENTRY:
+    tmp_13 = load state+13 as i32
+    !state
+    return tmp_13
+
+@sla__state_frame_current(state: ptr) -> i32:
+L_ENTRY:
+    tmp_14 = load state+0 as i32
+    !state
+    return tmp_14
+
+@sla__state_frame_previous(state: ptr) -> i32:
+L_ENTRY:
+    tmp_15 = load state+4 as i32
+    !state
+    return tmp_15
+
+@sla__sla_state_demo() -> i32:
+L_ENTRY:
+    tmp_16 = 10
+    tmp_17 = call @sla__state_frame_new(tmp_16)
+    !tmp_16
+    s0 = tmp_17
+    tmp_18 = call @sla__state_frame_has_pending(s0)
+    tmp_19 = 0
+    tmp_20 = ne tmp_18, tmp_19
+    !tmp_18
+    !tmp_19
+    br tmp_20 -> L_THEN_3, L_ELSE_4
+
+L_THEN_3:
+    !tmp_20
+    panic(9400)
+
+L_ELSE_4:
+    !tmp_20
+    jmp L_MERGE_5
+
+L_MERGE_5:
+    tmp_23 = 20
+    tmp_24 = call @sla__state_frame_request(s0, tmp_23)
+    !tmp_23
+    s1 = tmp_24
+    tmp_25 = call @sla__state_frame_has_pending(s1)
+    tmp_26 = 1
+    tmp_27 = ne tmp_25, tmp_26
+    !tmp_25
+    !tmp_26
+    br tmp_27 -> L_THEN_6, L_ELSE_7
+
+L_THEN_6:
+    !tmp_27
+    panic(9401)
+
+L_ELSE_7:
+    !tmp_27
+    jmp L_MERGE_8
+
+L_MERGE_8:
+    tmp_30 = call @sla__state_frame_apply(s1)
+    s2 = tmp_30
+    tmp_31 = call @sla__state_frame_current(s2)
+    tmp_32 = 20
+    tmp_33 = ne tmp_31, tmp_32
+    !tmp_31
+    !tmp_32
+    br tmp_33 -> L_THEN_9, L_ELSE_10
+
+L_THEN_9:
+    !tmp_33
+    panic(9402)
+
+L_ELSE_10:
+    !tmp_33
+    jmp L_MERGE_11
+
+L_MERGE_11:
+    tmp_36 = call @sla__state_frame_previous(s2)
+    tmp_37 = 10
+    tmp_38 = ne tmp_36, tmp_37
+    !tmp_36
+    !tmp_37
+    br tmp_38 -> L_THEN_12, L_ELSE_13
+
+L_THEN_12:
+    !tmp_38
+    panic(9403)
+
+L_ELSE_13:
+    !tmp_38
+    jmp L_MERGE_14
+
+L_MERGE_14:
+    tmp_41 = call @sla__state_frame_transition_count(s2)
+    tmp_42 = 1
+    tmp_43 = ne tmp_41, tmp_42
+    !tmp_41
+    !tmp_42
+    br tmp_43 -> L_THEN_15, L_ELSE_16
+
+L_THEN_15:
+    !tmp_43
+    panic(9404)
+
+L_ELSE_16:
+    !tmp_43
+    jmp L_MERGE_17
+
+L_MERGE_17:
+    tmp_46 = 30
+    tmp_47 = call @sla__state_frame_request(s2, tmp_46)
+    !tmp_46
+    s3 = tmp_47
+    tmp_48 = call @sla__state_frame_apply(s3)
+    s4 = tmp_48
+    tmp_49 = call @sla__state_frame_current(s4)
+    tmp_50 = 30
+    tmp_51 = ne tmp_49, tmp_50
+    !tmp_49
+    !tmp_50
+    br tmp_51 -> L_THEN_18, L_ELSE_19
+
+L_THEN_18:
+    !tmp_51
+    panic(9405)
+
+L_ELSE_19:
+    !tmp_51
+    jmp L_MERGE_20
+
+L_MERGE_20:
+    tmp_54 = call @sla__state_frame_previous(s4)
+    tmp_55 = 20
+    tmp_56 = ne tmp_54, tmp_55
+    !tmp_54
+    !tmp_55
+    br tmp_56 -> L_THEN_21, L_ELSE_22
+
+L_THEN_21:
+    !tmp_56
+    panic(9406)
+
+L_ELSE_22:
+    !tmp_56
+    jmp L_MERGE_23
+
+L_MERGE_23:
+    tmp_59 = call @sla__state_frame_transition_count(s4)
+    tmp_60 = 2
+    tmp_61 = ne tmp_59, tmp_60
+    !tmp_59
+    !tmp_60
+    br tmp_61 -> L_THEN_24, L_ELSE_25
+
+L_THEN_24:
+    !tmp_61
+    panic(9407)
+
+L_ELSE_25:
+    !tmp_61
+    jmp L_MERGE_26
+
+L_MERGE_26:
+    tmp_64 = call @sla__state_frame_current(s4)
+    tmp_65 = call @sla__state_frame_previous(s4)
+    tmp_66 = add tmp_64, tmp_65
+    !tmp_64
+    !tmp_65
+    tmp_67 = call @sla__state_frame_transition_count(s4)
+    tmp_68 = add tmp_66, tmp_67
+    !tmp_66
+    !tmp_67
+    !s0
+    !s1
+    !s2
+    !s3
+    return tmp_68
+
+@sla__bevy_style_state_scoped_demo() -> i32:
+L_ENTRY:
+    tmp_69 = call @sla__sla_state_demo()
+    return tmp_69
+
+@main() -> i32:
+L_ENTRY:
+    tmp_70 = call @sla__bevy_style_state_scoped_demo()
+    return tmp_70
+
+@test "sla state transitions preserve previous and count"():
+L_TEST_ENTRY_27:
+    tmp_71 = call @sla__sla_state_demo()
+    tmp_72 = 52
+    tmp_73 = ne tmp_71, tmp_72
+    !tmp_71
+    !tmp_72
+    br tmp_73 -> L_THEN_28, L_ELSE_29
+
+L_THEN_28:
+    !tmp_73
+    panic(9408)
+
+L_ELSE_29:
+    !tmp_73
+    jmp L_MERGE_30
+
+L_MERGE_30:
+    return
+
+@test "state scoped demo mirrors state transitions"():
+L_TEST_ENTRY_31:
+    tmp_76 = call @sla__bevy_style_state_scoped_demo()
+    tmp_77 = 52
+    tmp_78 = ne tmp_76, tmp_77
+    !tmp_76
+    !tmp_77
+    br tmp_78 -> L_THEN_32, L_ELSE_33
+
+L_THEN_32:
+    !tmp_78
+    panic(15114)
+
+L_ELSE_33:
+    !tmp_78
+    jmp L_MERGE_34
+
+L_MERGE_34:
+    return
+
