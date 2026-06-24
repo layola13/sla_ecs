@@ -15,11 +15,15 @@ struct TableErasedSystemAccess {
 struct TableErasedSystem<R, M> {
     run: fn(TableErasedWorld<R, M>) -> TableErasedWorld<R, M>,
     access: TableErasedSystemAccess,
+    condition_count: i64,
+    conditions: [fn(i32) -> bool; 8],
 }
 
 struct TableErasedSchedule<R, M> {
     systems: Vec<TableErasedSystem<R, M>>,
     batch_ids: Vec<i32>,
+    condition_count: i64,
+    conditions: [fn(i32) -> bool; 8],
     conflict_count: i32,
     batch_count: i32,
 }
@@ -38,6 +42,8 @@ fn table_erased_access_read_resource(access: TableErasedSystemAccess) -> TableEr
 fn table_erased_access_write_resource(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.writes_resource = true; return access; }
 fn table_erased_access_read_messages(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.reads_messages = true; return access; }
 fn table_erased_access_write_messages(access: TableErasedSystemAccess) -> TableErasedSystemAccess { access.writes_messages = true; return access; }
+
+fn table_erased_run_condition_always(change_tick: i32) -> bool { return true; }
 
 fn table_erased_component_list_has(values: Vec<i32>, component_id: i32) -> bool {
     let i: i64 = 0;
@@ -79,13 +85,27 @@ fn table_erased_access_conflicts(left: TableErasedSystemAccess, right: TableEras
 }
 
 fn table_erased_system_new<R, M>(run: fn(TableErasedWorld<R, M>) -> TableErasedWorld<R, M>, access: TableErasedSystemAccess) -> TableErasedSystem<R, M> {
-    return TableErasedSystem<R, M> { run: run, access: access };
+    return TableErasedSystem<R, M> { run: run, access: access, condition_count: 0, conditions: [table_erased_run_condition_always; 8] };
+}
+
+fn table_erased_system_run_if<R, M>(system: TableErasedSystem<R, M>, condition: fn(i32) -> bool) -> TableErasedSystem<R, M> {
+    if system.condition_count >= 8 { panic(11980); };
+    system.conditions[system.condition_count] = condition;
+    system.condition_count = system.condition_count + 1;
+    return system;
 }
 
 fn table_erased_schedule_default<R, M>() -> TableErasedSchedule<R, M> {
     let systems: Vec<TableErasedSystem<R, M>> = Vec::new();
     let batch_ids: Vec<i32> = Vec::new();
-    return TableErasedSchedule<R, M> { systems: systems, batch_ids: batch_ids, conflict_count: 0, batch_count: 0 };
+    return TableErasedSchedule<R, M> { systems: systems, batch_ids: batch_ids, condition_count: 0, conditions: [table_erased_run_condition_always; 8], conflict_count: 0, batch_count: 0 };
+}
+
+fn table_erased_schedule_run_if<R, M>(schedule: TableErasedSchedule<R, M>, condition: fn(i32) -> bool) -> TableErasedSchedule<R, M> {
+    if schedule.condition_count >= 8 { panic(11981); };
+    schedule.conditions[schedule.condition_count] = condition;
+    schedule.condition_count = schedule.condition_count + 1;
+    return schedule;
 }
 
 fn table_erased_schedule_batch_accepts<R, M>(schedule: TableErasedSchedule<R, M>, batch_id: i32, access: TableErasedSystemAccess) -> bool {
@@ -157,12 +177,35 @@ fn table_erased_schedule_max_parallel_width<R, M>(schedule: TableErasedSchedule<
 
 fn table_erased_schedule_run<R, M>(schedule: TableErasedSchedule<R, M>, world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> {
     world = table_erased_world_increment_tick<R, M>(world);
+    let schedule_pass = true;
+    let schedule_condition_index: i64 = 0;
+    let schedule_condition_count = schedule.condition_count;
+    while schedule_condition_index < schedule_condition_count {
+        if schedule_pass {
+            let condition = schedule.conditions[schedule_condition_index];
+            if condition(world.registry.change_tick) != true { schedule_pass = false; };
+        };
+        schedule_condition_index = schedule_condition_index + 1;
+    }
+    if schedule_pass != true { return world; };
     let i: i64 = 0;
     let cnt = len(schedule.systems) as i64;
     while i < cnt {
         let system = schedule.systems[i];
-        let run = system.run;
-        world = run(world);
+        let system_pass = true;
+        let condition_index: i64 = 0;
+        let condition_count = system.condition_count;
+        while condition_index < condition_count {
+            if system_pass {
+                let condition = system.conditions[condition_index];
+                if condition(world.registry.change_tick) != true { system_pass = false; };
+            };
+            condition_index = condition_index + 1;
+        }
+        if system_pass {
+            let run = system.run;
+            world = run(world);
+        };
         i = i + 1;
     }
     return world;
@@ -170,6 +213,17 @@ fn table_erased_schedule_run<R, M>(schedule: TableErasedSchedule<R, M>, world: T
 
 fn table_erased_schedule_run_planned<R, M>(schedule: TableErasedSchedule<R, M>, world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> {
     world = table_erased_world_increment_tick<R, M>(world);
+    let schedule_pass = true;
+    let schedule_condition_index: i64 = 0;
+    let schedule_condition_count = schedule.condition_count;
+    while schedule_condition_index < schedule_condition_count {
+        if schedule_pass {
+            let condition = schedule.conditions[schedule_condition_index];
+            if condition(world.registry.change_tick) != true { schedule_pass = false; };
+        };
+        schedule_condition_index = schedule_condition_index + 1;
+    }
+    if schedule_pass != true { return world; };
     let batch: i32 = 0;
     while batch < schedule.batch_count {
         let i: i64 = 0;
@@ -177,8 +231,20 @@ fn table_erased_schedule_run_planned<R, M>(schedule: TableErasedSchedule<R, M>, 
         while i < cnt {
             if schedule.batch_ids[i] == batch {
                 let system = schedule.systems[i];
-                let run = system.run;
-                world = run(world);
+                let system_pass = true;
+                let condition_index: i64 = 0;
+                let condition_count = system.condition_count;
+                while condition_index < condition_count {
+                    if system_pass {
+                        let condition = system.conditions[condition_index];
+                        if condition(world.registry.change_tick) != true { system_pass = false; };
+                    };
+                    condition_index = condition_index + 1;
+                }
+                if system_pass {
+                    let run = system.run;
+                    world = run(world);
+                };
             };
             i = i + 1;
         }
@@ -217,6 +283,18 @@ fn table_erased_schedule_resource_system(world: TableErasedWorld<TableErasedSche
 
 fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent>) -> TableErasedWorld<TableErasedScheduleTime, TableErasedScheduleEvent> {
     return table_erased_world_write_message<TableErasedScheduleTime, TableErasedScheduleEvent>(world, TableErasedScheduleEvent { amount: 9 });
+}
+
+fn table_erased_schedule_condition_false(change_tick: i32) -> bool {
+    return false;
+}
+
+fn table_erased_schedule_condition_true(change_tick: i32) -> bool {
+    return true;
+}
+
+fn table_erased_schedule_condition_tick_at_least_three(change_tick: i32) -> bool {
+    return change_tick >= 3;
 }
 
 @test "table erased schedule runs systems in order"() {
@@ -294,4 +372,77 @@ fn table_erased_schedule_message_system(world: TableErasedWorld<TableErasedSched
     if table_erased_schedule_system_batch<TableErasedScheduleTime, TableErasedScheduleEvent>(s2, 1) != 1 { panic(11921); };
     if table_erased_world_component_id_for_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, TABLE_ERASED_SCHEDULE_POS_TYPE) != position.id { panic(11922); };
     if table_erased_world_component_id_for_type<TableErasedScheduleTime, TableErasedScheduleEvent>(w2, TABLE_ERASED_SCHEDULE_VEL_TYPE) != velocity.id { panic(11923); };
+}
+
+@test "table erased schedule system run_if skips only matching system"() {
+    let w0 = table_erased_schedule_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
+    let (w3, entity) = table_erased_world_spawn<TableErasedScheduleTime, TableErasedScheduleEvent>(w2);
+    let w4 = table_erased_world_insert<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w3, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE, TableErasedSchedulePos { x: 3, y: 0 });
+    let w5 = table_erased_world_insert<TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(w4, entity, velocity.id, TABLE_ERASED_SCHEDULE_VEL_TYPE, TableErasedScheduleVel { x: 4, y: 0 });
+    let move_access = table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id);
+    let message_access = table_erased_access_write_messages(table_erased_system_access_none());
+    let move_system = table_erased_system_run_if<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_move_system, move_access), table_erased_schedule_condition_false);
+    let message_system = table_erased_system_run_if<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_message_system, message_access), table_erased_schedule_condition_true);
+    if move_system.condition_count != 1 { panic(11934); };
+    if message_system.condition_count != 1 { panic(11935); };
+    let direct_false = move_system.conditions[0];
+    if direct_false(2) { panic(11936); };
+    let direct_true = message_system.conditions[0];
+    if direct_true(2) != true { panic(11937); };
+    let s0 = table_erased_schedule_default<TableErasedScheduleTime, TableErasedScheduleEvent>();
+    let s1 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s0, move_system);
+    let s2 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s1, message_system);
+    if s2.systems[0].condition_count != 1 { panic(11938); };
+    if s2.systems[1].condition_count != 1 { panic(11939); };
+    let stored_true = s2.systems[1].conditions[0];
+    if stored_true(2) != true { panic(11929); };
+    let w6 = table_erased_schedule_run<TableErasedScheduleTime, TableErasedScheduleEvent>(s2, w5);
+    if table_erased_world_get<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w6, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE).x != 3 { panic(11930); };
+    if messages_len<TableErasedScheduleEvent>(w6.messages) != 1 { panic(11933); };
+    let event = table_erased_world_read_message<TableErasedScheduleTime, TableErasedScheduleEvent>(w6, message_reader_new(), table_erased_schedule_event_default());
+    if event.has_value != true { panic(11931); };
+    if event.value.amount != 9 { panic(11932); };
+}
+
+@test "table erased schedule run_if gates whole schedule"() {
+    let w0 = table_erased_schedule_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
+    let (w3, entity) = table_erased_world_spawn<TableErasedScheduleTime, TableErasedScheduleEvent>(w2);
+    let w4 = table_erased_world_insert<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w3, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE, TableErasedSchedulePos { x: 3, y: 0 });
+    let w5 = table_erased_world_insert<TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(w4, entity, velocity.id, TABLE_ERASED_SCHEDULE_VEL_TYPE, TableErasedScheduleVel { x: 4, y: 0 });
+    let move_access = table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id);
+    let s0 = table_erased_schedule_default<TableErasedScheduleTime, TableErasedScheduleEvent>();
+    let s1 = table_erased_schedule_run_if<TableErasedScheduleTime, TableErasedScheduleEvent>(s0, table_erased_schedule_condition_tick_at_least_three);
+    if s1.condition_count != 1 { panic(11945); };
+    let direct_schedule_condition = s1.conditions[0];
+    if direct_schedule_condition(3) != true { panic(11946); };
+    let s2 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s1, table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_move_system, move_access));
+    if s2.condition_count != 1 { panic(11947); };
+    let stored_schedule_condition = s2.conditions[0];
+    if stored_schedule_condition(3) != true { panic(11948); };
+    let w6 = table_erased_schedule_run<TableErasedScheduleTime, TableErasedScheduleEvent>(s2, w5);
+    if table_erased_world_get<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w6, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE).x != 3 { panic(11940); };
+    if w6.registry.change_tick != 2 { panic(11941); };
+    let w7 = table_erased_schedule_run<TableErasedScheduleTime, TableErasedScheduleEvent>(s2, w6);
+    if w7.registry.change_tick != 3 { panic(11944); };
+    if table_erased_world_get<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w7, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE).x != 7 { panic(11942); };
+    if w7.registry.change_tick != 3 { panic(11943); };
+}
+
+@test "table erased planned schedule respects run_if"() {
+    let w0 = table_erased_schedule_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w0, TABLE_ERASED_SCHEDULE_POS_TYPE, ecs_box_drop<TableErasedSchedulePos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedScheduleTime, TableErasedScheduleEvent>(w1, TABLE_ERASED_SCHEDULE_VEL_TYPE, ecs_box_drop<TableErasedScheduleVel>);
+    let (w3, entity) = table_erased_world_spawn<TableErasedScheduleTime, TableErasedScheduleEvent>(w2);
+    let w4 = table_erased_world_insert<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w3, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE, TableErasedSchedulePos { x: 3, y: 0 });
+    let w5 = table_erased_world_insert<TableErasedScheduleVel, TableErasedScheduleTime, TableErasedScheduleEvent>(w4, entity, velocity.id, TABLE_ERASED_SCHEDULE_VEL_TYPE, TableErasedScheduleVel { x: 4, y: 0 });
+    let move_access = table_erased_access_read_component(table_erased_access_write_component(table_erased_system_access_none(), position.id), velocity.id);
+    let move_system = table_erased_system_run_if<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_system_new<TableErasedScheduleTime, TableErasedScheduleEvent>(table_erased_schedule_move_system, move_access), table_erased_schedule_condition_false);
+    let s0 = table_erased_schedule_default<TableErasedScheduleTime, TableErasedScheduleEvent>();
+    let s1 = table_erased_schedule_add_systems<TableErasedScheduleTime, TableErasedScheduleEvent>(s0, move_system);
+    let w6 = table_erased_schedule_run_planned<TableErasedScheduleTime, TableErasedScheduleEvent>(s1, w5);
+    if table_erased_world_get<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w6, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE).x != 3 { panic(11950); };
 }
