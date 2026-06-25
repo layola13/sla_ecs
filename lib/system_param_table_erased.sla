@@ -230,6 +230,24 @@ fn table_erased_message_mutator_write<M>(param: TableErasedMessageMutatorParam<M
     return param;
 }
 
+fn table_erased_message_mutator_write_with_message_id<M>(param: TableErasedMessageMutatorParam<M>, value: M) -> (TableErasedMessageMutatorParam<M>, MessageId<M>) {
+    let written = messages_mutator_write_with_message_id<M>(param.messages, value);
+    param.messages = written.messages;
+    return (param, written.id);
+}
+
+fn table_erased_message_mutator_write_batch_with_message_id<M>(param: TableErasedMessageMutatorParam<M>, writer: MessageWriter<M>) -> (TableErasedMessageMutatorParam<M>, MessageBatchWriteWithMessageId<M>) {
+    let written = messages_mutator_write_batch_with_message_id<M>(param.messages, writer);
+    param.messages = written.messages;
+    return (param, written);
+}
+
+fn table_erased_message_mutator_write_default_with_message_id<M>(param: TableErasedMessageMutatorParam<M>, default_value: M) -> (TableErasedMessageMutatorParam<M>, MessageId<M>) {
+    let written = messages_mutator_write_default_with_message_id<M>(param.messages, default_value);
+    param.messages = written.messages;
+    return (param, written.id);
+}
+
 fn table_erased_pair_mut_readonly_pair_param_set<A, B>(mut_query: Query<TableErasedPairMut<A, B>>, read_query: Query<TableErasedPair<A, B>>) -> TableErasedPairMutReadonlyPairParamSet<A, B> {
     return TableErasedPairMutReadonlyPairParamSet<A, B> { mut_query: mut_query, read_query: read_query };
 }
@@ -1586,7 +1604,18 @@ fn table_erased_param_message_mutator_system(param: TableErasedMessageMutatorPar
     if read3.has_value != true { panic(12093); };
     read3.item.value.amount = read3.item.value.amount + 100;
     let param7 = table_erased_message_mutator_write_back<TableErasedParamEvent>(param6, read3.item);
-    return table_erased_message_mutator_write<TableErasedParamEvent>(param7, TableErasedParamEvent { amount: 11 });
+    let (param8, id3) = table_erased_message_mutator_write_with_message_id<TableErasedParamEvent>(param7, TableErasedParamEvent { amount: 11 });
+    if message_id_typed_value<TableErasedParamEvent>(id3) != 3 { panic(12160); };
+    let writer0 = message_writer_new<TableErasedParamEvent>();
+    let writer1 = message_writer_send<TableErasedParamEvent>(writer0, TableErasedParamEvent { amount: 13 });
+    let writer2 = message_writer_send<TableErasedParamEvent>(writer1, TableErasedParamEvent { amount: 15 });
+    let (param9, batch) = table_erased_message_mutator_write_batch_with_message_id<TableErasedParamEvent>(param8, writer2);
+    if message_id_typed_value<TableErasedParamEvent>(batch.first_id) != 4 { panic(12161); };
+    if batch.count != 2 { panic(12162); };
+    if message_id_typed_value<TableErasedParamEvent>(message_batch_write_message_id_at<TableErasedParamEvent>(batch, 1)) != 5 { panic(12163); };
+    let (param10, default_id) = table_erased_message_mutator_write_default_with_message_id<TableErasedParamEvent>(param9, table_erased_param_event_default());
+    if message_id_typed_value<TableErasedParamEvent>(default_id) != 6 { panic(12164); };
+    return param10;
 }
 
 fn table_erased_param_reader_writer_param_set_system(param: TableErasedMessageReaderWriterParamSet<TableErasedParamEvent>) -> TableErasedMessageReaderWriterParamSet<TableErasedParamEvent> {
@@ -2647,10 +2676,17 @@ fn table_erased_param_triple_marker_velocity_pos_count_system(param: TableErased
     let check1 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check0.reader, table_erased_param_event_default());
     let check2 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check1.reader, table_erased_param_event_default());
     let check3 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check2.reader, table_erased_param_event_default());
+    let check4 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check3.reader, table_erased_param_event_default());
+    let check5 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check4.reader, table_erased_param_event_default());
+    let check6 = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, check5.reader, table_erased_param_event_default());
     if check0.value.amount != 105 { panic(12095); };
     if check1.value.amount != 107 { panic(12096); };
     if check2.value.amount != 103 { panic(12097); };
     if check3.value.amount != 11 { panic(12098); };
+    if check4.value.amount != 13 { panic(12165); };
+    if check5.value.amount != 15 { panic(12166); };
+    if check6.value.amount != 0 { panic(12167); };
+    if message_id_typed_value<TableErasedParamEvent>(table_erased_world_current_update_message_id_at<TableErasedParamTime, TableErasedParamEvent>(w3, 6, table_erased_param_event_default()).id) != 6 { panic(12168); };
 
     let next = table_erased_world_read_message<TableErasedParamTime, TableErasedParamEvent>(w3, reader1, table_erased_param_event_default());
     if next.has_value != true { panic(12099); };
