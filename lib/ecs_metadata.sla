@@ -188,8 +188,16 @@ fn ecs_erased_messages_write_with_id<T>(messages: ErasedMessages, metadata: EcsM
     return erased_messages_write_with_id<T>(messages, metadata.type_id, metadata.drop_fn, value);
 }
 
+fn ecs_erased_messages_write_with_message_id<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, value: T) -> ErasedMessageWriteWithMessageId<T> {
+    return erased_messages_write_with_message_id<T>(messages, metadata.type_id, metadata.drop_fn, value);
+}
+
 fn ecs_erased_messages_write_default<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, default_value: T) -> ErasedMessageWrite {
     return erased_messages_write_default<T>(messages, metadata.type_id, metadata.drop_fn, default_value);
+}
+
+fn ecs_erased_messages_write_default_with_message_id<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, default_value: T) -> ErasedMessageWriteWithMessageId<T> {
+    return erased_messages_write_default_with_message_id<T>(messages, metadata.type_id, metadata.drop_fn, default_value);
 }
 
 fn ecs_erased_message_writer_new(metadata: EcsMessageMetadata) -> ErasedMessageWriter {
@@ -200,6 +208,10 @@ fn ecs_erased_messages_write_batch(messages: ErasedMessages, writer: ErasedMessa
     return erased_messages_write_batch(messages, writer);
 }
 
+fn ecs_erased_messages_write_batch_with_message_id<T>(messages: ErasedMessages, writer: ErasedMessageWriter) -> ErasedMessageBatchWriteWithMessageId<T> {
+    return erased_messages_write_batch_with_message_id<T>(messages, writer);
+}
+
 fn ecs_erased_messages_read_next<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, reader: MessageReader, default_value: T) -> ErasedMessageRead<T> {
     return erased_messages_read_next<T>(messages, metadata.type_id, reader, default_value);
 }
@@ -208,8 +220,16 @@ fn ecs_erased_messages_read_next_with_id<T>(messages: ErasedMessages, metadata: 
     return erased_messages_read_next_with_id<T>(messages, metadata.type_id, reader, default_value);
 }
 
+fn ecs_erased_messages_read_next_with_message_id<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, reader: MessageReader, default_value: T) -> ErasedMessageReadWithMessageId<T> {
+    return erased_messages_read_next_with_message_id<T>(messages, metadata.type_id, reader, default_value);
+}
+
 fn ecs_erased_messages_get_message<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, id: i64, default_value: T) -> ErasedMessageReadWithId<T> {
     return erased_messages_get_message<T>(messages, metadata.type_id, id, default_value);
+}
+
+fn ecs_erased_messages_get_message_id<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, id: MessageId<T>, default_value: T) -> ErasedMessageReadWithMessageId<T> {
+    return erased_messages_get_message_id<T>(messages, metadata.type_id, id, default_value);
 }
 
 fn ecs_erased_messages_reader_len(messages: ErasedMessages, metadata: EcsMessageMetadata, reader: MessageReader) -> i64 {
@@ -373,10 +393,19 @@ fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     let batch_read = ecs_erased_messages_read_next_with_id<EcsMetaDamage>(batch.messages, damage_meta, reader_current, ecs_meta_damage_default());
     if batch_read.id != 2 { panic(14591); };
     if batch_read.value.amount != 21 { panic(14592); };
-    let updated = ecs_erased_messages_update_channel(batch.messages, damage_meta);
+    let typed_written = ecs_erased_messages_write_with_message_id<EcsMetaDamage>(batch.messages, damage_meta, EcsMetaDamage { amount: 34 });
+    if message_id_typed_value<EcsMetaDamage>(typed_written.id) != 3 { panic(14596); };
+    let typed_found = ecs_erased_messages_get_message_id<EcsMetaDamage>(typed_written.messages, damage_meta, typed_written.id, ecs_meta_damage_default());
+    if typed_found.has_value != true { panic(14597); };
+    if typed_found.value.amount != 34 { panic(14598); };
+    let typed_reader = MessageReader { cursor: 3 };
+    let typed_read = ecs_erased_messages_read_next_with_message_id<EcsMetaDamage>(typed_written.messages, damage_meta, typed_reader, ecs_meta_damage_default());
+    if message_id_typed_value<EcsMetaDamage>(typed_read.id) != 3 { panic(14599); };
+    if typed_read.value.amount != 34 { panic(14600); };
+    let updated = ecs_erased_messages_update_channel(typed_written.messages, damage_meta);
     if ecs_erased_messages_reader_missed(updated, damage_meta, message_reader_new()) != 0 { panic(14593); };
     let drained = ecs_erased_messages_drain_channel(updated, damage_meta);
-    if drained.count != 3 { panic(14594); };
+    if drained.count != 4 { panic(14594); };
     if erased_messages_channel_len(drained.messages, damage_meta.type_id) != 0 { panic(14595); };
     let observers0 = erased_observers_new();
     let observers1 = ecs_erased_observers_add(observers0, ping_meta, ecs_meta_ping_score);

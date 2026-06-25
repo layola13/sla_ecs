@@ -3233,8 +3233,18 @@ fn table_erased_world_write_message_with_id<R, M>(world: TableErasedWorld<R, M>,
     world.messages = written.messages;
     return (world, written.id);
 }
+fn table_erased_world_write_message_with_message_id<R, M>(world: TableErasedWorld<R, M>, value: M) -> (TableErasedWorld<R, M>, MessageId<M>) {
+    let written = messages_write_with_message_id<M>(world.messages, value);
+    world.messages = written.messages;
+    return (world, written.id);
+}
 fn table_erased_world_write_default_message<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, i64) {
     let written = messages_write_default<M>(world.messages, default_value);
+    world.messages = written.messages;
+    return (world, written.id);
+}
+fn table_erased_world_write_default_message_with_message_id<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageId<M>) {
+    let written = messages_write_default_with_message_id<M>(world.messages, default_value);
     world.messages = written.messages;
     return (world, written.id);
 }
@@ -3243,9 +3253,16 @@ fn table_erased_world_write_message_batch<R, M>(world: TableErasedWorld<R, M>, w
     world.messages = written.messages;
     return (world, written.first_id, written.count);
 }
+fn table_erased_world_write_message_batch_with_message_id<R, M>(world: TableErasedWorld<R, M>, writer: MessageWriter<M>) -> (TableErasedWorld<R, M>, MessageId<M>, i64) {
+    let written = messages_write_batch_with_message_id<M>(world.messages, writer);
+    world.messages = written.messages;
+    return (world, written.first_id, written.count);
+}
 fn table_erased_world_read_message<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageRead<M> { return messages_read_next<M>(world.messages, reader, default_value); }
 fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithId<M> { return messages_read_next_with_id<M>(world.messages, reader, default_value); }
+fn table_erased_world_read_message_with_message_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithMessageId<M> { return messages_read_next_with_message_id<M>(world.messages, reader, default_value); }
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
+fn table_erased_world_get_message_id<R, M>(world: TableErasedWorld<R, M>, id: MessageId<M>, default_value: M) -> MessageReadWithMessageId<M> { return messages_get_message_id<M>(world.messages, id, default_value); }
 fn table_erased_world_update_messages<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.messages = messages_update<M>(world.messages); return world; }
 fn table_erased_world_current_update_message_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_current_update_len<M>(world.messages); }
 fn table_erased_world_update_messages_drain<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageDrainItems<M>) {
@@ -3403,6 +3420,32 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if empty_first != 3 { panic(11687); };
     if empty_count != 0 { panic(11688); };
     if w3.messages.next_id != 3 { panic(11689); };
+}
+
+@test "table erased world exposes typed MessageId wrappers"() {
+    let w0 = table_erased_test_world_new();
+    let (w1, default_id) = table_erased_world_write_default_message_with_message_id<TableErasedTime, TableErasedEvent>(w0, TableErasedEvent { amount: 4 });
+    if message_id_typed_value<TableErasedEvent>(default_id) != 0 { panic(11690); };
+    let writer0 = message_writer_new<TableErasedEvent>();
+    let writer1 = message_writer_send<TableErasedEvent>(writer0, TableErasedEvent { amount: 6 });
+    let writer2 = message_writer_send<TableErasedEvent>(writer1, TableErasedEvent { amount: 8 });
+    let (w2, batch_first, count) = table_erased_world_write_message_batch_with_message_id<TableErasedTime, TableErasedEvent>(w1, writer2);
+    if message_id_typed_value<TableErasedEvent>(batch_first) != 1 { panic(11691); };
+    if count != 2 { panic(11692); };
+
+    let found_default = table_erased_world_get_message_id<TableErasedTime, TableErasedEvent>(w2, default_id, table_erased_event_default());
+    if found_default.has_value != true { panic(11693); };
+    if found_default.value.amount != 4 { panic(11694); };
+    let read_batch = table_erased_world_read_message_with_message_id<TableErasedTime, TableErasedEvent>(w2, MessageReader { cursor: 1 }, table_erased_event_default());
+    if read_batch.has_value != true { panic(11695); };
+    if read_batch.value.amount != 6 { panic(11696); };
+    if message_id_typed_value<TableErasedEvent>(read_batch.id) != 1 { panic(11697); };
+
+    let (w3, direct_id) = table_erased_world_write_message_with_message_id<TableErasedTime, TableErasedEvent>(w2, TableErasedEvent { amount: 10 });
+    if message_id_typed_value<TableErasedEvent>(direct_id) != 3 { panic(11698); };
+    let found_direct = table_erased_world_get_message_id<TableErasedTime, TableErasedEvent>(w3, direct_id, table_erased_event_default());
+    if found_direct.has_value != true { panic(11699); };
+    if found_direct.value.amount != 10 { panic(11700); };
 }
 
 @test "table erased world messages update retains one frame"() {
