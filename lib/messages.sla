@@ -375,6 +375,36 @@ fn messages_current_update_len<T>(messages: Messages<T>) -> i64 {
     return result;
 }
 
+fn messages_message_count<T>(messages: Messages<T>) -> i64 {
+    return messages.next_id;
+}
+
+fn messages_oldest_message_count<T>(messages: Messages<T>) -> i64 {
+    return messages_oldest_id<T>(messages);
+}
+
+fn messages_current_update_message_at<T>(messages: Messages<T>, index: i64, default_value: T) -> MessageReadWithId<T> {
+    if index < 0 { return MessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: MessageReader { cursor: messages.current_start_id } }; };
+    let i: i64 = 0;
+    let current_index: i64 = 0;
+    while i < messages.count {
+        let stored_id = messages.ids[i];
+        if stored_id >= messages.current_start_id {
+            if current_index == index {
+                return MessageReadWithId<T> { has_value: true, value: messages.values[i], id: stored_id, reader: MessageReader { cursor: stored_id + 1 } };
+            };
+            current_index = current_index + 1;
+        };
+        i = i + 1;
+    }
+    return MessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: MessageReader { cursor: messages.next_id } };
+}
+
+fn messages_current_update_message_id_at<T>(messages: Messages<T>, index: i64, default_value: T) -> MessageReadWithMessageId<T> {
+    let read = messages_current_update_message_at<T>(messages, index, default_value);
+    return MessageReadWithMessageId<T> { has_value: read.has_value, value: read.value, id: message_id_typed_new<T>(read.id), reader: read.reader };
+}
+
 fn messages_reader_len<T>(messages: Messages<T>, reader: MessageReader) -> i64 {
     let i: i64 = 0;
     let result: i64 = 0;
@@ -485,6 +515,8 @@ fn test_damage_default() -> TestDamageMessage {
     if m.current_start_id != 0 { panic(2497); };
     if messages_len<TestDamageMessage>(m) != 0 { panic(2451); };
     if messages_is_empty<TestDamageMessage>(m) != true { panic(2452); };
+    if messages_message_count<TestDamageMessage>(m) != 0 { panic(2589); };
+    if messages_oldest_message_count<TestDamageMessage>(m) != 0 { panic(2590); };
 }
 
 @test "messages writer appends"() {
@@ -495,6 +527,8 @@ fn test_damage_default() -> TestDamageMessage {
     if m2.next_id != 2 { panic(2453); };
     if m2.ids[0] != 0 { panic(2454); };
     if m2.ids[1] != 1 { panic(2455); };
+    if messages_message_count<TestDamageMessage>(m2) != 2 { panic(2591); };
+    if messages_oldest_message_count<TestDamageMessage>(m2) != 0 { panic(2592); };
 }
 
 @test "messages write returns monotonic ids and supports direct lookup"() {
@@ -779,6 +813,20 @@ fn test_damage_default() -> TestDamageMessage {
     let m5 = messages_write<TestDamageMessage>(m4, TestDamageMessage { amount: 3 });
     if messages_len<TestDamageMessage>(m5) != 3 { panic(2505); };
     if messages_current_update_len<TestDamageMessage>(m5) != 2 { panic(2506); };
+    if messages_message_count<TestDamageMessage>(m5) != 3 { panic(2593); };
+    if messages_oldest_message_count<TestDamageMessage>(m5) != 0 { panic(2594); };
+
+    let current_at0 = messages_current_update_message_at<TestDamageMessage>(m5, 0, test_damage_default());
+    let current_at1 = messages_current_update_message_id_at<TestDamageMessage>(m5, 1, test_damage_default());
+    let current_at2 = messages_current_update_message_at<TestDamageMessage>(m5, 2, test_damage_default());
+    if current_at0.has_value != true { panic(2595); };
+    if current_at0.id != 1 { panic(2596); };
+    if current_at0.value.amount != 2 { panic(2597); };
+    if current_at1.has_value != true { panic(2598); };
+    if message_id_typed_value<TestDamageMessage>(current_at1.id) != 2 { panic(2599); };
+    if current_at1.value.amount != 3 { panic(2600); };
+    if current_at2.has_value { panic(2601); };
+    if current_at2.id != -1 { panic(2602); };
 
     let current_reader = message_reader_current_update<TestDamageMessage>(m5);
     let current1 = messages_read_next_with_id<TestDamageMessage>(m5, current_reader, test_damage_default());
@@ -793,6 +841,7 @@ fn test_damage_default() -> TestDamageMessage {
     let m6 = messages_update<TestDamageMessage>(m5);
     if messages_len<TestDamageMessage>(m6) != 2 { panic(2512); };
     if messages_current_update_len<TestDamageMessage>(m6) != 0 { panic(2513); };
+    if messages_oldest_message_count<TestDamageMessage>(m6) != 1 { panic(2603); };
     if messages_reader_missed<TestDamageMessage>(m6, message_reader_new()) != 1 { panic(2514); };
     let old = messages_get_message<TestDamageMessage>(m6, message_id_new(0), test_damage_default());
     if old.has_value { panic(2515); };
@@ -802,6 +851,7 @@ fn test_damage_default() -> TestDamageMessage {
 
     let m7 = messages_update<TestDamageMessage>(m6);
     if messages_len<TestDamageMessage>(m7) != 0 { panic(2518); };
+    if messages_oldest_message_count<TestDamageMessage>(m7) != 3 { panic(2604); };
     if messages_reader_missed<TestDamageMessage>(m7, message_reader_new()) != 3 { panic(2519); };
 }
 

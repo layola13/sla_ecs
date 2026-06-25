@@ -134,6 +134,37 @@ fn erased_messages_current_update_len(messages: ErasedMessages, type_id: i32) ->
     return result;
 }
 
+fn erased_messages_message_count(messages: ErasedMessages, type_id: i32) -> i64 {
+    return erased_messages_channel_next_id(messages, type_id);
+}
+
+fn erased_messages_current_update_message_at<T>(messages: ErasedMessages, type_id: i32, index: i64, default_value: T) -> ErasedMessageReadWithId<T> {
+    let reader = MessageReader { cursor: erased_messages_channel_next_id(messages, type_id) };
+    if index < 0 { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    let slot = erased_messages_channel_slot(messages, type_id);
+    if slot < 0 { return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader }; };
+    let i: i64 = 0;
+    let current_index: i64 = 0;
+    let cnt = len(messages.channels[slot].values) as i64;
+    while i < cnt {
+        let stored = messages.channels[slot].values[i];
+        if stored.id >= messages.channels[slot].current_start_id {
+            if current_index == index {
+                let value = erased_message_value_read<T>(stored, type_id);
+                return ErasedMessageReadWithId<T> { has_value: true, value: value, id: stored.id, reader: MessageReader { cursor: stored.id + 1 } };
+            };
+            current_index = current_index + 1;
+        };
+        i = i + 1;
+    }
+    return ErasedMessageReadWithId<T> { has_value: false, value: default_value, id: message_id_none(), reader: reader };
+}
+
+fn erased_messages_current_update_message_id_at<T>(messages: ErasedMessages, type_id: i32, index: i64, default_value: T) -> ErasedMessageReadWithMessageId<T> {
+    let read = erased_messages_current_update_message_at<T>(messages, type_id, index, default_value);
+    return ErasedMessageReadWithMessageId<T> { has_value: read.has_value, value: read.value, id: message_id_typed_new<T>(read.id), reader: read.reader };
+}
+
 fn erased_messages_ensure_channel(messages: ErasedMessages, type_id: i32, drop_fn: fn(*u8) -> void) -> ErasedMessages {
     let slot = erased_messages_channel_slot(messages, type_id);
     if slot >= 0 { return messages; };
@@ -239,6 +270,10 @@ fn erased_messages_oldest_id(messages: ErasedMessages, type_id: i32) -> i64 {
     if slot < 0 { return 0; };
     if len(messages.channels[slot].values) == 0 { return messages.channels[slot].next_id; };
     return messages.channels[slot].values[0].id;
+}
+
+fn erased_messages_oldest_message_count(messages: ErasedMessages, type_id: i32) -> i64 {
+    return erased_messages_oldest_id(messages, type_id);
 }
 
 fn erased_messages_reader_len(messages: ErasedMessages, type_id: i32, reader: MessageReader) -> i64 {
@@ -456,6 +491,8 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     if erased_messages_channel_count(messages3) != 2 { panic(12713); };
     if erased_messages_channel_len(messages3, damage_type) != 2 { panic(12714); };
     if erased_messages_channel_len(messages3, spawn_type) != 1 { panic(12715); };
+    if erased_messages_message_count(messages3, damage_type) != 2 { panic(12842); };
+    if erased_messages_oldest_message_count(messages3, damage_type) != 0 { panic(12843); };
     let damage_reader = message_reader_new();
     let spawn_reader = message_reader_new();
     let d1 = erased_messages_read_next<ErasedDamageMessage>(messages3, damage_type, damage_reader, erased_damage_default());
@@ -622,6 +659,19 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     let messages6 = erased_messages_write<ErasedDamageMessage>(messages5, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 3 });
     if erased_messages_channel_len(messages6, damage_type) != 3 { panic(12783); };
     if erased_messages_current_update_len(messages6, damage_type) != 2 { panic(12784); };
+    if erased_messages_message_count(messages6, damage_type) != 3 { panic(12844); };
+    if erased_messages_oldest_message_count(messages6, damage_type) != 0 { panic(12845); };
+    let current_at0 = erased_messages_current_update_message_at<ErasedDamageMessage>(messages6, damage_type, 0, erased_damage_default());
+    let current_at1 = erased_messages_current_update_message_id_at<ErasedDamageMessage>(messages6, damage_type, 1, erased_damage_default());
+    let current_at2 = erased_messages_current_update_message_at<ErasedDamageMessage>(messages6, damage_type, 2, erased_damage_default());
+    if current_at0.has_value != true { panic(12846); };
+    if current_at0.id != 1 { panic(12847); };
+    if current_at0.value.amount != 2 { panic(12848); };
+    if current_at1.has_value != true { panic(12849); };
+    if message_id_typed_value<ErasedDamageMessage>(current_at1.id) != 2 { panic(12850); };
+    if current_at1.value.amount != 3 { panic(12851); };
+    if current_at2.has_value { panic(12852); };
+    if current_at2.id != -1 { panic(12853); };
     let current_reader = erased_message_reader_current_update(messages6, damage_type);
     let current1 = erased_messages_read_next_with_id<ErasedDamageMessage>(messages6, damage_type, current_reader, erased_damage_default());
     let current2 = erased_messages_read_next_with_id<ErasedDamageMessage>(messages6, damage_type, current1.reader, erased_damage_default());
@@ -631,6 +681,7 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     if current2.value.amount != 3 { panic(12788); };
     let messages7 = erased_messages_update_channel(messages6, damage_type);
     if erased_messages_channel_len(messages7, damage_type) != 2 { panic(12789); };
+    if erased_messages_oldest_message_count(messages7, damage_type) != 1 { panic(12854); };
     if erased_messages_reader_missed(messages7, damage_type, message_reader_new()) != 1 { panic(12790); };
     let old = erased_messages_get_message<ErasedDamageMessage>(messages7, damage_type, 0, erased_damage_default());
     if old.has_value { panic(12791); };

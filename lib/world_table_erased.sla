@@ -3273,6 +3273,12 @@ fn table_erased_world_message_reader_is_empty<R, M>(world: TableErasedWorld<R, M
 fn table_erased_world_message_reader_clear<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> MessageReader { return messages_reader_clear<M>(reader, world.messages); }
 fn table_erased_world_update_messages<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.messages = messages_update<M>(world.messages); return world; }
 fn table_erased_world_current_update_message_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_current_update_len<M>(world.messages); }
+fn table_erased_world_messages_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_len<M>(world.messages); }
+fn table_erased_world_messages_is_empty<R, M>(world: TableErasedWorld<R, M>) -> bool { return messages_is_empty<M>(world.messages); }
+fn table_erased_world_messages_message_count<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_message_count<M>(world.messages); }
+fn table_erased_world_messages_oldest_message_count<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_oldest_message_count<M>(world.messages); }
+fn table_erased_world_current_update_message_at<R, M>(world: TableErasedWorld<R, M>, index: i64, default_value: M) -> MessageReadWithId<M> { return messages_current_update_message_at<M>(world.messages, index, default_value); }
+fn table_erased_world_current_update_message_id_at<R, M>(world: TableErasedWorld<R, M>, index: i64, default_value: M) -> MessageReadWithMessageId<M> { return messages_current_update_message_id_at<M>(world.messages, index, default_value); }
 fn table_erased_world_update_messages_drain<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageDrainItems<M>) {
     let drained = messages_update_drain<M>(world.messages, default_value);
     let items = MessageDrainItems<M> { count: drained.count, ids: drained.ids, values: drained.values };
@@ -3509,10 +3515,22 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     let w4 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w3, TableErasedEvent { amount: 2 });
     let w5 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w4, TableErasedEvent { amount: 3 });
     if messages_len<TableErasedEvent>(w5.messages) != 3 { panic(11658); };
+    if table_erased_world_messages_len<TableErasedTime, TableErasedEvent>(w5) != 3 { panic(11717); };
+    if table_erased_world_messages_is_empty<TableErasedTime, TableErasedEvent>(w5) { panic(11718); };
+    if table_erased_world_messages_message_count<TableErasedTime, TableErasedEvent>(w5) != 3 { panic(11719); };
+    if table_erased_world_messages_oldest_message_count<TableErasedTime, TableErasedEvent>(w5) != 0 { panic(11720); };
     if table_erased_world_current_update_message_len<TableErasedTime, TableErasedEvent>(w5) != 2 { panic(11659); };
+    let current_at0 = table_erased_world_current_update_message_at<TableErasedTime, TableErasedEvent>(w5, 0, table_erased_event_default());
+    if current_at0.has_value != true { panic(11721); };
+    if current_at0.id != 1 { panic(11722); };
+    if current_at0.value.amount != 2 { panic(11723); };
+    let current_at1 = table_erased_world_current_update_message_id_at<TableErasedTime, TableErasedEvent>(w5, 1, table_erased_event_default());
+    if message_id_typed_value<TableErasedEvent>(current_at1.id) != 2 { panic(11724); };
+    if current_at1.value.amount != 3 { panic(11725); };
 
     let w6 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w5);
     if messages_len<TableErasedEvent>(w6.messages) != 2 { panic(11660); };
+    if table_erased_world_messages_oldest_message_count<TableErasedTime, TableErasedEvent>(w6) != 1 { panic(11726); };
     let dropped = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w6, message_id_new(0), table_erased_event_default());
     if dropped.has_value { panic(11661); };
     let kept = table_erased_world_get_message<TableErasedTime, TableErasedEvent>(w6, message_id_new(1), table_erased_event_default());

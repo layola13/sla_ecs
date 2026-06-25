@@ -54,6 +54,13 @@ fn table_erased_relationship_world_message_reader_len<R, M>(world: TableErasedRe
 fn table_erased_relationship_world_message_reader_missed<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader) -> i64 { return table_erased_world_message_reader_missed<R, M>(world.table, reader); }
 fn table_erased_relationship_world_message_reader_is_empty<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader) -> bool { return table_erased_world_message_reader_is_empty<R, M>(world.table, reader); }
 fn table_erased_relationship_world_message_reader_clear<R, M>(world: TableErasedRelationshipWorld<R, M>, reader: MessageReader) -> MessageReader { return table_erased_world_message_reader_clear<R, M>(world.table, reader); }
+fn table_erased_relationship_world_messages_len<R, M>(world: TableErasedRelationshipWorld<R, M>) -> i64 { return table_erased_world_messages_len<R, M>(world.table); }
+fn table_erased_relationship_world_messages_is_empty<R, M>(world: TableErasedRelationshipWorld<R, M>) -> bool { return table_erased_world_messages_is_empty<R, M>(world.table); }
+fn table_erased_relationship_world_messages_message_count<R, M>(world: TableErasedRelationshipWorld<R, M>) -> i64 { return table_erased_world_messages_message_count<R, M>(world.table); }
+fn table_erased_relationship_world_messages_oldest_message_count<R, M>(world: TableErasedRelationshipWorld<R, M>) -> i64 { return table_erased_world_messages_oldest_message_count<R, M>(world.table); }
+fn table_erased_relationship_world_current_update_message_len<R, M>(world: TableErasedRelationshipWorld<R, M>) -> i64 { return table_erased_world_current_update_message_len<R, M>(world.table); }
+fn table_erased_relationship_world_current_update_message_at<R, M>(world: TableErasedRelationshipWorld<R, M>, index: i64, default_value: M) -> MessageReadWithId<M> { return table_erased_world_current_update_message_at<R, M>(world.table, index, default_value); }
+fn table_erased_relationship_world_current_update_message_id_at<R, M>(world: TableErasedRelationshipWorld<R, M>, index: i64, default_value: M) -> MessageReadWithMessageId<M> { return table_erased_world_current_update_message_id_at<R, M>(world.table, index, default_value); }
 
 fn table_erased_relationship_world_is_alive<R, M>(world: TableErasedRelationshipWorld<R, M>, entity: Entity) -> bool {
     if table_erased_world_is_alive<R, M>(world.table, entity) != true { return false; };
@@ -179,6 +186,10 @@ fn table_erased_relationship_test_world_new() -> TableErasedRelationshipWorld<Ta
     w0.table = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0.table, TableErasedEvent { amount: 6 });
     let reader0 = message_reader_new();
     if table_erased_relationship_world_message_reader_len<TableErasedTime, TableErasedEvent>(w0, reader0) != 2 { panic(12290); };
+    if table_erased_relationship_world_messages_len<TableErasedTime, TableErasedEvent>(w0) != 2 { panic(12300); };
+    if table_erased_relationship_world_messages_message_count<TableErasedTime, TableErasedEvent>(w0) != 2 { panic(12301); };
+    if table_erased_relationship_world_messages_oldest_message_count<TableErasedTime, TableErasedEvent>(w0) != 0 { panic(12302); };
+    if table_erased_relationship_world_current_update_message_len<TableErasedTime, TableErasedEvent>(w0) != 2 { panic(12303); };
     let cleared = table_erased_relationship_world_message_reader_clear<TableErasedTime, TableErasedEvent>(w0, reader0);
     if table_erased_relationship_world_message_reader_is_empty<TableErasedTime, TableErasedEvent>(w0, cleared) != true { panic(12291); };
     w0.table = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0.table, TableErasedEvent { amount: 8 });
@@ -186,6 +197,9 @@ fn table_erased_relationship_test_world_new() -> TableErasedRelationshipWorld<Ta
     if read.has_value != true { panic(12292); };
     if read.id != 2 { panic(12293); };
     if read.value.amount != 8 { panic(12294); };
+    let current_at = table_erased_relationship_world_current_update_message_id_at<TableErasedTime, TableErasedEvent>(w0, 2, table_erased_event_default());
+    if message_id_typed_value<TableErasedEvent>(current_at.id) != 2 { panic(12304); };
+    if current_at.value.amount != 8 { panic(12305); };
     let current = table_erased_relationship_world_message_reader_current<TableErasedTime, TableErasedEvent>(w0);
     if table_erased_relationship_world_message_reader_len<TableErasedTime, TableErasedEvent>(w0, current) != 0 { panic(12295); };
     w0.table = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0.table);

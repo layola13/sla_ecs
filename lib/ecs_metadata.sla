@@ -244,6 +244,34 @@ fn ecs_erased_messages_reader_clear(messages: ErasedMessages, metadata: EcsMessa
     return erased_messages_reader_clear(messages, metadata.type_id, reader);
 }
 
+fn ecs_erased_messages_len(messages: ErasedMessages, metadata: EcsMessageMetadata) -> i64 {
+    return erased_messages_len(messages, metadata.type_id);
+}
+
+fn ecs_erased_messages_is_empty(messages: ErasedMessages, metadata: EcsMessageMetadata) -> bool {
+    return erased_messages_is_empty(messages, metadata.type_id);
+}
+
+fn ecs_erased_messages_message_count(messages: ErasedMessages, metadata: EcsMessageMetadata) -> i64 {
+    return erased_messages_message_count(messages, metadata.type_id);
+}
+
+fn ecs_erased_messages_oldest_message_count(messages: ErasedMessages, metadata: EcsMessageMetadata) -> i64 {
+    return erased_messages_oldest_message_count(messages, metadata.type_id);
+}
+
+fn ecs_erased_messages_current_update_len(messages: ErasedMessages, metadata: EcsMessageMetadata) -> i64 {
+    return erased_messages_current_update_len(messages, metadata.type_id);
+}
+
+fn ecs_erased_messages_current_update_message_at<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, index: i64, default_value: T) -> ErasedMessageReadWithId<T> {
+    return erased_messages_current_update_message_at<T>(messages, metadata.type_id, index, default_value);
+}
+
+fn ecs_erased_messages_current_update_message_id_at<T>(messages: ErasedMessages, metadata: EcsMessageMetadata, index: i64, default_value: T) -> ErasedMessageReadWithMessageId<T> {
+    return erased_messages_current_update_message_id_at<T>(messages, metadata.type_id, index, default_value);
+}
+
 fn ecs_erased_message_reader_current(messages: ErasedMessages, metadata: EcsMessageMetadata) -> MessageReader {
     return erased_message_reader_current(messages, metadata.type_id);
 }
@@ -413,6 +441,18 @@ fn ecs_meta_ping_score(value: ErasedEventValue, target_entity_id: i32) -> i32 {
     if alias_current_read.value.amount != 21 { panic(14606); };
     let typed_written = ecs_erased_messages_write_with_message_id<EcsMetaDamage>(batch.messages, damage_meta, EcsMetaDamage { amount: 34 });
     if message_id_typed_value<EcsMetaDamage>(typed_written.id) != 3 { panic(14596); };
+    if ecs_erased_messages_len(typed_written.messages, damage_meta) != 4 { panic(14607); };
+    if ecs_erased_messages_is_empty(typed_written.messages, damage_meta) { panic(14608); };
+    if ecs_erased_messages_message_count(typed_written.messages, damage_meta) != 4 { panic(14609); };
+    if ecs_erased_messages_oldest_message_count(typed_written.messages, damage_meta) != 0 { panic(14610); };
+    if ecs_erased_messages_current_update_len(typed_written.messages, damage_meta) != 4 { panic(14611); };
+    let current_at = ecs_erased_messages_current_update_message_at<EcsMetaDamage>(typed_written.messages, damage_meta, 2, ecs_meta_damage_default());
+    if current_at.has_value != true { panic(14612); };
+    if current_at.id != 2 { panic(14613); };
+    if current_at.value.amount != 21 { panic(14614); };
+    let current_typed = ecs_erased_messages_current_update_message_id_at<EcsMetaDamage>(typed_written.messages, damage_meta, 3, ecs_meta_damage_default());
+    if message_id_typed_value<EcsMetaDamage>(current_typed.id) != 3 { panic(14615); };
+    if current_typed.value.amount != 34 { panic(14616); };
     let typed_found = ecs_erased_messages_get_message_id<EcsMetaDamage>(typed_written.messages, damage_meta, typed_written.id, ecs_meta_damage_default());
     if typed_found.has_value != true { panic(14597); };
     if typed_found.value.amount != 34 { panic(14598); };
