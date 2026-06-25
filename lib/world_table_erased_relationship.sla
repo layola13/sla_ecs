@@ -23,6 +23,20 @@ fn table_erased_relationship_world_register_sparse_set<R, M>(world: TableErasedR
     return (world, info);
 }
 
+fn table_erased_relationship_world_register_disabling_component<R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32) -> TableErasedRelationshipWorld<R, M> {
+    world.table = table_erased_world_register_disabling_component<R, M>(world.table, component_id);
+    return world;
+}
+
+fn table_erased_relationship_world_register_disabling_component_auto<R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32) -> TableErasedRelationshipWorld<R, M> {
+    world.table = table_erased_world_register_disabling_component_auto<R, M>(world.table, type_id);
+    return world;
+}
+
+fn table_erased_relationship_world_query_entities<R, M>(world: TableErasedRelationshipWorld<R, M>) -> Query<Entity> { return table_erased_world_query_entities<R, M>(world.table); }
+fn table_erased_relationship_world_query_entities_allow<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_component_id: i32) -> Query<Entity> { return table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id); }
+fn table_erased_relationship_world_query_allow<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32) -> Query<EntityItem<T>> { return table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id); }
+
 fn table_erased_relationship_world_register_many<R, M>(world: TableErasedRelationshipWorld<R, M>, linked_spawn: bool, allow_self: bool) -> (TableErasedRelationshipWorld<R, M>, RelationshipKind) {
     let (relationships, kind) = relationship_world_register_many(world.relationships, linked_spawn, allow_self);
     world.relationships = relationships;
@@ -205,6 +219,25 @@ fn table_erased_relationship_test_world_new() -> TableErasedRelationshipWorld<Ta
     w0.table = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0.table);
     w0.table = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0.table);
     if table_erased_relationship_world_message_reader_missed<TableErasedTime, TableErasedEvent>(w0, message_reader_new()) != 3 { panic(12296); };
+}
+
+@test "table erased relationship world delegates default query filters"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, disabled) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let w3 = table_erased_relationship_world_register_disabling_component<TableErasedTime, TableErasedEvent>(w2, disabled.id);
+    let (w4, e1) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let (w5, e2) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let w6 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let w7 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w8 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w7, e2, disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let visible = table_erased_relationship_world_query_entities<TableErasedTime, TableErasedEvent>(w8);
+    if len(visible.items) != 1 { panic(12297); };
+    if visible.items[0].id != e1.id { panic(12298); };
+    let allowed = table_erased_relationship_world_query_allow<TableErasedPos, TableErasedTime, TableErasedEvent>(w8, position.id, TABLE_ERASED_POS_TYPE, disabled.id);
+    if len(allowed.items) != 2 { panic(12299); };
+    let entity_allowed = table_erased_relationship_world_query_entities_allow<TableErasedTime, TableErasedEvent>(w8, disabled.id);
+    if len(entity_allowed.items) != 2 { panic(12306); };
 }
 
 @test "table erased relationship world syncs entity allocation and components"() {
