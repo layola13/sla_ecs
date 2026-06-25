@@ -396,6 +396,78 @@ fn table_erased_query_pair_mut_contains<A, B>(query: Query<TableErasedPairMut<A,
     return false;
 }
 
+fn table_erased_query_join<A, B>(first: Query<EntityItem<A>>, second: Query<EntityItem<B>>) -> Query<TableErasedPair<A, B>> {
+    let result = query_new<TableErasedPair<A, B>>();
+    let i: i64 = 0;
+    let first_count = len(first.items) as i64;
+    while i < first_count {
+        let j: i64 = 0;
+        let second_count = len(second.items) as i64;
+        while j < second_count {
+            if entity_eq(first.items[i].entity, second.items[j].entity) {
+                result.items.push(TableErasedPair<A, B> { entity: first.items[i].entity, first: first.items[i].value, second: second.items[j].value });
+                j = second_count;
+            } else {
+                j = j + 1;
+            };
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_join_filtered<A, B>(first: Query<EntityItem<A>>, second: Query<EntityItem<B>>) -> Query<TableErasedPair<A, B>> {
+    return table_erased_query_join<A, B>(first, second);
+}
+
+fn table_erased_query_pair_join<A, B, C>(first: Query<TableErasedPair<A, B>>, second: Query<EntityItem<C>>) -> Query<TableErasedTriple<A, B, C>> {
+    let result = query_new<TableErasedTriple<A, B, C>>();
+    let i: i64 = 0;
+    let first_count = len(first.items) as i64;
+    while i < first_count {
+        let j: i64 = 0;
+        let second_count = len(second.items) as i64;
+        while j < second_count {
+            if entity_eq(first.items[i].entity, second.items[j].entity) {
+                result.items.push(TableErasedTriple<A, B, C> { entity: first.items[i].entity, first: first.items[i].first, second: first.items[i].second, third: second.items[j].value });
+                j = second_count;
+            } else {
+                j = j + 1;
+            };
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_pair_join_filtered<A, B, C>(first: Query<TableErasedPair<A, B>>, second: Query<EntityItem<C>>) -> Query<TableErasedTriple<A, B, C>> {
+    return table_erased_query_pair_join<A, B, C>(first, second);
+}
+
+fn table_erased_query_join_pair<A, B, C>(first: Query<EntityItem<A>>, second: Query<TableErasedPair<B, C>>) -> Query<TableErasedTriple<A, B, C>> {
+    let result = query_new<TableErasedTriple<A, B, C>>();
+    let i: i64 = 0;
+    let first_count = len(first.items) as i64;
+    while i < first_count {
+        let j: i64 = 0;
+        let second_count = len(second.items) as i64;
+        while j < second_count {
+            if entity_eq(first.items[i].entity, second.items[j].entity) {
+                result.items.push(TableErasedTriple<A, B, C> { entity: first.items[i].entity, first: first.items[i].value, second: second.items[j].first, third: second.items[j].second });
+                j = second_count;
+            } else {
+                j = j + 1;
+            };
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+fn table_erased_query_join_pair_filtered<A, B, C>(first: Query<EntityItem<A>>, second: Query<TableErasedPair<B, C>>) -> Query<TableErasedTriple<A, B, C>> {
+    return table_erased_query_join_pair<A, B, C>(first, second);
+}
+
 fn table_erased_query_entities_iter_many(query: Query<Entity>, entities: Vec<Entity>) -> Query<Entity> {
     let result = query_new<Entity>();
     let i: i64 = 0;
@@ -4010,6 +4082,71 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     let mover_combinations12_twelve = table_erased_query_pair_mut_combinations12<TableErasedPos, TableErasedVel>(table_erased_world_query_pair_mut_first_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w38, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE));
     if len(mover_combinations12_twelve.items) != 1 { panic(12305); };
     if mover_combinations12_twelve.items[0].twelfth.first.entity.id != e12.id { panic(12306); };
+}
+
+@test "table erased query join and join filtered preserve left order"() {
+    let w0 = table_erased_test_world_new();
+    let (w1, position) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, tag) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let (w4, e1) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w3);
+    let w5 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w4, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 10, y: 0 });
+    let w6 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w5, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 1, y: 0 });
+    let w7 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w6, e1, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 100 });
+    let (w8, e2) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w7);
+    let w9 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w8, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 20, y: 0 });
+    let (w10, e3) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w9);
+    let w11 = table_erased_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, e3, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 30, y: 0 });
+    let w12 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w11, e3, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 3, y: 0 });
+    let w13 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w12, e3, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 300 });
+    let (w14, e4) = table_erased_world_spawn<TableErasedTime, TableErasedEvent>(w13);
+    let w15 = table_erased_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w14, e4, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
+    let w16 = table_erased_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w15, e4, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 400 });
+
+    let left_order: Vec<Entity> = Vec::new();
+    left_order.push(e3);
+    left_order.push(e1);
+    left_order.push(e2);
+    let left_positions = table_erased_world_query_get_many_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w16, left_order, TABLE_ERASED_POS_TYPE);
+    let all_velocities = table_erased_world_query_auto<TableErasedVel, TableErasedTime, TableErasedEvent>(w16, TABLE_ERASED_VEL_TYPE);
+    let joined = table_erased_query_join<TableErasedPos, TableErasedVel>(left_positions, all_velocities);
+    if len(joined.items) != 2 { panic(12340); };
+    if joined.items[0].entity.id != e3.id { panic(12341); };
+    if joined.items[0].first.x != 30 { panic(12342); };
+    if joined.items[0].second.x != 3 { panic(12343); };
+    if joined.items[1].entity.id != e1.id { panic(12344); };
+    if joined.items[1].first.x != 10 { panic(12345); };
+    if joined.items[1].second.x != 1 { panic(12346); };
+
+    let filtered_order: Vec<Entity> = Vec::new();
+    filtered_order.push(e3);
+    filtered_order.push(e1);
+    let left_tagged_positions = table_erased_world_query_get_many_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w16, filtered_order, TABLE_ERASED_POS_TYPE);
+    let tagged_velocities = table_erased_world_query_with<TableErasedVel, TableErasedTime, TableErasedEvent>(w16, velocity.id, TABLE_ERASED_VEL_TYPE, tag.id);
+    let filtered_join = table_erased_query_join_filtered<TableErasedPos, TableErasedVel>(left_tagged_positions, tagged_velocities);
+    if len(filtered_join.items) != 2 { panic(12347); };
+    if filtered_join.items[0].entity.id != e3.id { panic(12348); };
+    if filtered_join.items[1].entity.id != e1.id { panic(12349); };
+
+    let all_tags = table_erased_world_query_auto<TableErasedTag, TableErasedTime, TableErasedEvent>(w16, TABLE_ERASED_TAG_TYPE);
+    let triples = table_erased_query_pair_join_filtered<TableErasedPos, TableErasedVel, TableErasedTag>(filtered_join, all_tags);
+    if len(triples.items) != 2 { panic(12350); };
+    if triples.items[0].entity.id != e3.id { panic(12351); };
+    if triples.items[0].first.x != 30 { panic(12352); };
+    if triples.items[0].second.x != 3 { panic(12353); };
+    if triples.items[0].third.value != 300 { panic(12354); };
+    if triples.items[1].entity.id != e1.id { panic(12355); };
+    if triples.items[1].third.value != 100 { panic(12356); };
+
+    let ordered_tags = table_erased_world_query_get_many_auto<TableErasedTag, TableErasedTime, TableErasedEvent>(w16, filtered_order, TABLE_ERASED_TAG_TYPE);
+    let tag_first_triples = table_erased_query_join_pair_filtered<TableErasedTag, TableErasedPos, TableErasedVel>(ordered_tags, joined);
+    if len(tag_first_triples.items) != 2 { panic(12357); };
+    if tag_first_triples.items[0].entity.id != e3.id { panic(12358); };
+    if tag_first_triples.items[0].first.value != 300 { panic(12359); };
+    if tag_first_triples.items[0].second.x != 30 { panic(12360); };
+    if tag_first_triples.items[0].third.x != 3 { panic(12361); };
+    if tag_first_triples.items[1].entity.id != e1.id { panic(12362); };
+    if tag_first_triples.items[1].first.value != 100 { panic(12363); };
 }
 
 @test "table erased pair mut without filter excludes marker archetypes"() {
