@@ -3263,6 +3263,12 @@ fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, 
 fn table_erased_world_read_message_with_message_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithMessageId<M> { return messages_read_next_with_message_id<M>(world.messages, reader, default_value); }
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
 fn table_erased_world_get_message_id<R, M>(world: TableErasedWorld<R, M>, id: MessageId<M>, default_value: M) -> MessageReadWithMessageId<M> { return messages_get_message_id<M>(world.messages, id, default_value); }
+fn table_erased_world_message_reader_current<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return message_reader_current<M>(world.messages); }
+fn table_erased_world_message_reader_current_update<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return message_reader_current_update<M>(world.messages); }
+fn table_erased_world_message_reader_len<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> i64 { return messages_reader_len<M>(world.messages, reader); }
+fn table_erased_world_message_reader_missed<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> i64 { return messages_reader_missed<M>(world.messages, reader); }
+fn table_erased_world_message_reader_is_empty<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> bool { return messages_reader_is_empty<M>(world.messages, reader); }
+fn table_erased_world_message_reader_clear<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> MessageReader { return messages_reader_clear<M>(reader, world.messages); }
 fn table_erased_world_update_messages<R, M>(world: TableErasedWorld<R, M>) -> TableErasedWorld<R, M> { world.messages = messages_update<M>(world.messages); return world; }
 fn table_erased_world_current_update_message_len<R, M>(world: TableErasedWorld<R, M>) -> i64 { return messages_current_update_len<M>(world.messages); }
 fn table_erased_world_update_messages_drain<R, M>(world: TableErasedWorld<R, M>, default_value: M) -> (TableErasedWorld<R, M>, MessageDrainItems<M>) {
@@ -3446,6 +3452,38 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     let found_direct = table_erased_world_get_message_id<TableErasedTime, TableErasedEvent>(w3, direct_id, table_erased_event_default());
     if found_direct.has_value != true { panic(11699); };
     if found_direct.value.amount != 10 { panic(11700); };
+}
+
+@test "table erased world exposes message reader cursor helpers"() {
+    let w0 = table_erased_test_world_new();
+    let w1 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0, TableErasedEvent { amount: 4 });
+    let w2 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w1, TableErasedEvent { amount: 6 });
+    let reader0 = message_reader_new();
+    if table_erased_world_message_reader_len<TableErasedTime, TableErasedEvent>(w2, reader0) != 2 { panic(11701); };
+    if table_erased_world_message_reader_is_empty<TableErasedTime, TableErasedEvent>(w2, reader0) { panic(11702); };
+
+    let reader_clear = table_erased_world_message_reader_clear<TableErasedTime, TableErasedEvent>(w2, reader0);
+    if table_erased_world_message_reader_is_empty<TableErasedTime, TableErasedEvent>(w2, reader_clear) != true { panic(11703); };
+    if table_erased_world_message_reader_len<TableErasedTime, TableErasedEvent>(w2, reader_clear) != 0 { panic(11704); };
+
+    let w3 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w2, TableErasedEvent { amount: 8 });
+    let read_new = table_erased_world_read_message_with_id<TableErasedTime, TableErasedEvent>(w3, reader_clear, table_erased_event_default());
+    if read_new.has_value != true { panic(11705); };
+    if read_new.id != 2 { panic(11706); };
+    if read_new.value.amount != 8 { panic(11707); };
+
+    let current = table_erased_world_message_reader_current<TableErasedTime, TableErasedEvent>(w3);
+    if table_erased_world_message_reader_len<TableErasedTime, TableErasedEvent>(w3, current) != 0 { panic(11708); };
+    let w4 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w3);
+    let w5 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w4);
+    if table_erased_world_message_reader_missed<TableErasedTime, TableErasedEvent>(w5, message_reader_new()) != 3 { panic(11709); };
+
+    let w6 = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w5, TableErasedEvent { amount: 10 });
+    let current_update = table_erased_world_message_reader_current_update<TableErasedTime, TableErasedEvent>(w6);
+    let read_update = table_erased_world_read_message_with_id<TableErasedTime, TableErasedEvent>(w6, current_update, table_erased_event_default());
+    if read_update.has_value != true { panic(11710); };
+    if read_update.id != 3 { panic(11711); };
+    if read_update.value.amount != 10 { panic(11712); };
 }
 
 @test "table erased world messages update retains one frame"() {

@@ -60,6 +60,13 @@ fn table_erased_observer_world_spawn_with_location<R, M>(world: TableErasedObser
     return (world, entity);
 }
 
+fn table_erased_observer_world_message_reader_current<R, M>(world: TableErasedObserverWorld<R, M>) -> MessageReader { return table_erased_world_message_reader_current<R, M>(world.table); }
+fn table_erased_observer_world_message_reader_current_update<R, M>(world: TableErasedObserverWorld<R, M>) -> MessageReader { return table_erased_world_message_reader_current_update<R, M>(world.table); }
+fn table_erased_observer_world_message_reader_len<R, M>(world: TableErasedObserverWorld<R, M>, reader: MessageReader) -> i64 { return table_erased_world_message_reader_len<R, M>(world.table, reader); }
+fn table_erased_observer_world_message_reader_missed<R, M>(world: TableErasedObserverWorld<R, M>, reader: MessageReader) -> i64 { return table_erased_world_message_reader_missed<R, M>(world.table, reader); }
+fn table_erased_observer_world_message_reader_is_empty<R, M>(world: TableErasedObserverWorld<R, M>, reader: MessageReader) -> bool { return table_erased_world_message_reader_is_empty<R, M>(world.table, reader); }
+fn table_erased_observer_world_message_reader_clear<R, M>(world: TableErasedObserverWorld<R, M>, reader: MessageReader) -> MessageReader { return table_erased_world_message_reader_clear<R, M>(world.table, reader); }
+
 fn table_erased_observer_world_trigger_lifecycle<R, M>(world: TableErasedObserverWorld<R, M>, kind: i32, entity: Entity, component_id: i32, type_id: i32) -> TableErasedObserverWorld<R, M> {
     let event = TableErasedLifecycleEvent { kind: kind, entity_id: entity.id, component_id: component_id, type_id: type_id };
     world.observers = erased_observers_trigger_entity<TableErasedLifecycleEvent>(world.observers, entity, TableErasedLifecycleEvent::event_type_id(), ecs_box_drop<TableErasedLifecycleEvent>, event);
@@ -178,6 +185,26 @@ fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i
     let event = erased_event_value_read<TableErasedObserverPing>(value, TableErasedObserverPing::event_type_id());
     if target_entity_id >= 0 { return event.amount + target_entity_id; };
     return event.amount;
+}
+
+@test "table erased observer world exposes message reader cursor helpers"() {
+    let w0 = table_erased_observer_test_world_new();
+    w0.table = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0.table, TableErasedEvent { amount: 4 });
+    w0.table = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0.table, TableErasedEvent { amount: 6 });
+    let reader0 = message_reader_new();
+    if table_erased_observer_world_message_reader_len<TableErasedTime, TableErasedEvent>(w0, reader0) != 2 { panic(14190); };
+    let cleared = table_erased_observer_world_message_reader_clear<TableErasedTime, TableErasedEvent>(w0, reader0);
+    if table_erased_observer_world_message_reader_is_empty<TableErasedTime, TableErasedEvent>(w0, cleared) != true { panic(14191); };
+    w0.table = table_erased_world_write_message<TableErasedTime, TableErasedEvent>(w0.table, TableErasedEvent { amount: 8 });
+    let read = table_erased_world_read_message_with_id<TableErasedTime, TableErasedEvent>(w0.table, cleared, table_erased_event_default());
+    if read.has_value != true { panic(14192); };
+    if read.id != 2 { panic(14193); };
+    if read.value.amount != 8 { panic(14194); };
+    let current = table_erased_observer_world_message_reader_current<TableErasedTime, TableErasedEvent>(w0);
+    if table_erased_observer_world_message_reader_len<TableErasedTime, TableErasedEvent>(w0, current) != 0 { panic(14195); };
+    w0.table = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0.table);
+    w0.table = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w0.table);
+    if table_erased_observer_world_message_reader_missed<TableErasedTime, TableErasedEvent>(w0, message_reader_new()) != 3 { panic(14196); };
 }
 
 @test "table erased observer world triggers add insert replace remove despawn"() {
