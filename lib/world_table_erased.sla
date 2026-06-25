@@ -145,7 +145,7 @@ struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
     entity: Entity,
 @each(T) {
@@ -164,7 +164,7 @@ struct TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }> {
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 struct TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }> {
     entity: Entity,
     value: A,
@@ -185,7 +185,7 @@ struct TableErasedPairWithAnyOf$N<A, B, @join(T, ", ") { $T }> {
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 struct TableErasedPairWithAnyOf$N<A, B, @join(T, ", ") { $T }> {
     entity: Entity,
     first: A,
@@ -2164,7 +2164,7 @@ fn table_erased_world_query_any_of$N_auto<@join(T, ", ") { $T }, R, M>(world: Ta
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 fn table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { component_id_$I: i32, type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
     let query = query_new<TableErasedAnyOf$N<@join(T, ", ") { $T }>>();
     let i: i64 = 0;
@@ -2271,7 +2271,7 @@ fn table_erased_world_query_with_any_of$N_auto<A, @join(T, ", ") { $T }, R, M>(w
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 fn table_erased_world_query_with_any_of$N<A, @join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, required_component_id: i32, required_type_id: i32, @join(T, ", ") { any_component_id_$I: i32, any_type_id_$I: i32 }, @join(T, ", ") { default_any_$I: fn() -> $T }) -> Query<TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }>> {
     let query = query_new<TableErasedWithAnyOf$N<A, @join(T, ", ") { $T }>>();
     let base = table_erased_world_query<A, R, M>(world, required_component_id, required_type_id);
@@ -2334,7 +2334,7 @@ fn table_erased_world_query_pair_with_any_of$N_auto<A, B, @join(T, ", ") { $T },
 }
 }
 
-@expand_tuple(5, 6, T) {
+@expand_tuple(5, 8, T) {
 fn table_erased_world_query_pair_with_any_of$N<A, B, @join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, @join(T, ", ") { any_component_id_$I: i32, any_type_id_$I: i32 }, @join(T, ", ") { default_any_$I: fn() -> $T }) -> Query<TableErasedPairWithAnyOf$N<A, B, @join(T, ", ") { $T }>> {
     let query = query_new<TableErasedPairWithAnyOf$N<A, B, @join(T, ", ") { $T }>>();
     let base = table_erased_world_query_pair<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id);
@@ -4937,4 +4937,54 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if any6_extra_present != 1 { panic(12664); };
     if any6_aux_sum != 6000 { panic(12665); };
     if any6_extra_sum != 3000 { panic(12666); };
+
+    let any8 = table_erased_world_query_any_of8_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra, TableErasedMore, TableErasedBonus, TableErasedTime, TableErasedEvent>(w26, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_MORE_TYPE, TABLE_ERASED_BONUS_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default, table_erased_aux_default, table_erased_extra_default, table_erased_more_default, table_erased_bonus_default);
+    if len(any8.items) != 4 { panic(12687); };
+    let any8_more_present: i32 = 0;
+    let any8_bonus_present: i32 = 0;
+    let any8_more_sum: i32 = 0;
+    let any8_bonus_sum: i32 = 0;
+    let any8_i: i64 = 0;
+    let any8_count = len(any8.items) as i64;
+    while any8_i < any8_count {
+        if any8.items[any8_i].value_6.has_value { any8_more_present = any8_more_present + 1; any8_more_sum = any8_more_sum + any8.items[any8_i].value_6.value.value; };
+        if any8.items[any8_i].value_7.has_value { any8_bonus_present = any8_bonus_present + 1; any8_bonus_sum = any8_bonus_sum + any8.items[any8_i].value_7.value.value; };
+        any8_i = any8_i + 1;
+    }
+    if any8_more_present != 1 { panic(12688); };
+    if any8_bonus_present != 1 { panic(12689); };
+    if any8_more_sum != 20000 { panic(12690); };
+    if any8_bonus_sum != 30000 { panic(12691); };
+
+    let pos_any8 = table_erased_world_query_with_any_of8_auto<TableErasedPos, TableErasedMarker, TableErasedVel, TableErasedAux, TableErasedExtra, TableErasedTag, TableErasedMore, TableErasedBonus, TableErasedPos, TableErasedTime, TableErasedEvent>(w26, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MORE_TYPE, TABLE_ERASED_BONUS_TYPE, TABLE_ERASED_POS_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_aux_default, table_erased_extra_default, table_erased_tag_default, table_erased_more_default, table_erased_bonus_default, table_erased_pos_default);
+    if len(pos_any8.items) != 3 { panic(12692); };
+    let pos_any8_bonus_present: i32 = 0;
+    let pos_any8_self_present: i32 = 0;
+    let pos_any8_self_sum: i32 = 0;
+    let pos_any8_i: i64 = 0;
+    let pos_any8_count = len(pos_any8.items) as i64;
+    while pos_any8_i < pos_any8_count {
+        if pos_any8.items[pos_any8_i].any_6.has_value { pos_any8_bonus_present = pos_any8_bonus_present + 1; };
+        if pos_any8.items[pos_any8_i].any_7.has_value { pos_any8_self_present = pos_any8_self_present + 1; pos_any8_self_sum = pos_any8_self_sum + pos_any8.items[pos_any8_i].any_7.value.x; };
+        pos_any8_i = pos_any8_i + 1;
+    }
+    if pos_any8_bonus_present != 1 { panic(12693); };
+    if pos_any8_self_present != 3 { panic(12694); };
+    if pos_any8_self_sum != 6 { panic(12695); };
+
+    let pos_vel_any8 = table_erased_world_query_pair_with_any_of8_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra, TableErasedMore, TableErasedBonus, TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(w26, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_MORE_TYPE, TABLE_ERASED_BONUS_TYPE, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_marker_default, table_erased_tag_default, table_erased_aux_default, table_erased_extra_default, table_erased_more_default, table_erased_bonus_default, table_erased_pos_default, table_erased_vel_default);
+    if len(pos_vel_any8.items) != 2 { panic(12696); };
+    let pair_any8_self_pos_present: i32 = 0;
+    let pair_any8_self_vel_present: i32 = 0;
+    let pair_any8_vel_sum: i32 = 0;
+    let pair_any8_i: i64 = 0;
+    let pair_any8_count = len(pos_vel_any8.items) as i64;
+    while pair_any8_i < pair_any8_count {
+        if pos_vel_any8.items[pair_any8_i].any_6.has_value { pair_any8_self_pos_present = pair_any8_self_pos_present + 1; };
+        if pos_vel_any8.items[pair_any8_i].any_7.has_value { pair_any8_self_vel_present = pair_any8_self_vel_present + 1; pair_any8_vel_sum = pair_any8_vel_sum + pos_vel_any8.items[pair_any8_i].any_7.value.x; };
+        pair_any8_i = pair_any8_i + 1;
+    }
+    if pair_any8_self_pos_present != 2 { panic(12697); };
+    if pair_any8_self_vel_present != 2 { panic(12698); };
+    if pair_any8_vel_sum != 50 { panic(12699); };
 }
