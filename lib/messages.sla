@@ -156,8 +156,16 @@ fn message_reader_new() -> MessageReader {
     return MessageReader { cursor: 0 };
 }
 
+fn messages_get_cursor<T>(messages: Messages<T>) -> MessageReader {
+    return message_reader_new();
+}
+
 fn message_reader_current<T>(messages: Messages<T>) -> MessageReader {
     return MessageReader { cursor: messages.next_id };
+}
+
+fn messages_get_cursor_current<T>(messages: Messages<T>) -> MessageReader {
+    return message_reader_current<T>(messages);
 }
 
 fn message_reader_current_update<T>(messages: Messages<T>) -> MessageReader {
@@ -635,6 +643,24 @@ fn test_damage_default() -> TestDamageMessage {
     if read_current.has_value != true { panic(2472); };
     if read_current.id != 2 { panic(2473); };
     if read_current.value.amount != 11 { panic(2474); };
+}
+
+@test "messages get cursor aliases match Bevy semantics"() {
+    let m0 = test_damage_messages_new();
+    let m1 = messages_write<TestDamageMessage>(m0, TestDamageMessage { amount: 5 });
+    let m2 = messages_write<TestDamageMessage>(m1, TestDamageMessage { amount: 7 });
+    let from_start = messages_get_cursor<TestDamageMessage>(m2);
+    let read_start = messages_read_next_with_id<TestDamageMessage>(m2, from_start, test_damage_default());
+    if read_start.has_value != true { panic(2582); };
+    if read_start.id != 0 { panic(2583); };
+    if read_start.value.amount != 5 { panic(2584); };
+    let current = messages_get_cursor_current<TestDamageMessage>(m2);
+    if messages_reader_is_empty<TestDamageMessage>(m2, current) != true { panic(2585); };
+    let m3 = messages_write<TestDamageMessage>(m2, TestDamageMessage { amount: 11 });
+    let read_current = messages_read_next_with_id<TestDamageMessage>(m3, current, test_damage_default());
+    if read_current.has_value != true { panic(2586); };
+    if read_current.id != 2 { panic(2587); };
+    if read_current.value.amount != 11 { panic(2588); };
 }
 
 @test "message reader len empty and clear support populated readers"() {

@@ -212,6 +212,14 @@ fn erased_message_reader_current(messages: ErasedMessages, type_id: i32) -> Mess
     return MessageReader { cursor: erased_messages_channel_next_id(messages, type_id) };
 }
 
+fn erased_messages_get_cursor(messages: ErasedMessages, type_id: i32) -> MessageReader {
+    return message_reader_new();
+}
+
+fn erased_messages_get_cursor_current(messages: ErasedMessages, type_id: i32) -> MessageReader {
+    return erased_message_reader_current(messages, type_id);
+}
+
 fn erased_message_reader_current_update(messages: ErasedMessages, type_id: i32) -> MessageReader {
     let slot = erased_messages_channel_slot(messages, type_id);
     if slot < 0 { return MessageReader { cursor: 0 }; };
@@ -527,6 +535,25 @@ fn erased_spawn_default() -> ErasedSpawnMessage { return ErasedSpawnMessage { en
     let read_current = erased_messages_read_next_with_id<ErasedDamageMessage>(w3.messages, damage_type, current, erased_damage_default());
     if read_current.id != 2 { panic(12758); };
     if read_current.value.amount != 11 { panic(12759); };
+}
+
+@test "erased messages get cursor aliases match Bevy semantics"() {
+    let damage_type = ErasedDamageMessage::message_type_id();
+    let messages0 = erased_messages_new();
+    let w1 = erased_messages_write_with_id<ErasedDamageMessage>(messages0, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 5 });
+    let w2 = erased_messages_write_with_id<ErasedDamageMessage>(w1.messages, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 7 });
+    let from_start = erased_messages_get_cursor(w2.messages, damage_type);
+    let read_start = erased_messages_read_next_with_id<ErasedDamageMessage>(w2.messages, damage_type, from_start, erased_damage_default());
+    if read_start.has_value != true { panic(12835); };
+    if read_start.id != 0 { panic(12836); };
+    if read_start.value.amount != 5 { panic(12837); };
+    let current = erased_messages_get_cursor_current(w2.messages, damage_type);
+    if erased_messages_reader_is_empty(w2.messages, damage_type, current) != true { panic(12838); };
+    let w3 = erased_messages_write_with_id<ErasedDamageMessage>(w2.messages, damage_type, ecs_box_drop<ErasedDamageMessage>, ErasedDamageMessage { amount: 11 });
+    let read_current = erased_messages_read_next_with_id<ErasedDamageMessage>(w3.messages, damage_type, current, erased_damage_default());
+    if read_current.has_value != true { panic(12839); };
+    if read_current.id != 2 { panic(12840); };
+    if read_current.value.amount != 11 { panic(12841); };
 }
 
 @test "erased messages batch and default writes return ids"() {

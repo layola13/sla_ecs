@@ -313,5 +313,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the strong typed `MessageId<T>` wrapper batch.
 - [x] Add ordinary, observer, and relationship table-erased Bevy-style `MessageReader` cursor facade helpers: current, current_update, len, missed, is_empty, and clear. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/world_table_erased.sla` (58 tests), `lib/world_table_erased_observer.sla` (64 tests), and `lib/world_table_erased_relationship.sla` (69 tests).
 - [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the table-erased message reader facade batch.
+- [x] Add Bevy-style `Messages::get_cursor` and `Messages::get_cursor_current` alias APIs over typed messages, erased message channels, ECS metadata wrappers, and table-erased world messages. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/messages.sla` (18 tests), `lib/messages_erased.sla` (27 tests), `lib/ecs_metadata.sla` (91 tests), and `lib/world_table_erased.sla` (59 tests).
+- [x] Update `README.md`, `plan.md`, `tasks.md`, and `progress.md` after the Bevy message cursor alias batch.
 - [ ] Continue replacing any future hand-written arity expansion with `@expand_tuple` or a compiler-level generic macro extension before adding more duplicated library code.
 - [x] Restore or intentionally supersede old `src/*.sla` prototype sources if future history requires them.

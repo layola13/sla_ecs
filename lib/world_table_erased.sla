@@ -3263,6 +3263,8 @@ fn table_erased_world_read_message_with_id<R, M>(world: TableErasedWorld<R, M>, 
 fn table_erased_world_read_message_with_message_id<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader, default_value: M) -> MessageReadWithMessageId<M> { return messages_read_next_with_message_id<M>(world.messages, reader, default_value); }
 fn table_erased_world_get_message<R, M>(world: TableErasedWorld<R, M>, id: i64, default_value: M) -> MessageReadWithId<M> { return messages_get_message<M>(world.messages, id, default_value); }
 fn table_erased_world_get_message_id<R, M>(world: TableErasedWorld<R, M>, id: MessageId<M>, default_value: M) -> MessageReadWithMessageId<M> { return messages_get_message_id<M>(world.messages, id, default_value); }
+fn table_erased_world_messages_get_cursor<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return messages_get_cursor<M>(world.messages); }
+fn table_erased_world_messages_get_cursor_current<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return messages_get_cursor_current<M>(world.messages); }
 fn table_erased_world_message_reader_current<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return message_reader_current<M>(world.messages); }
 fn table_erased_world_message_reader_current_update<R, M>(world: TableErasedWorld<R, M>) -> MessageReader { return message_reader_current_update<M>(world.messages); }
 fn table_erased_world_message_reader_len<R, M>(world: TableErasedWorld<R, M>, reader: MessageReader) -> i64 { return messages_reader_len<M>(world.messages, reader); }
@@ -3474,6 +3476,13 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
 
     let current = table_erased_world_message_reader_current<TableErasedTime, TableErasedEvent>(w3);
     if table_erased_world_message_reader_len<TableErasedTime, TableErasedEvent>(w3, current) != 0 { panic(11708); };
+    let from_start = table_erased_world_messages_get_cursor<TableErasedTime, TableErasedEvent>(w3);
+    let read_start = table_erased_world_read_message_with_id<TableErasedTime, TableErasedEvent>(w3, from_start, table_erased_event_default());
+    if read_start.has_value != true { panic(11713); };
+    if read_start.id != 0 { panic(11714); };
+    if read_start.value.amount != 4 { panic(11715); };
+    let current_alias = table_erased_world_messages_get_cursor_current<TableErasedTime, TableErasedEvent>(w3);
+    if table_erased_world_message_reader_len<TableErasedTime, TableErasedEvent>(w3, current_alias) != 0 { panic(11716); };
     let w4 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w3);
     let w5 = table_erased_world_update_messages<TableErasedTime, TableErasedEvent>(w4);
     if table_erased_world_message_reader_missed<TableErasedTime, TableErasedEvent>(w5, message_reader_new()) != 3 { panic(11709); };
