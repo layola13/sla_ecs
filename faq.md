@@ -20,6 +20,8 @@
 
 ## B. 编译器 bug 状态(sa_plugin_sla)
 
+- [x] **SAB 直接输出主线已可用于 ECS 构建**:`sa sla sab build` / `sa sla sab workspace` 现在走 SLA AST/type-checker 到 SAB 的直接后端,不是 `sla -> sa -> sab`。默认托管 SAB 写入 `.sla-cache/sab/`,不写 `.zig-cache/`;需要可检查落盘文件时才传 `--out`、`--sab-out` 或 `--emit-sab`。workspace 模式支持 `-p/--package`,并把托管 SAB 作为 `sa build-exe` 的稳定输入以利于增量编译。
+- [x] **SLA CLI 辅助命令已补齐**:`sa sla init [path]` 可生成最小 SLA 项目(`sa.mod`,`src/main.sla`,`.gitignore` 含 `.sla-cache/`);`sa sla skills [--json]` 可查看插件能力,文本模式会生成 Codex/Claude agent skill 文件。ECS 新目录或 agent 上下文可优先用这两个命令初始化/确认能力。
 - [x] **typeSize(.array) bug 已修**:结构体内数组按指针(8字节)算偏移,循环内访问 struct 字段数组不再 segfault。回归测试 `test_unit_struct_field_array_loop.sla`。
 - [x] **跨文件 .sla import 已修**:parser 预扫描导入类型名。回归 `test_unit_sla_import.sla`。
 - [x] **全局 scalar const 作为函数参数的 PhiStateConflict 已修**:`matches(i, GLOBAL_MARKER)` 这类调用在 while/if 分支里会生成临时寄存器,此前调用后未释放,回到循环头时报 PhiStateConflict。已在 `sa_plugin_sla` 做通用 call-arg cleanup,回归 `test_unit_global_const_call_arg_cleanup.sla`,并已 `SA_PLUGIN_DEV=1 sa plugin install --dev ...`。

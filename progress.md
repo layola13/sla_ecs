@@ -1,5 +1,6 @@
 # sla_ecs progress
 
+- [done] Recorded upstream Sla compiler SAB/CLI unblocker for ECS builds: `sa sla build-exe` and `sa sla sab workspace` now use direct SLA-to-SAB output with managed artifacts under `.sla-cache/sab/`, not `.zig-cache/` and not `sla -> sa -> sab`; `sa sla init [path]` and `sa sla skills [--json]` are available for project scaffolding and agent capability discovery.
 - [done] Created standalone `sla_ecs` project so ECS work no longer lands in `sa_plugin_sla` by default.
 - [done] Added Sla plugin support for non-array `for item in source` via library-defined `iter_len(self)` and `iter_at(self, index)` methods.
 - [done] Fixed Sla parser postfix precedence so field/index/method access binds tighter than arithmetic.

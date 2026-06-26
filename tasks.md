@@ -4,6 +4,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 
 ## Phase 1: Sla Compiler Unblockers
 
+- [x] Confirm upstream direct SAB workflow for ECS builds: `sa sla sab build/workspace` writes managed SAB under `.sla-cache/sab/`, keeps `.sa` text and `.sab` binary as separate compiler mainlines, supports workspace package selection, and does not use `.zig-cache/` for SLA-managed SAB artifacts.
+- [x] Confirm upstream SLA CLI helpers for ECS onboarding: `sa sla init [path]` scaffolds an SLA project and `sa sla skills [--json]` exposes plugin capabilities plus agent skill generation.
 - [x] Confirm current baseline: all `src/*.sla` prototype tests pass, while `examples/movement_demo.sla` fails on a Sla codegen cleanup issue.
 - [x] Add compiler regression for chained `array-of-struct` field access inside control flow.
 - [x] Fix Sla codegen cleanup for expressions like `game.positions.values[i].x`.
