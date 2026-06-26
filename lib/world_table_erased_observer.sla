@@ -60,7 +60,11 @@ fn table_erased_observer_world_register_disabling_component_auto<R, M>(world: Ta
 
 fn table_erased_observer_world_query_entities<R, M>(world: TableErasedObserverWorld<R, M>) -> Query<Entity> { return table_erased_world_query_entities<R, M>(world.table); }
 fn table_erased_observer_world_query_entities_allow<R, M>(world: TableErasedObserverWorld<R, M>, allow_component_id: i32) -> Query<Entity> { return table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id); }
+fn table_erased_observer_world_query_entities_allow_auto<R, M>(world: TableErasedObserverWorld<R, M>, allow_type_id: i32) -> Query<Entity> { return table_erased_world_query_entities_allow_auto<R, M>(world.table, allow_type_id); }
+fn table_erased_observer_world_query_entities_allow_two<R, M>(world: TableErasedObserverWorld<R, M>, first_allow_component_id: i32, second_allow_component_id: i32) -> Query<Entity> { return table_erased_world_query_entities_allow_two<R, M>(world.table, first_allow_component_id, second_allow_component_id); }
+fn table_erased_observer_world_query_entities_allow_two_auto<R, M>(world: TableErasedObserverWorld<R, M>, first_allow_type_id: i32, second_allow_type_id: i32) -> Query<Entity> { return table_erased_world_query_entities_allow_two_auto<R, M>(world.table, first_allow_type_id, second_allow_type_id); }
 fn table_erased_observer_world_query_allow<T, R, M>(world: TableErasedObserverWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32) -> Query<EntityItem<T>> { return table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id); }
+fn table_erased_observer_world_query_allow_auto<T, R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, allow_type_id: i32) -> Query<EntityItem<T>> { return table_erased_world_query_allow_auto<T, R, M>(world.table, type_id, allow_type_id); }
 
 fn table_erased_observer_world_spawn<R, M>(world: TableErasedObserverWorld<R, M>) -> (TableErasedObserverWorld<R, M>, Entity) {
     let (table, entity) = table_erased_world_spawn<R, M>(world.table);
@@ -239,19 +243,31 @@ fn table_erased_observer_ping_score(value: ErasedEventValue, target_entity_id: i
     let w0 = table_erased_observer_test_world_new();
     let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
     let (w2, disabled) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
-    let w3 = table_erased_observer_world_register_disabling_component<TableErasedTime, TableErasedEvent>(w2, disabled.id);
-    let (w4, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w3);
-    let (w5, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
-    let w6 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w5, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
-    let w7 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
-    let w8 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w7, e2, disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
-    let visible = table_erased_observer_world_query_entities<TableErasedTime, TableErasedEvent>(w8);
+    let (w3, hidden_tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let w4 = table_erased_observer_world_register_disabling_component<TableErasedTime, TableErasedEvent>(w3, disabled.id);
+    let w5 = table_erased_observer_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(w4, TABLE_ERASED_TAG_TYPE);
+    let (w6, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let (w7, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let (w8, e3) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w7);
+    let w9 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w8, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let w10 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w11 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w10, e2, disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let w12 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w11, e3, hidden_tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 3 });
+    let visible = table_erased_observer_world_query_entities<TableErasedTime, TableErasedEvent>(w12);
     if len(visible.items) != 1 { panic(13512); };
     if visible.items[0].id != e1.id { panic(13513); };
-    let allowed = table_erased_observer_world_query_allow<TableErasedPos, TableErasedTime, TableErasedEvent>(w8, position.id, TABLE_ERASED_POS_TYPE, disabled.id);
+    let allowed = table_erased_observer_world_query_allow<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, position.id, TABLE_ERASED_POS_TYPE, disabled.id);
     if len(allowed.items) != 2 { panic(13514); };
-    let entity_allowed = table_erased_observer_world_query_entities_allow<TableErasedTime, TableErasedEvent>(w8, disabled.id);
+    let allowed_auto = table_erased_observer_world_query_allow_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE);
+    if len(allowed_auto.items) != 2 { panic(13516); };
+    let entity_allowed = table_erased_observer_world_query_entities_allow<TableErasedTime, TableErasedEvent>(w12, disabled.id);
     if len(entity_allowed.items) != 2 { panic(13515); };
+    let entity_allowed_auto = table_erased_observer_world_query_entities_allow_auto<TableErasedTime, TableErasedEvent>(w12, TABLE_ERASED_MARKER_TYPE);
+    if len(entity_allowed_auto.items) != 2 { panic(13517); };
+    let all_allowed = table_erased_observer_world_query_entities_allow_two<TableErasedTime, TableErasedEvent>(w12, disabled.id, hidden_tag.id);
+    if len(all_allowed.items) != 3 { panic(13518); };
+    let all_allowed_auto = table_erased_observer_world_query_entities_allow_two_auto<TableErasedTime, TableErasedEvent>(w12, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE);
+    if len(all_allowed_auto.items) != 3 { panic(13519); };
 }
 
 @test "table erased observer world triggers add insert replace remove despawn"() {
