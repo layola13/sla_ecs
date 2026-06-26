@@ -1016,6 +1016,22 @@ fn table_erased_observer_run_pair_mut_single_resource_system_auto<A, B, R, M>(wo
     return table_erased_observer_run_pair_mut_single_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
 }
 
+fn table_erased_observer_run_pair_mut_single_allow_resource_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, allow_component_id: i32, run: fn(TableErasedObserverSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverWorld<R, M> {
+    let item = table_erased_query_single<TableErasedPairMut<A, B>>(table_erased_world_query_pair_mut_first_allow<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, allow_component_id));
+    let param0 = table_erased_observer_single_resource_param<TableErasedPairMut<A, B>, R>(item, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    world.table = table_erased_world_pair_write_first<A, B, R, M>(world.table, param1.item, param1.item.first.value);
+    return world;
+}
+
+fn table_erased_observer_run_pair_mut_single_allow_resource_system_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, allow_type_id: i32, run: fn(TableErasedObserverSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_observer_run_pair_mut_single_allow_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, allow_component_id, run);
+}
+
 fn table_erased_observer_run_pair_mut_populated_resource_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverWorld<R, M> {
     let query = table_erased_observer_query_populated<TableErasedPairMut<A, B>>(table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id));
     let param0 = table_erased_observer_populated_query_resource_param<TableErasedPairMut<A, B>, R>(query, table_erased_world_get_resource<R, M>(world.table));
@@ -1028,6 +1044,21 @@ fn table_erased_observer_run_pair_mut_populated_resource_system_auto<A, B, R, M>
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
     return table_erased_observer_run_pair_mut_populated_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
+}
+
+fn table_erased_observer_run_pair_mut_populated_allow_resource_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, allow_component_id: i32, run: fn(TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_observer_query_populated<TableErasedPairMut<A, B>>(table_erased_world_query_pair_mut_first_allow<A, B, R, M>(world.table, first_component_id, first_type_id, second_component_id, second_type_id, allow_component_id));
+    let param0 = table_erased_observer_populated_query_resource_param<TableErasedPairMut<A, B>, R>(query, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    return table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, param1.query);
+}
+
+fn table_erased_observer_run_pair_mut_populated_allow_resource_system_auto<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_type_id: i32, second_type_id: i32, allow_type_id: i32, run: fn(TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverPopulatedQueryResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedObserverWorld<R, M> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_observer_run_pair_mut_populated_allow_resource_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, allow_component_id, run);
 }
 
 fn table_erased_observer_run_join_query_resource_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedObserverJoinQueryResourceParam<A, B, R>) -> TableErasedObserverJoinQueryResourceParam<A, B, R>) -> TableErasedObserverWorld<R, M> {
@@ -3146,6 +3177,50 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(allowed_pair_mut.table, visible, position.id, TABLE_ERASED_POS_TYPE).x != 21 { panic(14609); };
     if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(allowed_pair_mut.table, hidden, position.id, TABLE_ERASED_POS_TYPE).x != 22 { panic(14610); };
     if allowed_pair_mut.observers.trigger_count != trigger_before { panic(14611); };
+}
+
+@test "table erased observer pair mut allow disabled single and populated gates"() {
+    let single0 = table_erased_observer_test_world_new();
+    let single1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(single0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (single2, single_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(single1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (single3, single_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(single2, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (single4, single_disabled) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(single3, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let single5 = table_erased_observer_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(single4, TABLE_ERASED_MARKER_TYPE);
+    let (single6, single_hidden) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(single5);
+    let single7 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(single6, single_hidden, single_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
+    let single8 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(single7, single_hidden, single_velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 7, y: 0 });
+    let single9 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(single8, single_hidden, single_disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let single10 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(single9.table, TableErasedTime { tick: 0 }), observers: single9.observers };
+    let single_trigger = single10.observers.trigger_count;
+    let single_default_pair = table_erased_observer_run_pair_query_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(single10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_observer_param_pair_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(single_default_pair.table).tick != 0 { panic(14920); };
+    let single_allowed = table_erased_observer_run_pair_mut_single_allow_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(single10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_observer_pair_mut_single_resource_system);
+    if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(single_allowed.table, single_hidden, single_position.id, TABLE_ERASED_POS_TYPE).x != 12 { panic(14921); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(single_allowed.table).tick != 312 { panic(14922); };
+    if single_allowed.observers.trigger_count != single_trigger { panic(14923); };
+
+    let pop0 = table_erased_observer_test_world_new();
+    let pop1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(pop0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (pop2, pop_position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(pop1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (pop3, pop_velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(pop2, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (pop4, pop_disabled) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(pop3, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let pop5 = table_erased_observer_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(pop4, TABLE_ERASED_MARKER_TYPE);
+    let (pop6, pop_visible) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(pop5);
+    let (pop7, pop_hidden) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(pop6);
+    let pop8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(pop7, pop_visible, pop_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let pop9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(pop8, pop_visible, pop_velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 10, y: 0 });
+    let pop10 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(pop9, pop_hidden, pop_position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let pop11 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(pop10, pop_hidden, pop_velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 20, y: 0 });
+    let pop12 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(pop11, pop_hidden, pop_disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let pop13 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(pop12.table, TableErasedTime { tick: 0 }), observers: pop12.observers };
+    let pop_trigger = pop13.observers.trigger_count;
+    let default_pair = table_erased_observer_run_pair_query_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(pop13, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, table_erased_observer_param_pair_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_pair.table).tick != 1 { panic(14924); };
+    let allowed_populated = table_erased_observer_run_pair_mut_populated_allow_resource_system_auto<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>(pop13, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_observer_pair_mut_populated_resource_system);
+    if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(allowed_populated.table, pop_visible, pop_position.id, TABLE_ERASED_POS_TYPE).x != 11 { panic(14925); };
+    if table_erased_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(allowed_populated.table, pop_hidden, pop_position.id, TABLE_ERASED_POS_TYPE).x != 22 { panic(14926); };
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_populated.table).tick != 2033 { panic(14927); };
+    if allowed_populated.observers.trigger_count != pop_trigger { panic(14928); };
 }
 
 @test "table erased observer allow disabled single optional and populated gates"() {
