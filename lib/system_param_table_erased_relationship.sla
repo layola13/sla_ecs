@@ -707,6 +707,16 @@ fn table_erased_relationship_run_single_query_resource_system_auto<T, R, M>(worl
     return table_erased_relationship_run_single_query_resource_system<T, R, M>(world, component_id, type_id, run);
 }
 
+fn table_erased_relationship_run_single_allow_query_resource_system<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32, run: fn(TableErasedRelationshipSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_single_query_resource_system<EntityItem<T>, R, M>(world, table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id), run);
+}
+
+fn table_erased_relationship_run_single_allow_query_resource_system_auto<T, R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, allow_type_id: i32, run: fn(TableErasedRelationshipSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_single_allow_query_resource_system<T, R, M>(world, component_id, type_id, allow_component_id, run);
+}
+
 fn table_erased_relationship_run_optional_single_query_resource_system<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, default_item: fn() -> EntityItem<T>, run: fn(TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
     return table_erased_relationship_run_item_optional_single_query_resource_system<EntityItem<T>, R, M>(world, table_erased_world_query<T, R, M>(world.table, component_id, type_id), default_item, run);
 }
@@ -714,6 +724,16 @@ fn table_erased_relationship_run_optional_single_query_resource_system<T, R, M>(
 fn table_erased_relationship_run_optional_single_query_resource_system_auto<T, R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, default_item: fn() -> EntityItem<T>, run: fn(TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
     let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
     return table_erased_relationship_run_optional_single_query_resource_system<T, R, M>(world, component_id, type_id, default_item, run);
+}
+
+fn table_erased_relationship_run_optional_single_allow_query_resource_system<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32, default_item: fn() -> EntityItem<T>, run: fn(TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_optional_single_query_resource_system<EntityItem<T>, R, M>(world, table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id), default_item, run);
+}
+
+fn table_erased_relationship_run_optional_single_allow_query_resource_system_auto<T, R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, allow_type_id: i32, default_item: fn() -> EntityItem<T>, run: fn(TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipOptionalSingleResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_optional_single_allow_query_resource_system<T, R, M>(world, component_id, type_id, allow_component_id, default_item, run);
 }
 
 fn table_erased_relationship_run_populated_query_resource_system<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
@@ -725,16 +745,53 @@ fn table_erased_relationship_run_populated_query_resource_system_auto<T, R, M>(w
     return table_erased_relationship_run_populated_query_resource_system<T, R, M>(world, component_id, type_id, run);
 }
 
+fn table_erased_relationship_run_populated_allow_query_resource_system<T, R, M>(world: TableErasedRelationshipWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_populated_query_resource_system<EntityItem<T>, R, M>(world, table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id), run);
+}
+
+fn table_erased_relationship_run_populated_allow_query_resource_system_auto<T, R, M>(world: TableErasedRelationshipWorld<R, M>, type_id: i32, allow_type_id: i32, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<EntityItem<T>, R>) -> TableErasedRelationshipWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_populated_allow_query_resource_system<T, R, M>(world, component_id, type_id, allow_component_id, run);
+}
+
 fn table_erased_relationship_run_entity_single_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, run: fn(TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
     return table_erased_relationship_run_item_single_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities<R, M>(world.table), run);
+}
+
+fn table_erased_relationship_run_entity_single_allow_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_component_id: i32, run: fn(TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_single_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id), run);
+}
+
+fn table_erased_relationship_run_entity_single_allow_resource_system_auto<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_type_id: i32, run: fn(TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_entity_single_allow_resource_system<R, M>(world, allow_component_id, run);
 }
 
 fn table_erased_relationship_run_entity_optional_single_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, default_item: fn() -> Entity, run: fn(TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
     return table_erased_relationship_run_item_optional_single_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities<R, M>(world.table), default_item, run);
 }
 
+fn table_erased_relationship_run_entity_optional_single_allow_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_component_id: i32, default_item: fn() -> Entity, run: fn(TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_optional_single_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id), default_item, run);
+}
+
+fn table_erased_relationship_run_entity_optional_single_allow_resource_system_auto<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_type_id: i32, default_item: fn() -> Entity, run: fn(TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipOptionalSingleResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_entity_optional_single_allow_resource_system<R, M>(world, allow_component_id, default_item, run);
+}
+
 fn table_erased_relationship_run_entity_populated_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
     return table_erased_relationship_run_item_populated_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities<R, M>(world.table), run);
+}
+
+fn table_erased_relationship_run_entity_populated_allow_resource_system<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_component_id: i32, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    return table_erased_relationship_run_item_populated_query_resource_system<Entity, R, M>(world, table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id), run);
+}
+
+fn table_erased_relationship_run_entity_populated_allow_resource_system_auto<R, M>(world: TableErasedRelationshipWorld<R, M>, allow_type_id: i32, run: fn(TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipPopulatedQueryResourceParam<Entity, R>) -> TableErasedRelationshipWorld<R, M> {
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_relationship_run_entity_populated_allow_resource_system<R, M>(world, allow_component_id, run);
 }
 
 fn table_erased_relationship_run_pair_mut_single_resource_system<A, B, R, M>(world: TableErasedRelationshipWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedRelationshipSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedRelationshipSingleResourceParam<TableErasedPairMut<A, B>, R>) -> TableErasedRelationshipWorld<R, M> {
@@ -1889,6 +1946,57 @@ fn table_erased_relationship_param_reader_writer_res_mut_commands_system(param: 
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_entities.table).tick != 2 { panic(15033); };
     if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(allowed_entities, kind.id, root) != 1 { panic(15034); };
     if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(allowed_entities, kind.id, child), root) != true { panic(15035); };
+}
+
+@test "table erased relationship allow disabled single optional and populated gates"() {
+    let single0 = table_erased_relationship_test_world_new();
+    let (single1, marker) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(single0, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (single2, tag) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(single1, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let single3 = table_erased_relationship_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(single2, TABLE_ERASED_TAG_TYPE);
+    let (single4, hidden) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(single3);
+    let single5 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(single4, hidden, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 3 });
+    let single6 = table_erased_relationship_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(single5, hidden, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 1 });
+    let single7 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(single6.table, TableErasedTime { tick: 0 }), relationships: single6.relationships };
+    let default_optional = table_erased_relationship_run_optional_single_query_resource_system_auto<TableErasedMarker, TableErasedTime, TableErasedEvent>(single7, TABLE_ERASED_MARKER_TYPE, table_erased_relationship_marker_item_default, table_erased_relationship_optional_single_marker_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_optional.table).tick != 77 { panic(15040); };
+    let allowed_single = table_erased_relationship_run_single_allow_query_resource_system_auto<TableErasedMarker, TableErasedTime, TableErasedEvent>(single7, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_relationship_single_marker_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_single.table).tick != 300 + hidden.id { panic(15041); };
+    let allowed_optional = table_erased_relationship_run_optional_single_allow_query_resource_system_auto<TableErasedMarker, TableErasedTime, TableErasedEvent>(single7, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_relationship_marker_item_default, table_erased_relationship_optional_single_marker_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_optional.table).tick != 3 { panic(15042); };
+
+    let pop0 = table_erased_relationship_test_world_new();
+    let (pop1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(pop0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (pop2, disabled) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(pop1, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let pop3 = table_erased_relationship_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(pop2, TABLE_ERASED_MARKER_TYPE);
+    let (pop4, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(pop3, true, false);
+    let (pop5, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(pop4);
+    let (pop6, disabled_child) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(pop5);
+    let pop7 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(pop6, root, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
+    let pop8 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(pop7, disabled_child, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 7, y: 0 });
+    let pop9 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(pop8, disabled_child, disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let pop10 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(pop9, kind.id, disabled_child, root);
+    let pop11 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(pop10.table, TableErasedTime { tick: 0 }), relationships: pop10.relationships };
+    let default_populated = table_erased_relationship_run_populated_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(pop11, TABLE_ERASED_POS_TYPE, table_erased_relationship_populated_pos_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_populated.table).tick != 105 { panic(15043); };
+    let allowed_populated = table_erased_relationship_run_populated_allow_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(pop11, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_relationship_populated_pos_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_populated.table).tick != 212 { panic(15044); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(allowed_populated, kind.id, root) != 1 { panic(15045); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(allowed_populated, kind.id, disabled_child), root) != true { panic(15046); };
+
+    let entity0 = table_erased_relationship_test_world_new();
+    let (entity1, entity_marker) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(entity0, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let entity2 = table_erased_relationship_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(entity1, TABLE_ERASED_MARKER_TYPE);
+    let (entity3, hidden_entity) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(entity2);
+    let entity4 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(entity3, hidden_entity, entity_marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let entity5 = TableErasedRelationshipWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(entity4.table, TableErasedTime { tick: 0 }), relationships: entity4.relationships };
+    let default_entity_optional = table_erased_relationship_run_entity_optional_single_resource_system<TableErasedTime, TableErasedEvent>(entity5, table_erased_relationship_entity_default, table_erased_relationship_entity_optional_single_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_entity_optional.table).tick != 66 { panic(15047); };
+    let allowed_entity_single = table_erased_relationship_run_entity_single_allow_resource_system_auto<TableErasedTime, TableErasedEvent>(entity5, TABLE_ERASED_MARKER_TYPE, table_erased_relationship_entity_single_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_entity_single.table).tick != 500 + hidden_entity.id { panic(15048); };
+    let allowed_entity_optional = table_erased_relationship_run_entity_optional_single_allow_resource_system_auto<TableErasedTime, TableErasedEvent>(entity5, TABLE_ERASED_MARKER_TYPE, table_erased_relationship_entity_default, table_erased_relationship_entity_optional_single_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_entity_optional.table).tick != 600 + hidden_entity.id { panic(15049); };
+    let allowed_entity_populated = table_erased_relationship_run_entity_populated_allow_resource_system_auto<TableErasedTime, TableErasedEvent>(entity5, TABLE_ERASED_MARKER_TYPE, table_erased_relationship_entity_populated_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_entity_populated.table).tick != 700 + hidden_entity.id { panic(15050); };
 }
 
 @test "table erased relationship join query system param preserves relationships"() {
