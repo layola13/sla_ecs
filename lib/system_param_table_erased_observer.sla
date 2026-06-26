@@ -1003,6 +1003,20 @@ fn table_erased_observer_run_with_query_resource_system_auto<T, R, M>(world: Tab
     return table_erased_observer_run_with_query_resource_system<T, R, M>(world, component_id, type_id, with_component_id, run);
 }
 
+fn table_erased_observer_run_allow_query_resource_system<T, R, M>(world: TableErasedObserverWorld<R, M>, component_id: i32, type_id: i32, allow_component_id: i32, run: fn(TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_allow<T, R, M>(world.table, component_id, type_id, allow_component_id);
+    let param0 = table_erased_observer_query_resource_param<T, R>(query, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    return world;
+}
+
+fn table_erased_observer_run_allow_query_resource_system_auto<T, R, M>(world: TableErasedObserverWorld<R, M>, type_id: i32, allow_type_id: i32, run: fn(TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverWorld<R, M> {
+    let component_id = table_erased_world_component_id_for_type<R, M>(world.table, type_id);
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_observer_run_allow_query_resource_system<T, R, M>(world, component_id, type_id, allow_component_id, run);
+}
+
 fn table_erased_observer_run_with_without_query_resource_system<T, R, M>(world: TableErasedObserverWorld<R, M>, component_id: i32, type_id: i32, with_component_id: i32, without_component_id: i32, run: fn(TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverQueryResourceParam<T, R>) -> TableErasedObserverWorld<R, M> {
     let query = table_erased_world_query_with_without<T, R, M>(world.table, component_id, type_id, with_component_id, without_component_id);
     let param0 = table_erased_observer_query_resource_param<T, R>(query, table_erased_world_get_resource<R, M>(world.table));
@@ -1127,6 +1141,19 @@ fn table_erased_observer_run_entity_query_resource_system<R, M>(world: TableEras
     let param1 = run(param0);
     world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
     return world;
+}
+
+fn table_erased_observer_run_entity_allow_query_resource_system<R, M>(world: TableErasedObserverWorld<R, M>, allow_component_id: i32, run: fn(TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverWorld<R, M> {
+    let query = table_erased_world_query_entities_allow<R, M>(world.table, allow_component_id);
+    let param0 = table_erased_observer_item_query_resource_param<Entity, R>(query, table_erased_world_get_resource<R, M>(world.table));
+    let param1 = run(param0);
+    world.table = table_erased_world_insert_resource<R, M>(world.table, param1.resource);
+    return world;
+}
+
+fn table_erased_observer_run_entity_allow_query_resource_system_auto<R, M>(world: TableErasedObserverWorld<R, M>, allow_type_id: i32, run: fn(TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverWorld<R, M> {
+    let allow_component_id = table_erased_world_component_id_for_type<R, M>(world.table, allow_type_id);
+    return table_erased_observer_run_entity_allow_query_resource_system<R, M>(world, allow_component_id, run);
 }
 
 fn table_erased_observer_run_entity_with_query_resource_system_auto<R, M>(world: TableErasedObserverWorld<R, M>, with_type_id: i32, run: fn(TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverItemQueryResourceParam<Entity, R>) -> TableErasedObserverWorld<R, M> {
@@ -2950,6 +2977,31 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if w8.observers.result_sum != entity.id + 9 { panic(14431); };
     if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(w8.table).tick != 1 { panic(14432); };
     if table_erased_world_component_id_for_type<TableErasedTime, TableErasedEvent>(w8.table, TABLE_ERASED_MARKER_TYPE) != marker.id { panic(14433); };
+}
+
+@test "table erased observer system params allow disabled entities"() {
+    let w0 = table_erased_observer_test_world_new();
+    let w1 = table_erased_observer_world_add_observer<TableErasedTime, TableErasedEvent>(w0, TableErasedLifecycleEvent::event_type_id(), table_erased_lifecycle_score);
+    let (w2, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w3, disabled) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let w4 = table_erased_observer_world_register_disabling_component_auto<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_MARKER_TYPE);
+    let (w5, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let (w6, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let w7 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w6, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 1, y: 0 });
+    let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 2, y: 0 });
+    let w9 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w8, e2, disabled.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 1 });
+    let w10 = TableErasedObserverWorld<TableErasedTime, TableErasedEvent> { table: table_erased_world_insert_resource<TableErasedTime, TableErasedEvent>(w9.table, TableErasedTime { tick: 0 }), observers: w9.observers };
+    let trigger_before = w10.observers.trigger_count;
+
+    let default_component = table_erased_observer_run_with_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_POS_TYPE, table_erased_observer_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_component.table).tick != 1 { panic(14600); };
+    let allowed_component = table_erased_observer_run_allow_query_resource_system_auto<TableErasedPos, TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE, table_erased_observer_param_count_query_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_component.table).tick != 2 { panic(14601); };
+    let default_entities = table_erased_observer_run_entity_query_resource_system<TableErasedTime, TableErasedEvent>(w10, table_erased_observer_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(default_entities.table).tick != 1 { panic(14602); };
+    let allowed_entities = table_erased_observer_run_entity_allow_query_resource_system_auto<TableErasedTime, TableErasedEvent>(w10, TABLE_ERASED_MARKER_TYPE, table_erased_observer_param_entity_count_system);
+    if table_erased_world_get_resource<TableErasedTime, TableErasedEvent>(allowed_entities.table).tick != 2 { panic(14603); };
+    if allowed_entities.observers.trigger_count != trigger_before { panic(14604); };
 }
 
 @test "table erased observer join query system param exposes two readonly queries"() {
