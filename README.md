@@ -6,6 +6,16 @@ The project is moving from fixed demo prototypes toward Bevy Core ECS parity.
 Current reusable infrastructure lives in `lib/`; verified executable examples live
 in `examples/`.
 
+## Toolchain Default
+
+`sa sla test` is now the default SAB-first test path for this project. The SLA
+plugin compiles tests directly to managed SAB under `.sla-cache/sab/` and passes
+that artifact to `sa test`; only `UnsupportedSabDirectFeature` falls back to the
+legacy `.test.sa` backend in `auto` mode. Use `--test-backend sab` when a focused
+check must prove strict direct SAB coverage, and `--test-backend sa` only when
+debugging the old text backend. Focused tests should still be wrapped in
+`timeout 120s`; build/install commands should not use that timeout wrapper.
+
 ## Architecture
 
 An ECS framework built for SA's linear ownership model and Referee safety system. No `mut` keyword — write access is expressed through linear value passing (`fn(World) -> World`).
