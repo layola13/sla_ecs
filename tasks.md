@@ -5,7 +5,8 @@ Update this file whenever a task is completed. Do not mark a task done until the
 ## Phase 1: Sla Compiler Unblockers
 
 - [x] Confirm upstream direct SAB workflow for ECS builds: `sa sla sab build/workspace` writes managed SAB under `.sla-cache/sab/`, keeps `.sa` text and `.sab` binary as separate compiler mainlines, supports workspace package selection, and does not use `.zig-cache/` for SLA-managed SAB artifacts.
-- [x] Confirm upstream SAB-first test workflow for ECS verification: default `sa sla test` / `--test-backend auto` writes managed `.sla-cache/sab/...` test artifacts and invokes `sa test` on SAB, falling back to legacy `.test.sa` only for `UnsupportedSabDirectFeature`; use `--test-backend sab` for strict direct-SAB coverage and `--test-backend sa` only for legacy backend debugging.
+- [x] Confirm upstream SAB-first test workflow for ECS verification: default `sa sla test` / `--test-backend auto` writes managed `.sla-cache/sab/...` test artifacts and invokes `sa test` on SAB; use `--test-backend sab` for explicit SAB artifact verification and `--test-backend sa` only for legacy backend debugging.
+- [x] Confirm current SAB backend supports the table-erased Commands batch tests that previously exposed SA-backend metadata gaps. Verification: focused `timeout 120s env SA_PLUGIN_DEV=1 SLA_PROFILE=1 sa sla test lib/commands_table_erased.sla --filter ...` runs passed for spawn batch bundles, insert batch bundles, and insert batch-if-new, with warm repeated runs around 2-3s.
 - [x] Confirm upstream SLA CLI helpers for ECS onboarding: `sa sla init [path]` scaffolds an SLA project and `sa sla skills [--json]` exposes plugin capabilities plus agent skill generation.
 - [x] Confirm current baseline: all `src/*.sla` prototype tests pass, while `examples/movement_demo.sla` fails on a Sla codegen cleanup issue.
 - [x] Add compiler regression for chained `array-of-struct` field access inside control flow.

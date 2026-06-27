@@ -2,7 +2,7 @@
 
 > 本文件由进度巡检线程每 10 分钟更新。todo 形式记录:Sla 语言陷阱、编译器 bug、架构忠实度建议。
 > codex 写代码,本线程只读巡检 + 在此留指导。
-> 最近更新:2026-06-20 04:38
+> 最近更新:2026-06-27 00:00
 
 ---
 
@@ -21,7 +21,7 @@
 ## B. 编译器 bug 状态(sa_plugin_sla)
 
 - [x] **SAB 直接输出主线已可用于 ECS 构建**:`sa sla sab build` / `sa sla sab workspace` 现在走 SLA AST/type-checker 到 SAB 的直接后端,不是 `sla -> sa -> sab`。默认托管 SAB 写入 `.sla-cache/sab/`,不写 `.zig-cache/`;需要可检查落盘文件时才传 `--out`、`--sab-out` 或 `--emit-sab`。workspace 模式支持 `-p/--package`,并把托管 SAB 作为 `sa build-exe` 的稳定输入以利于增量编译。
-- [x] **默认测试路径也是 SAB 优先**:`sa sla test` 默认等价于 `--test-backend auto`,先直接生成 `.sla-cache/sab/...` 并交给 `sa test`;只有 SAB 直接后端返回 `UnsupportedSabDirectFeature` 时才回退旧 `.test.sa`。要验证严格 SAB 覆盖时传 `--test-backend sab`;只有调试旧文本后端时才传 `--test-backend sa`。ECS 之前会超时的 `lib/system_param_table_erased.sla` focused 测试在 parser O(n^2) 修复和 `--filter` 前置剪枝后,已在 `timeout 120s` 下约 6.6s 通过。
+- [x] **默认测试路径也是 SAB**:`sa sla test` 默认等价于 `--test-backend auto`,生成 `.sla-cache/sab/...` 并交给 `sa test`;旧 `.test.sa` 只有显式 `--test-backend sa` 才会走。`--test-backend sab` 用来明确要求 SAB artifact 路径。当前 SAB 路径先尝试直接 AST-to-SAB,直接后端未覆盖的 SA 特性会走内存 SA-compatible SAB encoder,不会写 `.test.sa`。ECS 之前会超时/后端失败的 focused 测试在 SAB v3 元数据(raw_text/function reg ids/upstream loc 等)修复后已通过;冷跑可能 20s+ 填 SA 后端缓存,热跑约 2-3s。
 - [x] **SLA CLI 辅助命令已补齐**:`sa sla init [path]` 可生成最小 SLA 项目(`sa.mod`,`src/main.sla`,`.gitignore` 含 `.sla-cache/`);`sa sla skills [--json]` 可查看插件能力,文本模式会生成 Codex/Claude agent skill 文件。ECS 新目录或 agent 上下文可优先用这两个命令初始化/确认能力。
 - [x] **typeSize(.array) bug 已修**:结构体内数组按指针(8字节)算偏移,循环内访问 struct 字段数组不再 segfault。回归测试 `test_unit_struct_field_array_loop.sla`。
 - [x] **跨文件 .sla import 已修**:parser 预扫描导入类型名。回归 `test_unit_sla_import.sla`。
@@ -63,6 +63,8 @@
 - [ ] **下一步建议**:核心 + 进阶子系统已几乎全覆盖 bevy(Entity/Component/Archetype/Table/类型擦除列/Query+filter/SystemParam/Schedule/Commands/Resource/Message/change tick/**Bundle**/**Observer**/**metadata marker**)。收尾:① 统一对外 World API(目前多个 stepping-stone world 并存);② README/progress 忠实度对照表汇总;③ 后续用通用 macro/derive 设施生成 metadata,但不要写入编译器 ECS 关键字;④ 继续扩大 tuple/filter 组合到三元以上和复合过滤器。
 
 ## D. 测试基线(最近巡检)
+
+- [x] 00:00 SAB 默认路径复验:重建/安装 SA 与 SLA dev plugin 后,`timeout 120s env SA_PLUGIN_DEV=1 SLA_PROFILE=1 sa sla test lib/commands_table_erased.sla --filter ...` 分别通过 `table erased commands spawn batch bundles apply deferred`, `table erased commands insert batch bundles apply deferred`, `table erased commands insert batch if new keeps existing components`。三条冷跑约 26-28s,重复热跑约 2.2-2.7s。未跑全量测试。
 
 - [x] 04:58 全绿(compiler+table_erased parity):`test_unit_global_const_call_arg_cleanup.sla` PASS,`zig build test` PASS,dev plugin 已安装;`lib/world_table_erased.sla` 32 PASS,`examples/bevy_readme_parity_table_erased_demo.sla` 40 PASS,`lib/ecs_metadata.sla` 54 PASS,`examples/ecs_metadata_descriptor_demo.sla` 55 PASS;随后全量 54 个 `lib/*.sla` + 41 个 `examples/*.sla` 循环 PASS,生成 `.sa` 无绝对 `sa_std` import,两仓库 `git diff --check` PASS。
 - [x] 04:16 全绿(107 tests,codex 新增统一 ECS 元数据层):`lib/ecs_metadata.sla`(53)把 Component/Resource/Message/Event/Relationship 五类的 type_id/storage/drop glue/稳定类型标识(namespace+local id)统一成库级描述符(引擎无关)+ `examples/ecs_metadata_descriptor_demo.sla`(54)。

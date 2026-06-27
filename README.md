@@ -13,12 +13,14 @@ and the SLA plugin available through `SA_PLUGIN_DEV=1` during focused local
 checks.
 
 `sa sla test` is now the default SAB-first test path for this project. The SLA
-plugin compiles tests directly to managed SAB under `.sla-cache/sab/` and passes
-that artifact to `sa test`; only `UnsupportedSabDirectFeature` falls back to the
-legacy `.test.sa` backend in `auto` mode. Use `--test-backend sab` when a focused
-check must prove strict direct SAB coverage, and `--test-backend sa` only when
-debugging the old text backend. Focused tests should still be wrapped in
+plugin writes managed SAB under `.sla-cache/sab/` and passes that artifact to
+`sa test`. The legacy `.test.sa` backend is only used when explicitly requested
+with `--test-backend sa`; default `auto` and explicit `--test-backend sab` both
+stay on the SAB artifact path. Focused tests should still be wrapped in
 `timeout 120s`; build/install commands should not use that timeout wrapper.
+Cold focused runs may spend 20s+ filling the SA backend cache, while repeated
+runs should normally return in roughly 2-3s once `.sla-cache/sab/` and SA's
+incremental cache are warm.
 
 ## Architecture
 
