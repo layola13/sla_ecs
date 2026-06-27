@@ -86,6 +86,34 @@ fn table_erased_world_spawn_bundle3<R, M>(world: TableErasedWorld<R, M>, bundle:
     return (world, entity);
 }
 
+fn table_erased_world_spawn_batch_bundle2<R, M>(world: TableErasedWorld<R, M>, bundles: Vec<TableErasedBundle2>) -> (TableErasedWorld<R, M>, Vec<Entity>) {
+    let entities: Vec<Entity> = Vec::new();
+    let i: i64 = 0;
+    let cnt = len(bundles) as i64;
+    while i < cnt {
+        let bundle = bundles[i];
+        let (next_world, entity) = table_erased_world_spawn_bundle2<R, M>(world, bundle);
+        world = next_world;
+        entities.push(entity);
+        i = i + 1;
+    }
+    return (world, entities);
+}
+
+fn table_erased_world_spawn_batch_bundle3<R, M>(world: TableErasedWorld<R, M>, bundles: Vec<TableErasedBundle3>) -> (TableErasedWorld<R, M>, Vec<Entity>) {
+    let entities: Vec<Entity> = Vec::new();
+    let i: i64 = 0;
+    let cnt = len(bundles) as i64;
+    while i < cnt {
+        let bundle = bundles[i];
+        let (next_world, entity) = table_erased_world_spawn_bundle3<R, M>(world, bundle);
+        world = next_world;
+        entities.push(entity);
+        i = i + 1;
+    }
+    return (world, entities);
+}
+
 const TABLE_ERASED_BUNDLE_POS_TYPE: i32 = 401;
 const TABLE_ERASED_BUNDLE_VEL_TYPE: i32 = 402;
 const TABLE_ERASED_BUNDLE_PLAYER_TYPE: i32 = 403;
@@ -132,4 +160,29 @@ fn table_erased_bundle_world_new() -> TableErasedWorld<TableErasedBundleTime, Ta
     let vel = table_erased_world_get_auto<TableErasedBundleVel, TableErasedBundleTime, TableErasedBundleEvent>(w6, entity, TABLE_ERASED_BUNDLE_VEL_TYPE);
     let player_value = table_erased_world_get_auto<TableErasedBundlePlayer, TableErasedBundleTime, TableErasedBundleEvent>(w6, entity, TABLE_ERASED_BUNDLE_PLAYER_TYPE);
     if pos.x + vel.x + player_value.team != 12 { panic(12523); };
+}
+
+@test "table erased bundle spawn batch returns ordered entities"() {
+    let w0 = table_erased_bundle_world_new();
+    let (w1, position) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w0, TABLE_ERASED_BUNDLE_POS_TYPE, 0, ecs_box_drop<TableErasedBundlePos>);
+    let (w2, velocity) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w1, TABLE_ERASED_BUNDLE_VEL_TYPE, 0, ecs_box_drop<TableErasedBundleVel>);
+    let (w3, player) = table_erased_world_register_component_metadata<TableErasedBundleTime, TableErasedBundleEvent>(w2, TABLE_ERASED_BUNDLE_PLAYER_TYPE, 1, ecs_box_drop<TableErasedBundlePlayer>);
+
+    let bundles: Vec<TableErasedBundle3> = Vec::new();
+    bundles.push(table_erased_bundle3_new<TableErasedBundlePos, TableErasedBundleVel, TableErasedBundlePlayer>(TABLE_ERASED_BUNDLE_POS_TYPE, TableErasedBundlePos { x: 1, y: 0 }, TABLE_ERASED_BUNDLE_VEL_TYPE, TableErasedBundleVel { x: 2, y: 0 }, TABLE_ERASED_BUNDLE_PLAYER_TYPE, TableErasedBundlePlayer { team: 10 }));
+    bundles.push(table_erased_bundle3_new<TableErasedBundlePos, TableErasedBundleVel, TableErasedBundlePlayer>(TABLE_ERASED_BUNDLE_POS_TYPE, TableErasedBundlePos { x: 3, y: 0 }, TABLE_ERASED_BUNDLE_VEL_TYPE, TableErasedBundleVel { x: 4, y: 0 }, TABLE_ERASED_BUNDLE_PLAYER_TYPE, TableErasedBundlePlayer { team: 20 }));
+    bundles.push(table_erased_bundle3_new<TableErasedBundlePos, TableErasedBundleVel, TableErasedBundlePlayer>(TABLE_ERASED_BUNDLE_POS_TYPE, TableErasedBundlePos { x: 5, y: 0 }, TABLE_ERASED_BUNDLE_VEL_TYPE, TableErasedBundleVel { x: 6, y: 0 }, TABLE_ERASED_BUNDLE_PLAYER_TYPE, TableErasedBundlePlayer { team: 30 }));
+
+    let (w4, entities) = table_erased_world_spawn_batch_bundle3<TableErasedBundleTime, TableErasedBundleEvent>(w3, bundles);
+    if len(entities) != 3 { panic(12540); };
+    if entities[0].id >= entities[1].id { panic(12541); };
+    if entities[1].id >= entities[2].id { panic(12542); };
+    if table_erased_world_has<TableErasedBundleTime, TableErasedBundleEvent>(w4, entities[0], position.id) != true { panic(12543); };
+    if table_erased_world_has<TableErasedBundleTime, TableErasedBundleEvent>(w4, entities[1], velocity.id) != true { panic(12544); };
+    if table_erased_world_has<TableErasedBundleTime, TableErasedBundleEvent>(w4, entities[2], player.id) != true { panic(12545); };
+
+    let pairs = table_erased_world_query_pair_auto<TableErasedBundlePos, TableErasedBundleVel, TableErasedBundleTime, TableErasedBundleEvent>(w4, TABLE_ERASED_BUNDLE_POS_TYPE, TABLE_ERASED_BUNDLE_VEL_TYPE);
+    if len(pairs.items) != 3 { panic(12546); };
+    if pairs.items[0].first.x + pairs.items[1].first.x + pairs.items[2].first.x != 9 { panic(12547); };
+    if pairs.items[0].second.x + pairs.items[1].second.x + pairs.items[2].second.x != 12 { panic(12548); };
 }
