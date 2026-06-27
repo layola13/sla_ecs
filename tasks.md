@@ -183,7 +183,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
 - [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
-- [x] Add verified thread-backed table-erased read-only query shard example: `examples/parallel_query.sla`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test examples/parallel_query.sla --filter "parallel query demo runs table erased query shards on threads"`.
+- [x] Add verified thread-backed table-erased read-only query shard example: `examples/parallel_query.sla`, covering materialized query values and shared `Arc<TableErasedWorld<...>>` snapshots. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test examples/parallel_query.sla --filter "parallel query demo runs table erased query shards on threads"` and `timeout 120s env SA_PLUGIN_DEV=1 sa sla test examples/parallel_query.sla --filter "parallel query demo reads shared table erased world snapshot on threads"`.
 - [x] Add verified DynamicWorld schedule pipeline example: `examples/dynamic_schedule_demo.sla`.
 - [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
 - [x] Add verified DynamicWorld deferred Commands example: `examples/dynamic_commands_demo.sla`.
