@@ -110,6 +110,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-row type-erased system-param adapters over `TableErasedWorld<R, M>`.
 - [x] Add verified no-conflict parallel batch planning over `TableErasedSchedule<R, M>`.
 - [x] Add verified thread-backed read-only shard helpers in `lib/parallel.sla`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test lib/parallel.sla --filter "parallel i32 shard sum uses threads"`.
+- [x] Add verified thread-backed `TableErasedWorld<R, M>` read-only two-system runner in `lib/parallel_table_erased.sla`, with access-conflict rejection and shared `Arc<TableErasedWorld<...>>` snapshots. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test lib/parallel_table_erased.sla --filter "table erased readonly parallel runner executes no conflict systems on threads"`.
 - [x] Add verified runtime type-id metadata lookup helpers for `TableErasedWorld<R, M>`: component-id lookup by type id, auto insert/get/query/filters/Changed/remove, type-id Commands insert, type-id schedule access declarations, and type-id system-param adapters.
 - [x] Add verified table-erased component bundle helpers: type-id bundle constructors, spawn bundle, insert bundle, duplicate component rejection, and metadata-driven component registration.
 - [x] Add ECS component metadata contract files (`.sal` / `.sai`) and verify impl-provided component type ids integrate with `TableErasedWorld<R, M>` registration and lookup.
