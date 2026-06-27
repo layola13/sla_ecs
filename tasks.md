@@ -109,6 +109,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified table-row type-erased observer system-param adapters in `lib/system_param_table_erased_observer.sla`: pair-mut query writeback, observer Commands param, ResMut, MessageWriter, MessageReader, resource/message params, and explicit event trigger param. Verification: `SA_PLUGIN_DEV=1 sa sla test lib/system_param_table_erased_observer.sla`.
 - [x] Add verified table-row type-erased system-param adapters over `TableErasedWorld<R, M>`.
 - [x] Add verified no-conflict parallel batch planning over `TableErasedSchedule<R, M>`.
+- [x] Add verified thread-backed read-only shard helpers in `lib/parallel.sla`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test lib/parallel.sla --filter "parallel i32 shard sum uses threads"`.
 - [x] Add verified runtime type-id metadata lookup helpers for `TableErasedWorld<R, M>`: component-id lookup by type id, auto insert/get/query/filters/Changed/remove, type-id Commands insert, type-id schedule access declarations, and type-id system-param adapters.
 - [x] Add verified table-erased component bundle helpers: type-id bundle constructors, spawn bundle, insert bundle, duplicate component rejection, and metadata-driven component registration.
 - [x] Add ECS component metadata contract files (`.sal` / `.sai`) and verify impl-provided component type ids integrate with `TableErasedWorld<R, M>` registration and lookup.
@@ -182,6 +183,7 @@ Update this file whenever a task is completed. Do not mark a task done until the
 - [x] Add verified World-based movement/resource/message example: `examples/world_movement_demo.sla`.
 - [x] Add verified DynamicWorld movement/resource/message example exceeding the old 16-entity cap: `examples/dynamic_world_movement_demo.sla`.
 - [x] Add verified DynamicWorld3 bundle/query/filter example: `examples/dynamic_world3_bundle_demo.sla`.
+- [x] Add verified thread-backed table-erased read-only query shard example: `examples/parallel_query.sla`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla test examples/parallel_query.sla --filter "parallel query demo runs table erased query shards on threads"`.
 - [x] Add verified DynamicWorld schedule pipeline example: `examples/dynamic_schedule_demo.sla`.
 - [x] Add verified DynamicWorld resource change detection example: `examples/dynamic_resource_change_demo.sla`.
 - [x] Add verified DynamicWorld deferred Commands example: `examples/dynamic_commands_demo.sla`.
