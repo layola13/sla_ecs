@@ -2,7 +2,7 @@
 
 > 本文件由进度巡检线程每 10 分钟更新。todo 形式记录:Sla 语言陷阱、编译器 bug、架构忠实度建议。
 > codex 写代码,本线程只读巡检 + 在此留指导。
-> 最近更新:2026-06-27 00:00
+> 最近更新:2026-06-27 08:47 UTC
 
 ---
 
@@ -14,14 +14,15 @@
 - [ ] **impl 方法内 while 循环里 `return self` 可能 TypeMismatch**:复杂的带提前返回的循环方法,改用自由函数 `fn op(store: T, ...) -> T`。
 - [ ] **泛型 `impl<T>` 方法不工作**:`impl<T> Foo<T> { fn m() }` 解析失败。泛型操作一律用泛型自由函数 `fn op<T>(...)`,已验证可单态化。
 - [x] **`Type::method()` 关联函数现已可用(含用户自定义)**:derive 生成的 `Type::component_type_id()` 和**手写** `impl T { fn event_type_id() -> i32 }` 都能用 `::` 调用(16:12 event_observer_demo 验证 `ObserverSpeakEvent::event_type_id()`)。此前记的"不工作"是旧状态。
-- [ ] **函数指针不能存进 struct 字段**:`struct S { f: fn(i32)->i32 }` 取用会 UndefinedCall。函数指针只能作函数参数传递。schedule 存系统已验证可行(说明有特例,注意写法)。
+- [x] **函数指针值/struct 字段路径已恢复**:`struct S { f: fn(i32)->i32 }` 这类存储/取用已通过默认 SAB 路径验证;函数指针调用会走完整 SA-compatible SAB encoder 并保留 `call_indirect`。验证:`timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_unit_fn_ptr_value.sla --filter "function pointer survives struct return"`。
 - [x] **Entity(值类型 struct)已接入通用 derive 值语义**:`lib/entity.sla` 现在使用 `@derive(copy, eq, ord, hash, debug)`,同一 `Entity` 变量可以复制后继续使用,并可直接 `==`/`!=`/`<`/`>`、`hash(entity)`、`debug(entity)`。`entity_eq` 保留为兼容包装并改为调用派生 `==`。验证:`SA_PLUGIN_DEV=1 sa sla test lib/entity.sla`, `lib/hierarchy.sla`, `examples/hierarchy_relationship_demo.sla` 通过。旧的拆 `id/gen` 重建写法可逐步清理,但不再是新代码必需规避法。
 - [ ] **大数组字面量 + 多 struct 同文件**:曾见 `[0;64]` 级字面量在多 storage 结构体同文件时 TypeMismatch。优先用 Vec 动态存储,避免巨型固定数组。
 
 ## B. 编译器 bug 状态(sa_plugin_sla)
 
 - [x] **SAB 直接输出主线已可用于 ECS 构建**:`sa sla sab build` / `sa sla sab workspace` 现在走 SLA AST/type-checker 到 SAB 的直接后端,不是 `sla -> sa -> sab`。默认托管 SAB 写入 `.sla-cache/sab/`,不写 `.zig-cache/`;需要可检查落盘文件时才传 `--out`、`--sab-out` 或 `--emit-sab`。workspace 模式支持 `-p/--package`,并把托管 SAB 作为 `sa build-exe` 的稳定输入以利于增量编译。
-- [x] **默认测试路径也是 SAB**:`sa sla test` 默认等价于 `--test-backend auto`,生成 `.sla-cache/sab/...` 并交给 `sa test`;旧 `.test.sa` 只有显式 `--test-backend sa` 才会走。`--test-backend sab` 用来明确要求 SAB artifact 路径。当前 SAB 路径先尝试直接 AST-to-SAB,直接后端未覆盖的 SA 特性会走内存 SA-compatible SAB encoder,不会写 `.test.sa`。ECS 之前会超时/后端失败的 focused 测试在 SAB v3 元数据(raw_text/function reg ids/upstream loc 等)修复后已通过;冷跑可能 20s+ 填 SA 后端缓存,热跑约 2-3s。
+- [x] **默认测试路径也是 SAB**:`sa sla test` 默认等价于 `--test-backend auto`,生成 `.sla-cache/sab/...` 并交给 `sa test`;旧 `.test.sa` 只有显式 `--test-backend sa` 才会走。`--test-backend sab` 用来明确要求 SAB artifact 路径。当前 SAB 路径先尝试直接 AST-to-SAB,直接后端未覆盖的 SA 特性会走内存 SA-compatible SAB encoder,不会写 `.test.sa`。SCI SAB focused tests 已覆盖 SA `InstKind`/`OpKind`/operand tag;函数指针 `call_indirect` 走完整 SAB encoder。ECS focused 测试能过但仍非 2-3s:最新 `parallel_table_erased` 安装插件运行约 19.30s。
+- [x] **SAB filter 裁剪已装入 dev 插件**:最新 `sa_plugin_sla` 已在 filtered SAB test 路径加入可达函数裁剪,只在 `sa sla test --filter ...` 生效,普通 `sab build/workspace` 保持完整输出。验证:`zig build`,focused `zig build test -Dtest-filter=...`,local/installed CLI 默认 SAB 测试均通过。注意:测试命令继续带 `timeout 120s`;`sa plugin install --dev ...` 本轮在 5 分钟上限内无输出超时,manifest/lock 未变化,已用 verified `zig-out/lib/libsla.so` 更新 installed `current`/`0.1.0` 动态库并校验 hash。
 - [x] **SLA CLI 辅助命令已补齐**:`sa sla init [path]` 可生成最小 SLA 项目(`sa.mod`,`src/main.sla`,`.gitignore` 含 `.sla-cache/`);`sa sla skills [--json]` 可查看插件能力,文本模式会生成 Codex/Claude agent skill 文件。ECS 新目录或 agent 上下文可优先用这两个命令初始化/确认能力。
 - [x] **typeSize(.array) bug 已修**:结构体内数组按指针(8字节)算偏移,循环内访问 struct 字段数组不再 segfault。回归测试 `test_unit_struct_field_array_loop.sla`。
 - [x] **跨文件 .sla import 已修**:parser 预扫描导入类型名。回归 `test_unit_sla_import.sla`。
@@ -65,6 +66,8 @@
 
 ## D. 测试基线(最近巡检)
 
+- [x] 08:47 SAB 完整支持 + 性能定位复验:SCI focused tests 覆盖每个 SA `InstKind`/`OpKind`/operand tag;安装后的 `SA_PLUGIN_DEV=1 sa sla test tests/test_sab_direct.sla --filter "direct sab add"`、`tests/test_unit_fn_ptr_value.sla --filter "function pointer can be stored and called"`、`--filter "function pointer survives struct return"` 均 PASS。`lib/parallel_table_erased.sla --filter "table erased readonly parallel runner executes no conflict systems on threads"` 默认 SAB PASS,约 19.30s/MaxRSS 约 153MB;profile 显示约 4.0s SA-compatible flatten、5.2s SAB encode、13.5s `sa test <managed.sab>`。仍需后续 SCI/SAB encode 与 SA test incremental 性能优化,未跑全量测试。
+- [x] 07:08 SAB 默认路径复验 + table-erased 并行单测性能定位:`sa_plugin_sla` dev 插件已重建安装,`sa sla help` 显示 `test --test-backend auto|sab|sa`,`sa sla skills --json` 和 `sa sla init` 可用。`timeout 120s env SA_PLUGIN_DEV=1 SLA_PROFILE=1 sa sla test lib/parallel_table_erased.sla --filter "table erased readonly parallel runner executes no conflict systems on threads"` 连续通过,约 17.0s/16.0s;managed SAB 约 651 KiB / 8,315 指令。`sa test <managed.sab> --compile-only` 仍约 17s,说明剩余慢点主要在 SA 后端测试编译/链接,不是 SLA import/parse/codegen。未跑全量测试。
 - [x] 00:00 SAB 默认路径复验:重建/安装 SA 与 SLA dev plugin 后,`timeout 120s env SA_PLUGIN_DEV=1 SLA_PROFILE=1 sa sla test lib/commands_table_erased.sla --filter ...` 分别通过 `table erased commands spawn batch bundles apply deferred`, `table erased commands insert batch bundles apply deferred`, `table erased commands insert batch if new keeps existing components`。三条冷跑约 26-28s,重复热跑约 2.2-2.7s。未跑全量测试。
 
 - [x] 04:58 全绿(compiler+table_erased parity):`test_unit_global_const_call_arg_cleanup.sla` PASS,`zig build test` PASS,dev plugin 已安装;`lib/world_table_erased.sla` 32 PASS,`examples/bevy_readme_parity_table_erased_demo.sla` 40 PASS,`lib/ecs_metadata.sla` 54 PASS,`examples/ecs_metadata_descriptor_demo.sla` 55 PASS;随后全量 54 个 `lib/*.sla` + 41 个 `examples/*.sla` 循环 PASS,生成 `.sa` 无绝对 `sa_std` import,两仓库 `git diff --check` PASS。
