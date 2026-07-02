@@ -662,3 +662,14 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Integration test importing both lib modules (27 tests SA) — `tests/test_ecs_lib_graph_entity_access_isolated.sla`
 
 ### Grand Total: 683 isolated tests across 30 files, all passing on SA backend
+
+## Session 2026-07-02 (lib collections + clone + condition + observer batch)
+
+### Completed
+- [x] Created lib/entity_collections.sla: EntityHashMap (insert/get/remove/contains_key/keys/clear), EntityIndexMap (insert/get/get_index_of/get_by_index/swap_remove/shift_remove preserving order/keys/clear), EntityIndexSet (insert dedup/contains/shift_remove/get_index/iter/clear)
+- [x] Created lib/component_clone.sla: SourceComponent (read/ptr/id), EntityMapper (get_or_insert/get/len), ComponentCloneCtx (source/target/component_id/target_component_written/moving/linked_cloning/write_target_component/queue_entity_clone), ComponentCloneBehavior (clone/reflect/ignore/custom/resolve), clone handler functions (via_clone/via_reflect/ignore)
+- [x] Created lib/schedule_condition.sla: run_once (stateful), resource_exists/added/changed/exists_and_changed/changed_or_removed/removed/equals/exists_and_equals, on_message, any_with_component/any_component_removed/any_match_filter, not/and/or combinators, ResourceTrackState
+- [x] Created lib/observer_runner.sla: Trigger (global/entity/propagate with target/event_key/propagate/original_target), On (event/event_key/trigger/observer/caller/propagate), ObserverRegistry (add/trigger/deactivate/count/run_count), ObserverWithCondition (run_if/should_run)
+- [x] Integration test importing all 4 lib modules (40 tests SA) — `tests/test_ecs_lib_collections_clone_condition_observer_isolated.sla`
+
+### Grand Total: 723 isolated tests across 31 files, all passing on SA backend
