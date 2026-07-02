@@ -653,3 +653,12 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Integration test importing all 6 lib modules (34 tests SA) — `tests/test_ecs_lib_modules_isolated.sla`
 
 ### Grand Total: 656 isolated tests across 29 files, all passing on SA backend
+
+## Session 2026-07-02 (lib graph + entity_access batch)
+
+### Completed
+- [x] Created lib/schedule_graph.sla: EcsDiGraph (add/remove node/edge, contains, node/edge_count, neighbors, toposort Kahn's BFS with cycle detection returning (bool, Vec)), EcsDag (new, add_node/add_edge, is_dirty/is_toposorted, toposort caching, get_toposort, contains_edge), EcsTarjanState + ecs_tarjan_compute (full Tarjan SCC: strongconnect/succ/pop_scc/next with tuple-threaded state)
+- [x] Created lib/entity_access.sla: EcsEntityRef (new, id, contains, get, add, component_count, entry), EcsEntityWorldMut (new, id, contains, get, insert new/update, remove swap-pop, component_count), EcsComponentEntry (Occupied/Vacant, is_occupied, get, insert, or_insert), EcsFilteredEntityRef (new, allow, is_allowed, get with access control)
+- [x] Integration test importing both lib modules (27 tests SA) — `tests/test_ecs_lib_graph_entity_access_isolated.sla`
+
+### Grand Total: 683 isolated tests across 30 files, all passing on SA backend
