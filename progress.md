@@ -509,3 +509,7 @@ echo "progress updated"
 - [done] Added lib/entity_command.sla (EntityCommand insert/remove/clear/despawn/clone/move/log/observe + EntityCommandError + InsertMode + apply) + 14 isolated SA tests.
 - [done] Added lib/schedule_executor.sla (SingleThreadedExecutor/MultiThreadedExecutor run/skip/apply_deferred/set_up/finish) + lib/exclusive_system_param.sla (DeferredWorld/Commands/Query/Resource/NonSend/SystemName) + lib/graph_map.sla (directed/undirected Graph add/remove node/edge/neighbors/degree) + lib/reflect_resource.sla (ReflectResource register/insert/get/remove) + 25 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1156 isolated tests across 63 test files and 113 lib modules.
+
+- [done] Added lib/schedules.sla (Schedules insert/remove/remove_temporarily/reinsert/get/entry) + lib/schedule_pass.sla (FlattenedDependencies + Kahn toposort w/ cycle detection, ScheduleBuildPass, DagAnalysis) + 18 isolated SA tests.
+- [done] Added lib/system_trait.sla (SystemStateFlags bitfield, System initialize/run/apply_deferred, RunSystemOnce) + lib/sparse_set.sla (SparseSet + ComponentSparseSet) + lib/bundle_writer.sla (BundleScratch + BundleWriter) + 21 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1195 isolated tests across 65 test files and 118 lib modules.

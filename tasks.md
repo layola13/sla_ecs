@@ -773,3 +773,20 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: entity_command 14, executor+param+graph+reflect 25 — all passing on SA backend
 
 ### Grand Total: 1156 isolated tests across 63 test files, 113 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (schedules + schedule_pass + system_trait + sparse_set + bundle_writer batch)
+
+### Completed
+- [x] Created lib/schedules.sla: EcsSchedules (contains/insert/reinsert/remove/remove_temporarily/get/entry/mark_empty, temporarily_removed + empty_labels) — mirrors schedule::schedule::Schedules
+- [x] Created lib/schedule_pass.sla: EcsSystemKey, EcsFlattenedDependencies (add_node/add_edge/remove_edge/toposort via Kahn's algorithm with cycle detection), EcsScheduleBuildPass (build/analyze), EcsDagAnalysis — mirrors schedule::pass
+- [x] Created lib/system_trait.sla: EcsSystemStateFlags (bitfield set/unset/has, fixed: SLA has no bitwise NOT, used XOR), EcsSystem (initialize/run/apply_deferred), EcsRunSystemOnceResult, ecs_run_system_once (checks initialized) — mirrors system::system
+- [x] Created lib/sparse_set.sla: EcsSparseSet (ensure_capacity/insert/contains/get/remove swap-remove/clear), EcsComponentSparseSet (insert/get/get_with_ticks/remove) — mirrors storage::sparse_set
+- [x] Created lib/bundle_writer.sla: EcsBundleScratch (push/is_empty/len/writer), EcsBundleWriter (push/finish) — mirrors bundle::writer
+- [x] Tests: schedules+pass 18, system+sparse+writer 21 — all passing on SA backend
+
+### Key SLA Discovery (this batch)
+- SLA has no bitwise NOT (`~x`); use XOR (`f.bits ^ (f.bits & bit)`) to clear a bit.
+- Struct literals in @test functions don't work for imported-module structs; add library constructor helpers.
+- Chained field access through a tuple element (`r.0.field`) can fail to parse; bind `let m = r.0;` first.
+
+### Grand Total: 1195 isolated tests across 65 test files, 118 lib modules, all passing on SA backend
