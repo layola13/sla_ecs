@@ -268,3 +268,9 @@ Last updated: 2026-07-02
 - 24 tests — test_ecs_lib_unique_slice_isolated.sla
 - Tests: 1837 → 1861, lib modules: 172 → 173, test files: 94 → 95
 - src/entity/unique_slice.rs (UniqueEntityEquivalentSlice) ✓
+
+## Batch 46 — unique_array (2026-07-02)
+- lib/unique_array.sla: EcsUniqueEntityArray (new/from_array/into_inner/as_slice/len/is_empty/is_full/capacity/get/first/last/contains/index_of/set/push/swap/reverse/eq/sum/map_doubled) — mirrors entity/unique_array.rs
+- 19 tests — test_ecs_lib_unique_array_isolated.sla
+- Tests: 1861 → 1880, lib modules: 173 → 174, test files: 95 → 96
+- src/entity/unique_array.rs (UniqueEntityEquivalentArray) ✓
