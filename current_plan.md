@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1740 isolated tests across 89 test files, 167 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1755 isolated tests across 90 test files, 168 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -232,3 +232,9 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_system_param_special_isolated.sla
 - Tests: 1719 → 1740, lib modules: 166 → 167, test files: 88 → 89
 - src/system/system_param.rs (Deferred/SystemBuffer/ExclusiveMarker/NonSendMarker/RemovedComponents/RunSystemOnce) ✓
+
+## Batch 40 — query_lens (2026-07-02)
+- lib/query_lens.sla: EcsQueryLens (new/has_access/has_write/transmute/transmute_filtered/join/join_filtered/get/is_empty/as_query_lens/into_query_lens/query/filter_count) — mirrors system::query.rs QueryLens + transmute + join
+- 15 tests — test_ecs_lib_query_lens_isolated.sla
+- Tests: 1740 → 1755, lib modules: 167 → 168, test files: 89 → 90
+- src/system/query.rs (QueryLens/transmute_lens/join) ✓
