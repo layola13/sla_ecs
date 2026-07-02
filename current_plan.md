@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1455 isolated tests across 78 test files, 156 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1485 isolated tests across 79 test files, 157 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -159,3 +159,15 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_entry_isolated.sla
 - Tests: 1434 → 1455, lib modules: 155 → 156, test files: 77 → 78
 - src/world/entity_access/entry.rs ✓
+
+## Batch 29 — filtered_entity (2026-07-02)
+- lib/filtered_entity.sla: EcsAccess (add_read/add_write/set_read_all/set_write_all/has_read/has_write/has_read_all/has_write_all/clone) + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef (id/location/archetype/access/contains/contains_id/contains_type_id/get/get_ref/get_by_id/get_change_ticks_by_id/try_into_all/eq/cmp) + EcsFilteredEntityMut2 (get/get_mut/get_mut_by_id/get_change_ticks_by_id/reborrow/into_readonly/as_readonly/try_into_all/eq/cmp) + EcsUnsafeFilteredEntityMut (new_readonly/into_mut) — mirrors world::entity_access::filtered.rs
+- 30 tests — test_ecs_lib_filtered_entity_isolated.sla
+- Tests: 1455 → 1485, lib modules: 156 → 157, test files: 78 → 79
+- src/world/entity_access/filtered.rs ✓
+
+## Batch 29 — filtered_entity (2026-07-02)
+- lib/filtered_entity.sla: EcsAccess (add_read/add_write/set_read_all/set_write_all/has_read/has_write/has_read_all/has_write_all/clone) + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef (id/location/archetype/access/contains/get/get_ref/get_by_id/get_change_ticks_by_id/try_into_all/eq/cmp) + EcsFilteredEntityMut2 (get/get_mut/get_mut_by_id/reborrow/into_readonly/as_readonly/try_into_all/eq/cmp) + EcsUnsafeFilteredEntityMut — mirrors world::entity_access::filtered.rs
+- 30 tests — test_ecs_lib_filtered_entity_isolated.sla
+- Tests: 1455 → 1485, lib modules: 156 → 157, test files: 78 → 79
+- src/world/entity_access/filtered.rs ✓
