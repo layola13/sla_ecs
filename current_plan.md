@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1434 isolated tests across 77 test files, 155 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1455 isolated tests across 78 test files, 156 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -153,3 +153,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_entity_mut_isolated.sla
 - Tests: 1415 → 1434, lib modules: 154 → 155, test files: 76 → 77
 - src/world/entity_access/entity_mut.rs ✓
+
+## Batch 28 — entry (2026-07-02)
+- lib/entry.sla: EcsComponentEntry (occupied/vacant/and_modify/insert_entry/or_insert/or_insert_with/or_default/from_state) + EcsOccupiedEntry (get/insert/take/get_mut/into_mut) + EcsVacantEntry (insert) — mirrors world::entity_access::entry.rs
+- 21 tests — test_ecs_lib_entry_isolated.sla
+- Tests: 1434 → 1455, lib modules: 155 → 156, test files: 77 → 78
+- src/world/entity_access/entry.rs ✓
