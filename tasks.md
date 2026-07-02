@@ -1019,3 +1019,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_unique_array_isolated.sla: 19 tests — all passing on SA backend
 
 ### Grand Total: 1880 isolated tests across 96 test files, 174 lib modules, all passing on SA backend
+
+## Batch 47 — clone_entities (2026-07-02)
+- [x] Created lib/clone_entities.sla: SourceComponent + ComponentCloneCtx + EntityMapper + EntityClonerState — mirrors entity/clone_entities.rs
+- [x] Created tests/test_ecs_lib_clone_entities_isolated.sla: 29 tests — all passing on SA backend
+
+### Grand Total: 1909 isolated tests across 97 test files, 175 lib modules, all passing on SA backend

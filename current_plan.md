@@ -274,3 +274,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_unique_array_isolated.sla
 - Tests: 1861 → 1880, lib modules: 173 → 174, test files: 95 → 96
 - src/entity/unique_array.rs (UniqueEntityEquivalentArray) ✓
+
+## Batch 47 — clone_entities (2026-07-02)
+- lib/clone_entities.sla: EcsSourceComponent + EcsEntityMapper + EcsComponentCloneCtx + EcsEntityClonerState — mirrors entity/clone_entities.rs
+- 29 tests — test_ecs_lib_clone_entities_isolated.sla
+- Tests: 1880 → 1909, lib modules: 174 → 175, test files: 96 → 97
+- src/entity/clone_entities.rs (SourceComponent/ComponentCloneCtx/EntityMapper/EntityClonerState) ✓
