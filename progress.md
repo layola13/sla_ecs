@@ -521,3 +521,6 @@ echo "progress updated"
 
 - [done] Added lib/component_register.sla (ComponentIds + ComponentsRegistrator queue/apply/register) + lib/message_update.sla (MessageUpdateSystems) + lib/spawn_batch.sla (SpawnBatchIter) + lib/entity_component_fetch.sla (EntityComponentFetch) + lib/bundle_remove.sla (BundleRemover) + 19 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1274 isolated tests across 69 test files and 137 lib modules.
+
+- [done] Added lib/intern.sla (Interner + Interned) + lib/name_hashed.sla (HashedStr + Name + NameOrEntity) + lib/lifecycle_hooks.sla (HookContext + ComponentHooks + RemovedComponent) + lib/entity_disabling_filters.sla (Disabled + DefaultQueryFilters) + 24 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1298 isolated tests across 70 test files and 141 lib modules.

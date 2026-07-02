@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1274 isolated tests across 69 test files, 137 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1298 isolated tests across 70 test files, 141 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 1274 tests across 69 isolated test files
+## Completed (all verified, SA backend) — 1298 tests across 70 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -116,6 +116,10 @@ Last updated: 2026-07-02
 - src/world/spawn_batch.rs ✓ (SpawnBatchIter)
 - src/world/entity_access/component_fetch.rs ✓ (EntityComponentFetch)
 - src/bundle/remove.rs ✓ (BundleRemover)
+- src/intern.rs ✓ (Interner, Interned)
+- src/name.rs ✓ (Name, HashedStr, NameOrEntity)
+- src/lifecycle.rs ✓ (ComponentHooks, HookContext, RemovedComponent)
+- src/entity_disabling.rs ✓ (Disabled, DefaultQueryFilters)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

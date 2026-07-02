@@ -823,3 +823,14 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 19 tests covering all 5 modules — all passing on SA backend
 
 ### Grand Total: 1274 isolated tests across 69 test files, 137 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (intern + name_hashed + lifecycle_hooks + entity_disabling_filters batch)
+
+### Completed
+- [x] Created lib/intern.sla: EcsInterner (intern/resolve/contains/len), EcsInterned (id/eq) — mirrors intern.rs
+- [x] Created lib/name_hashed.sla: EcsHashedStr (value/pre_hash/set/eq), EcsName (new/set/mutate/as_str/pre_hash/eq), EcsNameOrEntity — mirrors name.rs
+- [x] Created lib/lifecycle_hooks.sla: EcsHookContext, EcsComponentHooks (on_add/on_insert/on_discard/on_remove/on_despawn + try_ variants + count), EcsRemovedComponent — mirrors lifecycle.rs
+- [x] Created lib/entity_disabling_filters.sla: EcsDisabled, EcsDefaultQueryFilters (register/is_disabled/is_entity_disabled) — mirrors entity_disabling.rs
+- [x] Tests: 24 tests covering all 4 modules — all passing on SA backend
+
+### Grand Total: 1298 isolated tests across 70 test files, 141 lib modules, all passing on SA backend
