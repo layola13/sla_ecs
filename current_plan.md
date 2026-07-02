@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 569 isolated tests across 26 files)
+- Bevy ECS core API parity: ~99% (175+ facade functions + 622 isolated tests across 28 files)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -62,9 +62,9 @@ Last updated: 2026-07-02
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)
 - src/traversal.rs ✓ (Traversal trait)
-- src/template.rs — partial (template engine, lower priority)
+- src/template.rs ✓ (Template, TemplateContext, SceneEntityReferences, EntityTemplate, FnTemplate, OptionTemplate, VecTemplate)
 
-## Remaining (minor / low-priority)
-- src/template.rs: template engine (niche, lower priority)
+## Remaining (minor)
 - Full SAB backend verification once compiler large-file limit is resolved
 - Continue refining edge cases as bevy_ecs evolves
+- src/never.rs: Never type alias (language-level, no semantic API to test)

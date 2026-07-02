@@ -632,3 +632,11 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Archetype (id/table_id/entities/add_entity/entity_table_row/contains table+sparse_set/component_count/has_add_hook) + Edges (insert/remove/take kinds, get_after_bundle lookup) + Lifecycle (ADD/INSERT/DISCARD/REMOVE/DESPAWN EventKeys, RemovedComponentMessages push/get/is_empty) + Hierarchy (Children push/get/remove/is_empty, Parent get) + Resource (insert/remove/is_present/id) (25 tests SA) — `tests/test_ecs_archetype_lifecycle_hierarchy_isolated.sla`
 
 ### Grand Total: 569 isolated tests across 26 files, all passing on SA backend
+
+## Session 2026-07-02 (query filters + system params + template batch)
+
+### Completed
+- [x] Query Filters (With/Without/Or/Added/Changed/Allow/Spawned) + Fetch types (Has/AnyOf/Option/Read/Write) + SystemParams (ParamSet add/get_mut/for_each, Local get/set, Deferred push/reborrow, If into_inner/is_present, SystemChangeTick this_run/last_run, StaticSystemParam) (34 tests SA) — `tests/test_ecs_query_filters_system_params_isolated.sla`
+- [x] Template engine (InnerSceneEntityReference eq, SceneEntityReferences set/get/len, TemplateContext get_entity/resource/resource_entity, EntityTemplate from_reference/from_fn, FnTemplate, OptionTemplate some/none, VecTemplate push/get/len) (19 tests SA) — `tests/test_ecs_template_engine_isolated.sla`
+
+### Grand Total: 622 isolated tests across 28 files, all passing on SA backend
