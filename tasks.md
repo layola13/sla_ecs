@@ -863,3 +863,13 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 18 tests — all passing on SA backend
 
 ### Grand Total: 1344 isolated tests across 73 test files, 145 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (system_combinator + system_registry + component_required batch)
+
+### Completed
+- [x] Created lib/system_combinator.sla: EcsCombinatorSystem (pipe/and/or/map kinds, combine), EcsPipeSystem (run_b/output), EcsIntoPipeSystem, EcsIsPipeSystemMarker, EcsXorMarker + xor_combine — mirrors system::combinator
+- [x] Created lib/system_registry.sla: EcsSystemId, EcsSystemIdMarker, EcsRegisteredSystem (initialize/run), EcsRemovedSystem, EcsSystemHandle (Strong/Weak), EcsStrongSystemHandle, EcsRegisteredSystemDespawner, despawn_unused_registered_systems — mirrors system::system_registry
+- [x] Created lib/component_required.sla: EcsRequiredComponent (id/constructor/depth), EcsRequiredComponents (register shallowest-wins/contains/depth_of/constructor_of/iter_ids), RequiredComponentsError constants, EcsRequiredComponentsRegistrator (register_required/register_required_recursive) — mirrors component::required
+- [x] Tests: 25 tests covering all 3 modules — all passing on SA backend
+
+### Grand Total: 1369 isolated tests across 74 test files, 148 lib modules, all passing on SA backend

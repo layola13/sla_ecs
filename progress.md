@@ -533,3 +533,6 @@ echo "progress updated"
 
 - [done] Added lib/component_info.sla (ComponentId + ComponentInfo full metadata + ComponentDescriptor + StorageType + component constants) + 18 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1344 isolated tests across 73 test files and 145 lib modules.
+
+- [done] Added lib/system_combinator.sla (CombinatorSystem pipe/and/or/map + PipeSystem) + lib/system_registry.sla (SystemId + RegisteredSystem + RemovedSystem + SystemHandle + despawn_unused) + lib/component_required.sla (RequiredComponents shallowest-wins + Registrator) + 25 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1369 isolated tests across 74 test files and 148 lib modules.
