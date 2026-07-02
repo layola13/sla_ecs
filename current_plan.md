@@ -256,3 +256,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_entities_collection_isolated.sla
 - Tests: 1795 → 1814, lib modules: 170 → 171, test files: 92 → 93
 - src/entity/mod.rs (Entities/EcsEntityLocation) ✓
+
+## Batch 44 — unique_vec (2026-07-02)
+- lib/unique_vec.sla: EcsUniqueEntityVec (new/with_capacity/from_vec/into_inner/as_slice/len/is_empty/get/first/last/contains/index_of/push/insert/swap_remove/remove/pop/clear/truncate/retain/split_off/extend_from_slice/from_entity_iter/eq/dedup) — mirrors entity/unique_vec.rs
+- 23 tests — test_ecs_lib_unique_vec_isolated.sla
+- Tests: 1814 → 1837, lib modules: 171 → 172, test files: 93 → 94
+- src/entity/unique_vec.rs (UniqueEntityEquivalentVec) ✓
