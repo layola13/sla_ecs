@@ -625,3 +625,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] SystemMeta (name/is_send/set_non_send/set_exclusive/has_deferred/last_run) + FunctionSystem (with_name, run, run_count, last_result) + SystemState (matches_world, init) + ComponentInfo (id/name/mutable/set_immutable/storage_type/sparse_set/is_send_sync/non_send/layout/drop) + ComponentDescriptor (new/new_resource/storage_type/is_resource/non_send) + WorldId (unique counter, eq) + CommandQueue (push/len/is_empty/apply/append/silent) + ComponentHooks (on_add/insert/replace/remove/despawn) + AppTypeRegistry/AppFunctionRegistry (register/count) (31 tests SA) — `tests/test_ecs_systemmeta_componentinfo_world_isolated.sla`
 
 ### Grand Total: 544 isolated tests across 25 files, all passing on SA backend
+
+## Session 2026-07-02 (archetype + lifecycle + hierarchy + resource batch)
+
+### Completed
+- [x] Archetype (id/table_id/entities/add_entity/entity_table_row/contains table+sparse_set/component_count/has_add_hook) + Edges (insert/remove/take kinds, get_after_bundle lookup) + Lifecycle (ADD/INSERT/DISCARD/REMOVE/DESPAWN EventKeys, RemovedComponentMessages push/get/is_empty) + Hierarchy (Children push/get/remove/is_empty, Parent get) + Resource (insert/remove/is_present/id) (25 tests SA) — `tests/test_ecs_archetype_lifecycle_hierarchy_isolated.sla`
+
+### Grand Total: 569 isolated tests across 26 files, all passing on SA backend

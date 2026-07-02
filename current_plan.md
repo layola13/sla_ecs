@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 544 isolated tests across 25 files)
+- Bevy ECS core API parity: ~99% (175+ facade functions + 569 isolated tests across 26 files)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 
 ## Completed (all verified, SA backend) — 390 tests across 20 isolated test files
@@ -31,6 +31,7 @@ Last updated: 2026-07-02
 22. EntityDisabling + Intern/Interned + Name/HashedStr + Relationship Query Iterators (descendants/ancestors/leaves/siblings/root) (21) — `tests/test_ecs_disabling_intern_name_isolated.sla`
 23. RequiredComponents + ComponentCloneBehavior + Event/EntityEvent/EventKey + QueryState + Entity Unique Collections (33) — `tests/test_ecs_required_clone_event_querystate_isolated.sla`
 24. SystemMeta/FunctionSystem + ComponentInfo/Descriptor + WorldId/CommandQueue + ComponentHooks + Reflect Registries (31) — `tests/test_ecs_systemmeta_componentinfo_world_isolated.sla`
+25. Archetype (entities/edges/components/table_row) + Lifecycle (EventKey/RemovedComponent) + Hierarchy (Children/Parent) + Resource (25) — `tests/test_ecs_archetype_lifecycle_hierarchy_isolated.sla`
 
 ## Remaining (auditing)
 - Verify remaining observer/lifecycle edge cases vs bevy_ecs
