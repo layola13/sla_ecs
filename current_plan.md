@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 459 isolated tests across 22 files)
+- Bevy ECS core API parity: ~99% (175+ facade functions + 480 isolated tests across 23 files)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 
 ## Completed (all verified, SA backend) — 390 tests across 20 isolated test files
@@ -28,6 +28,7 @@ Last updated: 2026-07-02
 19. Message Iterator types + MessageUpdateSystems (21) — `tests/test_ecs_message_iterators_isolated.sla`
 20. BatchingStrategy + BevyError/Severity/ErrorContext + EntityHashSet + Spawn/SpawnableList (38) — `tests/test_ecs_batching_error_spawn_isolated.sla`
 21. Query Access (read/write/archetypal/inversion/compatibility/subset) + Schedule Stepping (enable/disable/breakpoints/step/continue) (31) — `tests/test_ecs_access_stepping_isolated.sla`
+22. EntityDisabling + Intern/Interned + Name/HashedStr + Relationship Query Iterators (descendants/ancestors/leaves/siblings/root) (21) — `tests/test_ecs_disabling_intern_name_isolated.sla`
 
 ## Remaining (auditing)
 - Verify remaining observer/lifecycle edge cases vs bevy_ecs

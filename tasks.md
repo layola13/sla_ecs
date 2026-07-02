@@ -604,3 +604,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Query Access (add_read/write/remove, archetypal, read_all/write_all inversion, has_read/write/any, clear/clear_writes, is_compatible conflict detection, is_subset) + Schedule Stepping (enable/disable, add/remove_schedule, step_frame/continue_frame, set/clear_breakpoint, always_run/never_run_node, begin_frame) (31 tests SA) — `tests/test_ecs_access_stepping_isolated.sla`
 
 ### Grand Total: 459 isolated tests across 22 files, all passing on SA backend
+
+## Session 2026-07-02 (disabling + intern + name + rel-query batch)
+
+### Completed
+- [x] EntityDisabling (DefaultQueryFilters register/is_disabled, query filtering with explicit mention) + Intern/Interned (intern dedup, count) + Name/HashedStr (new/set/mutate/as_str/pre_hash) + Relationship Query Iterators (descendants BFS, ancestors, root_ancestor, siblings, leaves, parent lookup) (21 tests SA) — `tests/test_ecs_disabling_intern_name_isolated.sla`
+
+### Grand Total: 480 isolated tests across 23 files, all passing on SA backend
