@@ -618,3 +618,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] RequiredComponents (register dedup, iter_ids, contains, get_constructor) + ComponentCloneBehavior (clone/reflect/ignore/custom, resolve with default fn) + Event/EntityEvent/EventKey (register_event_key, event_key lookup, entity/global target) + QueryState (init_access, add read/write, validate_world, is_empty, matched_tables/archetypes, transmute, join) + Entity Unique Collections (push/len/pop/swap_remove/get/truncate/clear/with_capacity) (33 tests SA) — `tests/test_ecs_required_clone_event_querystate_isolated.sla`
 
 ### Grand Total: 513 isolated tests across 24 files, all passing on SA backend
+
+## Session 2026-07-02 (systemmeta + componentinfo + world + hooks + reflect batch)
+
+### Completed
+- [x] SystemMeta (name/is_send/set_non_send/set_exclusive/has_deferred/last_run) + FunctionSystem (with_name, run, run_count, last_result) + SystemState (matches_world, init) + ComponentInfo (id/name/mutable/set_immutable/storage_type/sparse_set/is_send_sync/non_send/layout/drop) + ComponentDescriptor (new/new_resource/storage_type/is_resource/non_send) + WorldId (unique counter, eq) + CommandQueue (push/len/is_empty/apply/append/silent) + ComponentHooks (on_add/insert/replace/remove/despawn) + AppTypeRegistry/AppFunctionRegistry (register/count) (31 tests SA) — `tests/test_ecs_systemmeta_componentinfo_world_isolated.sla`
+
+### Grand Total: 544 isolated tests across 25 files, all passing on SA backend
