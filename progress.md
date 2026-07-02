@@ -539,3 +539,6 @@ echo "progress updated"
 
 - [done] Added lib/message_cursor.sla (MessageCursor read/len/clear/missed) + lib/message_mutator.sla (MessageMutator write/read) + lib/message_registry_update.sla (MessageRegistry register/deregister/signal/run_updates + MessageMutIterator + MessageMutParIter) + 21 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1390 isolated tests across 75 test files and 151 lib modules.
+
+- [done] Added lib/message_reader_writer.sla (MessageReader + PopulatedMessageReader + MessageWriter) + lib/messages_buffer.sla (Messages double-buffer write/update/get_cursor/update_drain/oldest_message_count) + lib/message_iterators.sla (MessageIterator/WithId/ParIter) + 25 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1415 isolated tests across 76 test files and 154 lib modules.

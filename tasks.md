@@ -883,3 +883,13 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 21 tests covering all 3 modules — all passing on SA backend
 
 ### Grand Total: 1390 isolated tests across 75 test files, 151 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (message_reader_writer + messages_buffer + message_iterators batch)
+
+### Completed
+- [x] Created lib/message_reader_writer.sla: EcsMessageReader (read/read_with_id/par_read/len/is_empty/clear/total), EcsPopulatedMessageReader (is_populated), EcsMessageWriter (write/write_batch/write_default/len/at) — mirrors message::message_reader + message_writer
+- [x] Created lib/messages_buffer.sla: EcsMessages (write/write_batch/write_default/get_cursor/get_cursor_current/update/update_drain/clear/len/is_empty/oldest_message_count/current_len/previous_len) — mirrors message::messages
+- [x] Created lib/message_iterators.sla: EcsMessageIterator (next/len/is_empty), EcsMessageIteratorWithId (next/without_id), EcsMessageParIter (batching_strategy/batch_count/for_each/for_each_with_id) — mirrors message::iterators
+- [x] Tests: 25 tests covering all 3 modules — all passing on SA backend
+
+### Grand Total: 1415 isolated tests across 76 test files, 154 lib modules, all passing on SA backend
