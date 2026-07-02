@@ -898,22 +898,28 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created lib/entity_mut.sla: EcsEntityMut (id/location/archetype/set_archetype/contains/contains_id/contains_type_id/get/get_ref/get_mut/insert/remove/component_count/components/get_change_ticks_by_id/reborrow/into_readonly/as_readonly/into_filtered) + EcsFilteredEntityMut (allow/is_allowed/get/id/allowed_count/from_inner/inner) — mirrors world::entity_access::entity_mut.rs
 - [x] Created tests/test_ecs_lib_entity_mut_isolated.sla: 19 tests — all passing on SA backend
 
-### Grand Total: 1485 isolated tests across 79 test files, 157 lib modules, all passing on SA backend
+### Grand Total: 1528 isolated tests across 80 test files, 158 lib modules, all passing on SA backend
 
 ## Batch 28 — entry (2026-07-02)
 - [x] Created lib/entry.sla: EcsComponentEntry (occupied/vacant/and_modify/insert_entry/or_insert/or_insert_with/or_default/from_state) + EcsOccupiedEntry (get/insert/take/get_mut/into_mut) + EcsVacantEntry (insert) — mirrors world::entity_access::entry.rs
 - [x] Created tests/test_ecs_lib_entry_isolated.sla: 21 tests — all passing on SA backend
 
-### Grand Total: 1485 isolated tests across 79 test files, 157 lib modules, all passing on SA backend
+### Grand Total: 1528 isolated tests across 80 test files, 158 lib modules, all passing on SA backend
 
 ## Batch 29 — filtered_entity (2026-07-02)
 - [x] Created lib/filtered_entity.sla: EcsAccess + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef + EcsFilteredEntityMut2 + EcsUnsafeFilteredEntityMut — mirrors world::entity_access::filtered.rs
 - [x] Created tests/test_ecs_lib_filtered_entity_isolated.sla: 30 tests — all passing on SA backend
 
-### Grand Total: 1485 isolated tests across 79 test files, 157 lib modules, all passing on SA backend
+### Grand Total: 1528 isolated tests across 80 test files, 158 lib modules, all passing on SA backend
 
 ## Batch 29 — filtered_entity (2026-07-02)
 - [x] Created lib/filtered_entity.sla: EcsAccess + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef + EcsFilteredEntityMut2 + EcsUnsafeFilteredEntityMut — mirrors world::entity_access::filtered.rs
 - [x] Created tests/test_ecs_lib_filtered_entity_isolated.sla: 30 tests — all passing on SA backend
 
-### Grand Total: 1485 isolated tests across 79 test files, 157 lib modules, all passing on SA backend
+### Grand Total: 1528 isolated tests across 80 test files, 158 lib modules, all passing on SA backend
+
+## Batch 30 — world_mut (2026-07-02)
+- [x] Created lib/world_mut.sla: EcsEntityWorldMut2 — mirrors world::entity_access::world_mut.rs. Full EntityWorldMut API surface.
+- [x] Created tests/test_ecs_lib_world_mut_isolated.sla: 43 tests — all passing on SA backend
+
+### Grand Total: 1528 isolated tests across 80 test files, 158 lib modules, all passing on SA backend

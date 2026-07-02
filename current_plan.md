@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1485 isolated tests across 79 test files, 157 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1528 isolated tests across 80 test files, 158 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -171,3 +171,10 @@ Last updated: 2026-07-02
 - 30 tests — test_ecs_lib_filtered_entity_isolated.sla
 - Tests: 1455 → 1485, lib modules: 156 → 157, test files: 78 → 79
 - src/world/entity_access/filtered.rs ✓
+
+## Batch 30 — world_mut (2026-07-02)
+- lib/world_mut.sla: EcsEntityWorldMut2 (id/is_spawned/is_despawned/location/try_location/archetype/try_archetype/spawned_by/spawn_tick/contains/get/get_ref/get_mut/get_by_id/get_mut_by_id/into_borrow/get_change_ticks_by_id/insert/insert_if_new/remove/remove_by_id/remove_with_requires/retain/take/clear/despawn/despawn_no_free/flush/components/clone_and_spawn/clone_components/move_components/into_readonly/as_readonly/into_mutable/as_mutable/entry/insert_resource/get_resource/resource/resource_mut/resource_count/modify_component/update_location) — mirrors world::entity_access::world_mut.rs
+- 43 tests — test_ecs_lib_world_mut_isolated.sla
+- Tests: 1485 → 1528, lib modules: 157 → 158, test files: 79 → 80
+- src/world/entity_access/world_mut.rs ✓
+- entity_access/ subdirectory now fully deep-covered (entity_ref/entity_mut/filtered/entry/world_mut/except/component_fetch)
