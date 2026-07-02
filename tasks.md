@@ -1037,3 +1037,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_blob_array_isolated.sla: 19 tests — all passing on SA backend
 
 ### Grand Total: 1948 isolated tests across 99 test files, 177 lib modules, all passing on SA backend
+
+## Batch 50 — thin_array_ptr (2026-07-02)
+- [x] Created lib/thin_array_ptr.sla: EcsThinArrayPtr — mirrors storage/thin_array_ptr.rs
+- [x] Created tests/test_ecs_lib_thin_array_ptr_isolated.sla: 15 tests — all passing on SA backend
+
+### Grand Total: 1963 isolated tests across 100 test files, 178 lib modules, all passing on SA backend

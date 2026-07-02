@@ -292,3 +292,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_blob_array_isolated.sla
 - Tests: 1929 → 1948, lib modules: 176 → 177, test files: 98 → 99
 - src/storage/blob_array.rs (BlobArray) ✓
+
+## Batch 50 — thin_array_ptr (2026-07-02)
+- lib/thin_array_ptr.sla: EcsThinArrayPtr (with_capacity/empty/alloc/realloc/capacity/initialize/get/swap_remove/swap_remove_nonoverlapping/clear_elements/drop/as_slice/len/is_empty) — mirrors storage/thin_array_ptr.rs
+- 15 tests — test_ecs_lib_thin_array_ptr_isolated.sla
+- Tests: 1948 → 1963, lib modules: 177 → 178, test files: 99 → 100
+- src/storage/thin_array_ptr.rs (ThinArrayPtr) ✓
