@@ -898,58 +898,64 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created lib/entity_mut.sla: EcsEntityMut (id/location/archetype/set_archetype/contains/contains_id/contains_type_id/get/get_ref/get_mut/insert/remove/component_count/components/get_change_ticks_by_id/reborrow/into_readonly/as_readonly/into_filtered) + EcsFilteredEntityMut (allow/is_allowed/get/id/allowed_count/from_inner/inner) — mirrors world::entity_access::entity_mut.rs
 - [x] Created tests/test_ecs_lib_entity_mut_isolated.sla: 19 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 28 — entry (2026-07-02)
 - [x] Created lib/entry.sla: EcsComponentEntry (occupied/vacant/and_modify/insert_entry/or_insert/or_insert_with/or_default/from_state) + EcsOccupiedEntry (get/insert/take/get_mut/into_mut) + EcsVacantEntry (insert) — mirrors world::entity_access::entry.rs
 - [x] Created tests/test_ecs_lib_entry_isolated.sla: 21 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 29 — filtered_entity (2026-07-02)
 - [x] Created lib/filtered_entity.sla: EcsAccess + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef + EcsFilteredEntityMut2 + EcsUnsafeFilteredEntityMut — mirrors world::entity_access::filtered.rs
 - [x] Created tests/test_ecs_lib_filtered_entity_isolated.sla: 30 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 29 — filtered_entity (2026-07-02)
 - [x] Created lib/filtered_entity.sla: EcsAccess + EcsTryFromFilteredError + EcsEntityComponents + EcsFilteredEntityRef + EcsFilteredEntityMut2 + EcsUnsafeFilteredEntityMut — mirrors world::entity_access::filtered.rs
 - [x] Created tests/test_ecs_lib_filtered_entity_isolated.sla: 30 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 30 — world_mut (2026-07-02)
 - [x] Created lib/world_mut.sla: EcsEntityWorldMut2 — mirrors world::entity_access::world_mut.rs. Full EntityWorldMut API surface.
 - [x] Created tests/test_ecs_lib_world_mut_isolated.sla: 43 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 31 — entity_commands_conditional (2026-07-02)
 - [x] Created lib/entity_commands_conditional.sla: EcsEntityCommands2 — mirrors system::commands::EntityCommands conditional/try API
 - [x] Created tests/test_ecs_lib_entity_commands_conditional_isolated.sla: 37 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 32 — entity_entry_commands (2026-07-02)
 - [x] Created lib/entity_entry_commands.sla: EcsEntityEntryCommands — mirrors system::commands::EntityEntryCommands deferred entry API
 - [x] Created tests/test_ecs_lib_entity_entry_commands_isolated.sla: 24 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 33 — commands_world (2026-07-02)
 - [x] Created lib/commands_world.sla: EcsCommands — mirrors system::commands::Commands world-level API
 - [x] Created tests/test_ecs_lib_commands_world_isolated.sla: 32 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 34 — world_resource_api (2026-07-02)
 - [x] Created lib/world_resource_api.sla: EcsWorldResource — mirrors world::mod.rs resource management API
 - [x] Created tests/test_ecs_lib_world_resource_api_isolated.sla: 28 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
 
 ## Batch 35 — world_error (2026-07-02)
 - [x] Created lib/world_error.sla: 6 error types — mirrors world::error.rs
 - [x] Created tests/test_ecs_lib_world_error_isolated.sla: 18 tests — all passing on SA backend
 
-### Grand Total: 1667 isolated tests across 85 test files, 163 lib modules, all passing on SA backend
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend
+
+## Batch 36 — schedule_condition_advanced (2026-07-02)
+- [x] Created lib/schedule_condition_advanced.sla: condition_changed/condition_changed_to + 10 combinators — mirrors schedule::condition.rs
+- [x] Created tests/test_ecs_lib_schedule_condition_advanced_isolated.sla: 22 tests — all passing on SA backend
+
+### Grand Total: 1689 isolated tests across 86 test files, 164 lib modules, all passing on SA backend

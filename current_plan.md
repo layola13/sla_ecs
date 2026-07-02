@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1667 isolated tests across 85 test files, 163 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1689 isolated tests across 86 test files, 164 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -208,3 +208,9 @@ Last updated: 2026-07-02
 - 18 tests — test_ecs_lib_world_error_isolated.sla
 - Tests: 1649 → 1667, lib modules: 162 → 163, test files: 84 → 85
 - src/world/error.rs ✓
+
+## Batch 36 — schedule_condition_advanced (2026-07-02)
+- lib/schedule_condition_advanced.sla: EcsConditionChangedState (condition_changed/condition_changed_to) + 10 combinator types (and_then/and_eager/or_else/or_eager/nand_then/nand_eager/nor_then/nor_eager/xor_then/xor_eager) + not + combine_by_kind + resource_exists_and — mirrors schedule::condition.rs advanced condition state
+- 22 tests — test_ecs_lib_schedule_condition_advanced_isolated.sla
+- Tests: 1667 → 1689, lib modules: 163 → 164, test files: 85 → 86
+- src/schedule/condition.rs (condition_changed/condition_changed_to/combinators) ✓
