@@ -749,3 +749,15 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: query_builder+fetch 19, system_builder 14, storage_internals 15 — all passing on SA backend
 
 ### Grand Total: 1083 isolated tests across 59 test files, 103 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (schedule_config + schedule_set + system_input + command_queue + observer_storage batch)
+
+### Completed
+- [x] Created lib/schedule_config.sla: EcsGraphInfo (in_set/before/after/run_if), EcsScheduleConfig (in_set/before/after/run_if/with_name), EcsScheduleConfigs enum (Noop/Single/Group + chain, in_set/run_if apply-to-all) — mirrors schedule::config
+- [x] Created lib/schedule_set.sla: EcsSystemSet (anonymous/system_type/base kinds, eq), EcsSetMembership (add/contains) — mirrors schedule::set (SystemTypeSet/AnonymousSet/IntoSystemSet)
+- [x] Created lib/system_input.sla: EcsSystemInput (unit/In/InRef/InMut kinds, is_input), EcsIn/EcsInRef/EcsInMut, EcsStaticSystemInput, FromInput — mirrors system::input
+- [x] Created lib/command_queue.sla: EcsCommandQueue (push/apply/append/is_empty/silent/silence_drop_warning/applied_count) — mirrors world::command_queue
+- [x] Created lib/observer_storage.sla: EcsCachedObservers (global/component/entity runners, add/get), EcsObserversCatalog (event-key-indexed + dedicated lifecycle caches), EcsObserverNode (distributed: entity/runner/watch_entity/with_component/run_if/error_handler), EcsObserverDescriptor — mirrors observer::centralized_storage + distributed_storage
+- [x] Tests: schedule_config+set 15, system_input+command_queue+observer_storage 19 — all passing on SA backend
+
+### Grand Total: 1117 isolated tests across 61 test files, 108 lib modules, all passing on SA backend
