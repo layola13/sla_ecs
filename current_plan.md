@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1705 isolated tests across 87 test files, 165 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1719 isolated tests across 88 test files, 166 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -220,3 +220,9 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_schedule_auto_insert_deferred_isolated.sla
 - Tests: 1689 → 1705, lib modules: 164 → 165, test files: 86 → 87
 - src/schedule/auto_insert_apply_deferred.rs ✓
+
+## Batch 38 — schedule_build_settings (2026-07-02)
+- lib/schedule_build_settings.sla: LogLevel (Ignore/Warn/Error) + EcsScheduleBuildSettings2 (ambiguity_detection/hierarchy_detection/auto_insert_apply_deferred/use_shortnames/report_sets) + EcsScheduleBuildMetadata (warning_count/edges_added) — mirrors schedule::schedule.rs ScheduleBuildSettings + LogLevel + ScheduleBuildMetadata
+- 14 tests — test_ecs_lib_schedule_build_settings_isolated.sla
+- Tests: 1705 → 1719, lib modules: 165 → 166, test files: 87 → 88
+- src/schedule/schedule.rs (ScheduleBuildSettings/LogLevel/ScheduleBuildMetadata) ✓
