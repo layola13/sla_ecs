@@ -611,3 +611,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] EntityDisabling (DefaultQueryFilters register/is_disabled, query filtering with explicit mention) + Intern/Interned (intern dedup, count) + Name/HashedStr (new/set/mutate/as_str/pre_hash) + Relationship Query Iterators (descendants BFS, ancestors, root_ancestor, siblings, leaves, parent lookup) (21 tests SA) — `tests/test_ecs_disabling_intern_name_isolated.sla`
 
 ### Grand Total: 480 isolated tests across 23 files, all passing on SA backend
+
+## Session 2026-07-02 (required + clone + event + querystate + unique batch)
+
+### Completed
+- [x] RequiredComponents (register dedup, iter_ids, contains, get_constructor) + ComponentCloneBehavior (clone/reflect/ignore/custom, resolve with default fn) + Event/EntityEvent/EventKey (register_event_key, event_key lookup, entity/global target) + QueryState (init_access, add read/write, validate_world, is_empty, matched_tables/archetypes, transmute, join) + Entity Unique Collections (push/len/pop/swap_remove/get/truncate/clear/with_capacity) (33 tests SA) — `tests/test_ecs_required_clone_event_querystate_isolated.sla`
+
+### Grand Total: 513 isolated tests across 24 files, all passing on SA backend
