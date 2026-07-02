@@ -1,0 +1,81 @@
+@import "lib/entity_map_entities.sla"
+
+@test "entity map insert and get"() {
+    let m = ecs_entity_map_new();
+    m = ecs_entity_map_insert(m, 1, 10);
+    m = ecs_entity_map_insert(m, 2, 20);
+    let r = ecs_entity_map_get(m, 1);
+    if r.0 != true { panic(41001); };
+    if r.1 != 10 { panic(41002); };
+    let r2 = ecs_entity_map_get(m, 2);
+    if r2.1 != 20 { panic(41003); };
+}
+
+@test "entity map get missing"() {
+    let m = ecs_entity_map_new();
+    m = ecs_entity_map_insert(m, 1, 10);
+    let r = ecs_entity_map_get(m, 99);
+    if r.0 != false { panic(41004); };
+}
+
+@test "entity map insert overwrite"() {
+    let m = ecs_entity_map_new();
+    m = ecs_entity_map_insert(m, 1, 10);
+    m = ecs_entity_map_insert(m, 1, 99);
+    let r = ecs_entity_map_get(m, 1);
+    if r.1 != 99 { panic(41005); };
+    if ecs_entity_map_len(m) != 1 { panic(41006); };
+}
+
+@test "entity map contains"() {
+    let m = ecs_entity_map_new();
+    m = ecs_entity_map_insert(m, 5, 50);
+    if ecs_entity_map_contains(m, 5) != true { panic(41007); };
+    if ecs_entity_map_contains(m, 6) != false { panic(41008); };
+}
+
+@test "scene entity mapper get or allocate new"() {
+    let m = ecs_scene_entity_mapper_new(100);
+    let r = ecs_scene_entity_mapper_get_or_allocate(m, 1);
+    if r.1 != 100 { panic(41009); };
+    if ecs_scene_entity_mapper_next_remote(r.0) != 101 { panic(41010); };
+}
+
+@test "scene entity mapper get or allocate existing"() {
+    let m = ecs_scene_entity_mapper_new(100);
+    let r1 = ecs_scene_entity_mapper_get_or_allocate(m, 1);
+    let r2 = ecs_scene_entity_mapper_get_or_allocate(r1.0, 1);
+    if r2.1 != 100 { panic(41011); };
+    if ecs_scene_entity_mapper_next_remote(r2.0) != 101 { panic(41012); };
+}
+
+@test "scene entity mapper multiple"() {
+    let m = ecs_scene_entity_mapper_new(0);
+    let r1 = ecs_scene_entity_mapper_get_or_allocate(m, 1);
+    let r2 = ecs_scene_entity_mapper_get_or_allocate(r1.0, 2);
+    let r3 = ecs_scene_entity_mapper_get_or_allocate(r2.0, 3);
+    if r1.1 != 0 { panic(41013); };
+    if r2.1 != 1 { panic(41014); };
+    if r3.1 != 2 { panic(41015); };
+}
+
+@test "scene entity mapper resolve"() {
+    let m = ecs_scene_entity_mapper_new(100);
+    let r = ecs_scene_entity_mapper_get_or_allocate(m, 5);
+    let res = ecs_scene_entity_mapper_resolve(r.0, 5);
+    if res.0 != true { panic(41016); };
+    if res.1 != 100 { panic(41017); };
+}
+
+@test "scene entity mapper resolve missing"() {
+    let m = ecs_scene_entity_mapper_new(100);
+    let res = ecs_scene_entity_mapper_resolve(m, 99);
+    if res.0 != false { panic(41018); };
+}
+
+@test "scene entity mapper len"() {
+    let m = ecs_scene_entity_mapper_new(100);
+    let r1 = ecs_scene_entity_mapper_get_or_allocate(m, 1);
+    let r2 = ecs_scene_entity_mapper_get_or_allocate(r1.0, 2);
+    if ecs_scene_entity_mapper_len(r2.0) != 2 { panic(41019); };
+}

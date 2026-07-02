@@ -194,3 +194,42 @@ fn ecs_maybe_location_into_option(m: EcsMaybeLocation) -> (bool, i64) {
     if m.has_location { return (true, m.location_id); };
     return (false, 0);
 }
+
+
+// === ContiguousComponentTicksMut: mutable contiguous slice of ticks ===
+// Mirrors change_detection/params.rs ContiguousComponentTicksMut.
+struct EcsContiguousComponentTicksMut {
+    added_ticks: Vec<i32>,
+    changed_ticks: Vec<i32>,
+    last_run: EcsTick,
+    this_run: EcsTick,
+}
+
+fn ecs_contig_mut_new(added: Vec<i32>, changed: Vec<i32>, last_run: EcsTick, this_run: EcsTick) -> EcsContiguousComponentTicksMut {
+    return EcsContiguousComponentTicksMut { added_ticks: added, changed_ticks: changed, last_run: last_run, this_run: this_run };
+}
+
+fn ecs_contig_mut_added_at(m: EcsContiguousComponentTicksMut, idx: i64) -> i32 { return m.added_ticks[idx]; }
+fn ecs_contig_mut_changed_at(m: EcsContiguousComponentTicksMut, idx: i64) -> i32 { return m.changed_ticks[idx]; }
+fn ecs_contig_mut_set_added(m: EcsContiguousComponentTicksMut, idx: i64, val: i32) -> EcsContiguousComponentTicksMut {
+    m.added_ticks[idx] = val;
+    return m;
+}
+fn ecs_contig_mut_set_changed(m: EcsContiguousComponentTicksMut, idx: i64, val: i32) -> EcsContiguousComponentTicksMut {
+    m.changed_ticks[idx] = val;
+    return m;
+}
+fn ecs_contig_mut_len(m: EcsContiguousComponentTicksMut) -> i64 { return len(m.added_ticks) as i64; }
+fn ecs_contig_mut_last_run(m: EcsContiguousComponentTicksMut) -> EcsTick { return m.last_run; }
+fn ecs_contig_mut_this_run(m: EcsContiguousComponentTicksMut) -> EcsTick { return m.this_run; }
+
+// mark a tick as changed (set to this_run value)
+fn ecs_contig_mut_mark_changed(m: EcsContiguousComponentTicksMut, idx: i64) -> EcsContiguousComponentTicksMut {
+    m.changed_ticks[idx] = m.this_run.tick;
+    return m;
+}
+
+// reborrow: returns a copy (same data)
+fn ecs_contig_mut_reborrow(m: EcsContiguousComponentTicksMut) -> EcsContiguousComponentTicksMut {
+    return m;
+}

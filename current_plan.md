@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 803 isolated tests across 34 files)
+- Bevy ECS core API parity: ~99.5% (175+ facade functions + 964 isolated tests across 51 test files, 91 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 569 tests across 26 isolated test files
+## Completed (all verified, SA backend) — 964 tests across 51 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -39,7 +39,7 @@ Last updated: 2026-07-02
 - src/archetype.rs ✓ (Archetype, Edges, ArchetypeId, ArchetypeRow)
 - src/batching.rs ✓ (BatchingStrategy)
 - src/bundle/ ✓ (BundleInfo)
-- src/change_detection/ ✓ (DetectChanges, Tick, MaybeLocation)
+- src/change_detection/ ✓ (DetectChanges, Tick, MaybeLocation, ComponentTickCells, ContiguousComponentTicksRef/Mut)
 - src/component/ ✓ (ComponentInfo, ComponentDescriptor, ComponentHooks, RequiredComponents, ComponentCloneBehavior, register, constants)
 - src/entity/ ✓ (Entity, EntityHashSet, UniqueVec, EntityMapper, hash)
 - src/entity_disabling.rs ✓ (DefaultQueryFilters, Disabled)
@@ -58,6 +58,10 @@ Last updated: 2026-07-02
 - src/resource.rs ✓ (Resource, IS_RESOURCE)
 - src/schedule/ ✓ (Schedule, ScheduleConfig, SystemSet, DAG, graph, executor, stepping, node, set, condition, pass)
 - src/spawn.rs ✓ (Spawn, SpawnableList, RelatedSpawner)
+- src/traversal.rs ✓ (Traversal trait, unit/relationship impls, PropagateDirection)
+- src/world/identifier.rs ✓ (WorldId, WorldIdAllocator)
+- src/world/deferred_world.rs ✓ (DeferredWorld)
+- src/entity/map_entities.rs ✓ (MapEntities, SceneEntityMapper, EntityHashMap)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

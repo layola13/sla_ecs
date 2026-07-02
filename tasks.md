@@ -706,3 +706,20 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Integration test importing both lib modules (27 tests SA) — `tests/test_ecs_lib_iter_worldcell_isolated.sla`
 
 ### Grand Total: 803 isolated tests across 34 files, all passing on SA backend
+
+## Session 2026-07-02 (change_detection + traversal/identifier/deferred_world/map_entities batch)
+
+### Completed
+- [x] Created lib/change_detection.sla: EcsTick (new/get/set/is_newer_than/eq/lt), EcsCheckChangeTicks, EcsComponentTicks (is_added/is_changed/set_changed/set_added), EcsComponentTickCells, EcsContiguousComponentTicksRef, EcsDetectChanges (is_added/is_changed/is_added_after/is_changed_after/ticks_since_startup), EcsDetectChangesMut (set_changed/set_added/set_if_eq — fixed PhiStateConflict by copying scalar tick value across branches), EcsContiguousComponentTicksMut (added/changed/mark_changed/reborrow), EcsMaybeLocation (none/some/is_some/is_none/unwrap/unwrap_or/assign/map/into_option)
+- [x] Created lib/traversal.sla: EcsTraversalNone (unit impl, traverse returns None), EcsTraversalRelationship (traverse returns Some(target)), EcsTraversalPath (set_edge/follow with loop detection + max depth), EcsPropagateDirection (none/traverse/targets — mirrors PropagateEntityTrigger)
+- [x] Created lib/world_identifier.sla: EcsWorldId (new/get/eq/lt/hash), EcsWorldIdAllocator (alloc returns Option, peek/count — mirrors AtomicUsize MAX_WORLD_ID)
+- [x] Created lib/deferred_world.sla: EcsDeferredWorld (reborrow/change_tick/commands/entity_mut/entities_and_commands/resource_mut/non_send_mut/write_message/write_message_default/write_message_batch/trigger/get_mut_by_id/as_unsafe_world_cell — mirrors world::deferred_world public surface)
+- [x] Created lib/entity_map_entities.sla: EcsEntityMap (insert/get/contains/len), EcsSceneEntityMapper (get_or_allocate/get_map/next_remote/resolve/len — mirrors MapEntities + SceneEntityMapper)
+- [x] Tests: change_detection 36 tests (test_ecs_lib_change_detection_isolated.sla), traversal 8 tests, world_identifier 6 tests, deferred_world 13 tests, entity_map_entities 10 tests — all passing on SA backend
+
+### Key SLA Discovery (this batch)
+- PhiStateConflict: assigning a struct-typed parameter inside one branch of an `if` (e.g. `d.changed_tick = change_tick;`) consumes the moved register on that path but not the other, breaking phi convergence. Fix: copy the scalar field out first (`let new_tick = change_tick.tick;`) then construct fresh on the mutating branch.
+- Confirmed SLA control-flow syntax: `if` blocks close with `};`, `while` blocks close with `}` (no semicolon).
+- Chained tuple field access (`r.1.1`) is unsupported — must bind intermediate (`let w = r.1; w.1`).
+
+### Grand Total: 964 isolated tests across 51 test files, 91 lib modules, all passing on SA backend

@@ -416,7 +416,7 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Bevy ECS Parity Assessment
 
-Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-01, re-verified 2026-07-01), **sla_ecs achieves ~99% Bevy ECS Core API parity**. 803 isolated tests across 34 files cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage — all passing on SA backend. The remaining gap is the SAB-backend codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
+Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-01, re-verified 2026-07-01), **sla_ecs achieves ~99.5% Bevy ECS Core API parity**. 964 isolated tests across 51 test files (91 lib modules) cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage — all passing on SA backend. The remaining gap is the SAB-backend codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
 
 ### ✅ Production-Ready (Fully Implemented + Verified)
 - Entity allocation with generation and free-list recycling
@@ -447,7 +447,7 @@ Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-0
 - **Unified World facade** covering full `bevy_ecs::world::World` public API
 - **System Registry** (`register_system`/`run_system`/`unregister_system`/`run_system_cached`, Bevy `system_registry.rs` parity)
 - **EntityCommands completeness** (`try_insert`/`remove_if`/`try_remove`/`retain`/`insert_if_new`/`trigger`/`observe`/entry pattern: `or_insert`/`or_default`/`or_from_world`/`and_modify`)
-- **ChangeDetection** full `DetectChanges`+`DetectChangesMut`+`Tick` (is_added/is_changed/is_added_after/is_changed_after/set_changed/set_added/set_last_changed/set_if_neq/bypass_change_detection/check_tick)
+- **ChangeDetection** full `DetectChanges`+`DetectChangesMut`+`Tick`+`ComponentTicks`+`ComponentTickCells`+`ContiguousComponentTicksRef/Mut`+`MaybeLocation` (is_added/is_changed/is_added_after/is_changed_after/set_changed/set_added/set_if_eq/check_tick). Plus **Traversal** (unit/relationship impls, path follow w/ loop detection, PropagateDirection), **WorldId/WorldIdAllocator**, **DeferredWorld**, and **MapEntities/SceneEntityMapper**.
 - **Query completeness** (`iter_combinations` K=3/4, `sort`/`sort_by_key`, `par_iter` batch, `With`/`Without`/`Or`/`Added`/`Changed` filters, `QueryBuilder` with/without/transmute)
 - **Archetype + Entity allocator + Edges + Storage** (alloc/free with generation recycling, archetype edges for insert/remove transitions, Table columns, SparseSet)
 
