@@ -497,3 +497,7 @@ echo "progress updated"
 - [done] Added lib/observer_system_param.sla (On<E> trigger context: event/event_mut/trigger/observer/caller/original_target/propagate, TriggerContext) + lib/query_access_iter.sla (EcsAccessType is_compatible, AccessConflictError, QueryAccessError, has_conflicts pair scan, classify_conflict) + 16 combined isolated SA tests.
 - [done] Added lib/filtered_resource.sla (ResourceAccess, ResourceFetchError, FilteredResources get/has_read/add_read, FilteredResourcesMut as_readonly/reborrow/get/get_mut/add_write) + 13 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1035 isolated tests across 56 test files and 99 lib modules.
+
+- [done] Added lib/query_builder.sla (QueryBuilder data/ref_id/mut_id/with/without/or/optional/extend_access/transmute/build) + 19 isolated SA tests.
+- [done] Added lib/query_fetch.sla (SpawnDetails, Entity/Read/Ref/Write/Option/Has fetches, AnyOf, NestedQuery, QueryItem) + lib/system_builder.sla (ParamBuilder of/resource/local/query, BuilderSystem, ParamSetBuilder, LocalBuilder, DynParamBuilder, FilteredResourcesParamBuilder) + lib/storage_internals.sla (BlobArray, ThinArrayPtr, Column) + 29 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1083 isolated tests across 59 test files and 103 lib modules.

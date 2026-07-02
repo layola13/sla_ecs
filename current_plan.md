@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.7% (175+ facade functions + 1035 isolated tests across 56 test files, 99 lib modules)
+- Bevy ECS core API parity: ~99.8% (175+ facade functions + 1083 isolated tests across 59 test files, 103 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 1035 tests across 56 isolated test files
+## Completed (all verified, SA backend) — 1083 tests across 59 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -70,6 +70,12 @@ Last updated: 2026-07-02
 - src/world/filtered_resource.rs ✓ (FilteredResources, FilteredResourcesMut)
 - src/observer/system_param.rs ✓ (On<E> trigger context, TriggerContext)
 - src/query/access_iter.rs ✓ (EcsAccessType, AccessConflictError, has_conflicts)
+- src/query/builder.rs ✓ (QueryBuilder data/with/without/or/optional/transmute/build)
+- src/query/fetch.rs ✓ (SpawnDetails, Entity/Read/Ref/Write/Option/Has fetches, AnyOf, NestedQuery)
+- src/system/builder.rs ✓ (ParamBuilder, BuilderSystem, ParamSetBuilder, DynParamBuilder)
+- src/storage/blob_array.rs ✓ (BlobArray)
+- src/storage/thin_array_ptr.rs ✓ (ThinArrayPtr)
+- src/storage/table/column.rs ✓ (Column)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

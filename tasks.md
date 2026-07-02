@@ -738,3 +738,14 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: system_adapter 14, system_name+fetch+exclusive 16, entity_cloner 12, observer+access 16, filtered_resource 13 — all passing on SA backend
 
 ### Grand Total: 1035 isolated tests across 56 test files, 99 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (query_builder + query_fetch + system_builder + storage_internals batch)
+
+### Completed
+- [x] Created lib/query_builder.sla: EcsQueryBuilder (new/world, data/ref_id/mut_id, filter/with/without, or/optional/and, extend_access, transmute, build) — mirrors query::builder
+- [x] Created lib/query_fetch.sla: EcsSpawnDetails (is_spawned/is_spawned_after/spawn_tick/spawned_by), EcsFetch (Entity/Read/Ref/Write/Option/Has kinds, is_read_only/is_write/present), EcsAnyOfFetch (add/any_present), EcsNestedQuery (push/at), EcsQueryItem/EcsROQueryItem — mirrors query::fetch
+- [x] Created lib/system_builder.sla: EcsParamBuilder (of/resource/resource_mut/local/query/query_filtered), EcsIsBuilderSystem, EcsIntoBuilderSystem, EcsBuilderSystem (initialize/with_name), EcsQueryParamBuilder, EcsParamSetBuilder, EcsLocalBuilder, EcsDynParamBuilder, EcsFilteredResourcesParamBuilder — mirrors system::builder
+- [x] Created lib/storage_internals.sla: EcsBlobArray (layout/is_zst/get_ptr/swap_remove/get_drop), EcsThinArrayPtr (with_capacity/alloc/push/clear), EcsColumn (with_capacity/push/swap/swap_remove/clear/get_drop) — mirrors storage::blob_array + thin_array_ptr + table::column
+- [x] Tests: query_builder+fetch 19, system_builder 14, storage_internals 15 — all passing on SA backend
+
+### Grand Total: 1083 isolated tests across 59 test files, 103 lib modules, all passing on SA backend
