@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1565 isolated tests across 81 test files, 159 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1589 isolated tests across 82 test files, 160 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -184,3 +184,9 @@ Last updated: 2026-07-02
 - 37 tests — test_ecs_lib_entity_commands_conditional_isolated.sla
 - Tests: 1528 → 1565, lib modules: 158 → 159, test files: 80 → 81
 - src/system/commands/mod.rs (EntityCommands conditional ops) ✓
+
+## Batch 32 — entity_entry_commands (2026-07-02)
+- lib/entity_entry_commands.sla: EcsEntityEntryCommands (and_modify/reborrow/or_insert/or_try_insert/or_insert_with/or_try_insert_with/or_default/or_from_world/commands/resolve/pending_value/ops_log) — mirrors system::commands::EntityEntryCommands
+- 24 tests — test_ecs_lib_entity_entry_commands_isolated.sla
+- Tests: 1565 → 1589, lib modules: 159 → 160, test files: 81 → 82
+- src/system/commands/mod.rs (EntityEntryCommands) ✓
