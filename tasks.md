@@ -834,3 +834,16 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 24 tests covering all 4 modules — all passing on SA backend
 
 ### Grand Total: 1298 isolated tests across 70 test files, 141 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (event_trigger + relationship_query_iter batch)
+
+### Completed
+- [x] Created lib/event_trigger.sla: EcsGlobalTrigger, EcsEntityTrigger (target), EcsPropagateEntityTrigger (auto_propagate/traversal_target/event/should_propagate), EcsEntityComponentsTrigger (add/component_count) — mirrors event::trigger
+- [x] Created lib/relationship_query_iter.sla: EcsRelationshipQuery (add_child/related/sources/iter_descendants DFS recursive/iter_siblings), EcsAncestorWalker (set_parent/parent_of/parent_of_or/root_ancestor recursive/iter_ancestors + iter_ancestors_count scalar) — mirrors relationship::relationship_query
+- [x] Tests: 16 tests covering both modules — all passing on SA backend
+
+### Key SLA Discovery (this batch)
+- Returning a Vec from a recursive function that accumulates via acc.push() can leak in the SA backend (MemoryLeak trap). Workaround: provide a scalar count variant (iter_ancestors_count) for testing, and keep the Vec-returning API for surface parity.
+- Recursive functions that consume a struct param by value (w passed to a child fn) then early-return on a branch leave the consumed register path consistent; the leak was specifically the accumulated Vec, not the struct.
+
+### Grand Total: 1314 isolated tests across 71 test files, 143 lib modules, all passing on SA backend

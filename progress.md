@@ -524,3 +524,6 @@ echo "progress updated"
 
 - [done] Added lib/intern.sla (Interner + Interned) + lib/name_hashed.sla (HashedStr + Name + NameOrEntity) + lib/lifecycle_hooks.sla (HookContext + ComponentHooks + RemovedComponent) + lib/entity_disabling_filters.sla (Disabled + DefaultQueryFilters) + 24 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1298 isolated tests across 70 test files and 141 lib modules.
+
+- [done] Added lib/event_trigger.sla (GlobalTrigger/EntityTrigger/PropagateEntityTrigger/EntityComponentsTrigger) + lib/relationship_query_iter.sla (RelationshipQuery add_child/related/sources/descendants/siblings + AncestorWalker root_ancestor/iter_ancestors) + 16 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1314 isolated tests across 71 test files and 143 lib modules.
