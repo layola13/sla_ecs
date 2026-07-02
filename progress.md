@@ -530,3 +530,6 @@ echo "progress updated"
 
 - [done] Added lib/relationship_source_collection.sla (RelationshipSourceCollection Vec/HashSet/UniqueVec + Ordered methods + RelationshipHookMode + RelationshipCloneBehavior constants) + 12 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1326 isolated tests across 72 test files and 144 lib modules.
+
+- [done] Added lib/component_info.sla (ComponentId + ComponentInfo full metadata + ComponentDescriptor + StorageType + component constants) + 18 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1344 isolated tests across 73 test files and 145 lib modules.

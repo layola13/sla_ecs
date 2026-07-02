@@ -855,3 +855,11 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 12 tests — all passing on SA backend
 
 ### Grand Total: 1326 isolated tests across 72 test files, 144 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (component_info batch)
+
+### Completed
+- [x] Created lib/component_info.sla: EcsComponentId (index/eq), EcsComponentInfo (id/name/mutable/type_id/layout/storage_type/send_and_sync/drop/clone_behavior/hooks/required_components/relationship_accessor), EcsComponentDescriptor (new/new_resource/storage_type/type_id/layout/is_resource), StorageType constants, component constants (ADD/INSERT/DISCARD/REMOVE/DESPAWN/IS_RESOURCE) — mirrors component::info + component::constants
+- [x] Tests: 18 tests — all passing on SA backend
+
+### Grand Total: 1344 isolated tests across 73 test files, 145 lib modules, all passing on SA backend
