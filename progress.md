@@ -518,3 +518,6 @@ echo "progress updated"
 - [done] Added lib/query_state.sla (QueryState matched tables/archetypes/access) + lib/query_world_query.sla (WorldQuery kinds) + lib/query_par_iter.sla (QueryParIter batching) + 17 isolated SA tests.
 - [done] Added lib/function_system.sla (SystemMeta + FunctionSystem + SystemStateParam) + lib/schedule_system.sla (WithInputWrapper) + lib/observer_system.sla (ObserverSystem) + lib/system_command.sla (Command) + lib/entity_access_except.sla (Except) + lib/relationship_related_methods.sla (RelatedMethods) + lib/error_command_handling.sla (CommandOutput + ErrorHandler) + 29 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1255 isolated tests across 68 test files and 132 lib modules.
+
+- [done] Added lib/component_register.sla (ComponentIds + ComponentsRegistrator queue/apply/register) + lib/message_update.sla (MessageUpdateSystems) + lib/spawn_batch.sla (SpawnBatchIter) + lib/entity_component_fetch.sla (EntityComponentFetch) + lib/bundle_remove.sla (BundleRemover) + 19 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1274 isolated tests across 69 test files and 137 lib modules.

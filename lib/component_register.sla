@@ -1,0 +1,86 @@
+// Bevy ECS component::register (src/component/register.rs):
+// ComponentIds + ComponentsRegistrator (id allocation + queued registration).
+
+// === ComponentIds ===
+// A monotonic allocator of ComponentId values.
+struct EcsComponentIds {
+    next: i32,
+}
+
+fn ecs_component_ids_new(start: i32) -> EcsComponentIds {
+    return EcsComponentIds { next: start };
+}
+
+fn ecs_component_ids_peek(c: EcsComponentIds) -> i32 { return c.next; }
+
+fn ecs_component_ids_next(c: EcsComponentIds) -> (EcsComponentIds, i32) {
+    let id = c.next;
+    c.next = c.next + 1;
+    return (c, id);
+}
+
+fn ecs_component_ids_len(c: EcsComponentIds) -> i64 { return c.next as i64; }
+
+fn ecs_component_ids_is_empty(c: EcsComponentIds) -> bool { return c.next == 0; }
+
+// === ComponentsRegistrator ===
+// Registers components, returning a ComponentId. Supports queued registration.
+struct EcsComponentsRegistrator {
+    ids: EcsComponentIds,
+    queued: Vec<i32>,          // queued component type ids pending registration
+    registered: Vec<i32>,      // fully registered component type ids
+}
+
+fn ecs_components_registrator_new() -> EcsComponentsRegistrator {
+    return EcsComponentsRegistrator { ids: ecs_component_ids_new(0), queued: Vec::new(), registered: Vec::new() };
+}
+
+// as_queued: returns the queued type ids
+fn ecs_components_registrator_as_queued(r: EcsComponentsRegistrator) -> Vec<i32> {
+    return r.queued;
+}
+
+// queue: add a component type id to the queue
+fn ecs_components_registrator_queue(r: EcsComponentsRegistrator, type_id: i32) -> EcsComponentsRegistrator {
+    r.queued.push(type_id);
+    return r;
+}
+
+// apply_queued_registrations: register all queued components
+fn ecs_components_registrator_apply_queued(r: EcsComponentsRegistrator) -> (EcsComponentsRegistrator, i64) {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(r.queued) as i64;
+    while i < n {
+        r.registered.push(r.queued[i]);
+        let r_ids = ecs_component_ids_next(r.ids);
+        r.ids = r_ids.0;
+        count = count + 1;
+        i = i + 1;
+    }
+    r.queued = Vec::new();
+    return (r, count);
+}
+
+// register_component: immediately register a component type, returns its id
+fn ecs_components_registrator_register_component(r: EcsComponentsRegistrator, type_id: i32) -> (EcsComponentsRegistrator, i32) {
+    let r_ids = ecs_component_ids_next(r.ids);
+    r.ids = r_ids.0;
+    r.registered.push(type_id);
+    return (r, r_ids.1);
+}
+
+fn ecs_components_registrator_registered_count(r: EcsComponentsRegistrator) -> i64 { return len(r.registered) as i64; }
+
+fn ecs_components_registrator_queued_count(r: EcsComponentsRegistrator) -> i64 { return len(r.queued) as i64; }
+
+// is_registered: whether a type id has been registered
+fn ecs_components_registrator_is_registered(r: EcsComponentsRegistrator, type_id: i32) -> bool {
+    let i: i64 = 0;
+    let n: i64 = len(r.registered) as i64;
+    while i < n {
+        if r.registered[i] == type_id { return true; };
+        i = i + 1;
+    }
+    return false;
+}

@@ -811,3 +811,15 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: reflect batch 14, query batch 17, system/command/related/except/error 29 — all passing on SA backend
 
 ### Grand Total: 1255 isolated tests across 68 test files, 132 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (component_register + message_update + spawn_batch + entity_component_fetch + bundle_remove batch)
+
+### Completed
+- [x] Created lib/component_register.sla: EcsComponentIds (peek/next/len/is_empty), EcsComponentsRegistrator (queue/apply_queued/register_component/is_registered/as_queued) — mirrors component::register
+- [x] Created lib/message_update.sla: EcsMessageUpdateSystems (signal_message_update_system/message_update_condition/message_update_system) — mirrors message::update
+- [x] Created lib/spawn_batch.sla: EcsSpawnBatchIter (next/len/spawned_count/collect/is_empty) — mirrors world::spawn_batch
+- [x] Created lib/entity_component_fetch.sla: EcsEntityComponentFetch (add/get/contains/len) — mirrors world::entity_access::component_fetch
+- [x] Created lib/bundle_remove.sla: EcsBundleRemover (remove/removed_count/pre_remove/empty_pre_remove) — mirrors bundle::remove
+- [x] Tests: 19 tests covering all 5 modules — all passing on SA backend
+
+### Grand Total: 1274 isolated tests across 69 test files, 137 lib modules, all passing on SA backend
