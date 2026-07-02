@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1719 isolated tests across 88 test files, 166 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1740 isolated tests across 89 test files, 167 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -226,3 +226,9 @@ Last updated: 2026-07-02
 - 14 tests — test_ecs_lib_schedule_build_settings_isolated.sla
 - Tests: 1705 → 1719, lib modules: 165 → 166, test files: 87 → 88
 - src/schedule/schedule.rs (ScheduleBuildSettings/LogLevel/ScheduleBuildMetadata) ✓
+
+## Batch 39 — system_param_special (2026-07-02)
+- lib/system_param_special.sla: EcsSystemBuffer (push/apply/queue/clear/get/len/is_applied) + EcsDeferred (push/apply/reborrow/clear/has_deferred) + EcsExclusiveMarker + EcsNonSendMarker + EcsRemovedComponentsParam (add/next/len/is_empty/clear) + EcsRunSystemOnceResult + EcsSystemParamValidationError — mirrors system::system_param.rs special params
+- 21 tests — test_ecs_lib_system_param_special_isolated.sla
+- Tests: 1719 → 1740, lib modules: 166 → 167, test files: 88 → 89
+- src/system/system_param.rs (Deferred/SystemBuffer/ExclusiveMarker/NonSendMarker/RemovedComponents/RunSystemOnce) ✓
