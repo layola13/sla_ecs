@@ -527,3 +527,6 @@ echo "progress updated"
 
 - [done] Added lib/event_trigger.sla (GlobalTrigger/EntityTrigger/PropagateEntityTrigger/EntityComponentsTrigger) + lib/relationship_query_iter.sla (RelationshipQuery add_child/related/sources/descendants/siblings + AncestorWalker root_ancestor/iter_ancestors) + 16 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1314 isolated tests across 71 test files and 143 lib modules.
+
+- [done] Added lib/relationship_source_collection.sla (RelationshipSourceCollection Vec/HashSet/UniqueVec + Ordered methods + RelationshipHookMode + RelationshipCloneBehavior constants) + 12 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1326 isolated tests across 72 test files and 144 lib modules.

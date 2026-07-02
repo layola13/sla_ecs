@@ -847,3 +847,11 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - Recursive functions that consume a struct param by value (w passed to a child fn) then early-return on a branch leave the consumed register path consistent; the leak was specifically the accumulated Vec, not the struct.
 
 ### Grand Total: 1314 isolated tests across 71 test files, 143 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (relationship_source_collection batch)
+
+### Completed
+- [x] Created lib/relationship_source_collection.sla: EcsRelationshipSourceCollection (Vec/HashSet/UniqueVec kinds, insert dedup/remove/clear/at/first/last/swap/contains), RelationshipHookMode constants (Skip/Run/RunIfParentExists), RelationshipCloneBehavior constants (Clone/Ignore/Default/ViaReflect) — mirrors relationship::relationship_source_collection + mod.rs hook/clone enums
+- [x] Tests: 12 tests — all passing on SA backend
+
+### Grand Total: 1326 isolated tests across 72 test files, 144 lib modules, all passing on SA backend
