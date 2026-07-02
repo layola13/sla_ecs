@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1777 isolated tests across 91 test files, 169 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1795 isolated tests across 92 test files, 170 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -244,3 +244,9 @@ Last updated: 2026-07-02
 - 22 tests — test_ecs_lib_observer_condition_isolated.sla
 - Tests: 1755 → 1777, lib modules: 168 → 169, test files: 90 → 91
 - src/observer/condition.rs ✓
+
+## Batch 42 — archetype_edges (2026-07-02)
+- lib/archetype_edges.sla: EcsArchetypeId/EcsArchetypeRow/ComponentStatus/EcsArchetypeAfterBundleInsert/EcsArchetypeEdges (insert/remove/take cache+get) /EcsArchetypeEntity — mirrors archetype.rs Edges + ArchetypeAfterBundleInsert + ArchetypeEntity
+- 18 tests — test_ecs_lib_archetype_edges_isolated.sla
+- Tests: 1777 → 1795, lib modules: 169 → 170, test files: 91 → 92
+- src/archetype.rs (Edges/ArchetypeAfterBundleInsert/ArchetypeEntity) ✓
