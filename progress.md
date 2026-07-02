@@ -513,3 +513,8 @@ echo "progress updated"
 - [done] Added lib/schedules.sla (Schedules insert/remove/remove_temporarily/reinsert/get/entry) + lib/schedule_pass.sla (FlattenedDependencies + Kahn toposort w/ cycle detection, ScheduleBuildPass, DagAnalysis) + 18 isolated SA tests.
 - [done] Added lib/system_trait.sla (SystemStateFlags bitfield, System initialize/run/apply_deferred, RunSystemOnce) + lib/sparse_set.sla (SparseSet + ComponentSparseSet) + lib/bundle_writer.sla (BundleScratch + BundleWriter) + 21 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1195 isolated tests across 65 test files and 118 lib modules.
+
+- [done] Added lib/reflect_component.sla + lib/reflect_bundle.sla + lib/reflect_misc.sla (ReflectEvent/Message/FromWorld/MapEntities/EntityCommands) + lib/world_reflect.sla + 14 isolated SA tests.
+- [done] Added lib/query_state.sla (QueryState matched tables/archetypes/access) + lib/query_world_query.sla (WorldQuery kinds) + lib/query_par_iter.sla (QueryParIter batching) + 17 isolated SA tests.
+- [done] Added lib/function_system.sla (SystemMeta + FunctionSystem + SystemStateParam) + lib/schedule_system.sla (WithInputWrapper) + lib/observer_system.sla (ObserverSystem) + lib/system_command.sla (Command) + lib/entity_access_except.sla (Except) + lib/relationship_related_methods.sla (RelatedMethods) + lib/error_command_handling.sla (CommandOutput + ErrorHandler) + 29 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1255 isolated tests across 68 test files and 132 lib modules.

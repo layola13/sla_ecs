@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1195 isolated tests across 65 test files, 118 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1255 isolated tests across 68 test files, 132 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 1195 tests across 65 isolated test files
+## Completed (all verified, SA backend) — 1255 tests across 68 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -92,6 +92,25 @@ Last updated: 2026-07-02
 - src/system/system.rs ✓ (System, SystemStateFlags, RunSystemOnce)
 - src/storage/sparse_set.rs ✓ (SparseSet, ComponentSparseSet)
 - src/bundle/writer.rs ✓ (BundleScratch, BundleWriter)
+- src/reflect/component.rs ✓ (ReflectComponent)
+- src/reflect/bundle.rs ✓ (ReflectBundle)
+- src/reflect/event.rs ✓ (ReflectEvent)
+- src/reflect/message.rs ✓ (ReflectMessage)
+- src/reflect/from_world.rs ✓ (FromWorld)
+- src/reflect/map_entities.rs ✓ (ReflectMapEntities)
+- src/reflect/entity_commands.rs ✓ (ReflectEntityCommands)
+- src/world/reflect.rs ✓ (ReflectWorld)
+- src/query/state.rs ✓ (QueryState)
+- src/query/world_query.rs ✓ (WorldQuery)
+- src/query/par_iter.rs ✓ (QueryParIter)
+- src/system/function_system.rs ✓ (SystemMeta, FunctionSystem)
+- src/system/schedule_system.rs ✓ (WithInputWrapper)
+- src/system/observer_system.rs ✓ (ObserverSystem)
+- src/system/commands/command.rs ✓ (Command)
+- src/world/entity_access/except.rs ✓ (Except)
+- src/relationship/related_methods.rs ✓ (RelatedMethods)
+- src/error/command_handling.rs ✓ (CommandOutput, ErrorHandler)
+- src/error/handler.rs ✓ (FallbackErrorHandler)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

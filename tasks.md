@@ -790,3 +790,24 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - Chained field access through a tuple element (`r.0.field`) can fail to parse; bind `let m = r.0;` first.
 
 ### Grand Total: 1195 isolated tests across 65 test files, 118 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (reflect + query state/world_query/par_iter + function/schedule/observer system + command + except + related_methods + error_handling + world_reflect batch)
+
+### Completed
+- [x] Created lib/reflect_component.sla: EcsReflectComponent (insert/apply/apply_or_insert_mapped/remove/take/contains/reflect/copy) — mirrors reflect::component
+- [x] Created lib/reflect_bundle.sla: EcsReflectBundle (add_component/insert/contains) — mirrors reflect::bundle
+- [x] Created lib/reflect_misc.sla: EcsReflectEvent, EcsReflectMessage, EcsFromWorld, EcsReflectMapEntities, EcsReflectEntityCommands — mirrors reflect::event/message/from_world/map_entities/entity_commands
+- [x] Created lib/world_reflect.sla: EcsReflectWorld (register_component/resource, short_type_name) — mirrors world::reflect
+- [x] Created lib/query_state.sla: EcsQueryState (add_read/write, matched_tables/archetypes, init_access, as_readonly, update_archetypes, is_empty, contains, from_builder) — mirrors query::state
+- [x] Created lib/query_world_query.sla: EcsWorldQuery (read/write/filter/has/read_only kinds, is_read_only/is_write/is_filter), EcsWorldQueryFetch — mirrors query::world_query
+- [x] Created lib/query_par_iter.sla: EcsQueryParIter (batching_strategy/for_each/len/batch_count) — mirrors query::par_iter
+- [x] Created lib/function_system.sla: EcsSystemMeta (name/flags/last_run/is_send/has_deferred/set_exclusive), EcsFunctionSystem (run/initialize), EcsSystemStateParam — mirrors system::function_system
+- [x] Created lib/schedule_system.sla: EcsWithInputWrapper, EcsWithInputFromWrapper — mirrors system::schedule_system
+- [x] Created lib/observer_system.sla: EcsObserverSystem (event/bundle/runner/run), EcsIntoObserverSystem — mirrors system::observer_system
+- [x] Created lib/system_command.sla: EcsCommand (spawn/insert/remove/despawn/resource_insert/resource_remove/custom kinds, apply) — mirrors system::commands::command
+- [x] Created lib/entity_access_except.sla: EcsExcept (add/excludes/filter) — mirrors world::entity_access::except
+- [x] Created lib/relationship_related_methods.sla: EcsRelatedMethods (add/add_many/remove/contains/clear/with_many/iter) — mirrors relationship::related_methods
+- [x] Created lib/error_command_handling.sla: EcsCommandOutput, EcsErrorHandler, EcsFallbackErrorHandler — mirrors error::command_handling + handler
+- [x] Tests: reflect batch 14, query batch 17, system/command/related/except/error 29 — all passing on SA backend
+
+### Grand Total: 1255 isolated tests across 68 test files, 132 lib modules, all passing on SA backend
