@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1755 isolated tests across 90 test files, 168 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1777 isolated tests across 91 test files, 169 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -238,3 +238,9 @@ Last updated: 2026-07-02
 - 15 tests — test_ecs_lib_query_lens_isolated.sla
 - Tests: 1740 → 1755, lib modules: 167 → 168, test files: 89 → 90
 - src/system/query.rs (QueryLens/transmute_lens/join) ✓
+
+## Batch 41 — observer_condition (2026-07-02)
+- lib/observer_condition.sla: EcsObserverCondition (new/initialize/check/last_result) + EcsObserverWithCondition (new/run_if/check/initialize/take_conditions) + conditions helpers (all_true/any_true/count/true_count) — mirrors observer::condition.rs
+- 22 tests — test_ecs_lib_observer_condition_isolated.sla
+- Tests: 1755 → 1777, lib modules: 168 → 169, test files: 90 → 91
+- src/observer/condition.rs ✓
