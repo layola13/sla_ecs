@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1528 isolated tests across 80 test files, 158 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1565 isolated tests across 81 test files, 159 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -178,3 +178,9 @@ Last updated: 2026-07-02
 - Tests: 1485 → 1528, lib modules: 157 → 158, test files: 79 → 80
 - src/world/entity_access/world_mut.rs ✓
 - entity_access/ subdirectory now fully deep-covered (entity_ref/entity_mut/filtered/entry/world_mut/except/component_fetch)
+
+## Batch 31 — entity_commands_conditional (2026-07-02)
+- lib/entity_commands_conditional.sla: EcsEntityCommands2 (insert/insert_if/insert_if_new/insert_if_new_and/insert_if_neq/try_insert/try_insert_if/try_insert_if_new/try_insert_if_new_and/remove/remove_if/remove_with_requires/remove_by_id/try_remove/try_remove_if/retain/clear/despawn/try_despawn/entry/queue/reborrow/command_log) — mirrors system::commands::EntityCommands conditional API
+- 37 tests — test_ecs_lib_entity_commands_conditional_isolated.sla
+- Tests: 1528 → 1565, lib modules: 158 → 159, test files: 80 → 81
+- src/system/commands/mod.rs (EntityCommands conditional ops) ✓
