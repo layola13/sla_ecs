@@ -640,3 +640,16 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Template engine (InnerSceneEntityReference eq, SceneEntityReferences set/get/len, TemplateContext get_entity/resource/resource_entity, EntityTemplate from_reference/from_fn, FnTemplate, OptionTemplate some/none, VecTemplate push/get/len) (19 tests SA) — `tests/test_ecs_template_engine_isolated.sla`
 
 ### Grand Total: 622 isolated tests across 28 files, all passing on SA backend
+
+## Session 2026-07-02 (lib implementation modules batch)
+
+### Completed
+- [x] Created lib/error.sla: BevyError (new/ignore/trace/debug/info/warn/error/panic, with_severity, with_context), Severity (7 levels + is_* checks), ErrorContext (System/RunCondition/Command/Observer), error handlers (panic/error/warn/info/debug/trace/ignore + severity_to_handler), CommandOutput (to_err), FallbackErrorHandler (default/custom/set), ResultSeverityExt (with_severity/map_severity), ContextExt (with_context)
+- [x] Created lib/stepping.sla: EcsStepping (enable/disable, add/remove/clear_schedule, step_frame/continue_frame, set/clear_breakpoint, always_run/never_run_node, clear_node, begin_frame, cursor)
+- [x] Created lib/query_access.sla: EcsAccess (add_read/write/component_read/write/resource_read/write, add_archetypal, remove_read/write, has_read/write/archetypal/any_read/any_write, read_all/write_all with inversion, has_read_all/has_write_all, clear/clear_writes, extend, remove_conflicting_access, is_compatible, is_subset)
+- [x] Created lib/query_filters.sla: With/Without/Or/Added/Changed/Allow/Spawned filters + Has/AnyOf/Option/Read/Write fetch types + ArchetypeFilter
+- [x] Created lib/batching.sla: EcsBatchingStrategy (new, fixed, min/max_batch, batches_per_thread, calc_batch_size with div_ceil + clamp)
+- [x] Created lib/template.sla: InnerSceneEntityReference/SceneEntityReference/SceneEntityReferences (set/get/len/is_empty), TemplateContext (get/set_entity, resource/resource_mut/resource_entity), EntityTemplate (from_reference/from_fn), FnTemplate, OptionTemplate (some/none/is_some/is_none/inner), VecTemplate (push/len/is_empty/get)
+- [x] Integration test importing all 6 lib modules (34 tests SA) — `tests/test_ecs_lib_modules_isolated.sla`
+
+### Grand Total: 656 isolated tests across 29 files, all passing on SA backend
