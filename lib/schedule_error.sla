@@ -1,0 +1,96 @@
+// Bevy ECS schedule build errors and warnings.
+// Mirrors src/schedule/error.rs.
+
+// === ScheduleBuildError ===
+const ECS_SCHED_ERR_HIERARCHY_SORT: i32 = 0;
+const ECS_SCHED_ERR_DEPENDENCY_SORT: i32 = 1;
+const ECS_SCHED_ERR_FLAT_DEPENDENCY_SORT: i32 = 2;
+const ECS_SCHED_ERR_CROSS_DEPENDENCY: i32 = 3;
+const ECS_SCHED_ERR_SETS_HAVE_ORDER_BUT_INTERSECT: i32 = 4;
+const ECS_SCHED_ERR_SYSTEM_TYPE_SET_AMBIGUITY: i32 = 5;
+const ECS_SCHED_ERR_ELEVATED: i32 = 6;
+const ECS_SCHED_ERR_HIERARCHY_REDUNDANCY: i32 = 7;
+const ECS_SCHED_ERR_AMBIGUITY: i32 = 8;
+
+struct EcsScheduleBuildError {
+    kind: i32,
+    message_id: i64,
+}
+
+fn ecs_schedule_build_error_new(kind: i32, message_id: i64) -> EcsScheduleBuildError {
+    return EcsScheduleBuildError { kind: kind, message_id: message_id };
+}
+
+fn ecs_schedule_build_error_kind(e: EcsScheduleBuildError) -> i32 { return e.kind; }
+fn ecs_schedule_build_error_message(e: EcsScheduleBuildError) -> i64 { return e.message_id; }
+
+fn ecs_schedule_build_error_is_hierarchy_sort(e: EcsScheduleBuildError) -> bool { return e.kind == ECS_SCHED_ERR_HIERARCHY_SORT; }
+fn ecs_schedule_build_error_is_dependency_sort(e: EcsScheduleBuildError) -> bool { return e.kind == ECS_SCHED_ERR_DEPENDENCY_SORT; }
+fn ecs_schedule_build_error_is_ambiguity(e: EcsScheduleBuildError) -> bool { return e.kind == ECS_SCHED_ERR_AMBIGUITY; }
+
+// === ScheduleBuildWarning ===
+const ECS_SCHED_WARN_AMBIGUOUS: i32 = 0;
+const ECS_SCHED_WARN_REDUNDANT: i32 = 1;
+
+struct EcsScheduleBuildWarning {
+    kind: i32,
+    system_a: i32,
+    system_b: i32,
+}
+
+fn ecs_schedule_build_warning_ambiguous(a: i32, b: i32) -> EcsScheduleBuildWarning {
+    return EcsScheduleBuildWarning { kind: ECS_SCHED_WARN_AMBIGUOUS, system_a: a, system_b: b };
+}
+
+fn ecs_schedule_build_warning_redundant(a: i32, b: i32) -> EcsScheduleBuildWarning {
+    return EcsScheduleBuildWarning { kind: ECS_SCHED_WARN_REDUNDANT, system_a: a, system_b: b };
+}
+
+fn ecs_schedule_build_warning_kind(w: EcsScheduleBuildWarning) -> i32 { return w.kind; }
+fn ecs_schedule_build_warning_is_ambiguous(w: EcsScheduleBuildWarning) -> bool { return w.kind == ECS_SCHED_WARN_AMBIGUOUS; }
+fn ecs_schedule_build_warning_is_redundant(w: EcsScheduleBuildWarning) -> bool { return w.kind == ECS_SCHED_WARN_REDUNDANT; }
+
+// === ScheduleError: runtime schedule execution error ===
+const ECS_SCHEDULE_ERR_BUILD: i32 = 0;
+const ECS_SCHEDULE_ERR_SYSTEM: i32 = 1;
+
+struct EcsScheduleError {
+    kind: i32,
+    inner: EcsScheduleBuildError,
+}
+
+fn ecs_schedule_error_build(inner: EcsScheduleBuildError) -> EcsScheduleError {
+    return EcsScheduleError { kind: ECS_SCHEDULE_ERR_BUILD, inner: inner };
+}
+
+fn ecs_schedule_error_system(message_id: i64) -> EcsScheduleError {
+    return EcsScheduleError { kind: ECS_SCHEDULE_ERR_SYSTEM, inner: ecs_schedule_build_error_new(0, message_id) };
+}
+
+fn ecs_schedule_error_kind(e: EcsScheduleError) -> i32 { return e.kind; }
+fn ecs_schedule_error_is_build(e: EcsScheduleError) -> bool { return e.kind == ECS_SCHEDULE_ERR_BUILD; }
+fn ecs_schedule_error_is_system(e: EcsScheduleError) -> bool { return e.kind == ECS_SCHEDULE_ERR_SYSTEM; }
+
+// === ScheduleBuildSettings ===
+struct EcsScheduleBuildSettings {
+    auto_insert_apply_deferred: bool,
+    use_shortnames: bool,
+    ambiguity_detection: bool,
+}
+
+fn ecs_schedule_build_settings_default() -> EcsScheduleBuildSettings {
+    return EcsScheduleBuildSettings { auto_insert_apply_deferred: true, use_shortnames: true, ambiguity_detection: false };
+}
+
+fn ecs_schedule_build_settings_set_auto_insert(s: EcsScheduleBuildSettings, val: bool) -> EcsScheduleBuildSettings {
+    s.auto_insert_apply_deferred = val;
+    return s;
+}
+
+fn ecs_schedule_build_settings_set_ambiguity_detection(s: EcsScheduleBuildSettings, val: bool) -> EcsScheduleBuildSettings {
+    s.ambiguity_detection = val;
+    return s;
+}
+
+fn ecs_schedule_build_settings_auto_insert(s: EcsScheduleBuildSettings) -> bool { return s.auto_insert_apply_deferred; }
+fn ecs_schedule_build_settings_ambiguity_detection(s: EcsScheduleBuildSettings) -> bool { return s.ambiguity_detection; }

@@ -683,3 +683,17 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Integration test importing all 3 lib modules (28 tests SA) — `tests/test_ecs_lib_node_spawner_allocator_isolated.sla`
 
 ### Grand Total: 751 isolated tests across 32 files, all passing on SA backend
+
+## Session 2026-07-02 (lib errors + autosync + parallel batch)
+
+### Completed
+- [x] Created lib/schedule_error.sla: ScheduleBuildError (9 kinds: HierarchySort/DependencySort/FlatDependencySort/CrossDependency/SetsHaveOrderButIntersect/SystemTypeSetAmbiguity/Elevated/HierarchyRedundancy/Ambiguity), ScheduleBuildWarning (Ambiguous/Redundant), ScheduleError (Build/System), ScheduleBuildSettings (auto_insert_apply_deferred/use_shortnames/ambiguity_detection)
+- [x] Created lib/query_error.sla: QueryEntityError (NotFound/DoesNotMatch/Alien), QuerySingleError (NoEntities/MultipleEntities), QueryNotDenseError, AccessConflicts (add/len/is_empty/get)
+- [x] Created lib/auto_insert_apply_deferred.sla: AutoInsertApplyDeferredPass (no_sync_edges, get_sync_point with caching by distance, sync_point_count), is_apply_deferred, ApplyDeferred marker (fixed: SLA doesn't support negative const literals, use sentinel)
+- [x] Created lib/parallel_scope.sla: ParallelCommands (command_scope, total_commands, scope_count, world_id)
+- [x] Integration test importing all 4 lib modules (25 tests SA) — `tests/test_ecs_lib_errors_autosync_parallel_isolated.sla`
+
+### Key SLA Discovery
+- SLA does NOT support negative integer literals in const declarations (`const X: i32 = -1;` causes CodegenError). Use positive sentinel values instead.
+
+### Grand Total: 776 isolated tests across 33 files, all passing on SA backend

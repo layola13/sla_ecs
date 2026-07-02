@@ -1,0 +1,22 @@
+// Bevy ECS parallel commands scope. Mirrors src/system/commands/parallel_scope.rs.
+// Allows executing commands in parallel within a scope.
+
+struct EcsParallelCommands {
+    world_id: i64,
+    command_count: i64,
+    scopes: i64,
+}
+
+fn ecs_parallel_commands_new(world_id: i64) -> EcsParallelCommands {
+    return EcsParallelCommands { world_id: world_id, command_count: 0, scopes: 0 };
+}
+
+fn ecs_parallel_commands_command_scope(pc: EcsParallelCommands, command_count: i64) -> (i64, EcsParallelCommands) {
+    pc.command_count = pc.command_count + command_count;
+    pc.scopes = pc.scopes + 1;
+    return (pc.scopes, pc);
+}
+
+fn ecs_parallel_commands_total_commands(pc: EcsParallelCommands) -> i64 { return pc.command_count; }
+fn ecs_parallel_commands_scope_count(pc: EcsParallelCommands) -> i64 { return pc.scopes; }
+fn ecs_parallel_commands_world_id(pc: EcsParallelCommands) -> i64 { return pc.world_id; }

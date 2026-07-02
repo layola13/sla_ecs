@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 751 isolated tests across 32 files)
+- Bevy ECS core API parity: ~99% (175+ facade functions + 776 isolated tests across 33 files)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 

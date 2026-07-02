@@ -1,0 +1,59 @@
+// Bevy ECS auto-insert apply deferred pass.
+// Mirrors src/schedule/auto_insert_apply_deferred.rs.
+// Inserts ApplyDeferred sync points between systems with deferred params.
+
+struct EcsAutoInsertApplyDeferredPass {
+    no_sync_edges: Vec<i32>,  // flat pairs: from, to
+    auto_sync_node_ids: Vec<i32>,  // sync_point_distance, system_key
+    sync_point_count: i32,
+}
+
+fn ecs_auto_insert_apply_deferred_new() -> EcsAutoInsertApplyDeferredPass {
+    return EcsAutoInsertApplyDeferredPass { no_sync_edges: Vec::new(), auto_sync_node_ids: Vec::new(), sync_point_count: 0 };
+}
+
+// IgnoreDeferred: mark an edge to skip auto sync point insertion
+fn ecs_auto_insert_add_no_sync_edge(p: EcsAutoInsertApplyDeferredPass, from: i32, to: i32) -> EcsAutoInsertApplyDeferredPass {
+    p.no_sync_edges.push(from);
+    p.no_sync_edges.push(to);
+    return p;
+}
+
+fn ecs_auto_insert_is_no_sync(p: EcsAutoInsertApplyDeferredPass, from: i32, to: i32) -> bool {
+    let i: i64 = 0;
+    let cnt = len(p.no_sync_edges) as i64;
+    while i < cnt {
+        if p.no_sync_edges[i] == from && p.no_sync_edges[i + 1] == to { return true; };
+        i = i + 2;
+    }
+    return false;
+}
+
+// get_sync_point: returns cached sync point or creates new one
+fn ecs_auto_insert_get_sync_point(p: EcsAutoInsertApplyDeferredPass, distance: i32) -> (i32, EcsAutoInsertApplyDeferredPass) {
+    let i: i64 = 0;
+    let cnt = len(p.auto_sync_node_ids) as i64;
+    while i < cnt {
+        if p.auto_sync_node_ids[i] == distance { return (p.auto_sync_node_ids[i + 1], p); };
+        i = i + 2;
+    }
+    // Create new sync point
+    let key = p.sync_point_count;
+    p.auto_sync_node_ids.push(distance);
+    p.auto_sync_node_ids.push(key);
+    p.sync_point_count = key + 1;
+    return (key, p);
+}
+
+fn ecs_auto_insert_sync_point_count(p: EcsAutoInsertApplyDeferredPass) -> i32 { return p.sync_point_count; }
+
+// is_apply_deferred: check if a system is an ApplyDeferred sync point
+fn ecs_is_apply_deferred(system_id: i32) -> bool {
+    if system_id == ECS_APPLY_DEFERRED { return true; };
+    return false;
+}
+
+// ApplyDeferred marker
+const ECS_APPLY_DEFERRED: i32 = 999999;
+
+fn ecs_apply_deferred_marker() -> i32 { return ECS_APPLY_DEFERRED; }
