@@ -1007,3 +1007,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_unique_vec_isolated.sla: 23 tests — all passing on SA backend
 
 ### Grand Total: 1837 isolated tests across 94 test files, 172 lib modules, all passing on SA backend
+
+## Batch 45 — unique_slice (2026-07-02)
+- [x] Created lib/unique_slice.sla: EcsUniqueEntitySlice (UniqueEntityEquivalentSlice) — mirrors entity/unique_slice.rs
+- [x] Created tests/test_ecs_lib_unique_slice_isolated.sla: 24 tests — all passing on SA backend
+
+### Grand Total: 1861 isolated tests across 95 test files, 173 lib modules, all passing on SA backend

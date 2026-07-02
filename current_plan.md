@@ -262,3 +262,9 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_unique_vec_isolated.sla
 - Tests: 1814 → 1837, lib modules: 171 → 172, test files: 93 → 94
 - src/entity/unique_vec.rs (UniqueEntityEquivalentVec) ✓
+
+## Batch 45 — unique_slice (2026-07-02)
+- lib/unique_slice.sla: EcsUniqueEntitySlice (new/empty/as_slice/into_inner/len/is_empty/get/first/last/get_sub_slice/contains/index_of/rindex_of/swap/reverse/rotate_left/rotate_right/sort/starts_with/ends_with/to_vec/eq/count_greater_than/min/max) — mirrors entity/unique_slice.rs
+- 24 tests — test_ecs_lib_unique_slice_isolated.sla
+- Tests: 1837 → 1861, lib modules: 172 → 173, test files: 94 → 95
+- src/entity/unique_slice.rs (UniqueEntityEquivalentSlice) ✓
