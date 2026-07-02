@@ -416,7 +416,7 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Bevy ECS Parity Assessment
 
-Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-01, re-verified 2026-07-01), **sla_ecs achieves ~99.5% Bevy ECS Core API parity**. 964 isolated tests across 51 test files (91 lib modules) cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage — all passing on SA backend. The remaining gap is the SAB-backend codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
+Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-01, re-verified 2026-07-01), **sla_ecs achieves ~99.7% Bevy ECS Core API parity**. 1035 isolated tests across 56 test files (99 lib modules) cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage — all passing on SA backend. The remaining gap is the SAB-backend codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
 
 ### ✅ Production-Ready (Fully Implemented + Verified)
 - Entity allocation with generation and free-list recycling

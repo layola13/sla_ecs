@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.5% (175+ facade functions + 964 isolated tests across 51 test files, 91 lib modules)
+- Bevy ECS core API parity: ~99.7% (175+ facade functions + 1035 isolated tests across 56 test files, 99 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 964 tests across 51 isolated test files
+## Completed (all verified, SA backend) — 1035 tests across 56 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -62,6 +62,14 @@ Last updated: 2026-07-02
 - src/world/identifier.rs ✓ (WorldId, WorldIdAllocator)
 - src/world/deferred_world.rs ✓ (DeferredWorld)
 - src/entity/map_entities.rs ✓ (MapEntities, SceneEntityMapper, EntityHashMap)
+- src/entity/clone_entities.rs ✓ (EntityCloner + EntityClonerBuilder OptIn/OptOut)
+- src/system/adapter_system.rs ✓ (Adapt, AdapterSystem, Not/Map/Chain adapters)
+- src/system/system_name.rs ✓ (SystemName, DebugName)
+- src/system/exclusive_function_system.rs ✓ (ExclusiveFunctionSystem)
+- src/world/entity_fetch.rs ✓ (EntityFetcher, WorldEntityFetch)
+- src/world/filtered_resource.rs ✓ (FilteredResources, FilteredResourcesMut)
+- src/observer/system_param.rs ✓ (On<E> trigger context, TriggerContext)
+- src/query/access_iter.rs ✓ (EcsAccessType, AccessConflictError, has_conflicts)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

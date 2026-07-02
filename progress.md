@@ -490,3 +490,10 @@ echo "progress updated"
 - [done] Added lib/deferred_world.sla (EcsDeferredWorld mirroring world::deferred_world public surface: commands/entity_mut/resource_mut/non_send_mut/write_message/trigger/get_mut_by_id/as_unsafe_world_cell) + 13 isolated SA tests.
 - [done] Added lib/entity_map_entities.sla (EcsEntityMap + EcsSceneEntityMapper mirroring MapEntities/SceneEntityMapper get_or_allocate/resolve) + 10 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md with the new batch. Grand total now 964 isolated tests across 51 test files and 91 lib modules.
+
+- [done] Added lib/system_adapter.sla (Adapt/AdapterSystem/IntoAdapterSystem + Not/Map/Chain adapters + RunSystemError) + 14 isolated SA tests.
+- [done] Added lib/system_name.sla (DebugName + SystemName) + lib/world_entity_fetch.sla (EntityFetcher get/get_mut/batch) + lib/exclusive_function_system.sla (ExclusiveFunctionSystem initialize/run/with_name) + 16 combined isolated SA tests.
+- [done] Added lib/entity_cloner.sla (EntityCloner + EntityClonerBuilder OptIn/OptOut, allow/deny/allow_if_new/move_components/linked_cloning/insert_mode, should_clone/clone_entity/spawn_clone, add_observers toggle) + 12 isolated SA tests.
+- [done] Added lib/observer_system_param.sla (On<E> trigger context: event/event_mut/trigger/observer/caller/original_target/propagate, TriggerContext) + lib/query_access_iter.sla (EcsAccessType is_compatible, AccessConflictError, QueryAccessError, has_conflicts pair scan, classify_conflict) + 16 combined isolated SA tests.
+- [done] Added lib/filtered_resource.sla (ResourceAccess, ResourceFetchError, FilteredResources get/has_read/add_read, FilteredResourcesMut as_readonly/reborrow/get/get_mut/add_write) + 13 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1035 isolated tests across 56 test files and 99 lib modules.

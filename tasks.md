@@ -723,3 +723,18 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - Chained tuple field access (`r.1.1`) is unsupported — must bind intermediate (`let w = r.1; w.1`).
 
 ### Grand Total: 964 isolated tests across 51 test files, 91 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (system adapter/name/fetch/exclusive + entity_cloner + observer_param + access_iter + filtered_resource batch)
+
+### Completed
+- [x] Created lib/system_adapter.sla: EcsRunSystemError, EcsNotMarker (not adapter inverts bool), EcsAdapterSystem (not/map/chain kinds, run), EcsIntoAdapterSystem (into), EcsMapAdapter (adapt with offset), EcsChainAdapter (adapt feeds output forward), EcsIsAdapterSystemMarker — mirrors system::adapter_system
+- [x] Created lib/system_name.sla: EcsDebugName (name/crate/eq), EcsSystemName (name/id/eq/with_name) — mirrors system::system_name
+- [x] Created lib/world_entity_fetch.sla: EcsEntityFetcher (get/get_mut/batch), WorldEntityFetch trait surface — mirrors world::entity_fetch
+- [x] Created lib/exclusive_function_system.sla: EcsIsExclusiveFunctionSystem, EcsHasExclusiveSystemInput, EcsExclusiveFunctionSystem (initialize/run/last_run/with_name/apply_deferred) — mirrors system::exclusive_function_system
+- [x] Created lib/entity_cloner.sla: EcsEntityClonerBuilder (opt_in/opt_out, move_components, linked_cloning, insert_mode, allow/deny/allow_if_new), EcsEntityCloner (finish/should_clone/clone_entity/spawn_clone), EcsEntityClonerObserverToggle (add_observers) — mirrors entity::clone_entities EntityCloner
+- [x] Created lib/observer_system_param.sla: EcsOnTrigger (event_key/event/event_mut/trigger_kind/observer/caller/original_target/propagate/get_propagate), EcsTriggerContext — mirrors observer::system_param On<E>
+- [x] Created lib/query_access_iter.sla: EcsAccessType/AccessLevel constants, is_compatible, EcsAccessConflictError, QueryAccessError constants, has_conflicts (O(n^2) pair scan), classify_conflict — mirrors query::access_iter
+- [x] Created lib/filtered_resource.sla: EcsResourceAccess (add_read/write, has_read/write, counts), ResourceFetchError constants, EcsFilteredResources (access/has_read/add_read/get/get_by_id/set), EcsFilteredResourcesMut (as_readonly/reborrow/get/get_mut/set) — mirrors world::filtered_resource
+- [x] Tests: system_adapter 14, system_name+fetch+exclusive 16, entity_cloner 12, observer+access 16, filtered_resource 13 — all passing on SA backend
+
+### Grand Total: 1035 isolated tests across 56 test files, 99 lib modules, all passing on SA backend
