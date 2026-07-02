@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1649 isolated tests across 84 test files, 162 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1667 isolated tests across 85 test files, 163 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -202,3 +202,9 @@ Last updated: 2026-07-02
 - 28 tests — test_ecs_lib_world_resource_api_isolated.sla
 - Tests: 1621 → 1649, lib modules: 161 → 162, test files: 83 → 84
 - src/world/mod.rs (resource management) ✓
+
+## Batch 35 — world_error (2026-07-02)
+- lib/world_error.sla: EcsTryRunScheduleError + EcsTryInsertBatchError + EcsEntityDespawnError + EcsEntityComponentError + EcsEntityMutableFetchError + EcsResourceFetchError — mirrors world::error.rs
+- 18 tests — test_ecs_lib_world_error_isolated.sla
+- Tests: 1649 → 1667, lib modules: 162 → 163, test files: 84 → 85
+- src/world/error.rs ✓
