@@ -597,3 +597,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] BatchingStrategy (new, fixed, min/max_batch, batches_per_thread, calc_batch_size with div_ceil + clamp) + BevyError (new/ignore/trace/debug/info/warn/error/panic, with_severity, with_context) + Severity (7 levels) + ErrorContext (System/RunCondition/Command/Observer) + severity→handler mapping + CommandOutput to_err + FallbackErrorHandler + EntityHash/EntityHashSet (insert dedup, remove, clear, contains, len, is_empty) + Spawn/SpawnableList/RelatedSpawner (push, len, target, spawn) (38 tests SA) — `tests/test_ecs_batching_error_spawn_isolated.sla`
 
 ### Grand Total: 428 isolated tests across 21 files, all passing on SA backend
+
+## Session 2026-07-02 (access + stepping batch)
+
+### Completed
+- [x] Query Access (add_read/write/remove, archetypal, read_all/write_all inversion, has_read/write/any, clear/clear_writes, is_compatible conflict detection, is_subset) + Schedule Stepping (enable/disable, add/remove_schedule, step_frame/continue_frame, set/clear_breakpoint, always_run/never_run_node, begin_frame) (31 tests SA) — `tests/test_ecs_access_stepping_isolated.sla`
+
+### Grand Total: 459 isolated tests across 22 files, all passing on SA backend
