@@ -542,3 +542,4 @@ echo "progress updated"
 
 - [done] Added lib/message_reader_writer.sla (MessageReader + PopulatedMessageReader + MessageWriter) + lib/messages_buffer.sla (Messages double-buffer write/update/get_cursor/update_drain/oldest_message_count) + lib/message_iterators.sla (MessageIterator/WithId/ParIter) + 25 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1415 isolated tests across 76 test files and 154 lib modules.
+- [done] Implemented lib/entity_mut.sla: EcsEntityMut + EcsFilteredEntityMut (entity_access::entity_mut.rs). 19 tests passing on SA backend. Covers id/location/archetype/contains/contains_id/contains_type_id/get/get_ref/get_mut/insert/remove/components/get_change_ticks_by_id/reborrow/into_readonly/as_readonly + FilteredEntityMut allow/is_allowed/get/id/from_inner/inner/into_filtered.

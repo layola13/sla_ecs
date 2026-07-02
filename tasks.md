@@ -893,3 +893,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: 25 tests covering all 3 modules — all passing on SA backend
 
 ### Grand Total: 1415 isolated tests across 76 test files, 154 lib modules, all passing on SA backend
+
+## Batch 27 — entity_mut (2026-07-02)
+- [x] Created lib/entity_mut.sla: EcsEntityMut (id/location/archetype/set_archetype/contains/contains_id/contains_type_id/get/get_ref/get_mut/insert/remove/component_count/components/get_change_ticks_by_id/reborrow/into_readonly/as_readonly/into_filtered) + EcsFilteredEntityMut (allow/is_allowed/get/id/allowed_count/from_inner/inner) — mirrors world::entity_access::entity_mut.rs
+- [x] Created tests/test_ecs_lib_entity_mut_isolated.sla: 19 tests — all passing on SA backend
+
+### Grand Total: 1434 isolated tests across 77 test files, 155 lib modules, all passing on SA backend

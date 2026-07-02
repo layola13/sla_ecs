@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1415 isolated tests across 76 test files, 154 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1434 isolated tests across 77 test files, 155 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
@@ -147,3 +147,9 @@ Last updated: 2026-07-02
 - Full SAB backend verification once compiler large-file limit is resolved
 - Continue refining edge cases as bevy_ecs evolves
 - src/never.rs: Never type alias (language-level, no semantic API to test)
+
+## Batch 27 — entity_mut (2026-07-02)
+- lib/entity_mut.sla: EcsEntityMut (id/location/archetype/contains/get/get_ref/get_mut/insert/remove/components/reborrow/into_readonly/as_readonly/get_change_ticks_by_id) + EcsFilteredEntityMut (allow/is_allowed/get/id/from_inner/inner/into_filtered)
+- 19 tests — test_ecs_lib_entity_mut_isolated.sla
+- Tests: 1415 → 1434, lib modules: 154 → 155, test files: 76 → 77
+- src/world/entity_access/entity_mut.rs ✓
