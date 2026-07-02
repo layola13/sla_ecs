@@ -298,3 +298,9 @@ Last updated: 2026-07-02
 - 15 tests — test_ecs_lib_thin_array_ptr_isolated.sla
 - Tests: 1948 → 1963, lib modules: 177 → 178, test files: 99 → 100
 - src/storage/thin_array_ptr.rs (ThinArrayPtr) ✓
+
+## Batch 51 — executor_single_threaded (2026-07-02)
+- lib/executor_single_threaded.sla: EcsSingleThreadedExecutor (new/init/set_apply_final_deferred/mark_completed/is_completed/mark_set_evaluated/is_set_evaluated/mark_unapplied/is_unapplied/run_system/skip_system/apply_deferred/finish/completed_count/unapplied_count) — mirrors schedule/executor/single_threaded.rs
+- 13 tests — test_ecs_lib_executor_single_threaded_isolated.sla
+- Tests: 1963 → 1976, lib modules: 178 → 179, test files: 100 → 101
+- src/schedule/executor/single_threaded.rs (SingleThreadedExecutor) ✓

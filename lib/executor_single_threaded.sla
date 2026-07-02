@@ -1,0 +1,194 @@
+// Bevy ECS schedule (src/schedule/executor/single_threaded.rs):
+// SingleThreadedExecutor — runs systems one at a time in dependency order.
+// Tracks evaluated_sets, completed_systems, unapplied_systems, apply_final_deferred.
+
+struct EcsSingleThreadedExecutor {
+    // Bitsets modeled as Vec<bool>
+    evaluated_sets: Vec<bool>,
+    completed_systems: Vec<bool>,
+    unapplied_systems: Vec<bool>,
+    apply_final_deferred: bool,
+    system_count: i64,
+    set_count: i64,
+    // Running state
+    systems_run: i64,
+    systems_skipped: i64,
+    deferred_applied: i64,
+}
+
+fn ecs_single_threaded_executor_new() -> EcsSingleThreadedExecutor {
+    return EcsSingleThreadedExecutor {
+        evaluated_sets: Vec::new(), completed_systems: Vec::new(),
+        unapplied_systems: Vec::new(), apply_final_deferred: true,
+        system_count: 0, set_count: 0,
+        systems_run: 0, systems_skipped: 0, deferred_applied: 0
+    };
+}
+
+// init: pre-allocate bitsets for system and set counts
+fn ecs_single_threaded_executor_init(e: EcsSingleThreadedExecutor, system_count: i64, set_count: i64) -> EcsSingleThreadedExecutor {
+    e.system_count = system_count;
+    e.set_count = set_count;
+    // Initialize bitsets to all false
+    e.evaluated_sets = Vec::new();
+    e.completed_systems = Vec::new();
+    e.unapplied_systems = Vec::new();
+    let i: i64 = 0;
+    while i < set_count {
+        e.evaluated_sets.push(false);
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    while j < system_count {
+        e.completed_systems.push(false);
+        e.unapplied_systems.push(false);
+        j = j + 1;
+    }
+    e.systems_run = 0;
+    e.systems_skipped = 0;
+    e.deferred_applied = 0;
+    return e;
+}
+
+// set_apply_final_deferred
+fn ecs_single_threaded_executor_set_apply_final_deferred(e: EcsSingleThreadedExecutor, apply: bool) -> EcsSingleThreadedExecutor {
+    e.apply_final_deferred = apply;
+    return e;
+}
+
+fn ecs_single_threaded_executor_apply_final_deferred(e: EcsSingleThreadedExecutor) -> bool { return e.apply_final_deferred; }
+
+// mark_system_completed: mark a system as completed (run or skipped)
+fn ecs_single_threaded_executor_mark_completed(e: EcsSingleThreadedExecutor, system_index: i64) -> EcsSingleThreadedExecutor {
+    if system_index >= 0 {
+        if system_index < len(e.completed_systems) as i64 {
+            e.completed_systems[system_index] = true;
+        };
+    };
+    return e;
+}
+
+// is_system_completed
+fn ecs_single_threaded_executor_is_completed(e: EcsSingleThreadedExecutor, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(e.completed_systems) as i64 { return false; };
+    return e.completed_systems[system_index];
+}
+
+// mark_set_evaluated
+fn ecs_single_threaded_executor_mark_set_evaluated(e: EcsSingleThreadedExecutor, set_index: i64) -> EcsSingleThreadedExecutor {
+    if set_index >= 0 {
+        if set_index < len(e.evaluated_sets) as i64 {
+            e.evaluated_sets[set_index] = true;
+        };
+    };
+    return e;
+}
+
+// is_set_evaluated
+fn ecs_single_threaded_executor_is_set_evaluated(e: EcsSingleThreadedExecutor, set_index: i64) -> bool {
+    if set_index < 0 { return false; };
+    if set_index >= len(e.evaluated_sets) as i64 { return false; };
+    return e.evaluated_sets[set_index];
+}
+
+// mark_unapplied: mark a system as having unapplied deferred buffers
+fn ecs_single_threaded_executor_mark_unapplied(e: EcsSingleThreadedExecutor, system_index: i64) -> EcsSingleThreadedExecutor {
+    if system_index >= 0 {
+        if system_index < len(e.unapplied_systems) as i64 {
+            e.unapplied_systems[system_index] = true;
+        };
+    };
+    return e;
+}
+
+// is_unapplied
+fn ecs_single_threaded_executor_is_unapplied(e: EcsSingleThreadedExecutor, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(e.unapplied_systems) as i64 { return false; };
+    return e.unapplied_systems[system_index];
+}
+
+// run_system: simulate running a system
+fn ecs_single_threaded_executor_run_system(e: EcsSingleThreadedExecutor, system_index: i64, is_apply_deferred: bool) -> EcsSingleThreadedExecutor {
+    let e2 = ecs_single_threaded_executor_mark_completed(e, system_index);
+    if is_apply_deferred {
+        e2.deferred_applied = e2.deferred_applied + 1;
+        e2.systems_run = e2.systems_run + 1;
+        return e2;
+    } else {
+        let e3 = ecs_single_threaded_executor_mark_unapplied(e2, system_index);
+        e3.systems_run = e3.systems_run + 1;
+        return e3;
+    };
+}
+
+// skip_system: mark system as skipped (completed but not run)
+fn ecs_single_threaded_executor_skip_system(e: EcsSingleThreadedExecutor, system_index: i64) -> EcsSingleThreadedExecutor {
+    let e2 = ecs_single_threaded_executor_mark_completed(e, system_index);
+    e2.systems_skipped = e2.systems_skipped + 1;
+    return e2;
+}
+
+// apply_deferred: apply all unapplied deferred buffers
+fn ecs_single_threaded_executor_apply_deferred(e: EcsSingleThreadedExecutor) -> EcsSingleThreadedExecutor {
+    // Clear all unapplied
+    let i: i64 = 0;
+    let n: i64 = len(e.unapplied_systems) as i64;
+    while i < n {
+        if e.unapplied_systems[i] {
+            e.unapplied_systems[i] = false;
+            e.deferred_applied = e.deferred_applied + 1;
+        };
+        i = i + 1;
+    }
+    return e;
+}
+
+// finish: clear all bitsets after a run
+fn ecs_single_threaded_executor_finish(e: EcsSingleThreadedExecutor) -> EcsSingleThreadedExecutor {
+    let i: i64 = 0;
+    let sn: i64 = len(e.evaluated_sets) as i64;
+    while i < sn {
+        e.evaluated_sets[i] = false;
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    let cn: i64 = len(e.completed_systems) as i64;
+    while j < cn {
+        e.completed_systems[j] = false;
+        j = j + 1;
+    }
+    return e;
+}
+
+// accessors
+fn ecs_single_threaded_executor_systems_run(e: EcsSingleThreadedExecutor) -> i64 { return e.systems_run; }
+fn ecs_single_threaded_executor_systems_skipped(e: EcsSingleThreadedExecutor) -> i64 { return e.systems_skipped; }
+fn ecs_single_threaded_executor_deferred_applied(e: EcsSingleThreadedExecutor) -> i64 { return e.deferred_applied; }
+fn ecs_single_threaded_executor_system_count(e: EcsSingleThreadedExecutor) -> i64 { return e.system_count; }
+fn ecs_single_threaded_executor_set_count(e: EcsSingleThreadedExecutor) -> i64 { return e.set_count; }
+
+// completed_count: count how many systems are marked completed
+fn ecs_single_threaded_executor_completed_count(e: EcsSingleThreadedExecutor) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(e.completed_systems) as i64;
+    while i < n {
+        if e.completed_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+// unapplied_count
+fn ecs_single_threaded_executor_unapplied_count(e: EcsSingleThreadedExecutor) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(e.unapplied_systems) as i64;
+    while i < n {
+        if e.unapplied_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}

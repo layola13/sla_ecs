@@ -1,0 +1,116 @@
+@import "lib/executor_single_threaded.sla"
+
+// Isolated tests for lib/executor_single_threaded.sla — SingleThreadedExecutor
+// Bevy reference: bevy_ecs/src/schedule/executor/single_threaded.rs
+
+@test "single_threaded_new"() {
+    let e = ecs_single_threaded_executor_new();
+    if ecs_single_threaded_executor_apply_final_deferred(e) != true { panic(82800); };
+    if ecs_single_threaded_executor_systems_run(e) != 0 { panic(82801); };
+    if ecs_single_threaded_executor_systems_skipped(e) != 0 { panic(82802); };
+}
+
+@test "single_threaded_init"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    if ecs_single_threaded_executor_system_count(e2) != 5 { panic(82803); };
+    if ecs_single_threaded_executor_set_count(e2) != 3 { panic(82804); };
+    if ecs_single_threaded_executor_completed_count(e2) != 0 { panic(82805); };
+}
+
+@test "single_threaded_set_apply_final_deferred"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_set_apply_final_deferred(e, false);
+    if ecs_single_threaded_executor_apply_final_deferred(e2) != false { panic(82806); };
+}
+
+@test "single_threaded_mark_completed"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_mark_completed(e2, 2);
+    if ecs_single_threaded_executor_is_completed(e3, 2) != true { panic(82807); };
+    if ecs_single_threaded_executor_is_completed(e3, 0) != false { panic(82808); };
+    if ecs_single_threaded_executor_completed_count(e3) != 1 { panic(82809); };
+}
+
+@test "single_threaded_mark_set_evaluated"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_mark_set_evaluated(e2, 1);
+    if ecs_single_threaded_executor_is_set_evaluated(e3, 1) != true { panic(82810); };
+    if ecs_single_threaded_executor_is_set_evaluated(e3, 0) != false { panic(82811); };
+}
+
+@test "single_threaded_run_system"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_run_system(e2, 0, false);
+    if ecs_single_threaded_executor_systems_run(e3) != 1 { panic(82812); };
+    if ecs_single_threaded_executor_is_completed(e3, 0) != true { panic(82813); };
+    if ecs_single_threaded_executor_is_unapplied(e3, 0) != true { panic(82814); };
+}
+
+@test "single_threaded_run_apply_deferred_system"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_run_system(e2, 0, true);
+    if ecs_single_threaded_executor_deferred_applied(e3) != 1 { panic(82815); };
+    if ecs_single_threaded_executor_is_unapplied(e3, 0) != false { panic(82816); };
+}
+
+@test "single_threaded_skip_system"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_skip_system(e2, 0);
+    if ecs_single_threaded_executor_systems_skipped(e3) != 1 { panic(82817); };
+    if ecs_single_threaded_executor_systems_run(e3) != 0 { panic(82818); };
+    if ecs_single_threaded_executor_is_completed(e3, 0) != true { panic(82819); };
+}
+
+@test "single_threaded_apply_deferred"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_run_system(e2, 0, false);
+    let e4 = ecs_single_threaded_executor_run_system(e3, 1, false);
+    if ecs_single_threaded_executor_unapplied_count(e4) != 2 { panic(82820); };
+    let e5 = ecs_single_threaded_executor_apply_deferred(e4);
+    if ecs_single_threaded_executor_unapplied_count(e5) != 0 { panic(82821); };
+    if ecs_single_threaded_executor_deferred_applied(e5) != 2 { panic(82822); };
+}
+
+@test "single_threaded_finish"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_mark_completed(e2, 0);
+    let e4 = ecs_single_threaded_executor_mark_completed(e3, 1);
+    if ecs_single_threaded_executor_completed_count(e4) != 2 { panic(82823); };
+    let e5 = ecs_single_threaded_executor_finish(e4);
+    if ecs_single_threaded_executor_completed_count(e5) != 0 { panic(82824); };
+}
+
+@test "single_threaded_mark_completed_out_of_range"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_mark_completed(e2, 99);
+    if ecs_single_threaded_executor_completed_count(e3) != 0 { panic(82825); };
+    let e4 = ecs_single_threaded_executor_mark_completed(e2, -1);
+    if ecs_single_threaded_executor_completed_count(e4) != 0 { panic(82826); };
+}
+
+@test "single_threaded_is_completed_not_initialized"() {
+    let e = ecs_single_threaded_executor_new();
+    if ecs_single_threaded_executor_is_completed(e, 0) != false { panic(82827); };
+}
+
+@test "single_threaded_run_multiple"() {
+    let e = ecs_single_threaded_executor_new();
+    let e2 = ecs_single_threaded_executor_init(e, 5, 3);
+    let e3 = ecs_single_threaded_executor_run_system(e2, 0, false);
+    let e4 = ecs_single_threaded_executor_skip_system(e3, 1);
+    let e5 = ecs_single_threaded_executor_run_system(e4, 2, false);
+    let e6 = ecs_single_threaded_executor_run_system(e5, 3, true);
+    if ecs_single_threaded_executor_systems_run(e6) != 3 { panic(82828); };
+    if ecs_single_threaded_executor_systems_skipped(e6) != 1 { panic(82829); };
+    if ecs_single_threaded_executor_completed_count(e6) != 4 { panic(82830); };
+    if ecs_single_threaded_executor_deferred_applied(e6) != 1 { panic(82831); };
+}
