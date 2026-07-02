@@ -697,3 +697,12 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - SLA does NOT support negative integer literals in const declarations (`const X: i32 = -1;` causes CodegenError). Use positive sentinel values instead.
 
 ### Grand Total: 776 isolated tests across 33 files, all passing on SA backend
+
+## Session 2026-07-02 (lib query_iter + unsafe_world_cell batch)
+
+### Completed
+- [x] Created lib/query_iter.sla: QueryIter (next/remaining/len/is_empty/count/last/nth), QueryParIter (batching_strategy/for_each/len), QueryManyIter (next/set_found/len), QueryContiguousIter (next/remaining), QuerySortedIter (fetch_next/fetch_next_back), AccessConflictError, has_conflicts
+- [x] Created lib/unsafe_world_cell.sla: UnsafeWorldCell (id/change_tick/last_change_tick/last_trigger_id/entity_count/archetype_count/component_count/bundle_count/increment_change_tick/get_entity), EntityMutableFetchError (NotSpawned/AliasedMutability), EntityComponentError (Missing/Aliased), ResourceFetchError (NotRegistered/DoesNotExist/Conflict), TryRunScheduleError, TryInsertBatchError, EntityDespawnError
+- [x] Integration test importing both lib modules (27 tests SA) — `tests/test_ecs_lib_iter_worldcell_isolated.sla`
+
+### Grand Total: 803 isolated tests across 34 files, all passing on SA backend
