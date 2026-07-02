@@ -280,3 +280,9 @@ Last updated: 2026-07-02
 - 29 tests — test_ecs_lib_clone_entities_isolated.sla
 - Tests: 1880 → 1909, lib modules: 174 → 175, test files: 96 → 97
 - src/entity/clone_entities.rs (SourceComponent/ComponentCloneCtx/EntityMapper/EntityClonerState) ✓
+
+## Batch 48 — table_column (2026-07-02)
+- lib/table_column.sla: EcsColumn (with_capacity/component_id/size/capacity/has_drop/len/is_empty/get_data/get_added_tick/get_changed_tick/get_changed_by/get_ticks/initialize/replace/swap_remove/clear/check_change_ticks/realloc/drop_last/get_drop/count_matching) — mirrors storage/table/column.rs
+- 20 tests — test_ecs_lib_table_column_isolated.sla
+- Tests: 1909 → 1929, lib modules: 175 → 176, test files: 97 → 98
+- src/storage/table/column.rs (Column) ✓
