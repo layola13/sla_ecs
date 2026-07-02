@@ -995,3 +995,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_archetype_edges_isolated.sla: 18 tests — all passing on SA backend
 
 ### Grand Total: 1795 isolated tests across 92 test files, 170 lib modules, all passing on SA backend
+
+## Batch 43 — entities_collection (2026-07-02)
+- [x] Created lib/entities_collection.sla: EcsEntities collection (EcsEntityLocation + EcsEntities struct with alloc/free/free_many/contains/contains_spawned/is_index_spawned/get_spawned/get/set_location/resolve_from_index/get_spawn_tick/get_despawn_tick/len/is_empty/count_spawned/any_spawned/clear/tick) — mirrors entity/mod.rs Entities struct
+- [x] Created tests/test_ecs_lib_entities_collection_isolated.sla: 19 tests — all passing on SA backend
+
+### Grand Total: 1814 isolated tests across 93 test files, 171 lib modules, all passing on SA backend

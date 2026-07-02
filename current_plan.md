@@ -250,3 +250,9 @@ Last updated: 2026-07-02
 - 18 tests — test_ecs_lib_archetype_edges_isolated.sla
 - Tests: 1777 → 1795, lib modules: 169 → 170, test files: 91 → 92
 - src/archetype.rs (Edges/ArchetypeAfterBundleInsert/ArchetypeEntity) ✓
+
+## Batch 43 — entities_collection (2026-07-02)
+- lib/entities_collection.sla: EcsEntityLocation (new/archetype/table/table_row/eq) + EcsEntities (alloc/free/free_many/contains/contains_spawned/is_index_spawned/get_spawned/get/set_location/resolve_from_index/get_spawn_tick/get_despawn_tick/len/is_empty/count_spawned/any_spawned/clear/tick) — mirrors entity/mod.rs Entities struct
+- 19 tests — test_ecs_lib_entities_collection_isolated.sla
+- Tests: 1795 → 1814, lib modules: 170 → 171, test files: 92 → 93
+- src/entity/mod.rs (Entities/EcsEntityLocation) ✓
