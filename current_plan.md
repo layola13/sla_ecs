@@ -3,7 +3,7 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99% (175+ facade functions + 390 isolated tests across 20 files)
+- Bevy ECS core API parity: ~99% (175+ facade functions + 428 isolated tests across 21 files)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 
 ## Completed (all verified, SA backend) — 390 tests across 20 isolated test files
@@ -26,6 +26,7 @@ Last updated: 2026-07-02
 17. SystemParamBuilder + Schedule Executor + ComponentDescriptor (26)
 18. Tarjan SCC (full algorithm) + NonSend storage (16) — `tests/test_ecs_scc_nonsend_isolated.sla`
 19. Message Iterator types + MessageUpdateSystems (21) — `tests/test_ecs_message_iterators_isolated.sla`
+20. BatchingStrategy + BevyError/Severity/ErrorContext + EntityHashSet + Spawn/SpawnableList (38) — `tests/test_ecs_batching_error_spawn_isolated.sla`
 
 ## Remaining (auditing)
 - Verify remaining observer/lifecycle edge cases vs bevy_ecs

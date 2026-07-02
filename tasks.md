@@ -590,3 +590,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Message Iterator types parity (iterators.rs + mut_iterators.rs + update.rs): MessageIterator, MessageIteratorWithId, MessageParIter, MessageMutIterator, MessageMutIteratorWithId, MessageMutParIter, MessageUpdateSystems + signal/update/condition systems (21 tests SA) — `tests/test_ecs_message_iterators_isolated.sla`
 
 ### Grand Total: 390 isolated tests across 20 files, all passing on SA backend
+
+## Session 2026-07-02 (batching + error + entity-hash + spawn batch)
+
+### Completed
+- [x] BatchingStrategy (new, fixed, min/max_batch, batches_per_thread, calc_batch_size with div_ceil + clamp) + BevyError (new/ignore/trace/debug/info/warn/error/panic, with_severity, with_context) + Severity (7 levels) + ErrorContext (System/RunCondition/Command/Observer) + severity→handler mapping + CommandOutput to_err + FallbackErrorHandler + EntityHash/EntityHashSet (insert dedup, remove, clear, contains, len, is_empty) + Spawn/SpawnableList/RelatedSpawner (push, len, target, spawn) (38 tests SA) — `tests/test_ecs_batching_error_spawn_isolated.sla`
+
+### Grand Total: 428 isolated tests across 21 files, all passing on SA backend
