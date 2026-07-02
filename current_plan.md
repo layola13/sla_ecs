@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1369 isolated tests across 74 test files, 148 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1390 isolated tests across 75 test files, 151 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 1369 tests across 74 isolated test files
+## Completed (all verified, SA backend) — 1390 tests across 75 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -129,6 +129,10 @@ Last updated: 2026-07-02
 - src/component/required.rs ✓ (RequiredComponents, RequiredComponentsRegistrator)
 - src/system/combinator.rs ✓ (CombinatorSystem, PipeSystem, Combine)
 - src/system/system_registry.rs ✓ (SystemId, RegisteredSystem, SystemHandle)
+- src/message/message_cursor.rs ✓ (MessageCursor)
+- src/message/message_mutator.rs ✓ (MessageMutator)
+- src/message/message_registry.rs ✓ (MessageRegistry, ShouldUpdateMessages)
+- src/message/mut_iterators.rs ✓ (MessageMutIterator, MessageMutParIter)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

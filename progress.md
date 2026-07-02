@@ -536,3 +536,6 @@ echo "progress updated"
 
 - [done] Added lib/system_combinator.sla (CombinatorSystem pipe/and/or/map + PipeSystem) + lib/system_registry.sla (SystemId + RegisteredSystem + RemovedSystem + SystemHandle + despawn_unused) + lib/component_required.sla (RequiredComponents shallowest-wins + Registrator) + 25 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1369 isolated tests across 74 test files and 148 lib modules.
+
+- [done] Added lib/message_cursor.sla (MessageCursor read/len/clear/missed) + lib/message_mutator.sla (MessageMutator write/read) + lib/message_registry_update.sla (MessageRegistry register/deregister/signal/run_updates + MessageMutIterator + MessageMutParIter) + 21 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1390 isolated tests across 75 test files and 151 lib modules.
