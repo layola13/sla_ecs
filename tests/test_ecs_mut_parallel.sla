@@ -1,0 +1,23 @@
+// Verification tests for the isolated mutable parallel runner.
+@import "../lib/parallel_runner.sla"
+
+const MPA_ID: i32 = 2401;
+const MPB_ID: i32 = 2402;
+
+fn mp_write_a(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
+    return 1;
+}
+
+fn mp_write_b(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
+    return 1;
+}
+
+@test "mut batch parallel sums disjoint systems"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let acc_a = table_erased_system_access_none();
+    let acc_b = table_erased_system_access_none();
+    acc_a.write_components.push(MPA_ID);
+    acc_b.write_components.push(MPB_ID);
+    let total = ecs_parallel_run_mut_batch<i32, i32>(w0, mp_write_a, mp_write_b, acc_a, acc_b);
+    if total != 2 { panic(24001); };
+}
