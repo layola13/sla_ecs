@@ -1049,3 +1049,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_executor_single_threaded_isolated.sla: 13 tests — all passing on SA backend
 
 ### Grand Total: 1976 isolated tests across 101 test files, 179 lib modules, all passing on SA backend
+
+## Batch 52 — executor_multi_threaded (2026-07-02)
+- [x] Created lib/executor_multi_threaded.sla: EcsMultiThreadedExecutor + EcsExecutorState — mirrors schedule/executor/multi_threaded.rs
+- [x] Created tests/test_ecs_lib_executor_multi_threaded_isolated.sla: 18 tests — all passing on SA backend
+
+### Grand Total: 1994 isolated tests across 102 test files, 180 lib modules, all passing on SA backend

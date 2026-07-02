@@ -1,0 +1,288 @@
+// Bevy ECS schedule (src/schedule/executor/multi_threaded.rs):
+// MultiThreadedExecutor + ExecutorState — runs systems in parallel using dependency tracking.
+// Tracks ready/running/completed/skipped/unapplied systems, dependency counts, local/exclusive thread state.
+
+struct EcsExecutorState {
+    // Bitsets modeled as Vec<bool>
+    evaluated_sets: Vec<bool>,
+    ready_systems: Vec<bool>,
+    ready_systems_copy: Vec<bool>,
+    running_systems: Vec<bool>,
+    skipped_systems: Vec<bool>,
+    completed_systems: Vec<bool>,
+    unapplied_systems: Vec<bool>,
+    // Dependency tracking
+    num_dependencies_remaining: Vec<i64>,
+    // Thread state
+    local_thread_running: bool,
+    exclusive_running: bool,
+    num_running_systems: i64,
+    system_count: i64,
+    set_count: i64,
+}
+
+struct EcsMultiThreadedExecutor {
+    state: EcsExecutorState,
+    apply_final_deferred: bool,
+    starting_systems: Vec<bool>,
+    systems_run: i64,
+    systems_skipped: i64,
+    deferred_applied: i64,
+}
+
+fn ecs_executor_state_new() -> EcsExecutorState {
+    return EcsExecutorState {
+        evaluated_sets: Vec::new(), ready_systems: Vec::new(), ready_systems_copy: Vec::new(),
+        running_systems: Vec::new(), skipped_systems: Vec::new(), completed_systems: Vec::new(),
+        unapplied_systems: Vec::new(), num_dependencies_remaining: Vec::new(),
+        local_thread_running: false, exclusive_running: false,
+        num_running_systems: 0, system_count: 0, set_count: 0
+    };
+}
+
+fn ecs_executor_state_init(s: EcsExecutorState, system_count: i64, set_count: i64) -> EcsExecutorState {
+    s.system_count = system_count;
+    s.set_count = set_count;
+    s.evaluated_sets = Vec::new();
+    s.ready_systems = Vec::new();
+    s.ready_systems_copy = Vec::new();
+    s.running_systems = Vec::new();
+    s.skipped_systems = Vec::new();
+    s.completed_systems = Vec::new();
+    s.unapplied_systems = Vec::new();
+    s.num_dependencies_remaining = Vec::new();
+    let i: i64 = 0;
+    while i < system_count {
+        s.ready_systems.push(false);
+        s.ready_systems_copy.push(false);
+        s.running_systems.push(false);
+        s.skipped_systems.push(false);
+        s.completed_systems.push(false);
+        s.unapplied_systems.push(false);
+        s.num_dependencies_remaining.push(0);
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    while j < set_count {
+        s.evaluated_sets.push(false);
+        j = j + 1;
+    }
+    s.num_running_systems = 0;
+    s.local_thread_running = false;
+    s.exclusive_running = false;
+    return s;
+}
+
+fn ecs_multi_threaded_executor_new() -> EcsMultiThreadedExecutor {
+    return EcsMultiThreadedExecutor {
+        state: ecs_executor_state_new(),
+        apply_final_deferred: true,
+        starting_systems: Vec::new(),
+        systems_run: 0, systems_skipped: 0, deferred_applied: 0
+    };
+}
+
+fn ecs_multi_threaded_executor_init(e: EcsMultiThreadedExecutor, system_count: i64, set_count: i64) -> EcsMultiThreadedExecutor {
+    let s = ecs_executor_state_init(e.state, system_count, set_count);
+    e.state = s;
+    e.starting_systems = Vec::new();
+    let i: i64 = 0;
+    while i < system_count {
+        e.starting_systems.push(false);
+        i = i + 1;
+    }
+    return e;
+}
+
+fn ecs_multi_threaded_executor_set_apply_final_deferred(e: EcsMultiThreadedExecutor, apply: bool) -> EcsMultiThreadedExecutor {
+    e.apply_final_deferred = apply;
+    return e;
+}
+
+fn ecs_multi_threaded_executor_apply_final_deferred(e: EcsMultiThreadedExecutor) -> bool { return e.apply_final_deferred; }
+
+// set_dependencies: set the number of remaining dependencies for a system
+fn ecs_executor_state_set_dependencies(s: EcsExecutorState, system_index: i64, count: i64) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.num_dependencies_remaining) as i64 {
+            s.num_dependencies_remaining[system_index] = count;
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_get_dependencies(s: EcsExecutorState, system_index: i64) -> i64 {
+    if system_index < 0 { return -1; };
+    if system_index >= len(s.num_dependencies_remaining) as i64 { return -1; };
+    return s.num_dependencies_remaining[system_index];
+}
+
+// mark_ready: mark a system as ready to run (dependencies met)
+fn ecs_executor_state_mark_ready(s: EcsExecutorState, system_index: i64) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.ready_systems) as i64 {
+            s.ready_systems[system_index] = true;
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_is_ready(s: EcsExecutorState, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(s.ready_systems) as i64 { return false; };
+    return s.ready_systems[system_index];
+}
+
+// start_system: mark a system as running
+fn ecs_executor_state_start_system(s: EcsExecutorState, system_index: i64, is_exclusive: bool, is_local: bool) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.running_systems) as i64 {
+            s.running_systems[system_index] = true;
+            s.ready_systems[system_index] = false;
+            s.num_running_systems = s.num_running_systems + 1;
+            if is_exclusive { s.exclusive_running = true; };
+            if is_local { s.local_thread_running = true; };
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_is_running(s: EcsExecutorState, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(s.running_systems) as i64 { return false; };
+    return s.running_systems[system_index];
+}
+
+// complete_system: mark a system as completed, decrement dependents
+fn ecs_executor_state_complete_system(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.running_systems) as i64 {
+            s.running_systems[system_index] = false;
+            s.completed_systems[system_index] = true;
+            s.unapplied_systems[system_index] = true;
+            if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
+        };
+    };
+    // Decrement dependencies for dependents
+    let i: i64 = 0;
+    let n: i64 = len(dependents) as i64;
+    while i < n {
+        let dep_idx = dependents[i];
+        if dep_idx >= 0 {
+            if dep_idx < len(s.num_dependencies_remaining) as i64 {
+                if s.num_dependencies_remaining[dep_idx] > 0 {
+                    s.num_dependencies_remaining[dep_idx] = s.num_dependencies_remaining[dep_idx] - 1;
+                };
+                if s.num_dependencies_remaining[dep_idx] == 0 {
+                    s.ready_systems[dep_idx] = true;
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return s;
+}
+
+fn ecs_executor_state_is_completed(s: EcsExecutorState, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(s.completed_systems) as i64 { return false; };
+    return s.completed_systems[system_index];
+}
+
+// skip_system: mark as skipped
+fn ecs_executor_state_skip_system(s: EcsExecutorState, system_index: i64) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.skipped_systems) as i64 {
+            s.skipped_systems[system_index] = true;
+            s.completed_systems[system_index] = true;
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_is_skipped(s: EcsExecutorState, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(s.skipped_systems) as i64 { return false; };
+    return s.skipped_systems[system_index];
+}
+
+// apply_deferred: clear unapplied for a system
+fn ecs_executor_state_apply_deferred_system(s: EcsExecutorState, system_index: i64) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.unapplied_systems) as i64 {
+            s.unapplied_systems[system_index] = false;
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_is_unapplied(s: EcsExecutorState, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(s.unapplied_systems) as i64 { return false; };
+    return s.unapplied_systems[system_index];
+}
+
+// accessors
+fn ecs_executor_state_num_running(s: EcsExecutorState) -> i64 { return s.num_running_systems; }
+fn ecs_executor_state_local_thread_running(s: EcsExecutorState) -> bool { return s.local_thread_running; }
+fn ecs_executor_state_exclusive_running(s: EcsExecutorState) -> bool { return s.exclusive_running; }
+
+fn ecs_executor_state_completed_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.completed_systems) as i64;
+    while i < n {
+        if s.completed_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_ready_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.ready_systems) as i64;
+    while i < n {
+        if s.ready_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_running_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.ready_systems) as i64;
+    while i < n {
+        if s.ready_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_unapplied_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.unapplied_systems) as i64;
+    while i < n {
+        if s.unapplied_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+// mark_starting: mark a system as a starting system (no dependencies)
+fn ecs_multi_threaded_executor_mark_starting(e: EcsMultiThreadedExecutor, system_index: i64) -> EcsMultiThreadedExecutor {
+    if system_index >= 0 {
+        if system_index < len(e.starting_systems) as i64 {
+            e.starting_systems[system_index] = true;
+        };
+    };
+    return e;
+}
+
+fn ecs_multi_threaded_executor_is_starting(e: EcsMultiThreadedExecutor, system_index: i64) -> bool {
+    if system_index < 0 { return false; };
+    if system_index >= len(e.starting_systems) as i64 { return false; };
+    return e.starting_systems[system_index];
+}

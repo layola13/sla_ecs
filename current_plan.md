@@ -304,3 +304,9 @@ Last updated: 2026-07-02
 - 13 tests — test_ecs_lib_executor_single_threaded_isolated.sla
 - Tests: 1963 → 1976, lib modules: 178 → 179, test files: 100 → 101
 - src/schedule/executor/single_threaded.rs (SingleThreadedExecutor) ✓
+
+## Batch 52 — executor_multi_threaded (2026-07-02)
+- lib/executor_multi_threaded.sla: EcsMultiThreadedExecutor + EcsExecutorState (new/init/set_apply_final_deferred/mark_starting/is_starting + state init/set_dependencies/get_dependencies/mark_ready/is_ready/start_system/is_running/complete_system/is_completed/skip_system/is_skipped/apply_deferred_system/is_unapplied/num_running/local_thread_running/exclusive_running/completed_count/ready_count/unapplied_count) — mirrors schedule/executor/multi_threaded.rs
+- 18 tests — test_ecs_lib_executor_multi_threaded_isolated.sla
+- Tests: 1976 → 1994, lib modules: 179 → 180, test files: 101 → 102
+- src/schedule/executor/multi_threaded.rs (MultiThreadedExecutor/ExecutorState) ✓
