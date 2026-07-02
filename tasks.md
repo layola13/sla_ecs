@@ -673,3 +673,13 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Integration test importing all 4 lib modules (40 tests SA) — `tests/test_ecs_lib_collections_clone_condition_observer_isolated.sla`
 
 ### Grand Total: 723 isolated tests across 31 files, all passing on SA backend
+
+## Session 2026-07-02 (lib node + spawner + allocator batch)
+
+### Completed
+- [x] Created lib/schedule_node.sla: NodeId (System/Set variants, kind/index/is_system/is_set/eq), SystemWithAccess (id/name/set_exclusive), ConditionWithAccess, Systems (insert/get/has_conditions/add_condition/condition_count/len/is_empty), CompactNodeIdAndDirection, CompactNodeIdPair, Direction constants
+- [x] Created lib/bundle_spawner.sla: BundleSpawner (new/spawn/spawn_batch/reserve_storage/len/get_spawned/world_id/change_tick), InsertBundle (new/target/len/bundle_type), BundleInserter (insert/insert_batch/count), BundleRemover (remove/count)
+- [x] Created lib/remote_allocator.sla: RemoteAllocator (new/alloc/alloc_batch/close/is_closed/allocated_count/next_entity/contains)
+- [x] Integration test importing all 3 lib modules (28 tests SA) — `tests/test_ecs_lib_node_spawner_allocator_isolated.sla`
+
+### Grand Total: 751 isolated tests across 32 files, all passing on SA backend
