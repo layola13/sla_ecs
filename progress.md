@@ -505,3 +505,7 @@ echo "progress updated"
 - [done] Added lib/schedule_config.sla (GraphInfo, ScheduleConfig, ScheduleConfigs Noop/Single/Group+chain) + lib/schedule_set.sla (SystemSet anonymous/system_type/base, SetMembership) + 15 isolated SA tests.
 - [done] Added lib/system_input.sla (SystemInput unit/In/InRef/InMut, In/InRef/InMut/StaticSystemInput, FromInput) + lib/command_queue.sla (CommandQueue push/apply/append/silent) + lib/observer_storage.sla (CachedObservers global/component/entity runners, ObserversCatalog event-key-indexed + lifecycle caches, ObserverNode distributed, ObserverDescriptor) + 19 isolated SA tests.
 - [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1117 isolated tests across 61 test files and 108 lib modules.
+
+- [done] Added lib/entity_command.sla (EntityCommand insert/remove/clear/despawn/clone/move/log/observe + EntityCommandError + InsertMode + apply) + 14 isolated SA tests.
+- [done] Added lib/schedule_executor.sla (SingleThreadedExecutor/MultiThreadedExecutor run/skip/apply_deferred/set_up/finish) + lib/exclusive_system_param.sla (DeferredWorld/Commands/Query/Resource/NonSend/SystemName) + lib/graph_map.sla (directed/undirected Graph add/remove node/edge/neighbors/degree) + lib/reflect_resource.sla (ReflectResource register/insert/get/remove) + 25 isolated SA tests.
+- [done] Updated tasks.md, progress.md, current_plan.md. Grand total now 1156 isolated tests across 63 test files and 113 lib modules.

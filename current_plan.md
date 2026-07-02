@@ -3,11 +3,11 @@
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1117 isolated tests across 61 test files, 108 lib modules)
+- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1156 isolated tests across 63 test files, 113 lib modules)
 - All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
 - Every bevy_ecs module now has isolated parity tests covering its public API surface
 
-## Completed (all verified, SA backend) — 1117 tests across 61 isolated test files
+## Completed (all verified, SA backend) — 1156 tests across 63 isolated test files
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -82,6 +82,11 @@ Last updated: 2026-07-02
 - src/world/command_queue.rs ✓ (CommandQueue)
 - src/observer/centralized_storage.rs ✓ (Observers catalog, CachedObservers)
 - src/observer/distributed_storage.rs ✓ (Observer node, ObserverDescriptor)
+- src/system/commands/entity_command.rs ✓ (EntityCommand, EntityCommandError)
+- src/schedule/executor/ ✓ (SingleThreadedExecutor, MultiThreadedExecutor)
+- src/system/exclusive_system_param.rs ✓ (ExclusiveSystemParam)
+- src/schedule/graph/graph_map.rs ✓ (Graph directed/undirected)
+- src/reflect/resource.rs ✓ (ReflectResource)
 - src/storage/ ✓ (Table, Column, BlobArray, ThinArrayPtr, SparseSet, NonSend)
 - src/system/ ✓ (System, SystemMeta, FunctionSystem, SystemState, combinator, adapter, builder, input, system_name, system_registry, commands, query, observer_system)
 - src/world/ ✓ (World, WorldId, CommandQueue, DeferredWorld, EntityRef, EntityWorldMut, filtered_resource, spawn_batch, entity_fetch, identifier)

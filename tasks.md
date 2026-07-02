@@ -761,3 +761,15 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Tests: schedule_config+set 15, system_input+command_queue+observer_storage 19 — all passing on SA backend
 
 ### Grand Total: 1117 isolated tests across 61 test files, 108 lib modules, all passing on SA backend
+
+## Session 2026-07-02 (entity_command + schedule_executor + exclusive_system_param + graph_map + reflect_resource batch)
+
+### Completed
+- [x] Created lib/entity_command.sla: EcsEntityCommand (insert/insert_from_world/remove/remove_with_requires/remove_by_id/clear/despawn/retain/clone_with_opt_out/opt_in/clone_components/move_components/log_components/observe), EntityCommandError, InsertMode constants, apply() — mirrors system::commands::entity_command
+- [x] Created lib/schedule_executor.sla: EcsScheduleExecutor (single/multi-threaded kinds, run_system/skip_system/apply_deferred/set_up/finish, applied/skipped counts) — mirrors schedule::executor single_threaded + multi_threaded
+- [x] Created lib/exclusive_system_param.sla: EcsExclusiveSystemParam (DeferredWorld/Commands/Query/Resource/NonSend/SystemName kinds, init_state, is_mutable) — mirrors system::exclusive_system_param
+- [x] Created lib/graph_map.sla: EcsGraph (directed/undirected, add/remove node/edge, contains, neighbors directed/undirected, degree, nodes) — mirrors schedule::graph::graph_map
+- [x] Created lib/reflect_resource.sla: EcsReflectResource (register/is_registered/insert/get/remove/apply_or_insert) — mirrors reflect::resource ReflectResource
+- [x] Tests: entity_command 14, executor+param+graph+reflect 25 — all passing on SA backend
+
+### Grand Total: 1156 isolated tests across 63 test files, 113 lib modules, all passing on SA backend
