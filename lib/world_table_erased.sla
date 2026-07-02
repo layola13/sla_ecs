@@ -3,6 +3,7 @@
 // columns and aligned by entity row.
 @import "world_registry_erased.sla"
 @import "box_drop.sla"
+@import "bundle_info.sla"
 
 struct TableErasedColumnDef {
     component_id: i32,
@@ -64,6 +65,7 @@ struct TableErasedWorld<R, M> {
     messages: Messages<M>,
     resource_added_tick: i32,
     resource_changed_tick: i32,
+    bundle_registry: BundleRegistry
 }
 
 struct TableErasedMut<T> {
@@ -107,6 +109,23 @@ struct TableErasedTriple<A, B, C> {
     first: A,
     second: B,
     third: C,
+}
+
+struct TableErasedQuad<A, B, C, D> {
+    entity: Entity,
+    first: A,
+    second: B,
+    third: C,
+    fourth: D,
+}
+
+struct TableErasedQuintuple<A, B, C, D, E> {
+    entity: Entity,
+    first: A,
+    second: B,
+    third: C,
+    fourth: D,
+    fifth: E,
 }
 
 struct TableErasedOptional<T> {
@@ -858,6 +877,7 @@ fn table_erased_world_new<R, M>(default_r: R, default_m: M) -> TableErasedWorld<
         messages: messages_new<M>(default_m),
         resource_added_tick: 0,
         resource_changed_tick: 0,
+        bundle_registry: bundle_registry_new(),
     };
     world.archetypes.push(table_erased_archetype_new<R, M>(world, 0, table_erased_signature_empty()));
     return world;
@@ -2287,6 +2307,53 @@ fn table_erased_world_query_triple_auto<A, B, C, R, M>(world: TableErasedWorld<R
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
     let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
     return table_erased_world_query_triple<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id);
+}
+
+fn table_erased_world_query_quad<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32) -> Query<TableErasedQuad<A, B, C, D>> {
+    let query = query_new<TableErasedQuad<A, B, C, D>>();
+    let base = table_erased_world_query_triple<A, B, C, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        if table_erased_world_has<R, M>(world, item.entity, fourth_component_id) {
+            query.items.push(TableErasedQuad<A, B, C, D> { entity: item.entity, first: item.first, second: item.second, third: item.third, fourth: table_erased_world_get<D, R, M>(world, item.entity, fourth_component_id, fourth_type_id) });
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_quad_auto<A, B, C, D, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32) -> Query<TableErasedQuad<A, B, C, D>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
+    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world, fourth_type_id);
+    return table_erased_world_query_quad<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id);
+}
+
+fn table_erased_world_query_quintuple<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, third_component_id: i32, third_type_id: i32, fourth_component_id: i32, fourth_type_id: i32, fifth_component_id: i32, fifth_type_id: i32) -> Query<TableErasedQuintuple<A, B, C, D, E>> {
+    let query = query_new<TableErasedQuintuple<A, B, C, D, E>>();
+    let base = table_erased_world_query_quad<A, B, C, D, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id);
+    let i: i64 = 0;
+    let cnt = len(base.items) as i64;
+    while i < cnt {
+        let item = base.items[i];
+        if table_erased_world_has<R, M>(world, item.entity, fifth_component_id) {
+            query.items.push(TableErasedQuintuple<A, B, C, D, E> { entity: item.entity, first: item.first, second: item.second, third: item.third, fourth: item.fourth, fifth: table_erased_world_get<E, R, M>(world, item.entity, fifth_component_id, fifth_type_id) });
+        };
+        i = i + 1;
+    }
+    return query;
+}
+
+fn table_erased_world_query_quintuple_auto<A, B, C, D, E, R, M>(world: TableErasedWorld<R, M>, first_type_id: i32, second_type_id: i32, third_type_id: i32, fourth_type_id: i32, fifth_type_id: i32) -> Query<TableErasedQuintuple<A, B, C, D, E>> {
+    let first_component_id = table_erased_world_component_id_for_type<R, M>(world, first_type_id);
+    let second_component_id = table_erased_world_component_id_for_type<R, M>(world, second_type_id);
+    let third_component_id = table_erased_world_component_id_for_type<R, M>(world, third_type_id);
+    let fourth_component_id = table_erased_world_component_id_for_type<R, M>(world, fourth_type_id);
+    let fifth_component_id = table_erased_world_component_id_for_type<R, M>(world, fifth_type_id);
+    return table_erased_world_query_quintuple<A, B, C, D, E, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, third_component_id, third_type_id, fourth_component_id, fourth_type_id, fifth_component_id, fifth_type_id);
 }
 
 fn table_erased_world_query_pair_optional_second<A, B, R, M>(world: TableErasedWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, default_second: fn() -> B) -> Query<TableErasedPairOptionalSecond<A, B>> {
@@ -5424,4 +5491,47 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if pair_any8_self_pos_present != 2 { panic(12697); };
     if pair_any8_self_vel_present != 2 { panic(12698); };
     if pair_any8_vel_sum != 50 { panic(12699); };
+}
+
+// --- Helper: clone a single erased component from source to target ---
+// Returns the updated world. Solves the UseAfterMove issue where value_unchecked
+// and insert_erased both consume world by value.
+fn table_erased_world_clone_component<R, M>(world: TableErasedWorld<R, M>, source: Entity, target: Entity, type_id: i32) -> TableErasedWorld<R, M> {
+    if table_erased_world_has_type<R, M>(world, source, type_id) {
+        let cid = table_erased_world_component_id_for_type<R, M>(world, type_id);
+        let location = world.locations[source.id];
+        let archetype_slot = location.archetype_id as i64;
+        let column_slot = table_erased_world_column_slot<R, M>(world, archetype_slot, cid);
+        if column_slot < 0 { return world; };
+        let value = world.archetypes[archetype_slot].columns[column_slot].values[location.row];
+        return table_erased_world_insert_erased<R, M>(world, target, cid, value);
+    };
+    return world;
+}
+
+// Safe version of has that returns the world back. Takes component_id directly
+// to avoid the double-consumption issue with has_type (which internally calls
+// component_id_for_type + has, both consuming world).
+fn table_erased_world_has_safe<R, M>(world: TableErasedWorld<R, M>, entity: Entity, component_id: i32) -> (TableErasedWorld<R, M>, bool) {
+    // registry_world_has_component reads world.registry by value.
+    // To avoid consuming world, we read the registry field into a local first.
+    let reg = world.registry;
+    let has = registry_world_has_component(reg, entity, component_id);
+    // Restore: put reg back (since registry is a value type, this is a copy)
+    world.registry = reg;
+    return (world, has);
+}
+
+// Safe version of component_id_for_type that returns the world back.
+fn table_erased_world_component_id_for_type_safe<R, M>(world: TableErasedWorld<R, M>, type_id: i32) -> (TableErasedWorld<R, M>, i32) {
+    let cid: i32 = -1;
+    let i: i64 = 0;
+    let defs = world.component_defs;
+    let cnt = len(defs) as i64;
+    while i < cnt {
+        if defs[i].type_id == type_id { cid = defs[i].component_id; };
+        i = i + 1;
+    }
+    world.component_defs = defs;
+    return (world, cid);
 }

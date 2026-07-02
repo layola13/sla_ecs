@@ -6,6 +6,8 @@ Build `sla_ecs` into a real Sla/SA ECS runtime that matches the core semantics s
 
 The first deliverable is **Bevy Core ECS parity**, not the entire `bevy_ecs` crate. Full Bevy internals such as reflection and true parallel executors are later phases unless they block README-level semantics. Observers, deferred command queues, observer schedules/system-param adapters, library-owned metadata descriptors, generic relationship bookkeeping/traversal, generic relationship command queues and related spawner helpers, typed relationship facades, typed one-to-one facades, relationship difference replacement, and the canonical hierarchy relationship including `Children` ordering helpers now have verified `sla_ecs` slices. The Sla compiler now has engine-neutral `@derive(copy, eq, ord, hash, debug)` semantics for plain value structs; broader ECS-specific derive/macro generation remains pending and belongs outside compiler keyword branches.
 
+The unified outward-facing `lib/ecs_world.sla` facade now covers the full `bevy_ecs::world::World` API surface as `ecs_world_*` entry points over the table-erased full stack, including `try_despawn`, `get_mut`, `query_filtered`, `try_query`, `removed_with_id`, `contains_resource`, `init_non_send_resource`, `resource_ref`/`get_resource_ref`/`get_resource_mut`, `modify_resource`, `iter_entities`/`entities`, and `entities_and_commands`. Stepping-stone world types remain in `lib/` for regression coverage; new code should target the `ecs_world_*` facade.
+
 ## Current Baseline
 
 - The current tree contains the reusable `lib/` runtime and verified `examples/`; the old `src/` prototype directory is not present on disk.

@@ -494,3 +494,41 @@ fn table_erased_schedule_condition_tick_at_least_three(change_tick: i32) -> bool
     let w6 = table_erased_schedule_run_planned<TableErasedScheduleTime, TableErasedScheduleEvent>(s1, w5);
     if table_erased_world_get<TableErasedSchedulePos, TableErasedScheduleTime, TableErasedScheduleEvent>(w6, entity, position.id, TABLE_ERASED_SCHEDULE_POS_TYPE).x != 3 { panic(11950); };
 }
+
+// Explicit ordering (Bevy ScheduleConfigs::chain / before / after / in_set).
+// Bevy's `.chain()` places systems in sequential order; `.before(set)` /
+// `.after(set)` add dependency edges. sla_ecs models this by assigning systems
+// to explicit sequential batch ids (batch N runs before batch N+1), bypassing
+// the access-based auto-batch chooser.
+
+// Add a system assigned to an explicit batch id (Bevy ordered insertion).
+fn table_erased_schedule_add_system_in_batch<R, M>(schedule: TableErasedSchedule<R, M>, system: TableErasedSystem<R, M>, batch_id: i32) -> TableErasedSchedule<R, M> {
+    schedule.systems.push(system);
+    schedule.batch_ids.push(batch_id);
+    if batch_id >= schedule.batch_count { schedule.batch_count = batch_id + 1; };
+    return schedule;
+}
+
+// Chain: place a system after the last added system by giving it a new batch
+// one higher than the current max (Bevy .chain() sequential ordering).
+fn table_erased_schedule_chain<R, M>(schedule: TableErasedSchedule<R, M>, system: TableErasedSystem<R, M>) -> TableErasedSchedule<R, M> {
+    let next_batch = schedule.batch_count;
+    return table_erased_schedule_add_system_in_batch<R, M>(schedule, system, next_batch);
+}
+
+// before: place a system in a batch strictly before a target batch id.
+fn table_erased_schedule_before<R, M>(schedule: TableErasedSchedule<R, M>, system: TableErasedSystem<R, M>, target_batch_id: i32) -> TableErasedSchedule<R, M> {
+    let batch_id = target_batch_id - 1;
+    if batch_id < 0 { return table_erased_schedule_add_system_in_batch<R, M>(schedule, system, 0); };
+    return table_erased_schedule_add_system_in_batch<R, M>(schedule, system, batch_id);
+}
+
+// after: place a system in a batch strictly after a target batch id.
+fn table_erased_schedule_after<R, M>(schedule: TableErasedSchedule<R, M>, system: TableErasedSystem<R, M>, target_batch_id: i32) -> TableErasedSchedule<R, M> {
+    return table_erased_schedule_add_system_in_batch<R, M>(schedule, system, target_batch_id + 1);
+}
+
+// in_set: assign a system to a specific batch id (Bevy .in_set(set)).
+fn table_erased_schedule_in_set<R, M>(schedule: TableErasedSchedule<R, M>, system: TableErasedSystem<R, M>, batch_id: i32) -> TableErasedSchedule<R, M> {
+    return table_erased_schedule_add_system_in_batch<R, M>(schedule, system, batch_id);
+}

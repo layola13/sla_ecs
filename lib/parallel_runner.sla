@@ -1,0 +1,36 @@
+// Isolated mutable parallel runner (Bevy multi-threaded executor parity).
+//
+// Lives in its own module so the `Arc<*World>` + `thread::spawn` codegen does
+// not pay for the full ecs_world transitive import chain at the call site.
+// Mirrors Bevy's disjoint mutable parallel execution: two systems with
+// non-conflicting access run on threads sharing one world by raw pointer.
+@import "world_table_erased.sla"
+@import "table_erased_access.sla"
+@import "sa_std/core/arc.sa"
+@import "sa_std/thread.sa"
+
+fn ecs_parallel_run_mut_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess) -> i32 {
+    if table_erased_access_conflicts(first_access, second_access) { panic(23010); };
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let first_ptr = shared.clone();
+    let second_ptr = shared.clone();
+    let first_handle = thread::spawn(^|| first(first_ptr));
+    let second_handle = thread::spawn(^|| second(second_ptr));
+    return first_handle.join().unwrap() + second_handle.join().unwrap();
+}
+
+// Read-only parallel batch runner (Bevy read-only parallel execution). Two
+// read-only systems share the world by raw pointer in an Arc and run on
+// threads. Readonly + disjoint access is enforced by the caller (facade).
+fn ecs_parallel_run_readonly_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32) -> i32 {
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let first_ptr = shared.clone();
+    let second_ptr = shared.clone();
+    let first_handle = thread::spawn(^|| first(first_ptr));
+    let second_handle = thread::spawn(^|| second(second_ptr));
+    return first_handle.join().unwrap() + second_handle.join().unwrap();
+}
