@@ -286,3 +286,9 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_table_column_isolated.sla
 - Tests: 1909 → 1929, lib modules: 175 → 176, test files: 97 → 98
 - src/storage/table/column.rs (Column) ✓
+
+## Batch 49 — blob_array (2026-07-02)
+- lib/blob_array.sla: EcsBlobArray (with_capacity/new/item_size/item_align/is_zst/get_drop/len/is_empty/get/get_sub_slice/initialize/replace/swap_remove/swap_remove_and_drop/clear/drop_last/drop_all/get_ptr/count) — mirrors storage/blob_array.rs
+- 19 tests — test_ecs_lib_blob_array_isolated.sla
+- Tests: 1929 → 1948, lib modules: 176 → 177, test files: 98 → 99
+- src/storage/blob_array.rs (BlobArray) ✓
