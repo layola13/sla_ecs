@@ -1139,3 +1139,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_commands_mod_extension_isolated.sla: 35 tests — all passing on SA backend
 
 ### Grand Total: 2310 isolated tests across 116 test files, 193 lib modules, all passing on SA backend
+
+## Batch 67 — schedule_dag_analysis (2026-07-03)
+- [x] Created lib/schedule_dag_analysis.sla: DagAnalysis (compute/transitive reduction/closure/reachable/connected/disconnected/partition/redundant_edges/cross_dependencies/overlapping_groups) + DagGroups (new/insert/get/contains/count_for/build/flatten/flatten_undirected) + DagRedundancyError + DagCrossDependencyError + DagOverlappingGroupError — mirrors src/schedule/graph/dag.rs
+- [x] Created tests/test_ecs_lib_schedule_dag_analysis_isolated.sla: 23 tests — all passing on SA backend
+
+### Grand Total: 2333 isolated tests across 117 test files, 194 lib modules, all passing on SA backend

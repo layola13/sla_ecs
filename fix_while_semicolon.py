@@ -1,56 +1,81 @@
 #!/usr/bin/env python3
-"""Fix SLA `while { ... };` closing semicolons: while block needs `}` without `;`."""
-import re, sys
+"""Fix SLA `while { ... };` -> `while { ... }` while keeping `if/else { ... };`.
 
-def is_block_open(s):
-    s = s.rstrip()
-    if not s.endswith('{'):
-        return None
-    # sort by indentation precedence; return (indent, kind)
-    indent = len(s) - len(s.lstrip())
-    if re.search(r'\bwhile\b', s):
-        return (indent, 'while')
-    if re.search(r'\bif\b', s) and not s.rstrip().endswith('}'):
-        return (indent, 'if')
-    if re.search(r'\belse\b', s):
-        return (indent, 'else')
-    if re.search(r'\bfn\b', s):
-        return (indent, 'fn')
-    if re.search(r'\bstruct\b', s):
-        return (indent, 'struct')
-    if re.search(r'\btest\b', s):
-        return (indent, 'test')
-    return (indent, 'other')
+SLA rule: `while` blocks end with `}` (no semicolon).
+`if`/`else` blocks end with `};` (semicolon required).
+Stand-alone `} else {` lines mix close+open and must NOT be modified.
+"""
+import re, sys
 
 def fix(path):
     with open(path) as f:
         lines = f.readlines()
-    stack = []
+    stack = []  # kinds: 'while' | 'if' | 'else' | 'fn' | 'struct' | 'test'
     out = []
-    for line in lines:
-        raw = line.rstrip('\n')
-        m = re.fullmatch(r'(\s*)(\}+)(\s*;?)\s*', raw)
-        if m:
-            indent = len(m.group(1))
-            brace_count = len(m.group(2))
-            had_semi = m.group(3).strip() == ';'
-            # pop brace_count blocks
-            kinds = []
-            for _ in range(brace_count):
-                if stack:
-                    kinds.append(stack.pop())
-            outer = kinds[0] if kinds else None
-            # always strip the semicolon and re-add only if outer closes an if/else
-            rebuild = ' ' * indent + '}' * brace_count
-            if had_semi and outer in ('if','else'):
+    for i, line in enumerate(lines):
+        s = line.rstrip('\n')
+        indent = len(s) - len(s.lstrip())
+        body = s.lstrip()
+
+        # Case A: mixed close+open line like `} else {` or `} else if .. {`:
+        # Pop the opener first (the close consumes whatever block was open),
+        # then push the next opener (else).
+        m_mixed = re.match(r'^(\}+)(\s*(?:else\b|else\s+if\b)?.*?\{)\s*$', body)
+        if m_mixed:
+            for _ in range(len(m_mixed.group(1))):
+                kind = stack.pop() if stack else None
+            kind = None
+            if 'else' in m_mixed.group(2) and 'if' not in m_mixed.group(2):
+                kind = 'else'
+            elif 'while' in m_mixed.group(2):
+                kind = 'while'
+            elif 'if' in m_mixed.group(2):
+                kind = 'if'
+            if kind:
+                stack.append(kind)
+            out.append(line)
+            continue
+
+        # Case B: pure close `^}+;?$`
+        m_close = re.fullmatch(r'( *)(\}+)(;?)', s)
+        if m_close:
+            n_close = len(m_close.group(2))
+            had_semi = m_close.group(3) == ';'
+            closing_kinds = []
+            for _ in range(n_close):
+                k = stack.pop() if stack else None
+                closing_kinds.append(k)
+            outer = closing_kinds[0] if closing_kinds else None
+            rebuild = ' ' * indent + '}' * n_close
+            # Keep semicolon if outer is if/else (and not if outer is while/fn/struct|test)
+            if had_semi and outer in ('if', 'else'):
                 rebuild += ';'
             out.append(rebuild + '\n')
-        else:
-            ob = is_block_open(raw)
-            if ob:
-                stack.append(ob[1])
-            out.append(line)
-    with open(path,'w') as f:
+            continue
+
+        # Case C: opener line ending in `{`
+        if s.rstrip().endswith('{'):
+            kind = None
+            if re.search(r'\bwhile\b', s):
+                kind = 'while'
+            elif re.search(r'\belse\b', s) and not re.search(r'\bif\b', s):
+                kind = 'else'
+            elif re.search(r'\bif\b', s):
+                kind = 'if'
+            elif re.search(r'\bfn\b', s):
+                kind = 'fn'
+            elif re.search(r'\bstruct\b', s):
+                kind = 'struct'
+            elif re.search(r'\btest\b', s) and '@test' not in s:
+                # @test "name"() { handled separately below
+                pass
+            if '@test' in s:
+                kind = 'test'
+            if kind:
+                stack.append(kind)
+        out.append(line)
+
+    with open(path, 'w') as f:
         f.write(''.join(out))
     return path
 

@@ -397,3 +397,9 @@ Last updated: 2026-07-02
 - 35 tests — test_ecs_lib_commands_mod_extension_isolated.sla
 - Tests: 2275 → 2310, lib modules: 192 → 193, test files: 115 → 116
 - src/system/commands/mod.rs (Commands/EntityCommands pub method gaps) ✓
+
+## Batch 67 — schedule_dag_analysis (2026-07-03)
+- lib/schedule_dag_analysis.sla: DagAnalysis + DagGroups + 3 error types — mirrors src/schedule/graph/dag.rs
+- 23 tests — test_ecs_lib_schedule_dag_analysis_isolated.sla
+- Tests: 2310 → 2333, lib modules: 193 → 194, test files: 116 → 117
+- src/schedule/graph/dag.rs (DagAnalysis, DagGroups, DagRedundancyError, DagCrossDependencyError, DagOverlappingGroupError) ✓
