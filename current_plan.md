@@ -514,3 +514,10 @@ Last updated: 2026-07-02
 - 27 tests — test_ecs_lib_query_state_read_api_isolated.sla
 - Tests: 2690 → 2717, lib modules: 209 → 210, test files: 134 → 135
 - src/query/state.rs (single/single_mut + is_empty + contains + get/get_manual/get_mut + get_many/get_many_mut/get_many_unique/get_many_unique_mut + iter_many/iter_many_mut/iter_many_unique/iter_many_unique_mut + try_new + from_builder + update_archetypes + QueryEntityError {QueryDoesNotMatch,NotSpawned,AliasedMutability} + QuerySingleError {NoEntities,MultipleEntities}) ✓
+
+
+## Batch 86 — world_observer_trigger (2026-07-03)
+- lib/world_observer_trigger.sla: World::trigger/trigger_with/trigger_ref/trigger_ref_with + add_observer + observer registry bookkeeping — mirrors src/observer/mod.rs (gaps not in lib/observer_*.sla or lib/deferred_world.sla)
+- 15 tests — test_ecs_lib_world_observer_trigger_isolated.sla
+- Tests: 2717 → 2732, lib modules: 210 → 211, test files: 135 → 136
+- src/observer/mod.rs (trigger + trigger_with + trigger_ref + trigger_ref_with + add_observer) ✓
