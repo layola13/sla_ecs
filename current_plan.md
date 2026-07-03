@@ -612,3 +612,10 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_system_trait_extras_isolated.sla
 - Tests: 2962 → 2982, lib modules: 223 → 224, test files: 148 → 149
 - src/system/system.rs (System::is_send + system_type + refresh_hotpatch + queue_deferred + check_change_tick + default_system_sets + get_last_run + set_last_run + run_readonly + run_without_applying_deferred + TypeId-as-i64 model + non_send-bit-is_send negation) ✓
+
+
+## Batch 100 — relationship_replace_insert (2026-07-03)
+- lib/relationship_replace_insert.sla: insert_related + replace_related + replace_related_with_difference — mirrors src/relationship/related_methods.rs (reorder/replace-with-difference pub fns not in lib/relationship_related_methods.sla + lib/relationship_methods_extras.sla)
+- 16 tests — test_ecs_lib_relationship_replace_insert_isolated.sla
+- Tests: 2982 → 2998, lib modules: 224 → 225, test files: 149 → 150
+- src/relationship/related_methods.rs (EntityWorldMut::insert_related + replace_related + replace_related_with_difference + OrderedRelationshipSourceCollection place/place_most_recent mirror + EntityHashSet collect/set-difference + newly_related ⊂ relate invariant + keep-existing-collection-in-place-on-empty-diff) ✓
