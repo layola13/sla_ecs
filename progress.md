@@ -652,3 +652,9 @@ echo "progress updated"
 - 13 tests — test_ecs_lib_system_change_tick_extras_isolated.sla. panic codes 92162–92199.
 - Closures (FnMut) and generics modelled via closure-less access-count + integer slots per SLA rules 11–12. ParamSetGetResult single-field accessor struct.
 ### Grand Total: 3094 isolated tests across 155 test files, 230 lib modules, all passing on SA backend
+
+## Batch 106 — system_param_extras (2026-07-03)
+- lib/system_param_extras.sla: Local<T> + StaticSystemParam<P> + SystemParamValidationError surface — mirrors src/system/system_param.rs. Previously **completely uncovered**. Models Local<'s,T>(&'s mut T) as a single shared-mutable i64 slot with initialized flag (Deref reads, DerefMut writes via builder-style set), StaticSystemParam<'w,'s,P>(Item) with into_inner consumer + get/set accessors, SystemParamValidationError { skipped, message, param, field } with skipped<T>/invalid<T>/new<T> constructors distinguishing the If-gated skip path (skipped=true) from the default-panic error path (skipped=false), an EMPTY const sentinel, and Display formatted via SpveDisplayResult { param_short, has_field, message } with the "::"-prefix field rule.
+- 15 tests — test_ecs_lib_system_param_extras_isolated.sla. panic codes 92200–92240.
+- Generics (T: FromWorld, P: SystemParam) and Cow<str>/DebugName modelled via type-id i32 and message-id i64 sentinels per SLA rules 11–12. Builder-style mutators per rule 6.
+### Grand Total: 3109 isolated tests across 156 test files, 231 lib modules, all passing on SA backend

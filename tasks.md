@@ -1377,3 +1377,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 105 — system_change_tick_extras (DONE 2026-07-03)
 - [done] lib/system_change_tick_extras.sla: SystemChangeTick {this_run,last_run} + ParamSet get_mut/for_each/release (aliasing-control model) + Deferred reborrow/apply + If<T> gate. 13 tests passing on SA backend (panic 92162–92199).
+
+## Batch 106 — system_param_extras (DONE 2026-07-03)
+- [done] lib/system_param_extras.sla: Local<T> (shared mutable slot) + StaticSystemParam<P> (into_inner/get/set) + SystemParamValidationError (skipped/invalid/new + EMPTY + Display). 15 tests passing on SA backend (panic 92200–92240).
