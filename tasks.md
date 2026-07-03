@@ -1193,3 +1193,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 25 tests — test_ecs_lib_entity_lifecycle_isolated.sla
 - DefaultQueryFilters (empty/register_disabling_component/disabling_count/is_disabling/disabling_first[(found,id)]), ComponentHooks (new/on_add/on_insert/on_discard/on_remove/on_despawn returns hooks/has_*/_id/try_on_*[(ok,hooks)]), RemovedComponents (new/write/component_id/len/is_empty/clear/cursor/reset_cursor/read[(had,entity,r)]/read_with_id[(had,cid,entity,r)]/messages[(has,count,first_entity)])
 ### Grand Total: 2516 isolated tests across 125 test files, 202 lib modules, all passing on SA backend
+
+## Batch 76 — archetype_info (2026-07-03)
+- lib/archetype_info.sla: Archetype struct surface + ArchetypeFlags bitmask — mirrors src/archetype.rs
+- 21 tests — test_ecs_lib_archetype_info_isolated.sla
+- EcsArchetypeInfo (new/add_table_component/add_sparse_set_component/id/table_id/flags/generation/component_count/len/is_empty/add_entity/remove_entity/table_components_count/sparse_set_components_count/contains/get_storage_type[(found,storage)]/edges/set_edges/entity_table_row) + 10 flag mutators (set_on_*_hook/set_on_*_observer) + 10 has_* predicates (via has_flag with modulo for bitwise test since SLA has no & operator)
+### Grand Total: 2537 isolated tests across 126 test files, 203 lib modules, all passing on SA backend

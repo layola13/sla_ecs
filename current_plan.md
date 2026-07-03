@@ -452,3 +452,9 @@ Last updated: 2026-07-02
 - 25 tests — test_ecs_lib_entity_lifecycle_isolated.sla
 - Tests: 2491 → 2516, lib modules: 201 → 202, test files: 124 → 125
 - src/entity_disabling.rs (DefaultQueryFilters empty/register_disabling_component/disabling_ids) + src/lifecycle.rs (ComponentHooks on_*/try_on_*, RemovedComponents write/read/read_with_id/messages/len/clear) ✓
+
+## Batch 76 — archetype_info (2026-07-03)
+- lib/archetype_info.sla: Archetype struct surface + ArchetypeFlags bitmask — mirrors src/archetype.rs
+- 21 tests — test_ecs_lib_archetype_info_isolated.sla
+- Tests: 2516 → 2537, lib modules: 202 → 203, test files: 125 → 126
+- src/archetype.rs (Archetype id/table_id/components/contains/get_storage_type/len/is_empty/component_count/entity_table_row/has_*_hook/has_*_observer/edges/generation + ArchetypeFlags bitmask) ✓
