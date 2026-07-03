@@ -619,3 +619,10 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_relationship_replace_insert_isolated.sla
 - Tests: 2982 → 2998, lib modules: 224 → 225, test files: 149 → 150
 - src/relationship/related_methods.rs (EntityWorldMut::insert_related + replace_related + replace_related_with_difference + OrderedRelationshipSourceCollection place/place_most_recent mirror + EntityHashSet collect/set-difference + newly_related ⊂ relate invariant + keep-existing-collection-in-place-on-empty-diff) ✓
+
+
+## Batch 101 — relationship_source_collection_ordered (2026-07-03)
+- lib/relationship_source_collection_ordered.sla: OrderedRelationshipSourceCollection trait surface (insert/remove_at/insert_stable/remove_at_stable/sort/insert_sorted/place/place_most_recent/push_front) + with_capacity/reserve/shrink_to_fit/extend_from_iter/source_to_remove_before_add — mirrors src/relationship/relationship_source_collection.rs (gaps not in lib/relationship_source_collection.sla)
+- 29 tests — test_ecs_lib_relationship_source_collection_ordered_isolated.sla
+- Tests: 2998 → 3027, lib modules: 225 → 226, test files: 150 → 151
+- src/relationship/relationship_source_collection.rs (OrderedRelationshipSourceCollection::insert/remove_at/insert_stable/remove_at_stable/sort/insert_sorted/place_most_recent/place + push_front + RelationshipSourceCollection::with_capacity/reserve/shrink_to_fit/extend_from_iter/source_to_remove_before_add/is_empty) ✓
