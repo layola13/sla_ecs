@@ -316,3 +316,9 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_observer_distributed_storage_isolated.sla
 - Tests: 1994 → 2014, lib modules: 180 → 181, test files: 102 → 103
 - src/observer/distributed_storage.rs (Observer/ObserverDescriptor/ObservedBy) ✓
+
+## Batch 54 — system_schedule (2026-07-03)
+- lib/system_schedule.sla: EcsSystemSchedule + ApplyDeferred + default_executor (new/add_system/add_set/get_system_id/get_system_conditions/get_system_dependencies/get_set_id/mark_run/mark_skip/reset/clear/is_empty/total_conditions/total_dependencies + is_apply_deferred + default_executor_kind) — mirrors schedule/executor/mod.rs
+- 16 tests — test_ecs_lib_system_schedule_isolated.sla
+- Tests: 2014 → 2030, lib modules: 181 → 182, test files: 103 → 104
+- src/schedule/executor/mod.rs (SystemSchedule/ApplyDeferred/default_executor) ✓
