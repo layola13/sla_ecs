@@ -385,3 +385,9 @@ Last updated: 2026-07-02
 - 24 tests — test_ecs_lib_system_registry_template_isolated.sla
 - Tests: 2199 → 2223, lib modules: 190 → 191, test files: 113 → 114
 - src/system/system_registry.rs (SystemHandleTemplate, SystemHandleValue, CachedSystemId, register_system_cached/unregister_system_cached/run_system_cached/run_system_cached_with, register_tracked_system/register_tracked_boxed_system) ✓
+
+## Batch 65 — world_mod (2026-07-03)
+- lib/world_mod.sla: World struct comprehensive surface (~140 pub fns from src/world/mod.rs) — WorldId/EntityLocation/SpawnBatchIter/CheckChangeTicks/World covering spawn/spawn_at/spawn_batch, register_component/register_resource(dedup)/init/insert/remove, resource_getters (with scope), non_send complete surface, despawn/try_despawn/no_free, clear_trackers, query/try_query, removed, insert_batch(_if_new)/try_insert_batch(_if_new), write_message(_default/_batch), change_tick APIs (read/change/last/scope/check), clear_all/clear_entities/clear_resources/clear_non_send, add/get/contains/remove/run schedules, allow_ambiguous_*, register_required_components(_with)/get_required_components, register_bundle(_dynamic), modify_component(_by_id), modify_resource(_by_id), inspect_entity.
+- 52 tests — test_ecs_lib_world_mod_isolated.sla
+- Tests: 2223 → 2275, lib modules: 191 → 192, test files: 114 → 115
+- src/world/mod.rs (World pub API — ~140 methods) ✓

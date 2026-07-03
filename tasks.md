@@ -1127,3 +1127,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_system_registry_template_isolated.sla: 24 tests — all passing on SA backend
 
 ### Grand Total: 2223 isolated tests across 114 test files, 191 lib modules, all passing on SA backend
+
+## Batch 65 — world_mod (2026-07-03)
+- [x] Created lib/world_mod.sla: World struct comprehensive surface (~150 pub funcs from src/world/mod.rs) — WorldId/EntityLocation/SpawnBatchIter/CheckChangeTicks/World with spawn/despawn/clear_trackers/query/removed/resource/non_send/insert_batch/schedule/messages/ticks/scope/clear/required_components/register_bundle/etc.
+- [x] Created tests/test_ecs_lib_world_mod_isolated.sla: 52 tests — all passing on SA backend
+
+### Grand Total: 2275 isolated tests across 115 test files, 192 lib modules, all passing on SA backend
