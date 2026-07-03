@@ -476,3 +476,9 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_resource_mod_isolated.sla
 - Tests: 2582 → 2598, lib modules: 205 → 206, test files: 128 → 129
 - src/resource.rs (IsResource new/resource_component_id + ResourceEntities new/get/insert/iter + IS_RESOURCE constant) ✓
+
+## Batch 80 — event_mod (2026-07-03)
+- lib/event_mod.sla: EventKey + World event registry facade — mirrors src/event/mod.rs
+- 11 tests — test_ecs_lib_event_mod_isolated.sla
+- Tests: 2598 → 2609, lib modules: 206 → 207, test files: 129 → 130
+- src/event/mod.rs (EventKey new/component_id + World register_event_key/event_key) ✓

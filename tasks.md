@@ -1217,3 +1217,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 16 tests — test_ecs_lib_resource_mod_isolated.sla
 - EcsIsResource (new/id/eq), EcsResourceEntities (new/insert set-or-overwrite/get[(found,entity)]/len/is_empty/iter_at[(found,cid,entity)]/contains/remove[(removed,r)]/clear) + ECS_RESOURCE_FLAG (is_resource/make_resource/make_non_resource via bit-0 parity)
 ### Grand Total: 2598 isolated tests across 129 test files, 206 lib modules, all passing on SA backend
+
+## Batch 80 — event_mod (2026-07-03)
+- lib/event_mod.sla: EventKey + World event registry facade — mirrors src/event/mod.rs
+- 11 tests — test_ecs_lib_event_mod_isolated.sla
+- EcsEventKey (new/component_id), EcsEventRegistry (new/register_event_key[(r,key)] idempotent allocation/event_key[(found,component_id)]/len/is_empty/remove_event_key[(removed,r)]/next_component_id) with monotonic ComponentId assignment
+### Grand Total: 2609 isolated tests across 130 test files, 207 lib modules, all passing on SA backend
