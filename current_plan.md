@@ -349,3 +349,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_non_send_storage_isolated.sla
 - Tests: 2084 → 2103, lib modules: 185 → 186, test files: 107 → 108
 - src/storage/non_send.rs (NonSendData/NonSends) ✓
+
+## Batch 59 — observer_entity_cloning (2026-07-03)
+- lib/observer_entity_cloning.sla: EcsObserverCloneState (new/set_add_observers/register_clone/get_source/get_target/queue_observer/has_queued_observer/queue_event_key/queue_component/clear) — mirrors observer/entity_cloning.rs
+- 15 tests — test_ecs_lib_observer_entity_cloning_isolated.sla
+- Tests: 2103 → 2118, lib modules: 186 → 187, test files: 108 → 109
+- src/observer/entity_cloning.rs (EntityClonerBuilder::add_observers/component_clone_observed_by) ✓

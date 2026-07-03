@@ -1091,3 +1091,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_non_send_storage_isolated.sla: 19 tests — all passing on SA backend
 
 ### Grand Total: 2103 isolated tests across 108 test files, 186 lib modules, all passing on SA backend
+
+## Batch 59 — observer_entity_cloning (2026-07-03)
+- [x] Created lib/observer_entity_cloning.sla: EcsObserverCloneState — mirrors observer/entity_cloning.rs
+- [x] Created tests/test_ecs_lib_observer_entity_cloning_isolated.sla: 15 tests — all passing on SA backend
+
+### Grand Total: 2118 isolated tests across 109 test files, 187 lib modules, all passing on SA backend
