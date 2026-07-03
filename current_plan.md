@@ -598,3 +598,10 @@ Last updated: 2026-07-02
 - 13 tests — test_ecs_lib_entity_cloner_builder_extras_isolated.sla
 - Tests: 2928 → 2941, lib modules: 221 → 222, test files: 146 → 147
 - src/entity/clone_entities.rs (EntityClonerBuilder::with_default_clone_fn + override_clone_behavior_with_id + remove_clone_behavior_override_with_id + without_required_components [OptIn scope] + without_required_by_components [OptOut scope] + ComponentCloneFn-as-id + ComponentCloneBehavior-as-id) ✓
+
+
+## Batch 98 — relationship_methods_extras (2026-07-03)
+- lib/relationship_methods_extras.sla: EntityWorldMut/EntityCommands related-methods gaps (add_one_related + detach_all_related + despawn_related + despawn_children + with_related + with_related_entities + insert_recursive + remove_recursive) — mirrors src/relationship/related_methods.rs (gaps not in lib/relationship_related_methods.sla)
+- 21 tests — test_ecs_lib_relationship_methods_extras_isolated.sla
+- Tests: 2941 → 2962, lib modules: 222 → 223, test files: 147 → 148
+- src/relationship/related_methods.rs (EntityWorldMut::add_one_related + detach_all_related + despawn_related + despawn_children + insert_recursive + remove_recursive + EntityCommands::with_related + with_related_entities + Relationship<generic = relationship_id i32> + Fn<bundle> =bundle_id i32 + BFS-tree-descendants traversal + restore of accidentally-deleted lib/*.test.sa artifacts) ✓
