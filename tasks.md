@@ -1374,3 +1374,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 104 — storages (DONE 2026-07-03)
 - [done] lib/storages.sla: top-level Storages container + prepare_component dispatch (Table no-op / SparseSet bumps sparse_set_count) + SparseSets iter/get gap + NonSends register gap + register_table. 11 tests passing on SA backend (panic 92108–92161).
+
+## Batch 105 — system_change_tick_extras (DONE 2026-07-03)
+- [done] lib/system_change_tick_extras.sla: SystemChangeTick {this_run,last_run} + ParamSet get_mut/for_each/release (aliasing-control model) + Deferred reborrow/apply + If<T> gate. 13 tests passing on SA backend (panic 92162–92199).
