@@ -4,11 +4,11 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 234 lib `.sla` modules; 160 `tests/*.sla` files; 90 `examples/*.sla`; 7,011 `@test` annotations total across lib/tests/examples. (Earlier statements of "1795/92/170" and "1415/76" were stale and understated.)
+- Counts (measured 2026-07-03): 235 lib `.sla` modules; 161 `tests/*.sla` files; 90 `examples/*.sla`; 3,608 source `.sla` `@test` annotations across lib/tests/examples (3,178 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,202 after Batch 112.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 198 lib / 121 tests / 7,011 @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 235 lib / 161 tests / 3,608 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -640,3 +640,10 @@ Last updated: 2026-07-03
 - 18 tests — test_ecs_lib_entity_allocator_extras_isolated.sla
 - Tests: 3052 → 3070, lib modules: 227 → 228, test files: 152 → 153
 - src/entity/mod.rs (EntityAllocator::alloc/free/free_many/alloc_many/build_remote_allocator/has_remote_allocator/restart + RemoteAllocator generation-stability check + AllocEntitiesIterator-emulated single-result + LIFO recycled-stack alloc) ✓
+
+## Batch 112 — unique_vec_extras (2026-07-03)
+- lib/unique_vec_extras.sla: UniqueEntityEquivalentVec remaining methods (reserve/reserve_exact/try_reserve/try_reserve_exact/shrink_to_fit/shrink_to/append/split_off/drain/splice/resize_with/leak/spare_capacity/from_entity_set_iter) — mirrors src/entity/unique_vec.rs gaps not in lib/unique_vec.sla
+- 17 tests — test_ecs_lib_unique_vec_extras_isolated.sla
+- Tests: 3185 → 3202, lib modules: 234 → 235, test files: 160 → 161
+- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla` both pass. The first SAB run exposed a PhiStateConflict in mutable clamp code; source was reshaped into clamped helpers and now passes default backend too.
+- src/entity/unique_vec.rs (capacity management, reserve fallible facade, shrink semantics, append, split/drain/splice range operations, resize_with closure model as sequence, leak/spare capacity marker, FromEntitySetIterator trusted uniqueness path) ✓

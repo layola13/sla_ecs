@@ -1395,3 +1395,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 111 — world_id_factory (DONE 2026-07-03)
 - [done] lib/world_id_factory.sla: WorldId::new() static factory (Option + monotonic + exhaustion) + SparseSetIndex impl. 10 tests passing on SA backend (panic 92376–92405).
+
+## Batch 112 — unique_vec_extras (DONE 2026-07-03)
+- [done] lib/unique_vec_extras.sla: UniqueEntityEquivalentVec remaining public surface — reserve/reserve_exact/try_reserve/try_reserve_exact/shrink_to_fit/shrink_to/append/split_off/drain/splice/resize_with/leak/spare_capacity/from_entity_set_iter — mirrors src/entity/unique_vec.rs gaps not covered by lib/unique_vec.sla.
+- [done] tests/test_ecs_lib_unique_vec_extras_isolated.sla: 17 tests passing on SA backend and default backend. Panic codes 92406–92452.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla` both pass. Initial default/SAB PhiStateConflict in range-clamp code was fixed by source reshaping, not by SAB-only string rewriting.
+- Feature progress: Bevy ECS entity/unique_vec.rs gap surface 95% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection are still intentionally incomplete.
+### Grand Total: 3202 isolated tests across 161 test files, 235 lib modules, all passing on SA backend; Batch 112 also passes default backend.
