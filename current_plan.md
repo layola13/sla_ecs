@@ -500,3 +500,10 @@ Last updated: 2026-07-02
 - 15 tests — test_ecs_lib_query_builder_extras_isolated.sla
 - Tests: 2640 → 2655, lib modules: 209 → 210, test files: 132 → 133
 - src/query/builder.rs (QueryBuilder with_id/without_id/world_mut/access + transmute/transmute_filtered + build) ✓
+
+
+## Batch 84 — world_extras (2026-07-03)
+- lib/world_extras.sla: try_register_required_components[_with] + get_required_components_by_id + modify_component[_by_id] + modify_resource[_by_id] + spawn_at/empty_at/batch + EntityAllocator + ResourceEntities + components_queue/registrator + as_unsafe_world_cell facades — mirrors src/world/mod.rs gaps not in lib/ecs_world.sla
+- 35 tests — test_ecs_lib_world_extras_isolated.sla
+- Tests: 2655 → 2690, lib modules: 208 → 209, test files: 133 → 134
+- src/world/mod.rs (try_register_required_components/try_register_required_components_with/get_required_components_by_id/modify_component[_by_id]/modify_resource[_by_id]/spawn_at/spawn_empty_at/spawn_batch/components_queue/components_registrator/entity_allocator/resource_entities/as_unsafe_world_cell_readonly + RequiredComponentsError {DuplicateRegistration,CyclicRequirement,ArchetypeExists} + SpawnError {Invalid,AlreadySpawned} + EntityMutableFetchError {NotSpawned,AliasedMutability}) ✓

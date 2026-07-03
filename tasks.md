@@ -1240,4 +1240,11 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - lib/query_builder_extras.sla: QueryBuilder id-by-id variants + World mut + access view + transmute/build gap — mirrors src/query/builder.rs
 - 15 tests — test_ecs_lib_query_builder_extras_isolated.sla
 - EcsQueryBuilder2 (new/world/world_mut/data/ref_id/mut_id/filter/with/with_id/without/without_id/optional/and/or/extend_access_count/access[(dc,wc,woc,or_groups)]/data_count/with_count/without_count/or_groups/optional_count/transmute/transmute_filtered/build[_id])
-### Grand Total: 2655 isolated tests across 133 test files, 210 lib modules, all passing on SA backend
+### Grand Total: 2655 isolated tests across 133 test files, 208 lib modules, all passing on SA backend
+
+
+## Batch 84 — world_extras (2026-07-03)
+- lib/world_extras.sla: try_register_required_components[_with] + get_required_components_by_id + modify_component[_by_id] + modify_resource[_by_id] + spawn_at/empty_at/batch + EntityAllocator + ResourceEntities + components_queue/registrator + as_unsafe_world_cell facades — mirrors src/world/mod.rs gaps not in lib/ecs_world.sla
+- 35 tests — test_ecs_lib_world_extras_isolated.sla
+- ReqCompResult/RegisterResult/ReqQueryResult/ReqNthResult/AllocResult/ResourceGetResult/SpawnAtResult/SpawnBatchResult/QueueAtResult/QueueApplyResult/ModifyResult/ModifyResourceResult result structs (dedicated single-field accessors to avoid the SA-backend .1-tuple-slot corruption of scalar tuples returned from lib fns); try_register_with archetyped-duplicate+direct-duplicate errors mapping RequiredComponentsError {DuplicateRegistration,CyclicRequirement,ArchetypeExists}; get_required_by_id[(found,count)]/get_required_nth[(found,req_id,ctor)]; EntityAllocator (alloc returns idx+gen+allocator/free marking free-list reuse/is_spawned/check_can_spawn_at returning AlreadySpawned code/spawned_count); ResourceEntities insert overwrite + get[(found,entity_idx)] + len; spawn_facade spawn_at[(facade,ok,err,ent)] already-spawned error, spawn_empty_at, spawn_batch[(facade,count,first)]; ComponentsQueue enqueue/at[(found,type_id,storage)]/len/apply draining returning applied-count; UnsafeWorldCell readable/readonly ptr+flag; modify_component returns ok/(NotSpawned error-code)/present writeback; modify_resource locates resource entity by id and runs the mutator returning ok/error/present; by-id variants alias the typed paths
+### Grand Total: 2690 isolated tests across 134 test files, 209 lib modules, all passing on SA backend
