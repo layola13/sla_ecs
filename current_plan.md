@@ -591,3 +591,10 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_query_par_many_iter_isolated.sla
 - Tests: 2907 → 2928, lib modules: 220 → 221, test files: 145 → 146
 - src/query/par_iter.rs (QueryParManyIter::batching_strategy/for_each/for_each_init + QueryParManyUniqueIter::batching_strategy/for_each/for_each_init + len/is_empty/batch_count + UniqueEntityEquivalentVec de-dup model + Fn-over-items closure-as-func_id parameterization) ✓
+
+
+## Batch 97 — entity_cloner_builder_extras (2026-07-03)
+- lib/entity_cloner_builder_extras.sla: EntityClonerBuilder remaining pub surface (with_default_clone_fn + override_clone_behavior_with_id + remove_clone_behavior_override_with_id + without_required_components scope + without_required_by_components scope) — mirrors src/entity/clone_entities.rs lines 817-1004 (gaps not in lib/entity_cloner.sla)
+- 13 tests — test_ecs_lib_entity_cloner_builder_extras_isolated.sla
+- Tests: 2928 → 2941, lib modules: 221 → 222, test files: 146 → 147
+- src/entity/clone_entities.rs (EntityClonerBuilder::with_default_clone_fn + override_clone_behavior_with_id + remove_clone_behavior_override_with_id + without_required_components [OptIn scope] + without_required_by_components [OptOut scope] + ComponentCloneFn-as-id + ComponentCloneBehavior-as-id) ✓
