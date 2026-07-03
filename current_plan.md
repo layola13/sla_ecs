@@ -4,11 +4,11 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 238 lib `.sla` modules; 164 `tests/*.sla` files; 90 `examples/*.sla`; 3,659 source `.sla` `@test` annotations across lib/tests/examples (3,229 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,253 after Batch 115.
+- Counts (measured 2026-07-03): 239 lib `.sla` modules; 165 `tests/*.sla` files; 90 `examples/*.sla`; 3,677 source `.sla` `@test` annotations across lib/tests/examples (3,247 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,271 after Batch 116.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 238 lib / 164 tests / 3,659 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 239 lib / 165 tests / 3,677 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -668,3 +668,10 @@ Last updated: 2026-07-03
 - Tests: 3236 → 3253, lib modules: 237 → 238, test files: 163 → 164
 - Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa` passes (17/17) and `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla` passes. Default/SAB still fails `entity hash map extras extend refs` at panic 92537 due a focused backend limitation around `Vec<i32>` parameter indexing; this batch is accepted under the documented SA fallback rule.
 - src/entity/hash_map.rs (Keys/IntoKeys EntitySetIterator wrappers, clone/default/remaining/next model, extend variants, duplicate replacement, from/into inner map shape, EntityEquivalent index lookup) ✓
+
+## Batch 116 — entity_index_map_extras (2026-07-03)
+- lib/entity_index_map_extras.sla: EntityIndexMap ordered slice/range/iterator tranche (as_slice/get_range, Slice get_index_mut/first/last/split_at/split_first/split_last/iter/as_slice, Keys/IntoKeys double-ended/index/trusted-unique behavior, Drain range removal, value aggregation) — mirrors src/entity/index_map.rs gaps not in lib/entity_collections.sla
+- 18 tests — test_ecs_lib_entity_index_map_extras_isolated.sla
+- Tests: 3253 → 3271, lib modules: 238 → 239, test files: 164 → 165
+- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla` both pass. Initial default/SAB PhiStateConflict on mutable range clamps was fixed by source reshaping into clamped helpers.
+- src/entity/index_map.rs (ordered map slice/range access, mutable indexed value update, split/split_first/split_last, ordered Iter/Keys remaining and double-ended traversal, Keys index, Drain range removal, values/into_values-style aggregation) ✓
