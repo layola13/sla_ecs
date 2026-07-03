@@ -415,3 +415,9 @@ Last updated: 2026-07-02
 - 24 tests — test_ecs_lib_system_param_extras_isolated.sla
 - Tests: 2356 → 2380, lib modules: 195 → 196, test files: 118 → 119
 - src/system/system_param.rs (Deferred, If, StaticSystemParam, DynSystemParam, SystemParamValidationError) ✓
+
+## Batch 70 — bundle_info_extras (2026-07-03)
+- lib/bundle_info_extras.sla: BundleId::index + contributed_components split + Bundles registry — mirrors src/bundle/info.rs
+- 20 tests — test_ecs_lib_bundle_info_extras_isolated.sla
+- Tests: 2380 → 2400, lib modules: 196 → 197, test files: 119 → 120
+- src/bundle/info.rs (BundleId::index, BundleInfo contributed/explicit/required components + iter_*, Bundles registry get/get_id/is_empty/iter) ✓

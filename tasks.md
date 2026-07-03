@@ -1157,3 +1157,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 24 tests — test_ecs_lib_system_param_extras_isolated.sla
 - Deferred (new/value/reborrow/set_value), If<T> (new/into_inner/get(Deref)/set(DerefMut)), StaticSystemParam<T> (new/into_inner/get), DynSystemParam (new/is/downcast/downcast_mut/downcast_mut_inner/read-only vs mutable tag/change_tick/system_meta_id), SystemParamValidationErrorV2 (new/skipped/invalid/is_skipped/message_id/param_id/field_id/display packed encoding)
 ### Grand Total: 2380 isolated tests across 119 test files, 196 lib modules, all passing on SA backend
+
+## Batch 70 — bundle_info_extras (2026-07-03)
+- lib/bundle_info_extras.sla: BundleId::index + contributed_components split + Bundles registry — mirrors src/bundle/info.rs
+- 20 tests — test_ecs_lib_bundle_info_extras_isolated.sla
+- BundleIdV2 (new/index), BundleInfoV2 (new/explicit_count/explicit_components_len/explicit_components/required_components/contributed_components/id/iter_explicit/iter_contributed/iter_required), Bundles (new/len/is_empty/register/get/iter/register_type/get_id)
+### Grand Total: 2400 isolated tests across 120 test files, 197 lib modules, all passing on SA backend
