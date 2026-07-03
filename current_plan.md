@@ -570,3 +570,10 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_schedule_configs_extras_isolated.sla
 - Tests: 2852 → 2868, lib modules: 217 → 218, test files: 142 → 143
 - src/schedule/config.rs (IntoScheduleConfigs chain/chain_ignore_deferred/distributive_run_if/run_if/ambiguous_with/ambiguous_with_all/before_ignore_deferred/after_ignore_deferred/into_configs + ScheduleConfigs.apply_deferred_on_edges + before/after _ignore_deferred_inner + distributive_run_if_inner + ambiguous_with_inner/ambiguous_with_all_inner + chain_ignore_deferred_inner) ✓
+
+
+## Batch 94 — required_components_dynamic (2026-07-03)
+- lib/required_components_dynamic.sla: RequiredComponents register_by_id + register_dynamic_with + the _mut builder variants + EcsRequiredComponentsRegistratorDyn facade (new/target/components_next_id/register_required_by_id/_dynamic_with + last_ok/last_err_kind/_required_direct_count/_required_all_count/_required_direct_at/_required_all_at) — mirrors src/component/required.rs dynamic-registration gaps not in lib/component_required.sla
+- 16 tests — test_ecs_lib_required_components_dynamic_isolated.sla
+- Tests: 2868 → 2884, lib modules: 218 → 219, test files: 143 → 144
+- src/component/required.rs (RequiredComponents::register_by_id + register_dynamic_with + register_dynamic_with_mut/register_by_id_mut + RequiredComponentsRegistrator::register_required_by_id + register_required_dynamic_with + components_registrator accessor + register_inherited_required_components_unchecked id-prepend-to-all model) ✓
