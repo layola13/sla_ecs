@@ -507,3 +507,10 @@ Last updated: 2026-07-02
 - 35 tests — test_ecs_lib_world_extras_isolated.sla
 - Tests: 2655 → 2690, lib modules: 208 → 209, test files: 133 → 134
 - src/world/mod.rs (try_register_required_components/try_register_required_components_with/get_required_components_by_id/modify_component[_by_id]/modify_resource[_by_id]/spawn_at/spawn_empty_at/spawn_batch/components_queue/components_registrator/entity_allocator/resource_entities/as_unsafe_world_cell_readonly + RequiredComponentsError {DuplicateRegistration,CyclicRequirement,ArchetypeExists} + SpawnError {Invalid,AlreadySpawned} + EntityMutableFetchError {NotSpawned,AliasedMutability}) ✓
+
+
+## Batch 85 — query_state_read_api (2026-07-03)
+- lib/query_state_read_api.sla: QueryState read API gaps — single/single_mut + is_empty + contains + get/get_mut + get_many[_mut/_unique/_unique_mut] + iter_many[_mut/_unique/_unique_mut] + try_new + from_builder + update_archetypes + QueryEntityError + QuerySingleError markers — mirrors src/query/state.rs gaps not in lib/query_state_extras.sla
+- 27 tests — test_ecs_lib_query_state_read_api_isolated.sla
+- Tests: 2690 → 2717, lib modules: 209 → 210, test files: 134 → 135
+- src/query/state.rs (single/single_mut + is_empty + contains + get/get_manual/get_mut + get_many/get_many_mut/get_many_unique/get_many_unique_mut + iter_many/iter_many_mut/iter_many_unique/iter_many_unique_mut + try_new + from_builder + update_archetypes + QueryEntityError {QueryDoesNotMatch,NotSpawned,AliasedMutability} + QuerySingleError {NoEntities,MultipleEntities}) ✓
