@@ -328,3 +328,12 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_observer_centralized_storage_isolated.sla
 - Tests: 2030 → 2051, lib modules: 182 → 183, test files: 104 → 105
 - src/observer/centralized_storage.rs (Observers/CachedObservers/CachedComponentObservers) ✓
+
+## Batch 56 — reflect_type_data (2026-07-03)
+- lib/reflect_type_data.sla: ReflectFromWorld + ReflectEvent + ReflectMapEntities + ReflectCommand — mirrors reflect/{from_world,event,map_entities,entity_commands}.rs
+- 10 tests — test_ecs_lib_reflect_type_data_isolated.sla
+- Tests: 2051 → 2061, lib modules: 183 → 184, test files: 105 → 106
+- src/reflect/from_world.rs (ReflectFromWorld) ✓
+- src/reflect/event.rs (ReflectEvent) ✓
+- src/reflect/map_entities.rs (ReflectMapEntities) ✓
+- src/reflect/entity_commands.rs (ReflectCommandExt) ✓

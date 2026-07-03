@@ -1073,3 +1073,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_observer_centralized_storage_isolated.sla: 21 tests — all passing on SA backend
 
 ### Grand Total: 2051 isolated tests across 105 test files, 183 lib modules, all passing on SA backend
+
+## Batch 56 — reflect_type_data (2026-07-03)
+- [x] Created lib/reflect_type_data.sla: ReflectFromWorld + ReflectEvent + ReflectMapEntities + ReflectCommand — mirrors reflect/{from_world,event,map_entities,entity_commands}.rs
+- [x] Created tests/test_ecs_lib_reflect_type_data_isolated.sla: 10 tests — all passing on SA backend
+
+### Grand Total: 2061 isolated tests across 106 test files, 184 lib modules, all passing on SA backend
