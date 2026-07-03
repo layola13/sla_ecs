@@ -1187,3 +1187,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 23 tests — test_ecs_lib_schedule_stepping_isolated.sla
 - Stepping (new/begin_frame/schedules[(found,Vec)]/cursor[(found,label,node)]/add_schedule/remove_schedule/clear_schedule/enable/disable/is_enabled/step_frame/continue_frame/action/always_run_node/never_run_node/set_breakpoint_node/clear_breakpoint_node/clear_node/skipped_systems[(found,count,first_node) primitives-only]/behavior_for/has_schedule)
 ### Grand Total: 2491 isolated tests across 124 test files, 201 lib modules, all passing on SA backend
+
+## Batch 75 — entity_lifecycle (2026-07-03)
+- lib/entity_lifecycle.sla: DefaultQueryFilters + ComponentHooks + RemovedComponents — mirrors src/entity_disabling.rs + src/lifecycle.rs
+- 25 tests — test_ecs_lib_entity_lifecycle_isolated.sla
+- DefaultQueryFilters (empty/register_disabling_component/disabling_count/is_disabling/disabling_first[(found,id)]), ComponentHooks (new/on_add/on_insert/on_discard/on_remove/on_despawn returns hooks/has_*/_id/try_on_*[(ok,hooks)]), RemovedComponents (new/write/component_id/len/is_empty/clear/cursor/reset_cursor/read[(had,entity,r)]/read_with_id[(had,cid,entity,r)]/messages[(has,count,first_entity)])
+### Grand Total: 2516 isolated tests across 125 test files, 202 lib modules, all passing on SA backend

@@ -446,3 +446,9 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_schedule_stepping_isolated.sla
 - Tests: 2468 → 2491, lib modules: 200 → 201, test files: 123 → 124
 - src/schedule/stepping.rs (Stepping + Action + SystemBehavior + schedules + cursor + add/remove/clear schedule + enable/disable + step/continue frame + always_run/never_run/set/clear breakpoint/clear node + skipped_systems) ✓
+
+## Batch 75 — entity_lifecycle (2026-07-03)
+- lib/entity_lifecycle.sla: DefaultQueryFilters + ComponentHooks + RemovedComponents — mirrors src/entity_disabling.rs + src/lifecycle.rs
+- 25 tests — test_ecs_lib_entity_lifecycle_isolated.sla
+- Tests: 2491 → 2516, lib modules: 201 → 202, test files: 124 → 125
+- src/entity_disabling.rs (DefaultQueryFilters empty/register_disabling_component/disabling_ids) + src/lifecycle.rs (ComponentHooks on_*/try_on_*, RemovedComponents write/read/read_with_id/messages/len/clear) ✓
