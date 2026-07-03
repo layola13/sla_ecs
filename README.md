@@ -459,9 +459,69 @@ Measured counts: 198 lib `.sla` modules, 121 `tests/*.sla` files, 90 `examples/*
   - *Unwired:* `lib/executor_multi_threaded.sla` faithfully mirrors Bevy's `ExecutorState` dependency-satisfaction state machine (ready/running/completed bitsets, dependency counts, exclusive/local thread flags) but contains **no `thread::spawn`, no run/next/tick/drive main loop, and no TaskPool/Scope abstraction**, and has **no call sites outside its own isolated test file**. It is a faithful but not-yet-integrated component, not Bevy's general `MultiThreadedExecutor`. SAB still hits its codegen gap on the wired path (SA is the verified fallback).
 
 ### ❌ Not Applicable / Compiler-Limited
-- Full `bevy_reflect` derive + `AppTypeRegistry` interning: SLA has no runtime `TypeId`/derive-Reflect, so the `EcsReflect`/`ReflectComponent`/`ReflectFromWorld`/`ReflectEvent` types are **library fn-pointer tables that mirror the Bevy shapes**; they are not consulted by `World` (no runtime insert/remove/get via a reflected handle) and there is no `AppTypeRegistry` (the present `EcsAuton` is a project-local numeric-id allocator, semantically different).
+- **Runtime reflection — deliberately not implemented (and not needed for sla_ecs's scope).** Bevy's `bevy_ecs::reflect` is an adapter over `bevy_reflect` (~25,045 lines / 147 files), whose entire mechanism rests on language primitives SLA does not have: `TypeId`, `dyn Any`/`as_any`, and `#[derive(Reflect)]`-injected TypePath/typeinfo. A direct port would require first adding a runtime type system to the SA/SLA compiler itself — that is language engineering outside the sla_ecs boundary, not ECS work.
+  - *No consumer exists in sla_ecs.* Real reflection exists for scene (de)serialization, editor inspection, dynamic scripting, hot-reload, and runtime `insert_reflect`/`from_reflect` operation by reflected handle. sla_ecs has **none** of these subsystems (no `bevy_scene`-style serialization, no editor, no scripting) and nothing calls `AppTypeRegistry`/`ReflectComponent` — `lib/reflect*.sla` is referenced only by its own isolated test `tests/test_ecs_reflect.sla`; `World`/`Commands` do not call it. It is shape-aligned-but-unused.
+  - *Equivalent coverage already exists via SLA idioms.* What Bevy does with reflection is covered statically here: `lib/ecs_metadata.sla` (`EcsMetadataDescriptor`) + `lib/world_table_erased.sla` type-id lookup helpers give by-type-id register/insert/query; `commands_table_erased_*` / `world_table_erased_*` give erased by-id operations on components/bundles/resources/messages; `DynamicWorld<A,B,R,M>` + the table-erased path give dynamic components. This is "doing Bevy's reflection job in the way SLA should", not "porting Bevy's reflection primitives".
+  - *Decision.* `lib/reflect*.sla` is kept as API-surface alignment (fn-pointer tables mirroring `Reflect*Fns` shapes) and explicitly **not** as a usable runtime reflection system; no further investment is planned unless a downstream subsystem that consumes a reflected handle (e.g. a scene serializer) is added to sla_ecs. The present `EcsAuton` is a project-local numeric-id allocator, semantically different from `AppTypeRegistry`.
 
 All core Bevy README-level semantics (entity/component/bundle/world/query/system/schedule/observer/relationship/message/change-detection/storage CLI demo flow) are present and verified through end-to-end demos and focused test suites. The two genuinely incomplete areas — a general dynamic multithreaded executor and runtime reflection — remain as described above and are **not** counted in the fully-implemented list above.
+
+## SLA vs Rust:底层哲学差异与映射策略
+
+sla_ecs 不是"把 bevy_ecs 直译成 SLA",而是"用 SLA 应该用的方式做 bevy_ecs 的事"。**两者的实现哲学差异源于编译器/语言原语的不同,而非取舍偏好**。下面逐条列出会直接影响实现形态的关键差异、对应映射策略,以及本项目里的对应证据。
+
+### 1. 仿射(单次赋值)+ 显式移动,而非借用检查
+- **Rust/bevy**:基于 `&`/`&mut` 的 borrow checker;值默认可多次使用。
+- **SLA/SA**:寄存器级仿射约束(SA_LIMITATIONS §6 "单次赋值"),`x = func(x)` 在 `func` 消费 `x` 时即触发 `UseAfterMove`;且**循环回边**对 `w = func(w)` 这种"自消费-再赋值"形态会丢寄存器状态(faq.md 明列)。
+- **映射策略**:凡是 Bevy 用 `&mut world; world.register(..)` 的就地修改链,sla_ecs 多用**返回新值**(Rust 风格的 `let (w, ..) = func(w, ..)` 或递归自由函数)而不是就地改;循环中改世界时用**递归自由函数**规避回边 move。
+- **证据**:`lib/world_table_erased.sla` 的批量/clone/clear 用递归;`lib/ecs_world.sla` 的 `ecs_world_*` 多返回 tuple;`lib/hierarchy.sla` 用 `entity_new(e.id,e.gen)` 重建规避 move(faq.md 之"已修复 hierarchy""修复 ecs_template_spawn"条)。
+
+### 2. `Fn`/`FnMut` trait 不存在 → 命名函数指针替代闭包泛型
+- **Rust/bevy**:系统是 `impl IntoSystem<I, O>`,适配 `Fn` 闭包与命名函数统一。
+- **SLA**:无 `Fn`/`FnMut` trait,闭包字面量 `^|| ..` 无法作为泛型参数的类型约束。
+- **映射策略**:system/schedule/add_systems 用**命名函数指针** `fn(...) -> i32`;闭包只在"立即 spawn 线程需要捕获"等局部场景用 `^||`(thread::spawn)。
+- **证据**:README ✅ "System adapters map/pipe/chain (named fn pointers; SLA has no Fn trait so closure literals can't be generic params)";`lib/parallel_runner.sla` 在真线程处用 `^|| first(first_ptr)`。
+
+### 3. 无运行时 `TypeId`/`dyn Any` → 静态 type-id + 元数据描述符
+- **Rust/bevy**:`TypeId::of::<T>()` + `#[derive(Reflect)]` 提供运行时反射;`AppTypeRegistry` 据此跨类型操作。
+- **SLA**:无 `TypeId`、无 `dyn Any`、无 derive-Reflect。
+- **映射策略**:用**项目级 derive 标记 + 普通 `impl` 方法**给每个 component/resource/message/event 产出稳定数值 id;`lib/ecs_metadata.sla`(`EcsMetadataDescriptor`)集中存布局/存储 kind/关系形状;type-erased 路径靠这些 id 做按 type-id 注册/插入/查询。
+- **证据**:README ✅ "metadata IDs + verified type-id lookup helpers";`lib/ecs_metadata.sla`、`lib/world_table_erased.sla` 的 `table_erased_*_lookup` 家族。
+
+### 4. 整数 id 而非类型化 `ScheduleLabel`/`SystemSet`
+- **Rust/bevy**:`SystemSet`/`ScheduleLabel` 是 marker 类型,编译期防拼写错。
+- **SLA**:有 trait 但无 marker derive 工作流的经济性。
+- **映射策略**:用 trait `EcsScheduleLabelTrait`/`EcsSystemSetTrait` 提供**类型化标签**,但内部数值仍是 i32 id。
+- **证据**:README ✅ "Typed SystemSet/ScheduleLabel via traits"。
+
+### 5. 显式位置传入 vs 自动 caller location
+- **Rust/bevy**:`#[track_caller]`/`MaybeLocation` 在 spawn 时自动注入 file:line。
+- **SLA**:无自动 caller capture。
+- **映射策略**:显式 `spawn_with_location(file_id,line,col)` API;spawner 不自动捕获,调用方负责传入。
+- **证据**:README gap "Automatic Rust-style caller capture remains pending; explicit `spawn_with_location` metadata ... verified";`lib/ecs_world.sla` 的 `*_with_location` 家族。
+
+### 6. 真线程从 pthread 起,而非 async task + TaskPool::scope
+- **Rust/bevy**:`MultiThreadedExecutor` 基于 async tasks + `TaskPool::scope`,按任务图动态调度到线程池。
+- **SLA**:另一条更直接的路径——sla 编译器原生降 `thread::spawn(闭包)` → `sa_std/thread.sa` 宏 → sci `sa_pthread_host.c` 经 `dlsym` 调 libpthread(详见 README ⚠️ 一条)。无 async runtime。
+- **映射策略**:**已有真线程并行**(`lib/parallel_runner.sla` 固定 2 个 `thread::spawn`,共享 `Arc<*World>`),但**Bevy 的动态任务图多线程执行器未做**——`lib/executor_multi_threaded.sla` 只复刻了 `ExecutorState` 依赖满足状态机,无 `run/next/tick/drive` 主循环、无 TaskPool、未被连通。
+- **结论**:线程原语支持的不是问题,缺的是"动态任务图调度层"。
+
+### 7. 泛型 + 一律类型擦除而非 `dyn System`
+- **Rust/bevy**:大量 `Box<dyn System>`/`dyn SystemParam`。
+- **SLA**:已支持 trait object(`&dyn`),但无运行时类型分发表自带的 RTTI。
+- **映射策略**:每条 world 后端类型(homogeneous / registry-typed / table-erased / observer / relationship)用**对应一套系统参数 adapter 函数**(代码生成式组合,见 `lib/system_param_table_erased*.sla`),而非统一 `dyn System`。
+- **证据**:README 列举每条后端的 Param runner 组合(`Commands + ResMut runners` 等)。
+
+### 8. 反射:刻意不做(已在 ❌ 节细述)
+- 见上节"❌ Not Applicable / Compiler-Limited":SLA 无运行时 TypeId,sla_ecs 也无 scene/serde/editor 等下游消费者;`lib/reflect*.sla` 仅保留 fn-pointer 表作形状对齐,不被 `World` 消费。
+
+### 9. 仿射 + 无有界循环抽象 → 递归而非手写状态机
+- SA_LIMITATIONS §3 列"缺少安全有界循环抽象",但 sla 已支持普通 `while`/`for`;真正约束来自**仿射 + 回边 move** 一同作用,复杂清理代码会膨胀。
+- **映射策略**:sla_ecs 把会触及回边的逻辑写成**递归自由函数**(`fn step(state) -> state { if base return; return step(next) }`),而非 while 内 `state = func(state)`。
+- **证据**:`lib/ecs_world.sla`、`lib/world_table_erased.sla` 的批量/sum/reduce;`faq.md` 的 "ecs_template_spawn_rec" 修复条。
+
+### 共性致因小结
+把这张哲学差异表压缩成一句话:**SLA 缺 borrow checker 但有仿射约束、缺 `Fn` trait、缺 runtime TypeId、缺 async runtime,且与 borrow-checker 不同——它要求把"就地修改链"重写成"返回值链"。** 这是 sla_ecs 把"Bevy 用 trait object/反射/async 实现的部分"改成"静态分发 + 类型 id + pthread 真线程"的根因,而非性能偏好。
 
 ## Current Gaps
 

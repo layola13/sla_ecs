@@ -1181,3 +1181,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 21 tests — test_ecs_lib_system_combinator_isolated.sla
 - CombinatorSystem (new/run_a/run_b with 4 marker-defined combine semantics: pipe/and_then/map_combine/xor/out/a_id/b_id/name_id/marker_id), PipeSystem (new/run_a/run_b/out/pipe_value/a_id/b_id/name_id), IntoPipeSystem (new/into_pipe/a_id/b_id), IsPipeSystemMarker (new), assert_is_system/assert_is_read_only_system/assert_system_does_not_conflict (pass-through)
 ### Grand Total: 2468 isolated tests across 123 test files, 200 lib modules, all passing on SA backend
+
+## Batch 74 — schedule_stepping (2026-07-03)
+- lib/schedule_stepping.sla: Stepping controller — mirrors src/schedule/stepping.rs
+- 23 tests — test_ecs_lib_schedule_stepping_isolated.sla
+- Stepping (new/begin_frame/schedules[(found,Vec)]/cursor[(found,label,node)]/add_schedule/remove_schedule/clear_schedule/enable/disable/is_enabled/step_frame/continue_frame/action/always_run_node/never_run_node/set_breakpoint_node/clear_breakpoint_node/clear_node/skipped_systems[(found,count,first_node) primitives-only]/behavior_for/has_schedule)
+### Grand Total: 2491 isolated tests across 124 test files, 201 lib modules, all passing on SA backend

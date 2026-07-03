@@ -1,0 +1,262 @@
+// Bevy ECS schedule::stepping — Stepping controller for step-debugging schedules.
+// Mirrors src/schedule/stepping.rs.
+
+const ECS_STEPPING_ACTION_RUN_ALL: i32 = 0;
+const ECS_STEPPING_ACTION_WAITING: i32 = 1;
+const ECS_STEPPING_ACTION_CONTINUE: i32 = 2;
+const ECS_STEPPING_ACTION_STEP: i32 = 3;
+
+const ECS_SB_ALWAYS_RUN: i32 = 0;
+const ECS_SB_NEVER_RUN: i32 = 1;
+const ECS_SB_BREAK: i32 = 2;
+const ECS_SB_CONTINUE: i32 = 3;
+
+// Behaviour for a (label, node) pair; absent entries default to Break/Continue semantics.
+struct EcsSteppingNodeBehavior {
+    label: i32,
+    node: i32,
+    behavior: i32,
+}
+
+struct EcsSteppingScheduleState {
+    label: i32,
+    cursor_node: i32,
+    start_node: i32,
+}
+
+struct EcsStepping {
+    enabled: bool,
+    action: i32,
+    schedules: Vec<i32>,
+    schedule_states: Vec<EcsSteppingScheduleState>,
+    schedule_order: Vec<i32>,
+    previous_schedule: i32,
+    behaviors: Vec<EcsSteppingNodeBehavior>,
+    ready: bool,
+}
+
+fn ecs_stepping_new() -> EcsStepping {
+    let s = EcsStepping { enabled: false, action: ECS_STEPPING_ACTION_RUN_ALL, schedules: Vec::new(), schedule_states: Vec::new(), schedule_order: Vec::new(), previous_schedule: 0, behaviors: Vec::new(), ready: false };
+    return s;
+}
+
+// begin_frame: marks schedules ready for stepping this frame
+fn ecs_stepping_begin_frame(s: EcsStepping) -> EcsStepping {
+    s.ready = true;
+    return s;
+}
+
+// schedules(): returns NotReady if !ready, else the Vec<i32>
+fn ecs_stepping_schedules(s: EcsStepping) -> (bool, Vec<i32>) {
+    if s.ready != true {
+        return (false, Vec::new());
+    };
+    return (true, s.schedules);
+}
+
+// cursor(): returns (found, label, node)
+fn ecs_stepping_cursor(s: EcsStepping) -> (bool, i32, i32) {
+    let n: i32 = len(s.schedule_states) as i32;
+    if n == 0 {
+        return (false, 0, 0);
+    };
+    let idx: i32 = 0;
+    let lb = s.schedule_states[idx].label;
+    let nd = s.schedule_states[idx].cursor_node;
+    return (true, lb, nd);
+}
+
+fn ecs_stepping_add_schedule(s: EcsStepping, label: i32) -> EcsStepping {
+    s.schedules.push(label);
+    let state = EcsSteppingScheduleState { label: label, cursor_node: 0, start_node: 0 };
+    s.schedule_states.push(state);
+    return s;
+}
+
+fn ecs_stepping_remove_schedule(s: EcsStepping, label: i32) -> EcsStepping {
+    let out = Vec::new();
+    let idx: i32 = 0;
+    let n: i32 = len(s.schedules) as i32;
+    while idx < n {
+        if s.schedules[idx] != label {
+            out.push(s.schedules[idx]);
+        };
+        idx = idx + 1;
+    }
+    s.schedules = out;
+    return s;
+}
+
+fn ecs_stepping_clear_schedule(s: EcsStepping, label: i32) -> EcsStepping {
+    // reset cursor/start for the matching schedule state
+    let idx: i32 = 0;
+    let n: i32 = len(s.schedule_states) as i32;
+    while idx < n {
+        if s.schedule_states[idx].label == label {
+            s.schedule_states[idx].cursor_node = 0;
+            s.schedule_states[idx].start_node = 0;
+        };
+        idx = idx + 1;
+    }
+    return s;
+}
+
+fn ecs_stepping_enable(s: EcsStepping) -> EcsStepping {
+    s.enabled = true;
+    s.action = ECS_STEPPING_ACTION_WAITING;
+    return s;
+}
+
+fn ecs_stepping_disable(s: EcsStepping) -> EcsStepping {
+    s.enabled = false;
+    s.action = ECS_STEPPING_ACTION_RUN_ALL;
+    return s;
+}
+
+fn ecs_stepping_is_enabled(s: EcsStepping) -> bool {
+    return s.enabled;
+}
+
+fn ecs_stepping_step_frame(s: EcsStepping) -> EcsStepping {
+    if s.enabled != true {
+        return s;
+    };
+    s.action = ECS_STEPPING_ACTION_STEP;
+    return s;
+}
+
+fn ecs_stepping_continue_frame(s: EcsStepping) -> EcsStepping {
+    if s.enabled != true {
+        return s;
+    };
+    s.action = ECS_STEPPING_ACTION_CONTINUE;
+    return s;
+}
+
+fn ecs_stepping_action(s: EcsStepping) -> i32 {
+    return s.action;
+}
+
+// always_run_node: sets behavior for (label, node) to AlwaysRun
+fn ecs_stepping_always_run_node(s: EcsStepping, label: i32, node: i32) -> EcsStepping {
+    let b = EcsSteppingNodeBehavior { label: label, node: node, behavior: ECS_SB_ALWAYS_RUN };
+    s.behaviors.push(b);
+    return s;
+}
+
+fn ecs_stepping_never_run_node(s: EcsStepping, label: i32, node: i32) -> EcsStepping {
+    let b = EcsSteppingNodeBehavior { label: label, node: node, behavior: ECS_SB_NEVER_RUN };
+    s.behaviors.push(b);
+    return s;
+}
+
+fn ecs_stepping_set_breakpoint_node(s: EcsStepping, label: i32, node: i32) -> EcsStepping {
+    let b = EcsSteppingNodeBehavior { label: label, node: node, behavior: ECS_SB_BREAK };
+    s.behaviors.push(b);
+    return s;
+}
+
+fn ecs_stepping_clear_breakpoint_node(s: EcsStepping, label: i32, node: i32) -> EcsStepping {
+    let out = Vec::new();
+    let idx: i32 = 0;
+    let n: i32 = len(s.behaviors) as i32;
+    while idx < n {
+        let b = s.behaviors[idx];
+        if b.label != label || b.node != node {
+            out.push(b);
+        };
+        idx = idx + 1;
+    }
+    s.behaviors = out;
+    return s;
+}
+
+fn ecs_stepping_clear_node(s: EcsStepping, label: i32, node: i32) -> EcsStepping {
+    let out = Vec::new();
+    let idx: i32 = 0;
+    let n: i32 = len(s.behaviors) as i32;
+    while idx < n {
+        let b = s.behaviors[idx];
+        if b.label != label || b.node != node {
+            out.push(b);
+        };
+        idx = idx + 1;
+    }
+    s.behaviors = out;
+    return s;
+}
+
+// skipped_systems(schedule): when action == RunAll returns None; else returns (found, bitset vec)
+fn ecs_stepping_skipped_systems(s: EcsStepping, label: i32) -> (bool, i32, i32) {
+    // returns (found, count, first_node) - primitives-only API to avoid SA backend leak on returned freshly-built Vec
+    let act = s.action;
+    let states = s.schedule_states;
+    let behaviors = s.behaviors;
+    let _sv = s.schedules;
+    let _so = s.schedule_order;
+    let _en = s.enabled;
+    let _pr = s.previous_schedule;
+    let _rdy = s.ready;
+    if act == ECS_STEPPING_ACTION_RUN_ALL {
+        return (false, 0, 0);
+    };
+    let count: i32 = 0;
+    let first_node: i32 = 0;
+    let found: bool = false;
+    let idx: i32 = 0;
+    let n: i32 = len(states) as i32;
+    while idx < n {
+        if states[idx].label == label {
+            found = true;
+        };
+        idx = idx + 1;
+    }
+    if found == true {
+        let bi: i32 = 0;
+        let nb: i32 = len(behaviors) as i32;
+        while bi < nb {
+            let b_label = behaviors[bi].label;
+            if b_label == label {
+                let b_beh = behaviors[bi].behavior;
+                let b_node = behaviors[bi].node;
+                if b_beh == ECS_SB_NEVER_RUN {
+                    if count == 0 {
+                        first_node = b_node;
+                    };
+                    count = count + 1;
+                };
+                if b_beh == ECS_SB_BREAK && act == ECS_STEPPING_ACTION_WAITING {
+                    if count == 0 {
+                        first_node = b_node;
+                    };
+                    count = count + 1;
+                };
+            };
+            bi = bi + 1;
+        }
+    };
+    return (found, count, first_node);
+}
+fn ecs_stepping_behavior_for(s: EcsStepping, label: i32, node: i32) -> i32 {
+    let idx: i32 = 0;
+    let n: i32 = len(s.behaviors) as i32;
+    while idx < n {
+        if s.behaviors[idx].label == label && s.behaviors[idx].node == node {
+            return s.behaviors[idx].behavior;
+        };
+        idx = idx + 1;
+    }
+    return ECS_SB_CONTINUE;
+}
+
+fn ecs_stepping_has_schedule(s: EcsStepping, label: i32) -> bool {
+    let idx: i32 = 0;
+    let n: i32 = len(s.schedules) as i32;
+    while idx < n {
+        if s.schedules[idx] == label {
+            return true;
+        };
+        idx = idx + 1;
+    }
+    return false;
+}

@@ -440,3 +440,9 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_system_combinator_isolated.sla
 - Tests: 2447 → 2468, lib modules: 199 → 200, test files: 122 → 123
 - src/system/combinator.rs (CombinatorSystem, PipeSystem, IntoPipeSystem, IsPipeSystemMarker) + src/system/mod.rs (assert_is_system/assert_is_read_only_system/assert_system_does_not_conflict) ✓
+
+## Batch 74 — schedule_stepping (2026-07-03)
+- lib/schedule_stepping.sla: Stepping controller — mirrors src/schedule/stepping.rs
+- 23 tests — test_ecs_lib_schedule_stepping_isolated.sla
+- Tests: 2468 → 2491, lib modules: 200 → 201, test files: 123 → 124
+- src/schedule/stepping.rs (Stepping + Action + SystemBehavior + schedules + cursor + add/remove/clear schedule + enable/disable + step/continue frame + always_run/never_run/set/clear breakpoint/clear node + skipped_systems) ✓

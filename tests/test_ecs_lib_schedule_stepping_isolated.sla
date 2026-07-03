@@ -1,0 +1,176 @@
+@import "lib/schedule_stepping.sla"
+
+// Isolated tests for lib/schedule_stepping.sla — Stepping controller.
+// Bevy reference: src/schedule/stepping.rs
+
+@test "stepping_new_defaults"() {
+    let s = ecs_stepping_new();
+    if ecs_stepping_is_enabled(s) != false { panic(90762); };
+    if ecs_stepping_action(s) != 0 { panic(90763); };
+}
+
+@test "stepping_enable"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_enable(s);
+    if ecs_stepping_is_enabled(s2) != true { panic(90764); };
+    if ecs_stepping_action(s2) != 1 { panic(90765); };
+}
+
+@test "stepping_disable"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_enable(s);
+    let s3 = ecs_stepping_disable(s2);
+    if ecs_stepping_is_enabled(s3) != false { panic(90766); };
+    if ecs_stepping_action(s3) != 0 { panic(90767); };
+}
+
+@test "stepping_step_frame_when_enabled"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_enable(s);
+    let s3 = ecs_stepping_step_frame(s2);
+    if ecs_stepping_action(s3) != 3 { panic(90768); };
+}
+
+@test "stepping_step_frame_when_disabled_noop"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_step_frame(s);
+    if ecs_stepping_action(s2) != 0 { panic(90769); };
+}
+
+@test "stepping_continue_frame_when_enabled"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_enable(s);
+    let s3 = ecs_stepping_continue_frame(s2);
+    if ecs_stepping_action(s3) != 2 { panic(90770); };
+}
+
+@test "stepping_continue_frame_when_disabled_noop"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_continue_frame(s);
+    if ecs_stepping_action(s2) != 0 { panic(90771); };
+}
+
+@test "stepping_schedules_not_ready"() {
+    let s = ecs_stepping_new();
+    let r = ecs_stepping_schedules(s);
+    let ok0 = r.0;
+    if ok0 != false { panic(90772); };
+}
+
+@test "stepping_schedules_ready"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 100);
+    let s3 = ecs_stepping_begin_frame(s2);
+    let r = ecs_stepping_schedules(s3);
+    let ok0 = r.0;
+    let sched = r.1;
+    if ok0 != true { panic(90773); };
+    if len(sched) as i32 != 1 { panic(90774); };
+}
+
+@test "stepping_add_schedule"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 1);
+    if ecs_stepping_has_schedule(s2, 1) != true { panic(90775); };
+    if ecs_stepping_has_schedule(s2, 2) != false { panic(90776); };
+}
+
+@test "stepping_remove_schedule"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 1);
+    let s3 = ecs_stepping_remove_schedule(s2, 1);
+    if ecs_stepping_has_schedule(s3, 1) != false { panic(90777); };
+}
+
+@test "stepping_clear_schedule_resets_cursor"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 7);
+    let r = ecs_stepping_cursor(s2);
+    let ok0 = r.0;
+    let label0 = r.1;
+    let node0 = r.2;
+    if ok0 != true { panic(90778); };
+    if label0 != 7 { panic(90779); };
+    if node0 != 0 { panic(90780); };
+}
+
+@test "stepping_cursor_empty"() {
+    let s = ecs_stepping_new();
+    let r = ecs_stepping_cursor(s);
+    let ok0 = r.0;
+    if ok0 != false { panic(90781); };
+}
+
+@test "stepping_always_run_node"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_always_run_node(s, 1, 5);
+    if ecs_stepping_behavior_for(s2, 1, 5) != 0 { panic(90782); };
+}
+
+@test "stepping_never_run_node"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_never_run_node(s, 1, 5);
+    if ecs_stepping_behavior_for(s2, 1, 5) != 1 { panic(90783); };
+}
+
+@test "stepping_set_breakpoint_node"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_set_breakpoint_node(s, 1, 5);
+    if ecs_stepping_behavior_for(s2, 1, 5) != 2 { panic(90784); };
+}
+
+@test "stepping_behavior_unregistered_defaults_continue"() {
+    let s = ecs_stepping_new();
+    if ecs_stepping_behavior_for(s, 1, 9) != 3 { panic(90785); };
+}
+
+@test "stepping_clear_breakpoint_node"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_set_breakpoint_node(s, 1, 5);
+    let s3 = ecs_stepping_clear_breakpoint_node(s2, 1, 5);
+    if ecs_stepping_behavior_for(s3, 1, 5) != 3 { panic(90786); };
+}
+
+@test "stepping_clear_node"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_always_run_node(s, 1, 5);
+    let s3 = ecs_stepping_clear_node(s2, 1, 5);
+    if ecs_stepping_behavior_for(s3, 1, 5) != 3 { panic(90787); };
+}
+
+@test "stepping_skipped_systems_runall_returns_none"() {
+    let s = ecs_stepping_new();
+    let r = ecs_stepping_skipped_systems(s, 1);
+    if r.0 != false { panic(90788); };
+}
+
+@test "stepping_skipped_systems_never_run"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 7);
+    let s3 = ecs_stepping_never_run_node(s2, 7, 3);
+    let s4 = ecs_stepping_enable(s3);
+    let s5 = ecs_stepping_step_frame(s4);
+    let r = ecs_stepping_skipped_systems(s5, 7);
+    if r.0 != true { panic(90789); };
+    if r.1 != 1 { panic(90790); };
+    if r.2 != 3 { panic(90791); };
+}
+
+@test "stepping_skipped_systems_unknown_schedule"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_enable(s);
+    let r = ecs_stepping_skipped_systems(s2, 99);
+    if r.0 != false { panic(90792); };
+}
+
+@test "stepping_skipped_systems_waiting_break"() {
+    let s = ecs_stepping_new();
+    let s2 = ecs_stepping_add_schedule(s, 5);
+    let s3 = ecs_stepping_set_breakpoint_node(s2, 5, 2);
+    let s4 = ecs_stepping_enable(s3);
+    // After enable, action = WAITING, so Break nodes also get added to skipped.
+    let r = ecs_stepping_skipped_systems(s4, 5);
+    if r.0 != true { panic(90793); };
+    if r.1 != 1 { panic(90794); };
+    if r.2 != 2 { panic(90795); };
+}
