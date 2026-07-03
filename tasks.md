@@ -1389,3 +1389,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 109 — hot_patch (DONE 2026-07-03)
 - [done] lib/hot_patch.sla: HotPatched message + HotPatchChanges resource + is_changed_after + is_none_or + should_refresh_hotpatch + refresh_hotpatch. 19 tests passing on SA backend (panic 92319–92345).
+
+## Batch 110 — required_components_error (DONE 2026-07-03)
+- [done] lib/required_components_error.sla: RequiredComponentsError (3 variants) + lifecycle constants (ADD/INSERT/DISCARD/REMOVE/DESPAWN/IS_RESOURCE). 7 tests passing on SA backend (panic 92346–92375).
