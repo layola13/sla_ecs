@@ -556,3 +556,10 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_query_filtered_set_isolated.sla
 - Tests: 2821 → 2840, lib modules: 215 → 216, test files: 140 → 141
 - src/query/access.rs (FilteredAccessSet new/combined_access/filtered_accesses/is_compatible/get_conflicts/get_conflicts_single/add/add_resource_read/_write/add_unfiltered_read_all_components/add_unfiltered_write_all_components/extend/read_all/write_all/clear + Access::is_compatible helper) ✓
+
+
+## Batch 92 — filtered_resource_builders (2026-07-03)
+- lib/filtered_resource_builders.sla: FilteredResourcesBuilder + FilteredResourcesMutBuilder — mirrors src/world/filtered_resource.rs (gaps not in lib/filtered_resource.sla or lib/system_builder.sla)
+- 12 tests — test_ecs_lib_filtered_resource_builders_isolated.sla
+- Tests: 2840 → 2852, lib modules: 216 → 217, test files: 141 → 142
+- src/world/filtered_resource.rs (FilteredResourcesBuilder new/access/add_read_all/add_read[_by_id]/build + FilteredResourcesMutBuilder new/access/add_read_all/add_read[_by_id]/add_write_all/add_write[_by_id]/build) ✓
