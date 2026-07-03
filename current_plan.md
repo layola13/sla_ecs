@@ -355,3 +355,9 @@ Last updated: 2026-07-02
 - 15 tests — test_ecs_lib_observer_entity_cloning_isolated.sla
 - Tests: 2103 → 2118, lib modules: 186 → 187, test files: 108 → 109
 - src/observer/entity_cloning.rs (EntityClonerBuilder::add_observers/component_clone_observed_by) ✓
+
+## Batch 60 — parallel_scope (2026-07-03)
+- lib/parallel_scope.sla: EcsParallelCommands + EcsParallelCommandQueue (ParallelCommandQueue new/command/len/count_for_thread/get_commands_for_thread/get_all_commands/clear/is_empty + ParallelCommands new/command_scope/total_commands/queue_count/clear/is_empty) — mirrors system/commands/parallel_scope.rs
+- 11 tests — test_ecs_lib_parallel_scope_isolated.sla
+- Tests: 2118 → 2129, lib modules: 187 → 188, test files: 109 → 110
+- src/system/commands/parallel_scope.rs (ParallelCommands) ✓
