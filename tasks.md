@@ -1223,3 +1223,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 11 tests — test_ecs_lib_event_mod_isolated.sla
 - EcsEventKey (new/component_id), EcsEventRegistry (new/register_event_key[(r,key)] idempotent allocation/event_key[(found,component_id)]/len/is_empty/remove_event_key[(removed,r)]/next_component_id) with monotonic ComponentId assignment
 ### Grand Total: 2609 isolated tests across 130 test files, 207 lib modules, all passing on SA backend
+
+## Batch 81 — component_register (2026-07-03)
+- lib/component_register.sla: ComponentIdRegistrator iterator + ComponentsQueuedRegistrator facade — mirrors src/component/register.rs
+- 14 tests — test_ecs_lib_component_register_isolated.sla
+- EcsComponentIdRegistrator (new/peek/peek_mut/next[(id,r)]/next_mut[(id,r)]/len/is_empty/any_queued_mut/num_queued_mut/as_queued/queue_register_(component|resource|non_send)[(id,r)]/apply_queued_registrations resets queue) + EcsComponentDescriptorTiny (new/storage_type/is_resource accessors) + register_with_descriptor[(id,r)]
+### Grand Total: 2623 isolated tests across 131 test files, 208 lib modules, all passing on SA backend

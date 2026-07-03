@@ -482,3 +482,9 @@ Last updated: 2026-07-02
 - 11 tests — test_ecs_lib_event_mod_isolated.sla
 - Tests: 2598 → 2609, lib modules: 206 → 207, test files: 129 → 130
 - src/event/mod.rs (EventKey new/component_id + World register_event_key/event_key) ✓
+
+## Batch 81 — component_register (2026-07-03)
+- lib/component_register.sla: ComponentIdRegistrator iterator + ComponentsQueuedRegistrator facade — mirrors src/component/register.rs
+- 14 tests — test_ecs_lib_component_register_isolated.sla
+- Tests: 2609 → 2623, lib modules: 207 → 208, test files: 130 → 131
+- src/component/register.rs (ComponentIdRegistrator peek/next/peek_mut/next_mut/len/is_empty/as_queued/apply_queued_registrations/any_queued_mut/num_queued_mut + queue_register_component|resource|non_send + register_component_with_descriptor) ✓

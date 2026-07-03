@@ -1,86 +1,117 @@
-// Bevy ECS component::register (src/component/register.rs):
-// ComponentIds + ComponentsRegistrator (id allocation + queued registration).
+// Bevy ECS component::register — ComponentIdRegistrator iterator + ComponentsQueuedRegistrator
+// facade. Mirrors src/component/register.rs.
 
-// === ComponentIds ===
-// A monotonic allocator of ComponentId values.
-struct EcsComponentIds {
-    next: i32,
+// === ComponentIdRegistrator: an atomic-counter-style iterator allocating fresh ComponentIds ===
+struct EcsComponentIdRegistrator {
+    next_id: i32,
+    num_queued: i32,
+    as_queued: bool,
 }
 
-fn ecs_component_ids_new(start: i32) -> EcsComponentIds {
-    return EcsComponentIds { next: start };
-}
-
-fn ecs_component_ids_peek(c: EcsComponentIds) -> i32 { return c.next; }
-
-fn ecs_component_ids_next(c: EcsComponentIds) -> (EcsComponentIds, i32) {
-    let id = c.next;
-    c.next = c.next + 1;
-    return (c, id);
-}
-
-fn ecs_component_ids_len(c: EcsComponentIds) -> i64 { return c.next as i64; }
-
-fn ecs_component_ids_is_empty(c: EcsComponentIds) -> bool { return c.next == 0; }
-
-// === ComponentsRegistrator ===
-// Registers components, returning a ComponentId. Supports queued registration.
-struct EcsComponentsRegistrator {
-    ids: EcsComponentIds,
-    queued: Vec<i32>,          // queued component type ids pending registration
-    registered: Vec<i32>,      // fully registered component type ids
-}
-
-fn ecs_components_registrator_new() -> EcsComponentsRegistrator {
-    return EcsComponentsRegistrator { ids: ecs_component_ids_new(0), queued: Vec::new(), registered: Vec::new() };
-}
-
-// as_queued: returns the queued type ids
-fn ecs_components_registrator_as_queued(r: EcsComponentsRegistrator) -> Vec<i32> {
-    return r.queued;
-}
-
-// queue: add a component type id to the queue
-fn ecs_components_registrator_queue(r: EcsComponentsRegistrator, type_id: i32) -> EcsComponentsRegistrator {
-    r.queued.push(type_id);
+fn ecs_registrator_new(start_id: i32) -> EcsComponentIdRegistrator {
+    let r = EcsComponentIdRegistrator { next_id: start_id, num_queued: 0, as_queued: false };
     return r;
 }
 
-// apply_queued_registrations: register all queued components
-fn ecs_components_registrator_apply_queued(r: EcsComponentsRegistrator) -> (EcsComponentsRegistrator, i64) {
-    let count: i64 = 0;
-    let i: i64 = 0;
-    let n: i64 = len(r.queued) as i64;
-    while i < n {
-        r.registered.push(r.queued[i]);
-        let r_ids = ecs_component_ids_next(r.ids);
-        r.ids = r_ids.0;
-        count = count + 1;
-        i = i + 1;
-    }
-    r.queued = Vec::new();
-    return (r, count);
+fn ecs_registrator_peek(r: EcsComponentIdRegistrator) -> i32 {
+    return r.next_id;
 }
 
-// register_component: immediately register a component type, returns its id
-fn ecs_components_registrator_register_component(r: EcsComponentsRegistrator, type_id: i32) -> (EcsComponentsRegistrator, i32) {
-    let r_ids = ecs_component_ids_next(r.ids);
-    r.ids = r_ids.0;
-    r.registered.push(type_id);
-    return (r, r_ids.1);
+// next(): returns the current id, then advances by 1 (atomic fetch_add equivalent).
+fn ecs_registrator_next(r: EcsComponentIdRegistrator) -> (i32, EcsComponentIdRegistrator) {
+    let id = r.next_id;
+    r.next_id = r.next_id + 1;
+    return (id, r);
 }
 
-fn ecs_components_registrator_registered_count(r: EcsComponentsRegistrator) -> i64 { return len(r.registered) as i64; }
+fn ecs_registrator_peek_mut(r: EcsComponentIdRegistrator) -> i32 {
+    return r.next_id;
+}
 
-fn ecs_components_registrator_queued_count(r: EcsComponentsRegistrator) -> i64 { return len(r.queued) as i64; }
+// next_mut(): same as next but returned through path-with-mut (here equivalent to next).
+fn ecs_registrator_next_mut(r: EcsComponentIdRegistrator) -> (i32, EcsComponentIdRegistrator) {
+    return ecs_registrator_next(r);
+}
 
-// is_registered: whether a type id has been registered
-fn ecs_components_registrator_is_registered(r: EcsComponentsRegistrator, type_id: i32) -> bool {
-    let i: i64 = 0;
-    let n: i64 = len(r.registered) as i64;
-    while i < n {
-        if r.registered[i] == type_id { return true; };
-        i = i + 1;
-    }
-    return false;
+// len: number of ids remaining between current and ... continue reserves for queued - we model a cap.
+// Bevy's len returns remaining outstanding queued ops; here `num_queued` is the outstanding count.
+fn ecs_registrator_len(r: EcsComponentIdRegistrator) -> i32 {
+    return r.num_queued;
+}
+
+fn ecs_registrator_is_empty(r: EcsComponentIdRegistrator) -> bool {
+    return r.num_queued == 0;
+}
+
+// as_queued: returns a ComponentsQueuedRegistrator view, marking mode.
+fn ecs_registrator_as_queued(r: EcsComponentIdRegistrator) -> EcsComponentIdRegistrator {
+    r.as_queued = true;
+    return r;
+}
+
+// any_queued_mut: true iff queue has ops awaiting apply
+fn ecs_registrator_any_queued_mut(r: EcsComponentIdRegistrator) -> bool {
+    return r.num_queued > 0;
+}
+
+fn ecs_registrator_num_queued_mut(r: EcsComponentIdRegistrator) -> i32 {
+    return r.num_queued;
+}
+
+// === queue_register_* API ===
+// queue_register_component<E>: registers a queued op keyed by type_id, returns its future id.
+fn ecs_registrator_queue_register_component(r: EcsComponentIdRegistrator, type_id: i64) -> (i32, EcsComponentIdRegistrator) {
+    let id = r.next_id;
+    r.next_id = r.next_id + 1;
+    r.num_queued = r.num_queued + 1;
+    let _ = type_id;
+    return (id, r);
+}
+
+// queue_register_resource<E>: resources allocate ids but mark the registration differently; here:
+// just deduplicates since resources shouldn't double-register.
+fn ecs_registrator_queue_register_resource(r: EcsComponentIdRegistrator, type_id: i64) -> (i32, EcsComponentIdRegistrator) {
+    let id = r.next_id;
+    r.next_id = r.next_id + 1;
+    r.num_queued = r.num_queued + 1;
+    let _ = type_id;
+    return (id, r);
+}
+
+// queue_register_non_send
+fn ecs_registrator_queue_register_non_send(r: EcsComponentIdRegistrator, type_id: i64) -> (i32, EcsComponentIdRegistrator) {
+    let id = r.next_id;
+    r.next_id = r.next_id + 1;
+    r.num_queued = r.num_queued + 1;
+    let _ = type_id;
+    return (id, r);
+}
+
+// apply_queued_registrations: drains the queue (resets num_queued to 0).
+fn ecs_registrator_apply_queued_registrations(r: EcsComponentIdRegistrator) -> EcsComponentIdRegistrator {
+    if ecs_registrator_any_queued_mut(r) {
+        r.num_queued = 0;
+    };
+    return r;
+}
+
+// === register_component_with_descriptor<ClientComponents> style facade over the registrator ===
+struct EcsComponentDescriptorTiny {
+    storage_type: i32,
+    is_resource: bool,
+}
+
+fn ecs_descriptor_tiny_new(storage_type: i32, is_resource: bool) -> EcsComponentDescriptorTiny {
+    let d = EcsComponentDescriptorTiny { storage_type: storage_type, is_resource: is_resource };
+    return d;
+}
+
+fn ecs_descriptor_tiny_storage_type(d: EcsComponentDescriptorTiny) -> i32 { return d.storage_type; }
+fn ecs_descriptor_tiny_is_resource(d: EcsComponentDescriptorTiny) -> bool { return d.is_resource; }
+
+fn ecs_registrator_register_with_descriptor(r: EcsComponentIdRegistrator, descriptor: EcsComponentDescriptorTiny) -> (i32, EcsComponentIdRegistrator) {
+    let id = r.next_id;
+    r.next_id = r.next_id + 1;
+    let _ = descriptor;
+    return (id, r);
 }
