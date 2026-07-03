@@ -361,3 +361,9 @@ Last updated: 2026-07-02
 - 11 tests — test_ecs_lib_parallel_scope_isolated.sla
 - Tests: 2118 → 2129, lib modules: 187 → 188, test files: 109 → 110
 - src/system/commands/parallel_scope.rs (ParallelCommands) ✓
+
+## Batch 61 — change_detection_params (2026-07-03)
+- lib/change_detection_params.sla: Res + ResMut + NonSend + NonSendMut + Ref + Mut + MutUntyped — mirrors change_detection/params.rs
+- 22 tests — test_ecs_lib_change_detection_params_isolated.sla
+- Tests: 2129 → 2151, lib modules: 188 → 189, test files: 110 → 111
+- src/change_detection/params.rs (Res/ResMut/NonSend/NonSendMut/Ref/Mut/MutUntyped) ✓
