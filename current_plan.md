@@ -337,3 +337,9 @@ Last updated: 2026-07-02
 - src/reflect/event.rs (ReflectEvent) ✓
 - src/reflect/map_entities.rs (ReflectMapEntities) ✓
 - src/reflect/entity_commands.rs (ReflectCommandExt) ✓
+
+## Batch 57 — table_mod (2026-07-03)
+- lib/table_mod.sla: EcsTable + EcsTableId + EcsTableRow + EcsTables (TableId/TableRow new/value/index + Table new/add_column/allocate/get/set/get_added_tick/get_changed_tick/swap_remove/get_entity_at_row/has_column/get_column_index + Tables new/get/create) — mirrors storage/table/mod.rs
+- 23 tests — test_ecs_lib_table_mod_isolated.sla
+- Tests: 2061 → 2084, lib modules: 184 → 185, test files: 106 → 107
+- src/storage/table/mod.rs (Table/TableId/TableRow/Tables) ✓
