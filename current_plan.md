@@ -494,3 +494,9 @@ Last updated: 2026-07-02
 - 17 tests — test_ecs_lib_observer_descriptor_extras_isolated.sla
 - Tests: 2623 → 2640, lib modules: 208 → 209, test files: 131 → 132
 - src/observer/distributed_storage.rs (ObserverDescriptor with_event_keys|with_components|with_entities + event_keys()|components()|entities() accessor parity + Observer last_trigger_id/despawned_watched_entities/run + with_error_handler/with_name) ✓
+
+## Batch 83 — query_builder_extras (2026-07-03)
+- lib/query_builder_extras.sla: QueryBuilder id-by-id variants + World mut + access view + transmute/build gap — mirrors src/query/builder.rs
+- 15 tests — test_ecs_lib_query_builder_extras_isolated.sla
+- Tests: 2640 → 2655, lib modules: 209 → 210, test files: 132 → 133
+- src/query/builder.rs (QueryBuilder with_id/without_id/world_mut/access + transmute/transmute_filtered + build) ✓

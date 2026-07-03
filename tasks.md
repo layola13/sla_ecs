@@ -1235,3 +1235,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 17 tests — test_ecs_lib_observer_descriptor_extras_isolated.sla
 - EcsObserverDescriptorV2 (new/with_event_key/with_component/with_entity/event_key_count/event_key_at[(found,key)]/component_count/component_at[(found,id)]/entity_count/entity_at[(found,entity)]), EcsObserverRunState (new/last_trigger_id/despawned_watched_entities/run/record_despawned/reset), EcsObserverV2 (new/with_event_key/with_component/with_entity/with_error_handler/with_name/run/error_handler_id/name_id/last_trigger_id/despawned_watched_entities/describe_counts[(ekc,cc,ec)])
 ### Grand Total: 2640 isolated tests across 132 test files, 209 lib modules, all passing on SA backend
+
+## Batch 83 — query_builder_extras (2026-07-03)
+- lib/query_builder_extras.sla: QueryBuilder id-by-id variants + World mut + access view + transmute/build gap — mirrors src/query/builder.rs
+- 15 tests — test_ecs_lib_query_builder_extras_isolated.sla
+- EcsQueryBuilder2 (new/world/world_mut/data/ref_id/mut_id/filter/with/with_id/without/without_id/optional/and/or/extend_access_count/access[(dc,wc,woc,or_groups)]/data_count/with_count/without_count/or_groups/optional_count/transmute/transmute_filtered/build[_id])
+### Grand Total: 2655 isolated tests across 133 test files, 210 lib modules, all passing on SA backend
