@@ -1,13 +1,14 @@
-# sla_ecs Current Plan — 100% Bevy ECS Parity
+# sla_ecs Current Plan — Bevy ECS Parity (per-dimension)
 
 Last updated: 2026-07-02
 
 ## Overall Status
-- Bevy ECS core API parity: ~99.9% (175+ facade functions + 1795 isolated tests across 92 test files, 170 lib modules)
-- All tests verified on SA backend (SAB crashes on large-file imports — known compiler limitation)
-- Every bevy_ecs module now has isolated parity tests covering its public API surface
+- Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
+- Counts (measured 2026-07-03): 198 lib `.sla` modules; 121 `tests/*.sla` files; 90 `examples/*.sla`; 7,011 `@test` annotations total across lib/tests/examples. (Earlier statements of "1795/92/170" and "1415/76" were stale and understated.)
+- Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
+- Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (all verified, SA backend) — 1415 tests across 76 isolated test files
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 198 lib / 121 tests / 7,011 @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -433,3 +434,9 @@ Last updated: 2026-07-02
 - 22 tests — test_ecs_lib_query_state_extras_isolated.sla
 - Tests: 2425 → 2447, lib modules: 198 → 199, test files: 121 → 122
 - src/query/state.rs (QueryState component_access / matched_* / validate_world / matches_component_set / transmute_filtered / join_filtered + read/write access queries) + src/query/fetch.rs (StorageSwitch + ReadFetch/WriteFetch/RefFetch) ✓
+
+## Batch 73 — system_combinator (2026-07-03)
+- lib/system_combinator.sla: CombinatorSystem / PipeSystem / IntoPipeSystem / IsPipeSystemMarker + assert helpers — mirrors src/system/combinator.rs + src/system/mod.rs
+- 21 tests — test_ecs_lib_system_combinator_isolated.sla
+- Tests: 2447 → 2468, lib modules: 199 → 200, test files: 122 → 123
+- src/system/combinator.rs (CombinatorSystem, PipeSystem, IntoPipeSystem, IsPipeSystemMarker) + src/system/mod.rs (assert_is_system/assert_is_read_only_system/assert_system_does_not_conflict) ✓

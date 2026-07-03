@@ -1,3 +1,9 @@
+<!-- 历史/过时快照 ——— 本文件生成于 2026-06-21，其中的数字（54/54 lib、41–42 examples、
+219/219 tasks、"测试通过率 100%"、"100%/92% 对等"）已过时且整体偏高，仅作历史保留。
+当前权威状态以 README.md 的 "Bevy ECS Parity Assessment" 一节为准
+（2026-07-03：按维度 API 表面 ~93–96% / 行为 ~82–87%；198 lib / 121 tests / 90 examples / 7,011 @test；
+通用多线程执行器与运行时反射仍非完成）。下文为原始历史内容。 -->
+
 # Recent Updates to sla_ecs
 
 ## 2026-06-21: Query Combinator Extension and Comprehensive Testing

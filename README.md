@@ -416,7 +416,9 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Bevy ECS Parity Assessment
 
-Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-01, re-verified 2026-07-01), **sla_ecs achieves ~99.95% Bevy ECS Core API parity**. 2447 isolated tests across 122 test files (199 lib modules) cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage — all passing on SA backend. The remaining gap is the SAB-backend codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
+Based on an audit of `~/projects/bevy/crates/bevy_ecs` (re-verified 2026-07-03), sla_ecs's completion varies by dimension — **API surface parity ~93–96%, behavioral parity ~82–87%**. The single headline figures below are one-dimensional summaries and must be read together with the ⚠️/❌/Gaps sections: the two genuinely behavioral gaps (general dynamic multithreaded executor and runtime reflection) are described there and are excluded from the fully-implemented claim.
+
+Measured counts: 198 lib `.sla` modules, 121 `tests/*.sla` files, 90 `examples/*.sla`, and **7,011 `@test` annotations** across `lib/`+`tests/`+`examples/`. (The earlier '2447/122/199' sentence understated the test count by ~2.9x; it is updated here.) All listed modules cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage, verified on the SA backend. The SAB backend still hits a codegen limitation on large-file imports (SA backend is the verified fallback for isolated tests).
 
 ### ✅ Production-Ready (Fully Implemented + Verified)
 - Entity allocation with generation and free-list recycling
@@ -443,7 +445,7 @@ Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-0
 - **EntityMapper** entity remapping for cloning/serialization
 - **Result<T> error handling** (`ecs_world_try_get`/`try_get_resource`/`try_query_single`)
 - **Typed SystemSet/ScheduleLabel** via traits (`EcsScheduleLabelTrait`/`EcsSystemSetTrait`)
-- **Reflection** (`EcsReflect` trait + `EcsReflectComponent` fn-pointer table, Bevy `Reflect`/`ReflectComponent` parity)
+- **Reflection ECS surface** (fn-pointer tables `EcsReflectComponent`/`ReflectFromWorld`/`ReflectEvent` mirror Bevy's `Reflect*Fns` shapes; this is API surface only — not full runtime reflection, see ❌ below)
 - **Unified World facade** covering full `bevy_ecs::world::World` public API
 - **System Registry** (`register_system`/`run_system`/`unregister_system`/`run_system_cached`, Bevy `system_registry.rs` parity)
 - **EntityCommands completeness** (`try_insert`/`remove_if`/`try_remove`/`retain`/`insert_if_new`/`trigger`/`observe`/entry pattern: `or_insert`/`or_default`/`or_from_world`/`and_modify`)
@@ -452,12 +454,14 @@ Based on a detailed audit of `~/projects/bevy/crates/bevy_ecs` (conducted 2025-0
 - **Archetype + Entity allocator + Edges + Storage** (alloc/free with generation recycling, archetype edges for insert/remove transitions, Table columns, SparseSet)
 
 ### ⚠️ Partially Implemented
-- Multi-threaded mutable executor: read-only and mutable parallel runners (`ecs_world_run_readonly_batch_parallel` / `ecs_world_run_mut_batch_parallel` + `EcsUnsafeWorldCell`) implemented in isolated `lib/parallel_runner.sla` (shares world by `Arc<*World>` raw pointer to avoid the large-composite Arc codegen gap) and verified at runtime on the SA backend. SAB still hits its own codegen gap on this path (SA is the verified fallback).
+- **Multithreaded parallel execution — partial, one wired path and one unwired path:**
+  - *Wired & verified:* `lib/parallel_runner.sla` provides real pthread-backed disjoint mutable / read-only batch runners `ecs_parallel_run_mut_batch` and `ecs_parallel_run_readonly_batch` (two systems share the world via `Arc<*TableErasedWorld<R,M>>` and run on two `thread::spawn` calls). Backed by the sla `thread::spawn`/`join` lowering -> `sa_std/thread.sa` macros -> sci `sa_pthread_host.c` libpthread runtime. Verified by `tests/test_ecs_mut_parallel.sla` on the SA backend. (The function names `ecs_world_run_readonly_batch_parallel` / `ecs_world_run_mut_batch_parallel` quoted in earlier revisions of this file do not exist in code — the actual names are `ecs_parallel_run_*`.)
+  - *Unwired:* `lib/executor_multi_threaded.sla` faithfully mirrors Bevy's `ExecutorState` dependency-satisfaction state machine (ready/running/completed bitsets, dependency counts, exclusive/local thread flags) but contains **no `thread::spawn`, no run/next/tick/drive main loop, and no TaskPool/Scope abstraction**, and has **no call sites outside its own isolated test file**. It is a faithful but not-yet-integrated component, not Bevy's general `MultiThreadedExecutor`. SAB still hits its codegen gap on the wired path (SA is the verified fallback).
 
 ### ❌ Not Applicable / Compiler-Limited
-- Full `bevy_reflect` derive + `AppTypeRegistry` interning: SLA has no runtime `TypeId`/derive-Reflect; the ECS-relevant `Reflect`/`ReflectComponent` surface is implemented as library types.
+- Full `bevy_reflect` derive + `AppTypeRegistry` interning: SLA has no runtime `TypeId`/derive-Reflect, so the `EcsReflect`/`ReflectComponent`/`ReflectFromWorld`/`ReflectEvent` types are **library fn-pointer tables that mirror the Bevy shapes**; they are not consulted by `World` (no runtime insert/remove/get via a reflected handle) and there is no `AppTypeRegistry` (the present `EcsAuton` is a project-local numeric-id allocator, semantically different).
 
-All core Bevy README-level semantics are present and verified through end-to-end demos and focused test suites.
+All core Bevy README-level semantics (entity/component/bundle/world/query/system/schedule/observer/relationship/message/change-detection/storage CLI demo flow) are present and verified through end-to-end demos and focused test suites. The two genuinely incomplete areas — a general dynamic multithreaded executor and runtime reflection — remain as described above and are **not** counted in the fully-implemented list above.
 
 ## Current Gaps
 

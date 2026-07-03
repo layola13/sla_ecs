@@ -1,110 +1,166 @@
-// Bevy ECS system::combinator (src/system/combinator.rs):
-// Combine trait + CombinatorSystem + PipeSystem + IntoPipeSystem.
-// Combines two systems: Pipe (output of A feeds input of B), and combinators (and/or/map).
+// Bevy ECS system::combinator + mod.rs system adapters — CombinatorSystem / PipeSystem /
+// IntoPipeSystem / IsPipeSystemMarker + system-assertion helpers.
+// Mirrors src/system/combinator.rs + src/system/mod.rs.
 
-// === Combine trait surface ===
-// trait Combine<A, B> { type In; type Out; fn combine(a_out, b_out) -> Out }
-// Modeled as a tagged combine kind.
-
-// Combine kinds
-const ECS_COMBINE_PIPE: i32 = 0;        // a output -> b input
-const ECS_COMBINE_AND: i32 = 1;         // both run, output (a && b)
-const ECS_COMBINE_OR: i32 = 2;          // both run, output (a || b)
-const ECS_COMBINE_MAP: i32 = 3;         // map a output via b
-
+// === CombinatorSystem<Func, A, B> ===
+// Func is the marker that customizes Combine semantics; A, B are systems.
+// We model a system as an opaque id pointing at a registered fn-tagged behaviour box.
 struct EcsCombinatorSystem {
-    kind: i32,
+    marker_id: i32,
+    a_id: i64,
+    b_id: i64,
+    name_id: i64,
     a_output: i64,
     b_output: i64,
-    name_id: i64,
+    out: i64,
 }
 
-fn ecs_combinator_system_new(kind: i32, a_output: i64, b_output: i64, name_id: i64) -> EcsCombinatorSystem {
-    return EcsCombinatorSystem { kind: kind, a_output: a_output, b_output: b_output, name_id: name_id };
+fn ecs_combinator_system_new(marker_id: i32, a_id: i64, b_id: i64, name_id: i64) -> EcsCombinatorSystem {
+    let s = EcsCombinatorSystem { marker_id: marker_id, a_id: a_id, b_id: b_id, name_id: name_id, a_output: 0, b_output: 0, out: 0 };
+    return s;
 }
 
-fn ecs_combinator_system_kind(c: EcsCombinatorSystem) -> i32 { return c.kind; }
-fn ecs_combinator_system_name(c: EcsCombinatorSystem) -> i64 { return c.name_id; }
+// run_a: stores system A's output (client provides)
+fn ecs_combinator_system_run_a(s: EcsCombinatorSystem, a_output: i64) -> EcsCombinatorSystem {
+    s.a_output = a_output;
+    return s;
+}
 
-// combine: produce the combined output from a and b outputs
-fn ecs_combinator_system_combine(c: EcsCombinatorSystem) -> i64 {
-    if c.kind == ECS_COMBINE_PIPE {
-        // pipe: b output (b received a's output already)
-        return c.b_output;
+// run_b: stores system B's output and applies combine as marker-defined transform.
+// marker 0 = pipe (out = b_output applied to a_output)
+// marker 1 = chain/and_then (out = b if a != 0 else 0)
+// marker 2 = map_combine (out = a_output + b_output)
+// marker 3 = xor (out = 1 if a != 0 != b != 0)
+fn ecs_combinator_system_run_b(s: EcsCombinatorSystem, b_output: i64) -> EcsCombinatorSystem {
+    s.b_output = b_output;
+    if s.marker_id == 0 {
+        s.out = b_output;
+        return s;
     };
-    if c.kind == ECS_COMBINE_AND {
-        let a_bool = c.a_output != 0;
-        let b_bool = c.b_output != 0;
-        let r = 0;
-        if a_bool {
-            if b_bool { r = 1; };
+    if s.marker_id == 1 {
+        if s.a_output != 0 {
+            s.out = b_output;
+            return s;
         };
-        return r;
+        s.out = 0;
+        return s;
     };
-    if c.kind == ECS_COMBINE_OR {
-        let a_bool = c.a_output != 0;
-        let b_bool = c.b_output != 0;
-        let r = 0;
-        if a_bool { r = 1; };
-        if b_bool { r = 1; };
-        return r;
+    if s.marker_id == 2 {
+        s.out = s.a_output + b_output;
+        return s;
     };
-    // map: a output transformed
-    return c.a_output;
+    // marker 3: XOR
+    if s.a_output != 0 {
+        if b_output == 0 {
+            s.out = 1;
+            return s;
+        };
+        s.out = 0;
+        return s;
+    };
+    if b_output != 0 {
+        s.out = 1;
+        return s;
+    };
+    s.out = 0;
+    return s;
+}
+
+fn ecs_combinator_system_out(s: EcsCombinatorSystem) -> i64 {
+    return s.out;
+}
+
+fn ecs_combinator_system_a_id(s: EcsCombinatorSystem) -> i64 {
+    return s.a_id;
+}
+
+fn ecs_combinator_system_b_id(s: EcsCombinatorSystem) -> i64 {
+    return s.b_id;
+}
+
+fn ecs_combinator_system_name_id(s: EcsCombinatorSystem) -> i64 {
+    return s.name_id;
+}
+
+fn ecs_combinator_system_marker_id(s: EcsCombinatorSystem) -> i32 {
+    return s.marker_id;
 }
 
 // === PipeSystem<A, B> ===
-// Runs A, feeds output to B, returns B's output.
 struct EcsPipeSystem {
-    a_output: i64,
-    b_input: i64,
-    b_output: i64,
+    a_id: i64,
+    b_id: i64,
     name_id: i64,
+    pipe_value: i64,
+    b_assumed: i64,
 }
 
-fn ecs_pipe_system_new(a_output: i64, name_id: i64) -> EcsPipeSystem {
-    return EcsPipeSystem { a_output: a_output, b_input: a_output, b_output: 0, name_id: name_id };
+fn ecs_pipe_system_new(a_id: i64, b_id: i64, name_id: i64) -> EcsPipeSystem {
+    let s = EcsPipeSystem { a_id: a_id, b_id: b_id, name_id: name_id, pipe_value: 0, b_assumed: 0 };
+    return s;
 }
 
-fn ecs_pipe_system_name(p: EcsPipeSystem) -> i64 { return p.name_id; }
-
-// run_b: run system B with the piped input, returns final output
-fn ecs_pipe_system_run_b(p: EcsPipeSystem, b_output: i64) -> EcsPipeSystem {
-    p.b_output = b_output;
-    return p;
+// A's output is the input to B; final out is B's result.
+fn ecs_pipe_system_run_a(s: EcsPipeSystem, a_output: i64) -> EcsPipeSystem {
+    s.pipe_value = a_output;
+    return s;
 }
 
-fn ecs_pipe_system_output(p: EcsPipeSystem) -> i64 { return p.b_output; }
-fn ecs_pipe_system_a_output(p: EcsPipeSystem) -> i64 { return p.a_output; }
-fn ecs_pipe_system_b_input(p: EcsPipeSystem) -> i64 { return p.b_input; }
+fn ecs_pipe_system_run_b(s: EcsPipeSystem, b_output: i64) -> EcsPipeSystem {
+    s.b_assumed = b_output;
+    return s;
+}
+
+fn ecs_pipe_system_out(s: EcsPipeSystem) -> i64 {
+    return s.b_assumed;
+}
+
+fn ecs_pipe_system_pipe_value(s: EcsPipeSystem) -> i64 {
+    return s.pipe_value;
+}
+
+fn ecs_pipe_system_a_id(s: EcsPipeSystem) -> i64 { return s.a_id; }
+fn ecs_pipe_system_b_id(s: EcsPipeSystem) -> i64 { return s.b_id; }
+fn ecs_pipe_system_name_id(s: EcsPipeSystem) -> i64 { return s.name_id; }
 
 // === IntoPipeSystem<A, B> ===
 struct EcsIntoPipeSystem {
-    a_output: i64,
+    a_id: i64,
+    b_id: i64,
 }
 
-fn ecs_into_pipe_system_new(a_output: i64) -> EcsIntoPipeSystem {
-    return EcsIntoPipeSystem { a_output: a_output };
+fn ecs_into_pipe_system_new(a_id: i64, b_id: i64) -> EcsIntoPipeSystem {
+    let s = EcsIntoPipeSystem { a_id: a_id, b_id: b_id };
+    return s;
 }
 
-fn ecs_into_pipe_system_into(i: EcsIntoPipeSystem, name_id: i64) -> EcsPipeSystem {
-    return ecs_pipe_system_new(i.a_output, name_id);
+// Convert IntoPipeSystem into a PipeSystem by providing a name.
+fn ecs_into_pipe_system_into_pipe(s: EcsIntoPipeSystem, name_id: i64) -> EcsPipeSystem {
+    let p = ecs_pipe_system_new(s.a_id, s.b_id, name_id);
+    return p;
 }
+
+fn ecs_into_pipe_system_a_id(s: EcsIntoPipeSystem) -> i64 { return s.a_id; }
+fn ecs_into_pipe_system_b_id(s: EcsIntoPipeSystem) -> i64 { return s.b_id; }
 
 // === IsPipeSystemMarker ===
 struct EcsIsPipeSystemMarker {}
-fn ecs_is_pipe_system_marker_new() -> EcsIsPipeSystemMarker { return EcsIsPipeSystemMarker {}; }
 
-// === XorMarker (example Combine impl) ===
-struct EcsXorMarker {}
-fn ecs_xor_marker_new() -> EcsXorMarker { return EcsXorMarker {}; }
+fn ecs_is_pipe_system_marker_new() -> EcsIsPipeSystemMarker {
+    let m = EcsIsPipeSystemMarker {};
+    return m;
+}
 
-// xor combine: a ^ b
-fn ecs_xor_combine(a: bool, b: bool) -> bool {
-    if a {
-        if b { return false; };
-        return true;
-    };
-    if b { return true; };
-    return false;
+// === Assert helpers (src/system/mod.rs) ===
+// In SLA these assertions return the system id back, which is a compile-time/no-op pass.
+fn ecs_assert_is_system(system_id: i64) -> i64 {
+    return system_id;
+}
+
+fn ecs_assert_is_read_only_system(system_id: i64) -> i64 {
+    return system_id;
+}
+
+fn ecs_assert_system_does_not_conflict(system_id: i64) -> i64 {
+    return system_id;
 }

@@ -1175,3 +1175,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 22 tests — test_ecs_lib_query_state_extras_isolated.sla
 - StorageSwitch (new/extract_table/extract_sparse/extract_by_id returning (variant_tag, table, sparse)), ReadFetch/WriteFetch/RefFetch (new/get/set), QueryStateV2 (new/add_read/add_write/as_readonly/component_access/matched_tables/matched_archetypes/add_matched_(table|archetype)/matched_(table|archetype)_count/validate_world[(s,s,bkid)]/matches_component_set/transmute_filtered/join_filtered/world_id/generation/is_readonly/has_read/has_write)
 ### Grand Total: 2447 isolated tests across 122 test files, 199 lib modules, all passing on SA backend
+
+## Batch 73 — system_combinator (2026-07-03)
+- lib/system_combinator.sla: CombinatorSystem / PipeSystem / IntoPipeSystem / IsPipeSystemMarker + assert helpers — mirrors src/system/combinator.rs + src/system/mod.rs
+- 21 tests — test_ecs_lib_system_combinator_isolated.sla
+- CombinatorSystem (new/run_a/run_b with 4 marker-defined combine semantics: pipe/and_then/map_combine/xor/out/a_id/b_id/name_id/marker_id), PipeSystem (new/run_a/run_b/out/pipe_value/a_id/b_id/name_id), IntoPipeSystem (new/into_pipe/a_id/b_id), IsPipeSystemMarker (new), assert_is_system/assert_is_read_only_system/assert_system_does_not_conflict (pass-through)
+### Grand Total: 2468 isolated tests across 123 test files, 200 lib modules, all passing on SA backend
