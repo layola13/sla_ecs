@@ -4,7 +4,7 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 233 lib `.sla` modules; 159 `tests/*.sla` files; 90 `examples/*.sla`; 7,011 `@test` annotations total across lib/tests/examples. (Earlier statements of "1795/92/170" and "1415/76" were stale and understated.)
+- Counts (measured 2026-07-03): 234 lib `.sla` modules; 160 `tests/*.sla` files; 90 `examples/*.sla`; 7,011 `@test` annotations total across lib/tests/examples. (Earlier statements of "1795/92/170" and "1415/76" were stale and understated.)
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 

@@ -1392,3 +1392,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 110 — required_components_error (DONE 2026-07-03)
 - [done] lib/required_components_error.sla: RequiredComponentsError (3 variants) + lifecycle constants (ADD/INSERT/DISCARD/REMOVE/DESPAWN/IS_RESOURCE). 7 tests passing on SA backend (panic 92346–92375).
+
+## Batch 111 — world_id_factory (DONE 2026-07-03)
+- [done] lib/world_id_factory.sla: WorldId::new() static factory (Option + monotonic + exhaustion) + SparseSetIndex impl. 10 tests passing on SA backend (panic 92376–92405).
