@@ -427,3 +427,9 @@ Last updated: 2026-07-02
 - 25 tests — test_ecs_lib_component_info_extras_isolated.sla
 - Tests: 2400 → 2425, lib modules: 197 → 198, test files: 120 → 121
 - src/component/info.rs (ComponentInfo accessors + Components registry get_id/get_valid_id/get_resource_id/get_valid_resource_id/iter_registered + queued counts) ✓
+
+## Batch 72 — query_state_extras (2026-07-03)
+- lib/query_state_extras.sla: StorageSwitch + fetch wrappers + QueryState static surface — mirrors src/query/state.rs + src/query/fetch.rs
+- 22 tests — test_ecs_lib_query_state_extras_isolated.sla
+- Tests: 2425 → 2447, lib modules: 198 → 199, test files: 121 → 122
+- src/query/state.rs (QueryState component_access / matched_* / validate_world / matches_component_set / transmute_filtered / join_filtered + read/write access queries) + src/query/fetch.rs (StorageSwitch + ReadFetch/WriteFetch/RefFetch) ✓

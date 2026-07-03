@@ -1169,3 +1169,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 25 tests — test_ecs_lib_component_info_extras_isolated.sla
 - ComponentInfoV2 (id/name/mutable/clone_behavior/type_id[(has,id)]/storage_type/is_send_and_sync/has_hooks/required_components/required_by), Components (new/len/is_empty/num_queued/any_queued/num_queued_mut/any_queued_mut/num_registered/any_registered/get_info[(found,info)]/get_name[(found,id)]/is_id_valid/init_component/init_resource/queue_component/get_valid_id/get_id/get_valid_resource_id/get_resource_id/iter_registered)
 ### Grand Total: 2425 isolated tests across 121 test files, 198 lib modules, all passing on SA backend
+
+## Batch 72 — query_state_extras (2026-07-03)
+- lib/query_state_extras.sla: StorageSwitch<T,S> + fetch wrappers + QueryState static surface — mirrors src/query/state.rs + src/query/fetch.rs
+- 22 tests — test_ecs_lib_query_state_extras_isolated.sla
+- StorageSwitch (new/extract_table/extract_sparse/extract_by_id returning (variant_tag, table, sparse)), ReadFetch/WriteFetch/RefFetch (new/get/set), QueryStateV2 (new/add_read/add_write/as_readonly/component_access/matched_tables/matched_archetypes/add_matched_(table|archetype)/matched_(table|archetype)_count/validate_world[(s,s,bkid)]/matches_component_set/transmute_filtered/join_filtered/world_id/generation/is_readonly/has_read/has_write)
+### Grand Total: 2447 isolated tests across 122 test files, 199 lib modules, all passing on SA backend
