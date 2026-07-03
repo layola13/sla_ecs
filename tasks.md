@@ -1416,3 +1416,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla` both pass.
 - Feature progress: Bevy ECS entity/hash_set.rs wrapper-operation gap surface 85% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3236 isolated tests across 163 test files, 237 lib modules, all passing on SA backend; Batch 114 also passes default backend.
+
+## Batch 115 — entity_hash_map_extras (DONE 2026-07-03)
+- [done] lib/entity_hash_map_extras.sla: EntityHashMap wrapper extras — keys/into_keys iterator wrappers, Extend<(Entity,V)> and borrowed key/value extension shape, FromIterator/from_hash_map/into_inner, Index<&Q: EntityEquivalent> semantics — mirrors src/entity/hash_map.rs gaps not covered by lib/entity_collections.sla.
+- [done] tests/test_ecs_lib_entity_hash_map_extras_isolated.sla: 17 tests passing on SA backend. Panic codes 92527–92553.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa` passes, and `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla` passes. Default/SAB currently fails only `entity hash map extras extend refs` at panic 92537 due a backend limitation around `Vec<i32>` parameter indexing; accepted using the project SA fallback rule.
+- Feature progress: Bevy ECS entity/hash_map.rs wrapper gap surface 80% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3253 isolated tests across 164 test files, 238 lib modules, all passing on SA backend; Batch 115 has a documented default/SAB limitation on one focused test.

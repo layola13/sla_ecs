@@ -4,11 +4,11 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 237 lib `.sla` modules; 163 `tests/*.sla` files; 90 `examples/*.sla`; 3,642 source `.sla` `@test` annotations across lib/tests/examples (3,212 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,236 after Batch 114.
+- Counts (measured 2026-07-03): 238 lib `.sla` modules; 164 `tests/*.sla` files; 90 `examples/*.sla`; 3,659 source `.sla` `@test` annotations across lib/tests/examples (3,229 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,253 after Batch 115.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 237 lib / 163 tests / 3,642 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 238 lib / 164 tests / 3,659 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -661,3 +661,10 @@ Last updated: 2026-07-03
 - Tests: 3218 → 3236, lib modules: 236 → 237, test files: 162 → 163
 - Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla` both pass.
 - src/entity/hash_set.rs (set algebra wrapper ops, assign variants, Extend/FromIterator/FromEntitySetIterator-style construction, iterator/drain/extract_if wrappers, EntitySetIterator uniqueness-preserving set operations) ✓
+
+## Batch 115 — entity_hash_map_extras (2026-07-03)
+- lib/entity_hash_map_extras.sla: EntityHashMap wrapper extras (keys/into_keys iterator wrappers, Extend<(Entity,V)> and borrowed key/value extension shape, FromIterator/from_hash_map/into_inner, Index<&Q: EntityEquivalent> semantics) — mirrors src/entity/hash_map.rs gaps not in lib/entity_collections.sla
+- 17 tests — test_ecs_lib_entity_hash_map_extras_isolated.sla
+- Tests: 3236 → 3253, lib modules: 237 → 238, test files: 163 → 164
+- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa` passes (17/17) and `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla` passes. Default/SAB still fails `entity hash map extras extend refs` at panic 92537 due a focused backend limitation around `Vec<i32>` parameter indexing; this batch is accepted under the documented SA fallback rule.
+- src/entity/hash_map.rs (Keys/IntoKeys EntitySetIterator wrappers, clone/default/remaining/next model, extend variants, duplicate replacement, from/into inner map shape, EntityEquivalent index lookup) ✓
