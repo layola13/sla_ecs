@@ -1121,3 +1121,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_schedule_node_sets_isolated.sla: 32 tests — all passing on SA backend
 
 ### Grand Total: 2199 isolated tests across 113 test files, 190 lib modules, all passing on SA backend
+
+## Batch 64 — system_registry_template (2026-07-03)
+- [x] Created lib/system_registry_template.sla: SystemHandleTemplate + SystemHandleValue + SystemHandleOrValue + CachedSystemId + EcsCachedSystemRegistry (register/unregister/run) + EcsTrackedSystem + EcsStrippedSystemHandle + EcsTemplateContext — mirrors src/system/system_registry.rs (templates extension)
+- [x] Created tests/test_ecs_lib_system_registry_template_isolated.sla: 24 tests — all passing on SA backend
+
+### Grand Total: 2223 isolated tests across 114 test files, 191 lib modules, all passing on SA backend

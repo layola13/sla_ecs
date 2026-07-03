@@ -379,3 +379,9 @@ Last updated: 2026-07-02
 - 32 tests — test_ecs_lib_schedule_node_sets_isolated.sla
 - Tests: 2167 → 2199, lib modules: 189 → 190, test files: 112 → 113
 - src/schedule/node.rs (SystemSets, ConflictingSystems, Systems::get_mut/get_conditions_mut/iter/initialize) ✓
+
+## Batch 64 — system_registry_template (2026-07-03)
+- lib/system_registry_template.sla: SystemHandleTemplate + SystemHandleValue + CachedSystemId + EcsCachedSystemRegistry (register/unregister/run/run_with) + EcsTrackedSystem + EcsStrippedSystemHandle + EcsTemplateContext — mirrors src/system/system_registry.rs (templates extension)
+- 24 tests — test_ecs_lib_system_registry_template_isolated.sla
+- Tests: 2199 → 2223, lib modules: 190 → 191, test files: 113 → 114
+- src/system/system_registry.rs (SystemHandleTemplate, SystemHandleValue, CachedSystemId, register_system_cached/unregister_system_cached/run_system_cached/run_system_cached_with, register_tracked_system/register_tracked_boxed_system) ✓
