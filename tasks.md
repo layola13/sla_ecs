@@ -1199,3 +1199,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 21 tests — test_ecs_lib_archetype_info_isolated.sla
 - EcsArchetypeInfo (new/add_table_component/add_sparse_set_component/id/table_id/flags/generation/component_count/len/is_empty/add_entity/remove_entity/table_components_count/sparse_set_components_count/contains/get_storage_type[(found,storage)]/edges/set_edges/entity_table_row) + 10 flag mutators (set_on_*_hook/set_on_*_observer) + 10 has_* predicates (via has_flag with modulo for bitwise test since SLA has no & operator)
 ### Grand Total: 2537 isolated tests across 126 test files, 203 lib modules, all passing on SA backend
+
+## Batch 77 — archetypes_registry (2026-07-03)
+- lib/archetypes_registry.sla: plural Archetypes collection + ArchetypeRecord + ComponentIndex — mirrors src/archetype.rs (Archetypes + ComponentIndex + ArchetypeRecord)
+- 19 tests — test_ecs_lib_archetypes_registry_isolated.sla
+- ArchetypeRecord (table(column)/sparse()/column[(has,column)]), Archetypes (new pre-seeds empty archetype at id=0/generation_collect/len/empty_id/get[(found,id)]/spawn_table[(arch,id)] generation bump/iter_count/iter_at[(found,id)]/clear_entities generation bump), ComponentIndex (component_index_count/register_component_table/register_component_sparse/component_index_for[(found,has_column,column)]/component_index_archetypes_with[(count,first_archetype_id)] primitives-only)
+### Grand Total: 2556 isolated tests across 127 test files, 204 lib modules, all passing on SA backend

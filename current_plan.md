@@ -458,3 +458,9 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_archetype_info_isolated.sla
 - Tests: 2516 → 2537, lib modules: 202 → 203, test files: 125 → 126
 - src/archetype.rs (Archetype id/table_id/components/contains/get_storage_type/len/is_empty/component_count/entity_table_row/has_*_hook/has_*_observer/edges/generation + ArchetypeFlags bitmask) ✓
+
+## Batch 77 — archetypes_registry (2026-07-03)
+- lib/archetypes_registry.sla: plural Archetypes collection + ArchetypeRecord + ComponentIndex — mirrors src/archetype.rs
+- 19 tests — test_ecs_lib_archetypes_registry_isolated.sla
+- Tests: 2537 → 2556, lib modules: 203 → 204, test files: 126 → 127
+- src/archetype.rs (Archetypes new/len/empty/get/iter/generation/spawn_table/clear_entities/component_index + ArchetypeRecord + ComponentIndex component_id->{archetype_id,column}) ✓
