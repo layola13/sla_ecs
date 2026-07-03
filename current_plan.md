@@ -542,3 +542,10 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_query_sort_iter_isolated.sla
 - Tests: 2772 → 2791, lib modules: 213 → 214, test files: 138 → 139
 - src/query/iter.rs (sort + sort_unstable + sort_by + sort_unstable_by + sort_by_key + sort_unstable_by_key + sort_by_cached_key + QuerySortedIter fetch_next) ✓
+
+
+## Batch 90 — query_access_ops (2026-07-03)
+- lib/query_access_ops.sla: query/access.rs gaps — ComponentIdSet ops + AccessConflicts + Access get_conflicts/extend/intersection/union/remove_conflicting_access + FilteredAccess matches_everything/nothing/extend_access/get_conflicts/is_disjoint/access — mirrors src/query/access.rs (gaps not in lib/query_access.sla)
+- 30 tests — test_ecs_lib_query_access_ops_isolated.sla
+- Tests: 2791 → 2821, lib modules: 214 → 215, test files: 139 → 140
+- src/query/access.rs (FilterSet union/intersection/union_with/intersect_with/is_disjoint/is_clear/is_empty + AccessConflicts + Access get_conflicts/extend/intersection/union/remove_conflicting_access + FilteredAccess matches_everything/matches_nothing/extend_access/get_conflicts/is_disjoint) ✓
