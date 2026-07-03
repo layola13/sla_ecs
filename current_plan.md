@@ -367,3 +367,9 @@ Last updated: 2026-07-02
 - 22 tests — test_ecs_lib_change_detection_params_isolated.sla
 - Tests: 2129 → 2151, lib modules: 188 → 189, test files: 110 → 111
 - src/change_detection/params.rs (Res/ResMut/NonSend/NonSendMut/Ref/Mut/MutUntyped) ✓
+
+## Batch 62 — change_detection_traits (2026-07-03)
+- lib/change_detection_traits.sla: DetectChangesExt (new/last_changed/changed_by/set_last_changed/set_last_added/bypass_change_detection/set_if_neq/replace_if_neq/clone_from_if_neq/is_added/is_changed/is_added_after/is_changed_after/added/this_run/last_run/set_changed_by) — mirrors change_detection/traits.rs
+- 16 tests — test_ecs_lib_change_detection_traits_isolated.sla
+- Tests: 2151 → 2167, lib modules: 189 → 190, test files: 111 → 112
+- src/change_detection/traits.rs (DetectChanges/DetectChangesMut) ✓

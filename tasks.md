@@ -1109,3 +1109,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_change_detection_params_isolated.sla: 22 tests — all passing on SA backend
 
 ### Grand Total: 2151 isolated tests across 111 test files, 188 lib modules, all passing on SA backend
+
+## Batch 62 — change_detection_traits (2026-07-03)
+- [x] Created lib/change_detection_traits.sla: DetectChangesExt — mirrors change_detection/traits.rs
+- [x] Created tests/test_ecs_lib_change_detection_traits_isolated.sla: 16 tests — all passing on SA backend
+
+### Grand Total: 2167 isolated tests across 112 test files, 189 lib modules, all passing on SA backend
