@@ -1205,3 +1205,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 19 tests — test_ecs_lib_archetypes_registry_isolated.sla
 - ArchetypeRecord (table(column)/sparse()/column[(has,column)]), Archetypes (new pre-seeds empty archetype at id=0/generation_collect/len/empty_id/get[(found,id)]/spawn_table[(arch,id)] generation bump/iter_count/iter_at[(found,id)]/clear_entities generation bump), ComponentIndex (component_index_count/register_component_table/register_component_sparse/component_index_for[(found,has_column,column)]/component_index_archetypes_with[(count,first_archetype_id)] primitives-only)
 ### Grand Total: 2556 isolated tests across 127 test files, 204 lib modules, all passing on SA backend
+
+## Batch 78 — sparse_set_extras (2026-07-03)
+- lib/sparse_set_extras.sla: ComponentSparseSet tick accessors + ImmutableSparseSet + SparseSets collection — mirrors src/storage/sparse_set.rs
+- 26 tests — test_ecs_lib_sparse_set_extras_isolated.sla
+- ComponentSparseSetV2 (new/len/is_empty/contains/insert/remove/get[(found,value)]/get_added_tick/get_changed_tick/get_ticks[(found,added,changed)]/get_changed_by[(found,id)]/get_drop[(found,id)]), ImmutableSparseSetV2 (with_capacity/capacity/len/is_empty/contains/insert/get[(found,value)]/get_or_insert_with[(s,value)]/remove[(s,removed)]/clear), SparseSetsV2 (new/len/is_empty/get_or_insert[(s,idx)]/get_index/get_push/set_len)
+### Grand Total: 2582 isolated tests across 128 test files, 205 lib modules, all passing on SA backend

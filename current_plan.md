@@ -464,3 +464,9 @@ Last updated: 2026-07-02
 - 19 tests — test_ecs_lib_archetypes_registry_isolated.sla
 - Tests: 2537 → 2556, lib modules: 203 → 204, test files: 126 → 127
 - src/archetype.rs (Archetypes new/len/empty/get/iter/generation/spawn_table/clear_entities/component_index + ArchetypeRecord + ComponentIndex component_id->{archetype_id,column}) ✓
+
+## Batch 78 — sparse_set_extras (2026-07-03)
+- lib/sparse_set_extras.sla: ComponentSparseSet tick accessors + ImmutableSparseSet + SparseSets collection — mirrors src/storage/sparse_set.rs
+- 26 tests — test_ecs_lib_sparse_set_extras_isolated.sla
+- Tests: 2556 → 2582, lib modules: 204 → 205, test files: 127 → 128
+- src/storage/sparse_set.rs (ComponentSparseSet contains/get/get_added_tick/get_changed_tick/get_ticks/get_changed_by/get_drop + ImmutableSparseSet with_capacity/capacity/insert/get/get_mut/remove/clear/contains + SparseSets collection get_or_insert) ✓
