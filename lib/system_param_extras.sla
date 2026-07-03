@@ -1,0 +1,177 @@
+// Bevy ECS system::system_param extension surface — Deferred / If / StaticSystemParam /
+// DynSystemParam / SystemParamValidationError detailed constructor.
+// Mirrors src/system/system_param.rs.
+
+// === Deferred<'a, T: SystemBuffer> ===
+// Carries an index into the buffer slot; reborrow yields a view of the same slot.
+struct EcsDeferred {
+    slot: i32,
+    buffer_id: i64,
+    value: i64,
+}
+
+fn ecs_deferred_new(slot: i32, buffer_id: i64, value: i64) -> EcsDeferred {
+    let d = EcsDeferred { slot: slot, buffer_id: buffer_id, value: value };
+    return d;
+}
+
+fn ecs_deferred_value(d: EcsDeferred) -> i64 {
+    return d.value;
+}
+
+// reborrow: produces a new Deferred view over the same backed buffer slot.
+fn ecs_deferred_reborrow(d: EcsDeferred) -> EcsDeferred {
+    let r = EcsDeferred { slot: d.slot, buffer_id: d.buffer_id, value: d.value };
+    return r;
+}
+
+fn ecs_deferred_set_value(d: EcsDeferred, new_value: i64) -> EcsDeferred {
+    d.value = new_value;
+    return d;
+}
+
+// === If<T> ===
+// Wrapper whose inner T can be retrieved.
+struct EcsIf<T> { inner: T }
+
+fn ecs_if_new<T>(value: T) -> EcsIf<T> {
+    let w = EcsIf<T> { inner: value };
+    return w;
+}
+
+fn ecs_if_into_inner<T>(w: EcsIf<T>) -> T {
+    return w.inner;
+}
+
+// Deref-equivalent: get inner value (copy semantics on i64/i32/bool).
+fn ecs_if_get<T>(w: EcsIf<T>) -> T {
+    return w.inner;
+}
+
+// DerefMut-equivalent: set inner value.
+fn ecs_if_set<T>(w: EcsIf<T>, new_value: T) -> EcsIf<T> {
+    w.inner = new_value;
+    return w;
+}
+
+// === StaticSystemParam<'w, 's, P> ===
+struct EcsStaticSystemParam<T> { inner: T }
+
+fn ecs_static_system_param_new<T>(value: T) -> EcsStaticSystemParam<T> {
+    let p = EcsStaticSystemParam<T> { inner: value };
+    return p;
+}
+
+fn ecs_static_system_param_into_inner<T>(p: EcsStaticSystemParam<T>) -> T {
+    return p.inner;
+}
+
+fn ecs_static_system_param_get<T>(p: EcsStaticSystemParam<T>) -> T {
+    return p.inner;
+}
+
+// === DynSystemParam<'w, 's> ===
+// Tagged param carrying an opaque type-id + a boxed scalar, emulating the type-erased SystemParam item.
+struct EcsDynSystemParam {
+    type_id: i64,
+    boxed: i64,
+    system_meta_id: i64,
+    change_tick: i32,
+}
+
+fn ecs_dyn_system_param_new(type_id: i64, boxed: i64, system_meta_id: i64, change_tick: i32) -> EcsDynSystemParam {
+    let p = EcsDynSystemParam { type_id: type_id, boxed: boxed, system_meta_id: system_meta_id, change_tick: change_tick };
+    return p;
+}
+
+// is::<T>: true iff inner type tag matches expected.
+fn ecs_dyn_system_param_is(p: EcsDynSystemParam, expected_type_id: i64) -> bool {
+    return p.type_id == expected_type_id;
+}
+
+// downcast::<T>: returns (ok, boxed) — ok when type matches.
+fn ecs_dyn_system_param_downcast(p: EcsDynSystemParam, expected_type_id: i64) -> (bool, i64) {
+    if p.type_id == expected_type_id {
+        return (true, p.boxed);
+    };
+    return (false, 0);
+}
+
+// downcast_mut::<T>: same as downcast but takes a mutable borrow (here: returns updated boxed slot).
+fn ecs_dyn_system_param_downcast_mut(p: EcsDynSystemParam, expected_type_id: i64) -> (bool, i64) {
+    if p.type_id == expected_type_id {
+        return (true, p.boxed);
+    };
+    return (false, 0);
+}
+
+// downcast_mut_inner::<T>: read-only path — additional constraint is the param is ReadOnly;
+// here returns same value but signals the read-only inner tag (1 = read-only, 0 = mutable).
+fn ecs_dyn_system_param_downcast_mut_inner(p: EcsDynSystemParam, expected_type_id: i64, read_only_type_id: i64) -> (bool, i64, i32) {
+    if p.type_id == expected_type_id {
+        let ro = 0;
+        if p.type_id == read_only_type_id {
+            let ro2 = 1;
+            return (true, p.boxed, ro2);
+        };
+        return (true, p.boxed, ro);
+    };
+    return (false, 0, 0);
+}
+
+fn ecs_dyn_system_param_change_tick(p: EcsDynSystemParam) -> i32 {
+    return p.change_tick;
+}
+
+fn ecs_dyn_system_param_system_meta_id(p: EcsDynSystemParam) -> i64 {
+    return p.system_meta_id;
+}
+
+// === SystemParamValidationError ===
+// (covered in lib/system_param_special.sla; here add the detailed new<T> constructor + skipped/invalid delegates
+//  that also capture a message id and field id.)
+struct EcsSystemParamValidationErrorV2 {
+    skipped: bool,
+    message_id: i64,
+    param_id: i64,
+    field_id: i64,
+}
+
+fn ecs_system_param_validation_v2_new(skipped: bool, message_id: i64, param_id: i64, field_id: i64) -> EcsSystemParamValidationErrorV2 {
+    let e = EcsSystemParamValidationErrorV2 { skipped: skipped, message_id: message_id, param_id: param_id, field_id: field_id };
+    return e;
+}
+
+fn ecs_system_param_validation_v2_skipped(message_id: i64, param_id: i64) -> EcsSystemParamValidationErrorV2 {
+    return ecs_system_param_validation_v2_new(true, message_id, param_id, 0);
+}
+
+fn ecs_system_param_validation_v2_invalid(message_id: i64, param_id: i64) -> EcsSystemParamValidationErrorV2 {
+    return ecs_system_param_validation_v2_new(false, message_id, param_id, 0);
+}
+
+fn ecs_system_param_validation_v2_is_skipped(e: EcsSystemParamValidationErrorV2) -> bool {
+    return e.skipped;
+}
+
+fn ecs_system_param_validation_v2_message_id(e: EcsSystemParamValidationErrorV2) -> i64 {
+    return e.message_id;
+}
+
+fn ecs_system_param_validation_v2_param_id(e: EcsSystemParamValidationErrorV2) -> i64 {
+    return e.param_id;
+}
+
+fn ecs_system_param_validation_v2_field_id(e: EcsSystemParamValidationErrorV2) -> i64 {
+    return e.field_id;
+}
+
+// Display-equivalent: produces a packed encoding (skipped<<24 | message_id) to mirror fmt output presence.
+fn ecs_system_param_validation_v2_display(e: EcsSystemParamValidationErrorV2) -> i64 {
+    let s = 0;
+    if e.skipped {
+        let s2 = 1;
+        return (s2 * 16777216 + e.message_id);
+    };
+    return (s * 16777216 + e.message_id);
+}

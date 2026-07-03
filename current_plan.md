@@ -409,3 +409,9 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_function_system_extras_isolated.sla
 - Tests: 2333 → 2356, lib modules: 194 → 195, test files: 117 → 118
 - src/system/function_system.rs (SystemState, FunctionSystem, IsFunctionSystem, HasSystemInput) ✓
+
+## Batch 69 — system_param_extras (2026-07-03)
+- lib/system_param_extras.sla: Deferred / If<T> / StaticSystemParam<T> / DynSystemParam / SystemParamValidationErrorV2 — mirrors src/system/system_param.rs
+- 24 tests — test_ecs_lib_system_param_extras_isolated.sla
+- Tests: 2356 → 2380, lib modules: 195 → 196, test files: 118 → 119
+- src/system/system_param.rs (Deferred, If, StaticSystemParam, DynSystemParam, SystemParamValidationError) ✓

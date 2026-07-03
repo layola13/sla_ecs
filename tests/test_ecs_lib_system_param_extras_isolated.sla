@@ -1,0 +1,171 @@
+@import "lib/system_param_extras.sla"
+
+// Isolated tests for lib/system_param_extras.sla — Deferred / If / StaticSystemParam /
+// DynSystemParam / SystemParamValidationErrorV2
+// Bevy reference: src/system/system_param.rs
+
+@test "deferred_new_value"() {
+    let d = ecs_deferred_new(2, 99, 555);
+    if ecs_deferred_value(d) != 555 { panic(90534); };
+}
+
+@test "deferred_reborrow_same_slot"() {
+    let d = ecs_deferred_new(2, 99, 555);
+    let r = ecs_deferred_reborrow(d);
+    if ecs_deferred_value(r) != 555 { panic(90535); };
+    let r2 = ecs_deferred_set_value(r, 777);
+    if ecs_deferred_value(r2) != 777 { panic(90536); };
+}
+
+@test "deferred_set_value"() {
+    let d = ecs_deferred_new(0, 1, 10);
+    let d2 = ecs_deferred_set_value(d, 30);
+    if ecs_deferred_value(d2) != 30 { panic(90537); };
+}
+
+@test "if_new_into_inner"() {
+    let w = ecs_if_new<i64>(42);
+    if ecs_if_into_inner<i64>(w) != 42 { panic(90538); };
+}
+
+@test "if_get_deref"() {
+    let w = ecs_if_new<i64>(7);
+    if ecs_if_get<i64>(w) != 7 { panic(90539); };
+}
+
+@test "if_set_deref_mut"() {
+    let w = ecs_if_new<i64>(7);
+    let w2 = ecs_if_set<i64>(w, 99);
+    if ecs_if_get<i64>(w2) != 99 { panic(90540); };
+}
+
+@test "if_generic_bool"() {
+    let w = ecs_if_new<bool>(false);
+    if ecs_if_get<bool>(w) != false { panic(90541); };
+    let w2 = ecs_if_set<bool>(w, true);
+    if ecs_if_into_inner<bool>(w2) != true { panic(90542); };
+}
+
+@test "static_system_param_new_into_inner"() {
+    let p = ecs_static_system_param_new<i64>(123);
+    if ecs_static_system_param_into_inner<i64>(p) != 123 { panic(90543); };
+}
+
+@test "static_system_param_get"() {
+    let p = ecs_static_system_param_new<i64>(456);
+    if ecs_static_system_param_get<i64>(p) != 456 { panic(90544); };
+}
+
+@test "dyn_system_param_new"() {
+    let p = ecs_dyn_system_param_new(5, 777, 1, 10);
+    if ecs_dyn_system_param_change_tick(p) != 10 { panic(90545); };
+    if ecs_dyn_system_param_system_meta_id(p) != 1 { panic(90546); };
+}
+
+@test "dyn_system_param_is_match"() {
+    let p = ecs_dyn_system_param_new(5, 777, 1, 10);
+    if ecs_dyn_system_param_is(p, 5) != true { panic(90547); };
+    if ecs_dyn_system_param_is(p, 9) != false { panic(90548); };
+}
+
+@test "dyn_system_param_downcast_ok"() {
+    let p = ecs_dyn_system_param_new(5, 777, 1, 10);
+    let r = ecs_dyn_system_param_downcast(p, 5);
+    let ok0 = r.0;
+    let v0 = r.1;
+    if ok0 != true { panic(90549); };
+    if v0 != 777 { panic(90550); };
+}
+
+@test "dyn_system_param_downcast_fail"() {
+    let p = ecs_dyn_system_param_new(5, 777, 1, 10);
+    let r = ecs_dyn_system_param_downcast(p, 9);
+    let ok0 = r.0;
+    let v0 = r.1;
+    if ok0 != false { panic(90551); };
+    if v0 != 0 { panic(90552); };
+}
+
+@test "dyn_system_param_downcast_mut_ok"() {
+    let p = ecs_dyn_system_param_new(5, 888, 1, 10);
+    let r = ecs_dyn_system_param_downcast_mut(p, 5);
+    let ok0 = r.0;
+    let v0 = r.1;
+    if ok0 != true { panic(90553); };
+    if v0 != 888 { panic(90554); };
+}
+
+@test "dyn_system_param_downcast_mut_fail"() {
+    let p = ecs_dyn_system_param_new(5, 888, 1, 10);
+    let r = ecs_dyn_system_param_downcast_mut(p, 8);
+    let ok0 = r.0;
+    if ok0 != false { panic(90555); };
+}
+
+@test "dyn_system_param_downcast_mut_inner_readonly"() {
+    let p = ecs_dyn_system_param_new(5, 999, 1, 10);
+    let r = ecs_dyn_system_param_downcast_mut_inner(p, 5, 5);
+    let ok0 = r.0;
+    let v0 = r.1;
+    let ro0 = r.2;
+    if ok0 != true { panic(90556); };
+    if v0 != 999 { panic(90557); };
+    if ro0 != 1 { panic(90558); };
+}
+
+@test "dyn_system_param_downcast_mut_inner_mutable"() {
+    let p = ecs_dyn_system_param_new(5, 999, 1, 10);
+    let r = ecs_dyn_system_param_downcast_mut_inner(p, 5, 7);
+    let ok0 = r.0;
+    let ro0 = r.2;
+    if ok0 != true { panic(90559); };
+    if ro0 != 0 { panic(90560); };
+}
+
+@test "dyn_system_param_downcast_mut_inner_fail"() {
+    let p = ecs_dyn_system_param_new(5, 999, 1, 10);
+    let r = ecs_dyn_system_param_downcast_mut_inner(p, 8, 8);
+    let ok0 = r.0;
+    if ok0 != false { panic(90561); };
+}
+
+@test "spve_v2_new"() {
+    let e = ecs_system_param_validation_v2_new(false, 100, 7, 3);
+    if ecs_system_param_validation_v2_is_skipped(e) != false { panic(90562); };
+    if ecs_system_param_validation_v2_message_id(e) != 100 { panic(90563); };
+    if ecs_system_param_validation_v2_param_id(e) != 7 { panic(90564); };
+    if ecs_system_param_validation_v2_field_id(e) != 3 { panic(90565); };
+}
+
+@test "spve_v2_skipped"() {
+    let e = ecs_system_param_validation_v2_skipped(200, 8);
+    if ecs_system_param_validation_v2_is_skipped(e) != true { panic(90566); };
+    if ecs_system_param_validation_v2_field_id(e) != 0 { panic(90567); };
+}
+
+@test "spve_v2_invalid"() {
+    let e = ecs_system_param_validation_v2_invalid(300, 9);
+    if ecs_system_param_validation_v2_is_skipped(e) != false { panic(90568); };
+    if ecs_system_param_validation_v2_message_id(e) != 300 { panic(90569); };
+}
+
+@test "spve_v2_display_not_skipped"() {
+    let e = ecs_system_param_validation_v2_new(false, 100, 7, 3);
+    if ecs_system_param_validation_v2_display(e) != 100 { panic(90570); };
+}
+
+@test "spve_v2_display_skipped"() {
+    let e = ecs_system_param_validation_v2_new(true, 100, 7, 3);
+    if ecs_system_param_validation_v2_display(e) != 16777316 { panic(90571); };
+}
+
+@test "spve_v2_full_workflow"() {
+    let e = ecs_system_param_validation_v2_invalid(500, 11);
+    let e2 = ecs_system_param_validation_v2_new(true, 2, 1, 4);
+    if ecs_system_param_validation_v2_is_skipped(e) != false { panic(90572); };
+    if ecs_system_param_validation_v2_is_skipped(e2) != true { panic(90573); };
+    if ecs_system_param_validation_v2_message_id(e) != 500 { panic(90574); };
+    if ecs_system_param_validation_v2_field_id(e) != 0 { panic(90575); };
+    if ecs_system_param_validation_v2_param_id(e2) != 1 { panic(90576); };
+    if ecs_system_param_validation_v2_field_id(e2) != 4 { panic(90577); };
+}

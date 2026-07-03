@@ -1151,3 +1151,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 23 tests — test_ecs_lib_function_system_extras_isolated.sla
 - SystemState (new/from_builder/meta/meta_mut/get/get_mut/apply/matches_world/param_state), build_system/build_system_with_input/build_any_system, FunctionSystemV2 (new/with_name/initialize/is_initialized/run/last_output/run_count/with_input/input/set_exclusive/set_non_send/is_exclusive/is_non_send/name/last_run/set_last_run), markers (new)
 ### Grand Total: 2356 isolated tests across 118 test files, 195 lib modules, all passing on SA backend
+
+## Batch 69 — system_param_extras (2026-07-03)
+- lib/system_param_extras.sla: Deferred / If<T> / StaticSystemParam<T> / DynSystemParam / SystemParamValidationErrorV2 — mirrors src/system/system_param.rs
+- 24 tests — test_ecs_lib_system_param_extras_isolated.sla
+- Deferred (new/value/reborrow/set_value), If<T> (new/into_inner/get(Deref)/set(DerefMut)), StaticSystemParam<T> (new/into_inner/get), DynSystemParam (new/is/downcast/downcast_mut/downcast_mut_inner/read-only vs mutable tag/change_tick/system_meta_id), SystemParamValidationErrorV2 (new/skipped/invalid/is_skipped/message_id/param_id/field_id/display packed encoding)
+### Grand Total: 2380 isolated tests across 119 test files, 196 lib modules, all passing on SA backend
