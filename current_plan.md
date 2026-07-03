@@ -563,3 +563,10 @@ Last updated: 2026-07-02
 - 12 tests — test_ecs_lib_filtered_resource_builders_isolated.sla
 - Tests: 2840 → 2852, lib modules: 216 → 217, test files: 141 → 142
 - src/world/filtered_resource.rs (FilteredResourcesBuilder new/access/add_read_all/add_read[_by_id]/build + FilteredResourcesMutBuilder new/access/add_read_all/add_read[_by_id]/add_write_all/add_write[_by_id]/build) ✓
+
+
+## Batch 93 — schedule_configs_extras (2026-07-03)
+- lib/schedule_configs_extras.sla: IntoScheduleConfigs/ScheduleConfigs gaps — chain/chain_ignore_deferred/distributive_run_if/run_if/ambiguous_with/ambiguous_with_all/before_ignore_deferred/after_ignore_deferred/into_configs — mirrors src/schedule/config.rs (gaps not in lib/schedule_config.sla)
+- 16 tests — test_ecs_lib_schedule_configs_extras_isolated.sla
+- Tests: 2852 → 2868, lib modules: 217 → 218, test files: 142 → 143
+- src/schedule/config.rs (IntoScheduleConfigs chain/chain_ignore_deferred/distributive_run_if/run_if/ambiguous_with/ambiguous_with_all/before_ignore_deferred/after_ignore_deferred/into_configs + ScheduleConfigs.apply_deferred_on_edges + before/after _ignore_deferred_inner + distributive_run_if_inner + ambiguous_with_inner/ambiguous_with_all_inner + chain_ignore_deferred_inner) ✓
