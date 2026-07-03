@@ -689,3 +689,8 @@ echo "progress updated"
 - 17 tests — tests/test_ecs_lib_unique_vec_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla`.
 - Compiler note: the first default/SAB attempt hit `PhiStateConflict` on mutable clamp variables in split/drain/splice. The implementation was reshaped into early-return/clamped-helper paths; no compiler change was required and the default backend now passes this focused test.
 ### Grand Total: 3202 isolated tests across 161 test files, 235 lib modules, all passing on SA backend; Batch 112 also passes default backend.
+
+## Batch 113 — entity_set_iter_extras (2026-07-03)
+- lib/entity_set_iter_extras.sla: completed entity_set.rs iterator/equivalence gap coverage. Models ContainsEntity/EntityEquivalent through owned/ref/mut/Box/Rc/Arc-style wrappers over the same entity id, equality/order consistency over the entity id, UniqueEntityIter forward/back iteration and into_inner, EntitySetIterator::collect_set, and FromEntitySetIterator-style HashSet construction that trusts uniqueness and does not deduplicate arbitrary duplicate payloads.
+- 16 tests — tests/test_ecs_lib_entity_set_iter_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla`.
+### Grand Total: 3218 isolated tests across 162 test files, 236 lib modules, all passing on SA backend; Batch 113 also passes default backend.

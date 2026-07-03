@@ -1402,3 +1402,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_unique_vec_extras_isolated.sla` both pass. Initial default/SAB PhiStateConflict in range-clamp code was fixed by source reshaping, not by SAB-only string rewriting.
 - Feature progress: Bevy ECS entity/unique_vec.rs gap surface 95% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection are still intentionally incomplete.
 ### Grand Total: 3202 isolated tests across 161 test files, 235 lib modules, all passing on SA backend; Batch 112 also passes default backend.
+
+## Batch 113 — entity_set_iter_extras (DONE 2026-07-03)
+- [done] lib/entity_set_iter_extras.sla: ContainsEntity/EntityEquivalent wrapper semantics + UniqueEntityIter + EntitySetIterator::collect_set + FromEntitySetIterator HashSet construction — mirrors src/entity/entity_set.rs gaps not covered by lib/entity_set.sla.
+- [done] tests/test_ecs_lib_entity_set_iter_extras_isolated.sla: 16 tests passing on SA backend and default backend. Panic codes 92453–92484.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla` both pass.
+- Feature progress: Bevy ECS entity/entity_set.rs iterator/equivalence gap surface 90% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3218 isolated tests across 162 test files, 236 lib modules, all passing on SA backend; Batch 113 also passes default backend.
