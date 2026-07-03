@@ -310,3 +310,9 @@ Last updated: 2026-07-02
 - 18 tests — test_ecs_lib_executor_multi_threaded_isolated.sla
 - Tests: 1976 → 1994, lib modules: 179 → 180, test files: 101 → 102
 - src/schedule/executor/multi_threaded.rs (MultiThreadedExecutor/ExecutorState) ✓
+
+## Batch 53 — observer_distributed_storage (2026-07-02)
+- lib/observer_distributed_storage.sla: EcsObserver + EcsObservedBy (Observer new/with_dynamic_runner/with_entity/watch_entity/watch_entities/with_component/with_components/with_event_key/with_error_handler/run_if/set_name/watches_entity/watches_component + ObservedBy new/add/get/count/remove/len) — mirrors observer/distributed_storage.rs
+- 20 tests — test_ecs_lib_observer_distributed_storage_isolated.sla
+- Tests: 1994 → 2014, lib modules: 180 → 181, test files: 102 → 103
+- src/observer/distributed_storage.rs (Observer/ObserverDescriptor/ObservedBy) ✓

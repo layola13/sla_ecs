@@ -1055,3 +1055,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_executor_multi_threaded_isolated.sla: 18 tests — all passing on SA backend
 
 ### Grand Total: 1994 isolated tests across 102 test files, 180 lib modules, all passing on SA backend
+
+## Batch 53 — observer_distributed_storage (2026-07-02)
+- [x] Created lib/observer_distributed_storage.sla: EcsObserver + EcsObservedBy — mirrors observer/distributed_storage.rs
+- [x] Created tests/test_ecs_lib_observer_distributed_storage_isolated.sla: 20 tests — all passing on SA backend
+
+### Grand Total: 2014 isolated tests across 103 test files, 181 lib modules, all passing on SA backend
