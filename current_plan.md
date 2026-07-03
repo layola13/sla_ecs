@@ -535,3 +535,10 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_deferred_world_extras_isolated.sla
 - Tests: 2752 → 2772, lib modules: 212 → 213, test files: 137 → 138
 - src/world/deferred_world.rs (get_mut + get_entity_mut + query + non_send_resource_mut + get_resource_mut_by_id + get_non_send_mut_by_id) ✓
+
+
+## Batch 89 — query_sort_iter (2026-07-03)
+- lib/query_sort_iter.sla: QueryIter sort family — sort/sort_unstable/sort_by/sort_unstable_by/sort_by_key/sort_unstable_by_key/sort_by_cached_key + QuerySortedIter + sort_impl panic-if-consumed — mirrors src/query/iter.rs (gaps not in lib/query_iter.sla)
+- 19 tests — test_ecs_lib_query_sort_iter_isolated.sla
+- Tests: 2772 → 2791, lib modules: 213 → 214, test files: 138 → 139
+- src/query/iter.rs (sort + sort_unstable + sort_by + sort_unstable_by + sort_by_key + sort_unstable_by_key + sort_by_cached_key + QuerySortedIter fetch_next) ✓
