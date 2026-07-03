@@ -488,3 +488,9 @@ Last updated: 2026-07-02
 - 14 tests — test_ecs_lib_component_register_isolated.sla
 - Tests: 2609 → 2623, lib modules: 207 → 208, test files: 130 → 131
 - src/component/register.rs (ComponentIdRegistrator peek/next/peek_mut/next_mut/len/is_empty/as_queued/apply_queued_registrations/any_queued_mut/num_queued_mut + queue_register_component|resource|non_send + register_component_with_descriptor) ✓
+
+## Batch 82 — observer_descriptor_extras (2026-07-03)
+- lib/observer_descriptor_extras.sla: ObserverDescriptor v2 + Observer run state + ObserverV2 combined — mirrors src/observer/distributed_storage.rs
+- 17 tests — test_ecs_lib_observer_descriptor_extras_isolated.sla
+- Tests: 2623 → 2640, lib modules: 208 → 209, test files: 131 → 132
+- src/observer/distributed_storage.rs (ObserverDescriptor with_event_keys|with_components|with_entities + event_keys()|components()|entities() accessor parity + Observer last_trigger_id/despawned_watched_entities/run + with_error_handler/with_name) ✓

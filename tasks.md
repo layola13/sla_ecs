@@ -1229,3 +1229,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 14 tests — test_ecs_lib_component_register_isolated.sla
 - EcsComponentIdRegistrator (new/peek/peek_mut/next[(id,r)]/next_mut[(id,r)]/len/is_empty/any_queued_mut/num_queued_mut/as_queued/queue_register_(component|resource|non_send)[(id,r)]/apply_queued_registrations resets queue) + EcsComponentDescriptorTiny (new/storage_type/is_resource accessors) + register_with_descriptor[(id,r)]
 ### Grand Total: 2623 isolated tests across 131 test files, 208 lib modules, all passing on SA backend
+
+## Batch 82 — observer_descriptor_extras (2026-07-03)
+- lib/observer_descriptor_extras.sla: ObserverDescriptor v2 (event_keys/components/entities accessors + with_event_key) + Observer run state + ObserverV2 combined — mirrors src/observer/distributed_storage.rs
+- 17 tests — test_ecs_lib_observer_descriptor_extras_isolated.sla
+- EcsObserverDescriptorV2 (new/with_event_key/with_component/with_entity/event_key_count/event_key_at[(found,key)]/component_count/component_at[(found,id)]/entity_count/entity_at[(found,entity)]), EcsObserverRunState (new/last_trigger_id/despawned_watched_entities/run/record_despawned/reset), EcsObserverV2 (new/with_event_key/with_component/with_entity/with_error_handler/with_name/run/error_handler_id/name_id/last_trigger_id/despawned_watched_entities/describe_counts[(ekc,cc,ec)])
+### Grand Total: 2640 isolated tests across 132 test files, 209 lib modules, all passing on SA backend
