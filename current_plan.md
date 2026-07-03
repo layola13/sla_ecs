@@ -343,3 +343,9 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_table_mod_isolated.sla
 - Tests: 2061 → 2084, lib modules: 184 → 185, test files: 106 → 107
 - src/storage/table/mod.rs (Table/TableId/TableRow/Tables) ✓
+
+## Batch 58 — non_send_storage (2026-07-03)
+- lib/non_send_storage.sla: EcsNonSendData + EcsNonSends (NonSendData new/insert/remove/is_present/get_data/get_ticks/get_added_tick/get_changed_tick/get_changed_by/set_changed + NonSends new/len/is_empty/get/get_or_insert/insert/remove/clear/contains/count_present) — mirrors storage/non_send.rs
+- 19 tests — test_ecs_lib_non_send_storage_isolated.sla
+- Tests: 2084 → 2103, lib modules: 185 → 186, test files: 107 → 108
+- src/storage/non_send.rs (NonSendData/NonSends) ✓

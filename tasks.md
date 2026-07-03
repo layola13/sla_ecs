@@ -1085,3 +1085,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_table_mod_isolated.sla: 23 tests — all passing on SA backend
 
 ### Grand Total: 2084 isolated tests across 107 test files, 185 lib modules, all passing on SA backend
+
+## Batch 58 — non_send_storage (2026-07-03)
+- [x] Created lib/non_send_storage.sla: EcsNonSendData + EcsNonSends — mirrors storage/non_send.rs
+- [x] Created tests/test_ecs_lib_non_send_storage_isolated.sla: 19 tests — all passing on SA backend
+
+### Grand Total: 2103 isolated tests across 108 test files, 186 lib modules, all passing on SA backend
