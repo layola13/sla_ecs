@@ -549,3 +549,10 @@ Last updated: 2026-07-02
 - 30 tests — test_ecs_lib_query_access_ops_isolated.sla
 - Tests: 2791 → 2821, lib modules: 214 → 215, test files: 139 → 140
 - src/query/access.rs (FilterSet union/intersection/union_with/intersect_with/is_disjoint/is_clear/is_empty + AccessConflicts + Access get_conflicts/extend/intersection/union/remove_conflicting_access + FilteredAccess matches_everything/matches_nothing/extend_access/get_conflicts/is_disjoint) ✓
+
+
+## Batch 91 — query_filtered_set (2026-07-03)
+- lib/query_filtered_set.sla: FilteredAccessSet (gap surface) — mirrors src/query/access.rs
+- 19 tests — test_ecs_lib_query_filtered_set_isolated.sla
+- Tests: 2821 → 2840, lib modules: 215 → 216, test files: 140 → 141
+- src/query/access.rs (FilteredAccessSet new/combined_access/filtered_accesses/is_compatible/get_conflicts/get_conflicts_single/add/add_resource_read/_write/add_unfiltered_read_all_components/add_unfiltered_write_all_components/extend/read_all/write_all/clear + Access::is_compatible helper) ✓
