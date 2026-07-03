@@ -1383,3 +1383,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 107 — query_access_iter_extras (DONE 2026-07-03)
 - [done] lib/query_access_iter_extras.sla: EcsAccessType + EcsAccessLevel + AccessConflictError + is_compatible full match matrix (Component-vs-Component symmetric All rules + Component-vs-Access borrowed has_read/write/any rules + Access-vs-Access). 27 tests passing on SA backend (panic 92241–92284).
+
+## Batch 108 — auto_insert_apply_deferred (DONE 2026-07-03)
+- [done] lib/auto_insert_apply_deferred.sla: AutoInsertApplyDeferredPass + IgnoreDeferred + get_sync_point distance-cache + compute_distances edge-propagation algorithm. 13 tests passing on SA backend (panic 92285–92318).
