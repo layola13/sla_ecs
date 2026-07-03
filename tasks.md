@@ -1386,3 +1386,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 108 — auto_insert_apply_deferred (DONE 2026-07-03)
 - [done] lib/auto_insert_apply_deferred.sla: AutoInsertApplyDeferredPass + IgnoreDeferred + get_sync_point distance-cache + compute_distances edge-propagation algorithm. 13 tests passing on SA backend (panic 92285–92318).
+
+## Batch 109 — hot_patch (DONE 2026-07-03)
+- [done] lib/hot_patch.sla: HotPatched message + HotPatchChanges resource + is_changed_after + is_none_or + should_refresh_hotpatch + refresh_hotpatch. 19 tests passing on SA backend (panic 92319–92345).
