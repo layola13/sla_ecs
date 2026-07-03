@@ -4,11 +4,11 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 239 lib `.sla` modules; 165 `tests/*.sla` files; 90 `examples/*.sla`; 3,677 source `.sla` `@test` annotations across lib/tests/examples (3,247 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,271 after Batch 116.
+- Counts (measured 2026-07-03): 240 lib `.sla` modules; 166 `tests/*.sla` files; 90 `examples/*.sla`; 3,694 source `.sla` `@test` annotations across lib/tests/examples (3,264 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,288 after Batch 117.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 239 lib / 165 tests / 3,677 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 240 lib / 166 tests / 3,694 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -675,3 +675,10 @@ Last updated: 2026-07-03
 - Tests: 3253 → 3271, lib modules: 238 → 239, test files: 164 → 165
 - Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla` both pass. Initial default/SAB PhiStateConflict on mutable range clamps was fixed by source reshaping into clamped helpers.
 - src/entity/index_map.rs (ordered map slice/range access, mutable indexed value update, split/split_first/split_last, ordered Iter/Keys remaining and double-ended traversal, Keys index, Drain range removal, values/into_values-style aggregation) ✓
+
+## Batch 117 — entity_index_map_iter_extras (2026-07-03)
+- lib/entity_index_map_iter_extras.sla: EntityIndexMap iterator/boxed-slice wrapper tranche (boxed Slice default/clone/into-inner, Slice range variants, equality/order/hash, IterMut value update/as_slice, IntoIter next/next_back/as_slice, Drain::as_slice) — mirrors src/entity/index_map.rs iterator and Slice impl gaps after Batch 116
+- 17 tests — test_ecs_lib_entity_index_map_iter_extras_isolated.sla
+- Tests: 3271 → 3288, lib modules: 239 → 240, test files: 165 → 166
+- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla` both pass.
+- src/entity/index_map.rs (Box<Slice> default/clone/inner conversion, Slice range_from/range_to/range_inclusive + eq/cmp/hash, IterMut as_slice and mutable next update, IntoIter as_slice/next/next_back, Drain::as_slice) ✓

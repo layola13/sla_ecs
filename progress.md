@@ -711,3 +711,8 @@ echo "progress updated"
 - 18 tests — tests/test_ecs_lib_entity_index_map_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_extras_isolated.sla`.
 - Compiler/parser note: `r.1.has` tuple-field chaining still fails to parse in this context. I replaced the tuple return with `EcsEimSlicePairResult { slice, pair }`. The first default/SAB run also hit `PhiStateConflict` on mutable clamp variables in split/drain; source was reshaped into clamped helpers and now passes default backend.
 ### Grand Total: 3271 isolated tests across 165 test files, 239 lib modules, all passing on SA backend; Batch 116 also passes default backend.
+
+## Batch 117 — entity_index_map_iter_extras (2026-07-03)
+- lib/entity_index_map_iter_extras.sla: implemented additional EntityIndexMap iterator/boxed-slice wrapper coverage for src/entity/index_map.rs after Batch 116. Covers boxed Slice default/clone/into-inner, range_from/range_to/range_inclusive, Slice equality/order/hash, IterMut next-with-value-update plus as_slice, IntoIter next/next_back/as_slice, Drain::as_slice, and invalid/exhausted iterator cases.
+- 17 tests — tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla`.
+### Grand Total: 3288 isolated tests across 166 test files, 240 lib modules, all passing on SA backend; Batch 117 also passes default backend.

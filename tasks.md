@@ -1431,3 +1431,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Parser note: chained tuple-field access like `r.1.has` is rejected by current SLA parsing in this context; the implementation uses named result structs (`EcsEimSlicePairResult`) instead. I still consider `r.0.x` / `r.1.has` support desirable for Rust-like ergonomic parity, but project code should avoid depending on it until parser/backend coverage is explicit.
 - Feature progress: Bevy ECS entity/index_map.rs ordered slice/range/iterator gap surface 70% -> 90%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3271 isolated tests across 165 test files, 239 lib modules, all passing on SA backend; Batch 116 also passes default backend.
+
+## Batch 117 — entity_index_map_iter_extras (DONE 2026-07-03)
+- [done] lib/entity_index_map_iter_extras.sla: EntityIndexMap iterator/boxed-slice wrapper tranche — boxed Slice default/clone/into-inner, Slice range variants, equality/order/hash, IterMut value update/as_slice, IntoIter next/next_back/as_slice, Drain::as_slice — mirrors src/entity/index_map.rs iterator and Slice impl gaps after Batch 116.
+- [done] tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla: 17 tests passing on SA backend and default backend. Panic codes 92597–92627.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla` both pass.
+- Feature progress: Bevy ECS entity/index_map.rs ordered iterator/boxed-slice wrapper surface 90% -> 97%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3288 isolated tests across 166 test files, 240 lib modules, all passing on SA backend; Batch 117 also passes default backend.
