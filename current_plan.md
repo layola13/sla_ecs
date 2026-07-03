@@ -605,3 +605,10 @@ Last updated: 2026-07-02
 - 21 tests — test_ecs_lib_relationship_methods_extras_isolated.sla
 - Tests: 2941 → 2962, lib modules: 222 → 223, test files: 147 → 148
 - src/relationship/related_methods.rs (EntityWorldMut::add_one_related + detach_all_related + despawn_related + despawn_children + insert_recursive + remove_recursive + EntityCommands::with_related + with_related_entities + Relationship<generic = relationship_id i32> + Fn<bundle> =bundle_id i32 + BFS-tree-descendants traversal + restore of accidentally-deleted lib/*.test.sa artifacts) ✓
+
+
+## Batch 99 — system_trait_extras (2026-07-03)
+- lib/system_trait_extras.sla: System trait gaps (is_send + system_type + refresh_hotpatch + queue_deferred + check_change_tick + default_system_sets add/lookup + get_last_run/set_last_run + run_readonly + run_without_applying_deferred) — mirrors src/system/system.rs (gaps not in lib/system_trait.sla)
+- 20 tests — test_ecs_lib_system_trait_extras_isolated.sla
+- Tests: 2962 → 2982, lib modules: 223 → 224, test files: 148 → 149
+- src/system/system.rs (System::is_send + system_type + refresh_hotpatch + queue_deferred + check_change_tick + default_system_sets + get_last_run + set_last_run + run_readonly + run_without_applying_deferred + TypeId-as-i64 model + non_send-bit-is_send negation) ✓
