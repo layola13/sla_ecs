@@ -584,3 +584,10 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_removed_component_messages_isolated.sla
 - Tests: 2884 → 2907, lib modules: 219 → 220, test files: 144 → 145
 - src/lifecycle.rs (RemovedComponentMessages::new/update/iter/get/write + RemovedComponentReader::new/read/read_with_id/len/is_empty/clear + cursor/drained accessors + iter_pair/entity_at helpers + SparseSet-as-flat-Vec model) ✓
+
+
+## Batch 96 — query_par_many_iter (2026-07-03)
+- lib/query_par_many_iter.sla: QueryParManyIter + QueryParManyUniqueIter — mirrors src/query/par_iter.rs (gaps not in lib/query_par_iter.sla)
+- 21 tests — test_ecs_lib_query_par_many_iter_isolated.sla
+- Tests: 2907 → 2928, lib modules: 220 → 221, test files: 145 → 146
+- src/query/par_iter.rs (QueryParManyIter::batching_strategy/for_each/for_each_init + QueryParManyUniqueIter::batching_strategy/for_each/for_each_init + len/is_empty/batch_count + UniqueEntityEquivalentVec de-dup model + Fn-over-items closure-as-func_id parameterization) ✓
