@@ -577,3 +577,10 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_required_components_dynamic_isolated.sla
 - Tests: 2868 → 2884, lib modules: 218 → 219, test files: 143 → 144
 - src/component/required.rs (RequiredComponents::register_by_id + register_dynamic_with + register_dynamic_with_mut/register_by_id_mut + RequiredComponentsRegistrator::register_required_by_id + register_required_dynamic_with + components_registrator accessor + register_inherited_required_components_unchecked id-prepend-to-all model) ✓
+
+
+## Batch 95 — removed_component_messages (2026-07-03)
+- lib/removed_component_messages.sla: world-level RemovedComponentMessages storage + RemovedComponentReader reader API — mirrors src/lifecycle.rs (RemovedComponentMessages + RemovedComponentReader gaps not in lib/ecs_world.sla (write-only) or lib/entity_lifecycle.sla (per-component-level))
+- 23 tests — test_ecs_lib_removed_component_messages_isolated.sla
+- Tests: 2884 → 2907, lib modules: 219 → 220, test files: 144 → 145
+- src/lifecycle.rs (RemovedComponentMessages::new/update/iter/get/write + RemovedComponentReader::new/read/read_with_id/len/is_empty/clear + cursor/drained accessors + iter_pair/entity_at helpers + SparseSet-as-flat-Vec model) ✓
