@@ -403,3 +403,9 @@ Last updated: 2026-07-02
 - 23 tests — test_ecs_lib_schedule_dag_analysis_isolated.sla
 - Tests: 2310 → 2333, lib modules: 193 → 194, test files: 116 → 117
 - src/schedule/graph/dag.rs (DagAnalysis, DagGroups, DagRedundancyError, DagCrossDependencyError, DagOverlappingGroupError) ✓
+
+## Batch 68 — function_system_extras (2026-07-03)
+- lib/function_system_extras.sla: SystemState<Param> + FunctionSystemV2 + IsFunctionSystem/HasSystemInput markers — mirrors src/system/function_system.rs
+- 23 tests — test_ecs_lib_function_system_extras_isolated.sla
+- Tests: 2333 → 2356, lib modules: 194 → 195, test files: 117 → 118
+- src/system/function_system.rs (SystemState, FunctionSystem, IsFunctionSystem, HasSystemInput) ✓

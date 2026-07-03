@@ -1145,3 +1145,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_schedule_dag_analysis_isolated.sla: 23 tests — all passing on SA backend
 
 ### Grand Total: 2333 isolated tests across 117 test files, 194 lib modules, all passing on SA backend
+
+## Batch 68 — function_system_extras (2026-07-03)
+- lib/function_system_extras.sla: SystemState<Param> + FunctionSystemV2 + IsFunctionSystem/HasSystemInput markers — mirrors src/system/function_system.rs
+- 23 tests — test_ecs_lib_function_system_extras_isolated.sla
+- SystemState (new/from_builder/meta/meta_mut/get/get_mut/apply/matches_world/param_state), build_system/build_system_with_input/build_any_system, FunctionSystemV2 (new/with_name/initialize/is_initialized/run/last_output/run_count/with_input/input/set_exclusive/set_non_send/is_exclusive/is_non_send/name/last_run/set_last_run), markers (new)
+### Grand Total: 2356 isolated tests across 118 test files, 195 lib modules, all passing on SA backend
