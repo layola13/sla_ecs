@@ -1409,3 +1409,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla` both pass.
 - Feature progress: Bevy ECS entity/entity_set.rs iterator/equivalence gap surface 90% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3218 isolated tests across 162 test files, 236 lib modules, all passing on SA backend; Batch 113 also passes default backend.
+
+## Batch 114 — entity_hash_set_ops (DONE 2026-07-03)
+- [done] lib/entity_hash_set_ops.sla: EntityHashSet wrapper operations — BitAnd/BitOr/BitXor/Sub + assign variants, extend, from-iterator construction, iter/into_iter reductions, drain, extract_if, subset/superset/disjoint helpers — mirrors src/entity/hash_set.rs gaps not covered by basic EntityHashSet tests.
+- [done] tests/test_ecs_lib_entity_hash_set_ops_isolated.sla: 18 tests passing on SA backend and default backend. Panic codes 92485–92526.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla` both pass.
+- Feature progress: Bevy ECS entity/hash_set.rs wrapper-operation gap surface 85% -> 99%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3236 isolated tests across 163 test files, 237 lib modules, all passing on SA backend; Batch 114 also passes default backend.

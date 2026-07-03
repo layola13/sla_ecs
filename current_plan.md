@@ -4,11 +4,11 @@ Last updated: 2026-07-03
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 236 lib `.sla` modules; 162 `tests/*.sla` files; 90 `examples/*.sla`; 3,624 source `.sla` `@test` annotations across lib/tests/examples (3,194 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,218 after Batch 113.
+- Counts (measured 2026-07-03): 237 lib `.sla` modules; 163 `tests/*.sla` files; 90 `examples/*.sla`; 3,642 source `.sla` `@test` annotations across lib/tests/examples (3,212 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,236 after Batch 114.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 236 lib / 162 tests / 3,624 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 237 lib / 163 tests / 3,642 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -654,3 +654,10 @@ Last updated: 2026-07-03
 - Tests: 3202 → 3218, lib modules: 235 → 236, test files: 161 → 162
 - Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_set_iter_extras_isolated.sla` both pass.
 - src/entity/entity_set.rs (ContainsEntity for owned/ref/mut/Box/Rc/Arc model, EntityEquivalent equality/order over entity id, UniqueEntityIter forward/back iteration, into_inner, collect_set preserving trusted unique payload, FromEntitySetIterator no-dedup fast path) ✓
+
+## Batch 114 — entity_hash_set_ops (2026-07-03)
+- lib/entity_hash_set_ops.sla: EntityHashSet wrapper operations (BitAnd/BitOr/BitXor/Sub + assign variants, extend, from-iterator construction, iter/into_iter reductions, drain, extract_if, subset/superset/disjoint helpers) — mirrors src/entity/hash_set.rs gaps not in basic EntityHashSet tests
+- 18 tests — test_ecs_lib_entity_hash_set_ops_isolated.sla
+- Tests: 3218 → 3236, lib modules: 236 → 237, test files: 162 → 163
+- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_ops_isolated.sla` both pass.
+- src/entity/hash_set.rs (set algebra wrapper ops, assign variants, Extend/FromIterator/FromEntitySetIterator-style construction, iterator/drain/extract_if wrappers, EntitySetIterator uniqueness-preserving set operations) ✓
