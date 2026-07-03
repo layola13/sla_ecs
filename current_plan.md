@@ -391,3 +391,9 @@ Last updated: 2026-07-02
 - 52 tests — test_ecs_lib_world_mod_isolated.sla
 - Tests: 2223 → 2275, lib modules: 191 → 192, test files: 114 → 115
 - src/world/mod.rs (World pub API — ~140 methods) ✓
+
+## Batch 66 — commands_mod_extension (2026-07-03)
+- lib/commands_mod_extension.sla: Commands + EntityCommands extension methods (register_boxed_system / unregister_system_cached / run_system_cached(_with) / trigger / trigger_with / add_observer / write_message / run_schedule / get_spawned_entity; entry / queue_handled / queue_silenced / log_components / commands(_mut) / observe / trigger / clone_with_opt_out / clone_with_opt_in / clone_and_spawn(_with_opt_out/_with_opt_in) / clone_components / move_components) — mirrors src/system/commands/mod.rs
+- 35 tests — test_ecs_lib_commands_mod_extension_isolated.sla
+- Tests: 2275 → 2310, lib modules: 192 → 193, test files: 115 → 116
+- src/system/commands/mod.rs (Commands/EntityCommands pub method gaps) ✓

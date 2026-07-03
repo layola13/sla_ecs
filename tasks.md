@@ -1133,3 +1133,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_world_mod_isolated.sla: 52 tests — all passing on SA backend
 
 ### Grand Total: 2275 isolated tests across 115 test files, 192 lib modules, all passing on SA backend
+
+## Batch 66 — commands_mod_extension (2026-07-03)
+- [x] Created lib/commands_mod_extension.sla: Commands-side extensions (register_boxed_system/unregister_system_cached/run_system_cached(_with)/trigger/trigger_with/add_observer/write_message/run_schedule/get_spawned_entity/new_from_entities/rebound_to/reborrow) + EntityCommands-side extensions (entry/queue_handled/queue_silenced/log_components/commands/commands_mut/observe/trigger/clone_with_opt_out/clone_with_opt_in/clone_and_spawn/clone_and_spawn_with_opt_out/clone_and_spawn_with_opt_in/clone_components/move_components/reborrow) — mirrors src/system/commands/mod.rs (extension methods gaps)
+- [x] Created tests/test_ecs_lib_commands_mod_extension_isolated.sla: 35 tests — all passing on SA backend
+
+### Grand Total: 2310 isolated tests across 116 test files, 193 lib modules, all passing on SA backend
