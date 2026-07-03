@@ -626,3 +626,10 @@ Last updated: 2026-07-02
 - 29 tests — test_ecs_lib_relationship_source_collection_ordered_isolated.sla
 - Tests: 2998 → 3027, lib modules: 225 → 226, test files: 150 → 151
 - src/relationship/relationship_source_collection.rs (OrderedRelationshipSourceCollection::insert/remove_at/insert_stable/remove_at_stable/sort/insert_sorted/place_most_recent/place + push_front + RelationshipSourceCollection::with_capacity/reserve/shrink_to_fit/extend_from_iter/source_to_remove_before_add/is_empty) ✓
+
+
+## Batch 102 — entity_generation_extras (2026-07-03)
+- lib/entity_generation_extras.sla: EntityGeneration gap surface (FIRST + to_bits/from_bits + after_versions wrapping_add + after_versions_and_could_alias overflowing_add + cmp_approx Ordering) + Entity::try_from_bits + EntityIndex::from_raw_u32 (NonMaxU32 validation) — mirrors src/entity/mod.rs (gaps not in lib/entity.sla)
+- 25 tests — test_ecs_lib_entity_generation_extras_isolated.sla
+- Tests: 3027 → 3052, lib modules: 226 → 227, test files: 151 → 152
+- src/entity/mod.rs (EntityGeneration::FIRST/to_bits/from_bits/after_versions/after_versions_and_could_alias/cmp_approx + Entity::try_from_bits + EntityIndex::from_raw_u32 + DIFF_MAX=2^31 cmp_approx boundary + NonMaxU32 rejects u32::MAX + u32-wrapping arithmetic as i64-modulo-2^32) ✓
