@@ -1115,3 +1115,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [x] Created tests/test_ecs_lib_change_detection_traits_isolated.sla: 16 tests — all passing on SA backend
 
 ### Grand Total: 2167 isolated tests across 112 test files, 189 lib modules, all passing on SA backend
+
+## Batch 63 — schedule_node_sets (2026-07-03)
+- [x] Created lib/schedule_node_sets.sla: Systems extensions + SystemSets + ConflictingSystems + AmbiguousSystemConflictsWarning + SystemTypeSetAmbiguityError — mirrors src/schedule/node.rs (extension of schedule_node.sla)
+- [x] Created tests/test_ecs_lib_schedule_node_sets_isolated.sla: 32 tests — all passing on SA backend
+
+### Grand Total: 2199 isolated tests across 113 test files, 190 lib modules, all passing on SA backend

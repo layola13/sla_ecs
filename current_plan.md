@@ -373,3 +373,9 @@ Last updated: 2026-07-02
 - 16 tests — test_ecs_lib_change_detection_traits_isolated.sla
 - Tests: 2151 → 2167, lib modules: 189 → 190, test files: 111 → 112
 - src/change_detection/traits.rs (DetectChanges/DetectChangesMut) ✓
+
+## Batch 63 — schedule_node_sets (2026-07-03)
+- lib/schedule_node_sets.sla: Systems extensions (get_mut/get_conditions_mut/iter/remove/initialize/is_initialized/uninit) + SystemSets (new/len/is_empty/contains/get/get_key/get_key_or_insert/has_conditions/get_conditions/get_conditions_mut/iter/remove/initialize/is_initialized/set_is_system_type/check_type_set_ambiguity) + ConflictingSystems (new/len/push/check_if_not_empty/get/a/b/conflicts) + EcsSystemAccess (is_compatible/get_conflicts) + AmbiguousSystemConflictsWarning + SystemTypeSetAmbiguityError — mirrors src/schedule/node.rs
+- 32 tests — test_ecs_lib_schedule_node_sets_isolated.sla
+- Tests: 2167 → 2199, lib modules: 189 → 190, test files: 112 → 113
+- src/schedule/node.rs (SystemSets, ConflictingSystems, Systems::get_mut/get_conditions_mut/iter/initialize) ✓
