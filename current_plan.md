@@ -633,3 +633,10 @@ Last updated: 2026-07-02
 - 25 tests — test_ecs_lib_entity_generation_extras_isolated.sla
 - Tests: 3027 → 3052, lib modules: 226 → 227, test files: 151 → 152
 - src/entity/mod.rs (EntityGeneration::FIRST/to_bits/from_bits/after_versions/after_versions_and_could_alias/cmp_approx + Entity::try_from_bits + EntityIndex::from_raw_u32 + DIFF_MAX=2^31 cmp_approx boundary + NonMaxU32 rejects u32::MAX + u32-wrapping arithmetic as i64-modulo-2^32) ✓
+
+
+## Batch 103 — entity_allocator_extras (2026-07-03)
+- lib/entity_allocator_extras.sla: EntityAllocator pub-surface (alloc/free/free_many/alloc_many/build_remote_allocator/has_remote_allocator/restart) + RemoteAllocatorProxy snapshot — mirrors src/entity/mod.rs EntityAllocator 706-810 (gaps not in lib/remote_allocator.sla)
+- 18 tests — test_ecs_lib_entity_allocator_extras_isolated.sla
+- Tests: 3052 → 3070, lib modules: 227 → 228, test files: 152 → 153
+- src/entity/mod.rs (EntityAllocator::alloc/free/free_many/alloc_many/build_remote_allocator/has_remote_allocator/restart + RemoteAllocator generation-stability check + AllocEntitiesIterator-emulated single-result + LIFO recycled-stack alloc) ✓
