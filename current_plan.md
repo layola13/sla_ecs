@@ -470,3 +470,9 @@ Last updated: 2026-07-02
 - 26 tests — test_ecs_lib_sparse_set_extras_isolated.sla
 - Tests: 2556 → 2582, lib modules: 204 → 205, test files: 127 → 128
 - src/storage/sparse_set.rs (ComponentSparseSet contains/get/get_added_tick/get_changed_tick/get_ticks/get_changed_by/get_drop + ImmutableSparseSet with_capacity/capacity/insert/get/get_mut/remove/clear/contains + SparseSets collection get_or_insert) ✓
+
+## Batch 79 — resource_mod (2026-07-03)
+- lib/resource_mod.sla: IsResource marker + ResourceEntities + IS_RESOURCE flag — mirrors src/resource.rs
+- 16 tests — test_ecs_lib_resource_mod_isolated.sla
+- Tests: 2582 → 2598, lib modules: 205 → 206, test files: 128 → 129
+- src/resource.rs (IsResource new/resource_component_id + ResourceEntities new/get/insert/iter + IS_RESOURCE constant) ✓

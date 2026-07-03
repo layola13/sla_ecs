@@ -1211,3 +1211,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 26 tests — test_ecs_lib_sparse_set_extras_isolated.sla
 - ComponentSparseSetV2 (new/len/is_empty/contains/insert/remove/get[(found,value)]/get_added_tick/get_changed_tick/get_ticks[(found,added,changed)]/get_changed_by[(found,id)]/get_drop[(found,id)]), ImmutableSparseSetV2 (with_capacity/capacity/len/is_empty/contains/insert/get[(found,value)]/get_or_insert_with[(s,value)]/remove[(s,removed)]/clear), SparseSetsV2 (new/len/is_empty/get_or_insert[(s,idx)]/get_index/get_push/set_len)
 ### Grand Total: 2582 isolated tests across 128 test files, 205 lib modules, all passing on SA backend
+
+## Batch 79 — resource_mod (2026-07-03)
+- lib/resource_mod.sla: IsResource marker + ResourceEntities + IS_RESOURCE flag — mirrors src/resource.rs
+- 16 tests — test_ecs_lib_resource_mod_isolated.sla
+- EcsIsResource (new/id/eq), EcsResourceEntities (new/insert set-or-overwrite/get[(found,entity)]/len/is_empty/iter_at[(found,cid,entity)]/contains/remove[(removed,r)]/clear) + ECS_RESOURCE_FLAG (is_resource/make_resource/make_non_resource via bit-0 parity)
+### Grand Total: 2598 isolated tests across 129 test files, 206 lib modules, all passing on SA backend
