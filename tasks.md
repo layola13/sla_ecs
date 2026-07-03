@@ -1163,3 +1163,9 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - 20 tests — test_ecs_lib_bundle_info_extras_isolated.sla
 - BundleIdV2 (new/index), BundleInfoV2 (new/explicit_count/explicit_components_len/explicit_components/required_components/contributed_components/id/iter_explicit/iter_contributed/iter_required), Bundles (new/len/is_empty/register/get/iter/register_type/get_id)
 ### Grand Total: 2400 isolated tests across 120 test files, 197 lib modules, all passing on SA backend
+
+## Batch 71 — component_info_extras (2026-07-03)
+- lib/component_info_extras.sla: ComponentInfo accessors + Components registry — mirrors src/component/info.rs
+- 25 tests — test_ecs_lib_component_info_extras_isolated.sla
+- ComponentInfoV2 (id/name/mutable/clone_behavior/type_id[(has,id)]/storage_type/is_send_and_sync/has_hooks/required_components/required_by), Components (new/len/is_empty/num_queued/any_queued/num_queued_mut/any_queued_mut/num_registered/any_registered/get_info[(found,info)]/get_name[(found,id)]/is_id_valid/init_component/init_resource/queue_component/get_valid_id/get_id/get_valid_resource_id/get_resource_id/iter_registered)
+### Grand Total: 2425 isolated tests across 121 test files, 198 lib modules, all passing on SA backend

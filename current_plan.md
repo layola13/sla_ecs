@@ -421,3 +421,9 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_bundle_info_extras_isolated.sla
 - Tests: 2380 → 2400, lib modules: 196 → 197, test files: 119 → 120
 - src/bundle/info.rs (BundleId::index, BundleInfo contributed/explicit/required components + iter_*, Bundles registry get/get_id/is_empty/iter) ✓
+
+## Batch 71 — component_info_extras (2026-07-03)
+- lib/component_info_extras.sla: ComponentInfo accessors + Components registry — mirrors src/component/info.rs
+- 25 tests — test_ecs_lib_component_info_extras_isolated.sla
+- Tests: 2400 → 2425, lib modules: 197 → 198, test files: 120 → 121
+- src/component/info.rs (ComponentInfo accessors + Components registry get_id/get_valid_id/get_resource_id/get_valid_resource_id/iter_registered + queued counts) ✓
