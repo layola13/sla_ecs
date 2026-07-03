@@ -528,3 +528,10 @@ Last updated: 2026-07-02
 - 20 tests — test_ecs_lib_entity_ref_extras_isolated.sla
 - Tests: 2732 → 2752, lib modules: 211 → 212, test files: 136 → 137
 - src/world/entity_access/entity_ref.rs (location/archetype/contains_id/contains_type_id/get_ref/get_change_ticks/get_changed_by/get_change_ticks_by_id/get_by_id/components/get_components/into_filtered/spawned_by/spawn_tick) ✓
+
+
+## Batch 88 — deferred_world_extras (2026-07-03)
+- lib/deferred_world_extras.sla: DeferredWorld pub surface not in lib/deferred_world.sla — get_mut + get_entity_mut + query + non_send_resource_mut + get_resource_mut_by_id + get_non_send_mut_by_id — mirrors src/world/deferred_world.rs (gaps not in lib/deferred_world.sla)
+- 20 tests — test_ecs_lib_deferred_world_extras_isolated.sla
+- Tests: 2752 → 2772, lib modules: 212 → 213, test files: 137 → 138
+- src/world/deferred_world.rs (get_mut + get_entity_mut + query + non_send_resource_mut + get_resource_mut_by_id + get_non_send_mut_by_id) ✓
