@@ -521,3 +521,10 @@ Last updated: 2026-07-02
 - 15 tests — test_ecs_lib_world_observer_trigger_isolated.sla
 - Tests: 2717 → 2732, lib modules: 210 → 211, test files: 135 → 136
 - src/observer/mod.rs (trigger + trigger_with + trigger_ref + trigger_ref_with + add_observer) ✓
+
+
+## Batch 87 — entity_ref_extras (2026-07-03)
+- lib/entity_ref_extras.sla: EntityRef pub surface not in lib/entity_access.sla — into_filtered + location + archetype + contains_id/_type_id + get_ref + get_change_ticks[_by_id] + get_changed_by + get_by_id + components (count reduce) + get_components (all-or-none) + spawned_by + spawn_tick — mirrors src/world/entity_access/entity_ref.rs (gaps not in lib/entity_access.sla)
+- 20 tests — test_ecs_lib_entity_ref_extras_isolated.sla
+- Tests: 2732 → 2752, lib modules: 211 → 212, test files: 136 → 137
+- src/world/entity_access/entity_ref.rs (location/archetype/contains_id/contains_type_id/get_ref/get_change_ticks/get_changed_by/get_change_ticks_by_id/get_by_id/components/get_components/into_filtered/spawned_by/spawn_tick) ✓
