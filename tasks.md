@@ -1380,3 +1380,6 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 
 ## Batch 106 — system_param_extras (DONE 2026-07-03)
 - [done] lib/system_param_extras.sla: Local<T> (shared mutable slot) + StaticSystemParam<P> (into_inner/get/set) + SystemParamValidationError (skipped/invalid/new + EMPTY + Display). 15 tests passing on SA backend (panic 92200–92240).
+
+## Batch 107 — query_access_iter_extras (DONE 2026-07-03)
+- [done] lib/query_access_iter_extras.sla: EcsAccessType + EcsAccessLevel + AccessConflictError + is_compatible full match matrix (Component-vs-Component symmetric All rules + Component-vs-Access borrowed has_read/write/any rules + Access-vs-Access). 27 tests passing on SA backend (panic 92241–92284).

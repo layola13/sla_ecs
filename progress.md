@@ -658,3 +658,8 @@ echo "progress updated"
 - 15 tests — test_ecs_lib_system_param_extras_isolated.sla. panic codes 92200–92240.
 - Generics (T: FromWorld, P: SystemParam) and Cow<str>/DebugName modelled via type-id i32 and message-id i64 sentinels per SLA rules 11–12. Builder-style mutators per rule 6.
 ### Grand Total: 3109 isolated tests across 155 test files, 230 lib modules, all passing on SA backend
+
+## Batch 107 — query_access_iter_extras (2026-07-03)
+- lib/query_access_iter_extras.sla: EcsAccessType + EcsAccessLevel + AccessConflictError + is_compatible compatibility matrix — mirrors src/query/access_iter.rs. Previously **completely uncovered**. Models EcsAccessLevel {Read(id), Write(id), ReadAll, WriteAll} as (level_kind, component_id) with sentinel -1 for the All variants; EcsAccessType {Component(level), Access(&Access), Empty} encoded as (variant, level_kind, component_id, access_id + borrowed-Access payload reads/writes/read_all/write_all); the full is_compatible match matrix including the symmetric Component-vs-Access(via has_read/has_write/has_any_read/has_any_write) and Access-vs-Access (write-overlaps-read-or-write either direction + write_all/read_all propagation → conflict) branches; AccessConflictError(a, b) pair encoded by variant/level/component-id of both sides. Result returns AccessIsCompatibleResult {ok, conflict} single-field struct (avoids scalar-tuple corruption).
+- 27 tests — test_ecs_lib_query_access_iter_extras_isolated.sla. panic codes 92241–92284.
+### Grand Total: 3136 isolated tests across 156 test files, 231 lib modules, all passing on SA backend
