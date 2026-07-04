@@ -4,11 +4,11 @@ Last updated: 2026-07-04
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-04): 243 lib `.sla` modules; 169 `tests/*.sla` files; 90 `examples/*.sla`; 3,752 source `.sla` `@test` annotations across lib/tests/examples (3,322 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,346 after Batch 120.
+- Counts (measured 2026-07-04): 244 lib `.sla` modules; 170 `tests/*.sla` files; 90 `examples/*.sla`; 3,767 source `.sla` `@test` annotations across lib/tests/examples (3,337 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,361 after Batch 121.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 243 lib / 169 tests / 3,752 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 244 lib / 170 tests / 3,767 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -703,3 +703,10 @@ Last updated: 2026-07-04
 - Tests: 3334 → 3346, lib modules: 242 → 243, test files: 168 → 169
 - Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_set_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_derived_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_derived_extras_isolated.sla` all pass.
 - src/entity/index_set.rs (derived wrapper constructors/traits, Extend refs/owned, From<[Entity; N]>, FromIterator, PartialEq<IndexSet>, iterator size hints/debug markers) ✓
+
+## Batch 121 — entity_index_map_derived_extras (2026-07-04)
+- lib/entity_index_map_derived_extras.sla: EntityIndexMap derived/mutable-slice/wrapper cleanup tranche (new/default/with_capacity constructor intent, Clone/Debug markers, explicit Extend owned/ref shapes, array-style construction, PartialEq<IndexMap> order-insensitive equality, mutable Slice range/split/inner markers, Iter/IterMut/IntoIter/Drain/Keys/IntoKeys/IntoValues size-hint/debug/trusted-unique behavior) — mirrors src/entity/index_map.rs wrapper impl surface after Batches 116–117
+- 15 tests — test_ecs_lib_entity_index_map_derived_extras_isolated.sla
+- Tests: 3346 → 3361, lib modules: 243 → 244, test files: 169 → 170
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_map_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla` all pass.
+- src/entity/index_map.rs (derived wrapper constructors/traits, Extend refs/owned, From<[(Entity,V); N]>, FromIterator, PartialEq<IndexMap>, mutable Slice APIs, iterator size hints/debug markers, Keys EntitySetIterator markers) ✓
