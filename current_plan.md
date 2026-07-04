@@ -4,11 +4,11 @@ Last updated: 2026-07-04
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-04): 244 lib `.sla` modules; 170 `tests/*.sla` files; 90 `examples/*.sla`; 3,767 source `.sla` `@test` annotations across lib/tests/examples (3,337 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,361 after Batch 121.
-- Tests verified on the SA backend; focused Batches 112–121 also pass the default backend after the Batch 122 hash-map refs unblocker. SAB can still hit codegen limits on large/import-heavy paths, where SA remains the verified fallback.
+- Counts (measured 2026-07-04): 245 lib `.sla` modules; 171 `tests/*.sla` files; 90 `examples/*.sla`; 3,782 source `.sla` `@test` annotations across lib/tests/examples (3,352 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,376 after Batch 123.
+- Tests verified on the SA backend; focused Batches 112–123 also pass the default backend after the Batch 122 hash-map refs unblocker. SAB can still hit codegen limits on large/import-heavy paths, where SA remains the verified fallback.
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 244 lib / 170 tests / 3,767 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 245 lib / 171 tests / 3,782 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -717,3 +717,10 @@ Last updated: 2026-07-04
 - Tests unchanged: 3361 isolated tests, lib modules unchanged: 244, test files unchanged: 170
 - Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla` all pass.
 - src/entity/hash_map.rs borrowed Extend wrapper remains covered; the former Batch 115 default/SAB limitation is now closed. ✓
+
+## Batch 123 — entity_hash_set_derived_extras (2026-07-04)
+- lib/entity_hash_set_derived_extras.sla: EntityHashSet derived/wrapper cleanup tranche (new/default/with_capacity, from_hash_set/into_inner, Clone/Debug/Default markers, Extend<Entity>/Extend<&Entity>, From<[Entity; N]>, FromIterator, FromEntitySetIterator capacity/trusted-unique path, equality, Iter/IntoIter/Drain/ExtractIf into_inner/default/clone/size-hint/debug/trusted-unique markers, and set-operation iterator markers) — mirrors src/entity/hash_set.rs wrapper impl surface after Batch 114
+- 15 tests — test_ecs_lib_entity_hash_set_derived_extras_isolated.sla
+- Tests: 3361 → 3376, lib modules: 244 → 245, test files: 170 → 171
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_set_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_derived_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_set_derived_extras_isolated.sla` all pass.
+- src/entity/hash_set.rs (derived wrapper constructors/traits, Extend refs/owned, From<[Entity; N]>, FromIterator, FromEntitySetIterator, iterator into_inner/default/debug markers, ExtractIf and set-op EntitySetIterator markers) ✓
