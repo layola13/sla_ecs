@@ -147,11 +147,14 @@
     if r.0[2] != 3 { panic(34038); };
 }
 
-@test "remote allocator close"() {
+@test "remote allocator close still allows allocation"() {
     let a = ecs_remote_allocator_close(ecs_remote_allocator_new());
     if ecs_remote_allocator_is_closed(a) != true { panic(34039); };
     let r = ecs_remote_allocator_alloc(a);
-    if r.0 != -1 { panic(34040); };
+    if r.0 != 1 { panic(34040); };
+    if ecs_remote_allocator_is_closed(r.1) != true { panic(34046); };
+    let r2 = ecs_remote_allocator_alloc(r.1);
+    if r2.0 != 2 { panic(34047); };
 }
 
 @test "remote allocator allocated_count"() {

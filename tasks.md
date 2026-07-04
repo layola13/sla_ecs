@@ -1487,3 +1487,19 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_derived_extras_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_derived_extras_isolated.sla`, and `git diff --check` all pass.
 - Feature progress: Bevy ECS entity/hash_map.rs wrapper/iterator surface 99% -> 99%+; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 124 also passes default backend.
+
+## Batch 125 — remote_allocator_close_semantics (DONE 2026-07-04)
+- [done] lib/remote_allocator.sla: aligned the remote allocator model with Bevy's diagnostic-only closed state. `close` now only flips `is_closed`; `alloc` and `alloc_batch` continue to issue entities from the snapshot, matching `RemoteAllocator`'s behavior in `src/entity/remote_allocator.rs`.
+- [done] tests/test_ecs_lib_node_spawner_allocator_isolated.sla: updated the remote allocator close case so it verifies allocation still works after closure instead of treating closure as allocation failure.
+- [done] No new tests; revalidated the same 28-test node/spawner/allocator suite on SA backend and default backend. Panic codes remain 34034–34047 for the remote allocator cases.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/remote_allocator.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_node_spawner_allocator_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_node_spawner_allocator_isolated.sla`, and `git diff --check` all pass.
+- Feature progress: Bevy ECS entity/remote_allocator.rs close-state semantics now match diagnostic-only behavior; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because the major remaining gaps are still the dynamic multithread executor and full runtime reflection.
+### Grand Total unchanged: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 125 also passes default backend.
+
+## Batch 126 — entity_allocator_alloc_many_iterator (DONE 2026-07-04)
+- [done] lib/entity_allocator_extras.sla: reshaped `alloc_many` to model the iterator-shaped Bevy surface more closely. The returned alloc-many result now carries the allocated entity sequence plus a cursor, with `count`/`first` helpers backed by the iterator state and new `next`/`size_hint` helpers for the remaining sequence.
+- [done] tests/test_ecs_lib_entity_allocator_extras_isolated.sla: updated the alloc-many cases to exercise iterator-style advancement and size-hint tracking while preserving the existing entity-allocation and restart coverage.
+- [done] No new tests; revalidated the same 18-test entity allocator suite on SA backend and default backend. Panic codes remain 92068–92112 for the entity allocator cases.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_allocator_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla`, and `git diff --check` all pass.
+- Feature progress: Bevy ECS entity/mod.rs `EntityAllocator::alloc_many` now tracks iterator-style progress instead of only a summary pair; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because the major remaining gaps are still the dynamic multithread executor and full runtime reflection.
+### Grand Total unchanged: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 126 also passes default backend.

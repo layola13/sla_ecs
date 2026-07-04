@@ -6,24 +6,53 @@
 //   pub fn free(&mut self, freed: Entity)                          — push freed [Entity] to pending free
 //   pub fn free_many(&mut self, freed: &[Entity])                 — bulk-free
 //   pub fn alloc(&self) -> Entity                                  — pop freed-or-next new entity
-//   pub fn alloc_many(&self, count: u32) -> iterator               — emits N allocated Entities (modelled as
-//     returning the N allocated ids + a cursor)
+//   pub fn alloc_many(&self, count: u32) -> iterator               — emits N allocated Entities
 //
 // Also models AllocEntitiesIterator public-surface minimal accessors len/is_empty/next.
 // `Entity` is modelled as the lower-bit packed id i64 in our linear model.
 
-// === Result struct for alloc_many (single-field accessors) ===
+// === Result struct for alloc_many (iterator-shaped accessors) ===
 struct EntityAllocatorAllocManyResult {
-    count: i32,
-    first_entity: i64,
+    entities: Vec<i64>,
+    cursor: i32,
+}
+
+struct EntityAllocatorAllocManyNextResult {
+    iter: EntityAllocatorAllocManyResult,
+    has: i32,
+    entity: i64,
+}
+
+struct EntityAllocatorAllocManySizeHint {
+    lower: i32,
+    upper: i32,
 }
 
 fn ecs_eam_count(r: EntityAllocatorAllocManyResult) -> i32 {
-    return r.count;
+    let remaining = len(r.entities) as i32 - r.cursor;
+    if remaining < 0 { return 0; };
+    return remaining;
 }
 
 fn ecs_eam_first(r: EntityAllocatorAllocManyResult) -> i64 {
-    return r.first_entity;
+    if r.cursor < 0 { return -1; };
+    let idx = r.cursor;
+    if idx >= len(r.entities) as i32 { return -1; };
+    return r.entities[idx];
+}
+
+fn ecs_eam_next(r: EntityAllocatorAllocManyResult) -> EntityAllocatorAllocManyNextResult {
+    if r.cursor >= len(r.entities) as i32 {
+        return EntityAllocatorAllocManyNextResult { iter: r, has: 0, entity: -1 };
+    };
+    let entity = r.entities[r.cursor];
+    r.cursor = r.cursor + 1;
+    return EntityAllocatorAllocManyNextResult { iter: r, has: 1, entity: entity };
+}
+
+fn ecs_eam_size_hint(r: EntityAllocatorAllocManyResult) -> EntityAllocatorAllocManySizeHint {
+    let remaining = ecs_eam_count(r);
+    return EntityAllocatorAllocManySizeHint { lower: remaining, upper: remaining };
 }
 
 // === EcsEntityAllocator model: a free-stack of recycled [Entity] ids + next-fresh counter ===
@@ -104,19 +133,19 @@ fn ecs_entity_allocator_free_many(a: EcsEntityAllocator, freed: Vec<i64>) -> Ecs
 
 // alloc_many(count) -> AllocEntitiesIterator-emulates bulk alloc. Returns count + first-allocated.
 fn ecs_entity_allocator_alloc_many(a: EcsEntityAllocator, count: i32) -> (EcsEntityAllocator, EntityAllocatorAllocManyResult) {
+    let entities: Vec<i64> = Vec::new();
     if count <= 0 {
-        let none = EntityAllocatorAllocManyResult { count: 0, first_entity: -1 };
+        let none = EntityAllocatorAllocManyResult { entities: entities, cursor: 0 };
         return (a, none);
     };
-    let first: i64 = -1;
     let i: i32 = 0;
     while i < count {
         let (a2, e) = ecs_entity_allocator_alloc(a);
         a = a2;
-        if i == 0 { first = e; };
+        entities.push(e);
         i = i + 1;
     }
-    let res = EntityAllocatorAllocManyResult { count: count, first_entity: first };
+    let res = EntityAllocatorAllocManyResult { entities: entities, cursor: 0 };
     return (a, res);
 }
 

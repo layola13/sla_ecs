@@ -1,5 +1,6 @@
 // Bevy ECS remote entity allocator. Mirrors src/entity/remote_allocator.rs.
-// Allocates entities that are valid in a remote world (e.g., for scene loading).
+// `close` only reports source lifetime; allocation still continues from the
+// underlying snapshot, matching Bevy's diagnostic-only `is_closed` behavior.
 
 struct EcsRemoteAllocator {
     next_entity: i64,
@@ -12,7 +13,6 @@ fn ecs_remote_allocator_new() -> EcsRemoteAllocator {
 }
 
 fn ecs_remote_allocator_alloc(a: EcsRemoteAllocator) -> (i64, EcsRemoteAllocator) {
-    if a.is_closed { return (-1, a); };
     let entity = a.next_entity;
     a.next_entity = entity + 1;
     a.allocated.push(entity);
@@ -21,7 +21,6 @@ fn ecs_remote_allocator_alloc(a: EcsRemoteAllocator) -> (i64, EcsRemoteAllocator
 
 fn ecs_remote_allocator_alloc_batch(a: EcsRemoteAllocator, count: i64) -> (Vec<i64>, EcsRemoteAllocator) {
     let entities: Vec<i64> = Vec::new();
-    if a.is_closed { return (entities, a); };
     let i: i64 = 0;
     while i < count {
         let entity = a.next_entity;

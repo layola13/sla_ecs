@@ -755,3 +755,19 @@ echo "progress updated"
 - 16 tests — tests/test_ecs_lib_entity_hash_map_derived_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_derived_extras_isolated.sla --test-backend sa`, default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_derived_extras_isolated.sla`, and `git diff --check`.
 - Compiler note: this batch used named result structs and `Vec<i64>` borrowed-value inputs with insertion-time `i32` casts, matching the Batch 122 default-backend-safe pattern. No SAB fallback was required for the focused suite.
 ### Grand Total: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 124 also passes default backend.
+
+## Batch 125 — remote_allocator_close_semantics (2026-07-04)
+- lib/remote_allocator.sla: aligned the remote allocator snapshot model with Bevy's diagnostic-only closed state. `close` now only flips `is_closed`; `alloc` and `alloc_batch` continue to issue entities from the snapshot, matching the source `RemoteAllocator` behavior.
+- tests/test_ecs_lib_node_spawner_allocator_isolated.sla: updated the remote allocator close case so it verifies allocation still works after closure instead of expecting allocation failure.
+- 0 new tests — revalidated the same 28-test node/spawner/allocator suite on SA backend and default backend.
+- Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/remote_allocator.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_node_spawner_allocator_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_node_spawner_allocator_isolated.sla`, and `git diff --check`.
+- Compiler note: this batch keeps the existing tuple-shaped helper interface in `lib/remote_allocator.sla` but removes the Bevy-incompatible close gate. No SAB fallback was required.
+### Grand Total unchanged: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 125 also passes default backend.
+
+## Batch 126 — entity_allocator_alloc_many_iterator (2026-07-04)
+- lib/entity_allocator_extras.sla: reshaped `alloc_many` to model the iterator-shaped Bevy surface more closely. The returned alloc-many result now carries the allocated entity sequence plus a cursor, with `count`/`first` helpers backed by the iterator state and new `next`/`size_hint` helpers for the remaining sequence.
+- tests/test_ecs_lib_entity_allocator_extras_isolated.sla: updated the alloc-many cases to exercise iterator-style advancement and size-hint tracking while preserving the existing entity-allocation and restart coverage.
+- 0 new tests — revalidated the same 18-test entity allocator suite on SA backend and default backend.
+- Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/entity_allocator_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla`, and `git diff --check`.
+- Compiler note: `alloc_many` now exposes cursor/size-hint state without disturbing the existing allocator snapshot and restart behavior. No SAB fallback was required.
+### Grand Total unchanged: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 126 also passes default backend.
