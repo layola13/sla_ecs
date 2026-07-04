@@ -1438,3 +1438,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla --test-backend sa` and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla` both pass.
 - Feature progress: Bevy ECS entity/index_map.rs ordered iterator/boxed-slice wrapper surface 90% -> 97%; overall estimate remains API parity ~93–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3288 isolated tests across 166 test files, 240 lib modules, all passing on SA backend; Batch 117 also passes default backend.
+
+## Batch 118 — entity_index_set_extras (DONE 2026-07-04)
+- [done] lib/entity_index_set_extras.sla: EntityIndexSet ordered set/slice/range/iterator tranche — from_index_set/from_iter/into_inner/as_slice/get_range/index range/value, boxed Slice default/clone/into-inner, Slice split/range/equality/order/hash, BitAnd/BitOr/BitXor/Sub set algebra, Iter/IntoIter/Drain next/next_back/as_slice/default/clone/trusted-unique behavior — mirrors src/entity/index_set.rs gaps not in lib/entity_collections.sla.
+- [done] tests/test_ecs_lib_entity_index_set_extras_isolated.sla: 26 tests passing on SA backend and default backend. Panic codes 92628–92689.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_set_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_extras_isolated.sla --test-backend sa`, and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_extras_isolated.sla` all pass.
+- Feature progress: Bevy ECS entity/index_set.rs ordered wrapper/slice/iterator surface 40% -> 85%; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3314 isolated tests across 167 test files, 241 lib modules, all passing on SA backend; Batch 118 also passes default backend.

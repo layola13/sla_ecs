@@ -1,14 +1,14 @@
 # sla_ecs Current Plan — Bevy ECS Parity (per-dimension)
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-03): 240 lib `.sla` modules; 166 `tests/*.sla` files; 90 `examples/*.sla`; 3,694 source `.sla` `@test` annotations across lib/tests/examples (3,264 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,288 after Batch 117.
+- Counts (measured 2026-07-04): 241 lib `.sla` modules; 167 `tests/*.sla` files; 90 `examples/*.sla`; 3,720 source `.sla` `@test` annotations across lib/tests/examples (3,290 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,314 after Batch 118.
 - Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-03: 240 lib / 166 tests / 3,694 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 241 lib / 167 tests / 3,720 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -682,3 +682,10 @@ Last updated: 2026-07-03
 - Tests: 3271 → 3288, lib modules: 239 → 240, test files: 165 → 166
 - Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla --test-backend sa` and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_iter_extras_isolated.sla` both pass.
 - src/entity/index_map.rs (Box<Slice> default/clone/inner conversion, Slice range_from/range_to/range_inclusive + eq/cmp/hash, IterMut as_slice and mutable next update, IntoIter as_slice/next/next_back, Drain::as_slice) ✓
+
+## Batch 118 — entity_index_set_extras (2026-07-04)
+- lib/entity_index_set_extras.sla: EntityIndexSet ordered set/slice/range/iterator tranche (from_index_set/from_iter/into_inner/as_slice/get_range/index range/value, boxed Slice default/clone/into-inner, Slice split/range/equality/order/hash, BitAnd/BitOr/BitXor/Sub set algebra, Iter/IntoIter/Drain next/next_back/as_slice/default/clone/trusted-unique behavior) — mirrors src/entity/index_set.rs gaps not in lib/entity_collections.sla
+- 26 tests — test_ecs_lib_entity_index_set_extras_isolated.sla
+- Tests: 3288 → 3314, lib modules: 240 → 241, test files: 166 → 167
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_set_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_extras_isolated.sla` all pass.
+- src/entity/index_set.rs (ordered index set construction/dedup, order-insensitive set equality vs order-sensitive Slice equality, range/index access, split_first/split_last, boxed Slice wrappers, set algebra, EntitySetIterator-like unique iterators, IntoIter, Drain::as_slice) ✓
