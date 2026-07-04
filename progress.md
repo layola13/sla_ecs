@@ -703,8 +703,8 @@ echo "progress updated"
 ## Batch 115 — entity_hash_map_extras (2026-07-03)
 - lib/entity_hash_map_extras.sla: completed EntityHashMap wrapper extra coverage for src/entity/hash_map.rs. Models keys/into_keys EntitySetIterator wrappers, clone/default/cursor/remaining/next behavior, Extend<(Entity,V)> plus borrowed key/value extension shape, duplicate key replacement, FromIterator/from_hash_map/into_inner, and Index<&Q: EntityEquivalent> lookup semantics.
 - 17 tests — tests/test_ecs_lib_entity_hash_map_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa` (17/17) and `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla`.
-- Compiler note: default/SAB still fails the focused `entity hash map extras extend refs` test at panic 92537 despite materialized key/value locals, consistent with a backend limitation around `Vec<i32>` parameter indexing. The SA backend is the accepted fallback for this batch under the project rule.
-### Grand Total: 3253 isolated tests across 164 test files, 238 lib modules, all passing on SA backend; Batch 115 has a documented default/SAB limitation on one focused test.
+- Compiler note: Batch 122 reshaped the borrowed-value input path from raw `Vec<i32>` indexing to `Vec<i64>` input with an `i32` cast at insertion, so default/SAB now passes the focused `entity hash map extras extend refs` test that previously failed at panic 92537.
+### Grand Total: 3253 isolated tests across 164 test files, 238 lib modules, all passing on SA backend; Batch 115 also passes default backend after Batch 122.
 
 ## Batch 116 — entity_index_map_extras (2026-07-03)
 - lib/entity_index_map_extras.sla: implemented the ordered EntityIndexMap slice/range/iterator tranche for src/entity/index_map.rs. Covers as_slice/get_range, Slice get_index_mut/first/last/split_at/split_first/split_last, ordered Iter remaining-slice behavior and double-ended traversal, ordered Keys traversal/index/trusted-unique behavior, Drain range removal, duplicate-key insert replacement without moving order, and values/into_values-style aggregation.
@@ -738,3 +738,8 @@ echo "progress updated"
 - 15 tests — tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_map_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla`.
 - Compiler note: the first default/SAB attempt hit PhiStateConflict on `found_index = index` inside duplicate-key insertion. The source now copies with `index + 0`, and the focused default backend passes without SAB fallback.
 ### Grand Total: 3361 isolated tests across 170 test files, 244 lib modules, all passing on SA backend; Batch 121 also passes default backend.
+
+## Batch 122 — entity_hash_map_refs_default_backend_unblocker (2026-07-04)
+- lib/entity_hash_map_extras.sla: closed the prior Batch 115 default/SAB limitation by reshaping `ecs_ehm_extend_refs` away from raw `Vec<i32>` value indexing. The function now accepts `Vec<i64>` borrowed-value inputs and casts to the stored `i32` map value at insertion, preserving test-visible EntityHashMap semantics.
+- 0 new tests — revalidated tests/test_ecs_lib_entity_hash_map_extras_isolated.sla. Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla`.
+### Grand Total unchanged: 3361 isolated tests across 170 test files, 244 lib modules, all passing on SA backend; Batches 112–121 focused suites now also pass default backend.

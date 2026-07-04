@@ -5,7 +5,7 @@ Last updated: 2026-07-04
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
 - Counts (measured 2026-07-04): 244 lib `.sla` modules; 170 `tests/*.sla` files; 90 `examples/*.sla`; 3,767 source `.sla` `@test` annotations across lib/tests/examples (3,337 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,361 after Batch 121.
-- Tests verified on the SA backend (SAB hits a codegen limitation on large-file imports — known compiler limitation; SA is the verified fallback).
+- Tests verified on the SA backend; focused Batches 112–121 also pass the default backend after the Batch 122 hash-map refs unblocker. SAB can still hit codegen limits on large/import-heavy paths, where SA remains the verified fallback.
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
 ## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 244 lib / 170 tests / 3,767 source `.sla` @test total. Sub-list below is historical per-area summary
@@ -666,7 +666,7 @@ Last updated: 2026-07-04
 - lib/entity_hash_map_extras.sla: EntityHashMap wrapper extras (keys/into_keys iterator wrappers, Extend<(Entity,V)> and borrowed key/value extension shape, FromIterator/from_hash_map/into_inner, Index<&Q: EntityEquivalent> semantics) — mirrors src/entity/hash_map.rs gaps not in lib/entity_collections.sla
 - 17 tests — test_ecs_lib_entity_hash_map_extras_isolated.sla
 - Tests: 3236 → 3253, lib modules: 237 → 238, test files: 163 → 164
-- Verification: `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa` passes (17/17) and `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla` passes. Default/SAB still fails `entity hash map extras extend refs` at panic 92537 due a focused backend limitation around `Vec<i32>` parameter indexing; this batch is accepted under the documented SA fallback rule.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla` all pass after Batch 122 reshaped the borrowed-value input path away from raw `Vec<i32>` SAB indexing.
 - src/entity/hash_map.rs (Keys/IntoKeys EntitySetIterator wrappers, clone/default/remaining/next model, extend variants, duplicate replacement, from/into inner map shape, EntityEquivalent index lookup) ✓
 
 ## Batch 116 — entity_index_map_extras (2026-07-03)
@@ -710,3 +710,10 @@ Last updated: 2026-07-04
 - Tests: 3346 → 3361, lib modules: 243 → 244, test files: 169 → 170
 - Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_map_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_map_derived_extras_isolated.sla` all pass.
 - src/entity/index_map.rs (derived wrapper constructors/traits, Extend refs/owned, From<[(Entity,V); N]>, FromIterator, PartialEq<IndexMap>, mutable Slice APIs, iterator size hints/debug markers, Keys EntitySetIterator markers) ✓
+
+## Batch 122 — entity_hash_map_refs_default_backend_unblocker (2026-07-04)
+- lib/entity_hash_map_extras.sla: reshaped the borrowed-value `Extend<(&Entity, &V)>` model so `ecs_ehm_extend_refs` accepts `Vec<i64>` values and casts to the stored `i32` value at insertion, avoiding the focused default/SAB raw `Vec<i32>` indexing failure from Batch 115.
+- 0 new tests — revalidated existing test_ecs_lib_entity_hash_map_extras_isolated.sla
+- Tests unchanged: 3361 isolated tests, lib modules unchanged: 244, test files unchanged: 170
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_hash_map_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla --test-backend sa`, and default `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_hash_map_extras_isolated.sla` all pass.
+- src/entity/hash_map.rs borrowed Extend wrapper remains covered; the former Batch 115 default/SAB limitation is now closed. ✓
