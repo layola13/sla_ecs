@@ -1452,3 +1452,10 @@ Current overall estimate: 88% for Bevy-core ECS parity, but only about 45% for t
 - [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_set_iter_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_iter_extras_isolated.sla --test-backend sa`, and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_iter_extras_isolated.sla` all pass.
 - Feature progress: Bevy ECS entity/index_set.rs ordered wrapper/slice/iterator surface 85% -> 97%; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
 ### Grand Total: 3334 isolated tests across 168 test files, 242 lib modules, all passing on SA backend; Batch 119 also passes default backend.
+
+## Batch 120 — entity_index_set_derived_extras (DONE 2026-07-04)
+- [done] lib/entity_index_set_derived_extras.sla: EntityIndexSet derived/wrapper cleanup tranche — new/default/with_capacity constructor intent, Clone/Debug/Default markers, explicit Extend<Entity> and Extend<&Entity> shapes, array-style construction, PartialEq<IndexSet> order-insensitive equality, and Iter/IntoIter/Drain size-hint/debug/trusted-unique behavior — mirrors src/entity/index_set.rs wrapper impl surface after Batches 118–119.
+- [done] tests/test_ecs_lib_entity_index_set_derived_extras_isolated.sla: 12 tests passing on SA backend and default backend. Panic codes 92737–92774.
+- [done] Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_index_set_derived_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_derived_extras_isolated.sla --test-backend sa`, and `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_index_set_derived_extras_isolated.sla` all pass.
+- Feature progress: Bevy ECS entity/index_set.rs ordered wrapper/slice/iterator surface 97% -> 99%; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because dynamic multithread executor and full runtime reflection remain incomplete.
+### Grand Total: 3346 isolated tests across 169 test files, 243 lib modules, all passing on SA backend; Batch 120 also passes default backend.
