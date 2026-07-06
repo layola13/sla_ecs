@@ -1470,3 +1470,42 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if result.ran_count != 10 { panic(24255); };
     if result.wave_count != 1 { panic(24256); };
 }
+
+@test "task pool scoped task set mixes spawn on scope"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks1, mp_plan_d);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks2, mp_plan_b);
+    let tasks4 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks3, mp_plan_e);
+    let tasks5 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks4, mp_plan_c);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(tasks5) != 5 { panic(24257); };
+    if ecs_parallel_scoped_task_set_threaded_len<i32, i32>(tasks5) != 3 { panic(24258); };
+    if ecs_parallel_scoped_task_set_on_scope_len<i32, i32>(tasks5) != 2 { panic(24259); };
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, tasks5);
+    if result.mismatch { panic(24260); };
+    if result.used_threads != true { panic(24261); };
+    if result.thread_sum != 39 { panic(24262); };
+    if result.ran_count != 5 { panic(24263); };
+    if result.local_count != 2 { panic(24264); };
+    if result.wave_count != 2 { panic(24265); };
+}
+
+@test "task pool scoped task set spawn on scope only stays local"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks1, mp_plan_b);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(tasks2) != 2 { panic(24266); };
+    if ecs_parallel_scoped_task_set_threaded_len<i32, i32>(tasks2) != 0 { panic(24267); };
+    if ecs_parallel_scoped_task_set_on_scope_len<i32, i32>(tasks2) != 2 { panic(24268); };
+    let pool = ecs_parallel_task_pool_new(4);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, tasks2);
+    if result.mismatch { panic(24269); };
+    if result.used_threads { panic(24270); };
+    if result.thread_sum != 8 { panic(24271); };
+    if result.ran_count != 2 { panic(24272); };
+    if result.local_count != 2 { panic(24273); };
+    if result.wave_count != 0 { panic(24274); };
+}
