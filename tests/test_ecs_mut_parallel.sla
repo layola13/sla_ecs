@@ -613,3 +613,87 @@ fn mp_plan_e(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if ecs_executor_run_plan_apply_at(result.plan, 0) != 0 { panic(24150); };
     if ecs_executor_state_unapplied_count(result.plan.executor.state) != 0 { panic(24151); };
 }
+
+@test "dynamic catalog quint first wave"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 5, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let dep2 = Vec::new();
+    let dep3 = Vec::new();
+    let dep4 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let p3 = ecs_executor_run_plan_add_system(p2, ecs_executor_system_spec_new(2, false, false, false, true), 0, dep2);
+    let p4 = ecs_executor_run_plan_add_system(p3, ecs_executor_system_spec_new(3, false, false, false, true), 0, dep3);
+    let p5 = ecs_executor_run_plan_add_system(p4, ecs_executor_system_spec_new(4, false, false, false, true), 0, dep4);
+    let acc_a = table_erased_system_access_none();
+    let acc_b = table_erased_system_access_none();
+    let acc_c = table_erased_system_access_none();
+    let acc_d = table_erased_system_access_none();
+    let acc_e = table_erased_system_access_none();
+    acc_a.write_components.push(MPA_ID);
+    acc_b.write_components.push(MPB_ID);
+    acc_c.write_components.push(MPC_ID);
+    acc_d.write_components.push(MPD_ID);
+    acc_e.write_components.push(MPE_ID);
+    let catalog0 = ecs_parallel_fn_catalog_new<i32, i32>();
+    let catalog1 = ecs_parallel_fn_catalog_add<i32, i32>(catalog0, 0, mp_plan_a, acc_a);
+    let catalog2 = ecs_parallel_fn_catalog_add<i32, i32>(catalog1, 1, mp_plan_b, acc_b);
+    let catalog3 = ecs_parallel_fn_catalog_add<i32, i32>(catalog2, 2, mp_plan_c, acc_c);
+    let catalog4 = ecs_parallel_fn_catalog_add<i32, i32>(catalog3, 3, mp_plan_d, acc_d);
+    let catalog5 = ecs_parallel_fn_catalog_add<i32, i32>(catalog4, 4, mp_plan_e, acc_e);
+
+    let result = ecs_parallel_run_ready_dynamic_catalog_batch_up_to5<i32, i32>(w0, p5, catalog5, 9);
+    if result.mismatch { panic(24152); };
+    if result.used_threads != true { panic(24153); };
+    if result.thread_sum != 39 { panic(24154); };
+    if result.ran_count != 5 { panic(24155); };
+    if ecs_executor_state_completed_count(result.plan.executor.state) != 5 { panic(24156); };
+    if ecs_executor_run_plan_run_count(result.plan) != 5 { panic(24157); };
+    if ecs_executor_run_plan_run_at(result.plan, 4) != 4 { panic(24158); };
+}
+
+@test "task pool caps batch width at five"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 5, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let dep2 = Vec::new();
+    let dep3 = Vec::new();
+    let dep4 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let p3 = ecs_executor_run_plan_add_system(p2, ecs_executor_system_spec_new(2, false, false, false, true), 0, dep2);
+    let p4 = ecs_executor_run_plan_add_system(p3, ecs_executor_system_spec_new(3, false, false, false, true), 0, dep3);
+    let p5 = ecs_executor_run_plan_add_system(p4, ecs_executor_system_spec_new(4, false, false, false, true), 0, dep4);
+    let acc_a = table_erased_system_access_none();
+    let acc_b = table_erased_system_access_none();
+    let acc_c = table_erased_system_access_none();
+    let acc_d = table_erased_system_access_none();
+    let acc_e = table_erased_system_access_none();
+    acc_a.write_components.push(MPA_ID);
+    acc_b.write_components.push(MPB_ID);
+    acc_c.write_components.push(MPC_ID);
+    acc_d.write_components.push(MPD_ID);
+    acc_e.write_components.push(MPE_ID);
+    let catalog0 = ecs_parallel_fn_catalog_new<i32, i32>();
+    let catalog1 = ecs_parallel_fn_catalog_add<i32, i32>(catalog0, 0, mp_plan_a, acc_a);
+    let catalog2 = ecs_parallel_fn_catalog_add<i32, i32>(catalog1, 1, mp_plan_b, acc_b);
+    let catalog3 = ecs_parallel_fn_catalog_add<i32, i32>(catalog2, 2, mp_plan_c, acc_c);
+    let catalog4 = ecs_parallel_fn_catalog_add<i32, i32>(catalog3, 3, mp_plan_d, acc_d);
+    let catalog5 = ecs_parallel_fn_catalog_add<i32, i32>(catalog4, 4, mp_plan_e, acc_e);
+    let pool = ecs_parallel_task_pool_new(9);
+    if ecs_parallel_task_pool_worker_count(pool) != 9 { panic(24159); };
+    if ecs_parallel_task_pool_batch_width(pool) != 5 { panic(24160); };
+
+    let result = ecs_parallel_task_pool_run_ready_dynamic_catalog_batch<i32, i32>(pool, w0, p5, catalog5);
+    if result.mismatch { panic(24161); };
+    if result.thread_sum != 39 { panic(24162); };
+    if result.ran_count != 5 { panic(24163); };
+    if ecs_executor_state_completed_count(result.plan.executor.state) != 5 { panic(24164); };
+}
