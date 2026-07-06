@@ -81,6 +81,10 @@ fn mp_child_scope_nested(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsPara
     return tasks2;
 }
 
+fn mp_child_scope_empty(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParallelScopedTaskSet<i32, i32> {
+    return ecs_parallel_scoped_task_set_new<i32, i32>();
+}
+
 @test "mut batch parallel sums disjoint systems"() {
     let w0 = table_erased_world_new<i32, i32>(0, 0);
     let acc_a = table_erased_system_access_none();
@@ -1907,4 +1911,26 @@ fn mp_child_scope_nested(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsPara
     if ecs_parallel_scope_run_result_lane_at(result, 4) != 2 { panic(24454); };
     if ecs_parallel_scope_run_result_round_at(result, 8) != 1 { panic(24455); };
     if ecs_parallel_scope_run_result_lane_at(result, 8) != 2 { panic(24456); };
+}
+
+@test "task pool recursive scope runs pool child generator on worker"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_child_scope<i32, i32>(tasks0, mp_child_scope_empty);
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive<i32, i32>(pool, w0, tasks1);
+    if result.mismatch { panic(24475); };
+    if result.used_threads != true { panic(24476); };
+    if result.ticked_pool_executor != true { panic(24477); };
+    if result.ticked_scope_executor { panic(24478); };
+    if result.ticked_external_executor { panic(24479); };
+    if result.thread_sum != 0 { panic(24480); };
+    if result.ran_count != 0 { panic(24481); };
+    if result.child_scope_count != 1 { panic(24482); };
+    if result.child_scope_pool_count != 1 { panic(24483); };
+    if result.child_scope_local_count != 0 { panic(24484); };
+    if result.child_scope_external_count != 0 { panic(24485); };
+    if result.recursive_depth != 1 { panic(24486); };
+    if result.wave_count != 0 { panic(24487); };
+    if ecs_parallel_scope_run_result_len(result) != 0 { panic(24488); };
 }
