@@ -2019,8 +2019,14 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
             let generated_tasks = child_run(child_world);
             pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, generated_tasks);
             total_child_scopes = total_child_scopes + 1;
-            if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };
-            if child_lane == 2 { total_child_scope_external = total_child_scope_external + 1; };
+            if child_lane == 1 {
+                total_child_scope_local = total_child_scope_local + 1;
+                ticked_scope = true;
+            };
+            if child_lane == 2 {
+                total_child_scope_external = total_child_scope_external + 1;
+                if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
+            };
             root_child_i = root_child_i + 1;
         };
     }
@@ -2103,8 +2109,14 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
             let generated_tasks = child_run(child_world);
             pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, generated_tasks);
             total_child_scopes = total_child_scopes + 1;
-            if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };
-            if child_lane == 2 { total_child_scope_external = total_child_scope_external + 1; };
+            if child_lane == 1 {
+                total_child_scope_local = total_child_scope_local + 1;
+                ticked_scope = true;
+            };
+            if child_lane == 2 {
+                total_child_scope_external = total_child_scope_external + 1;
+                if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
+            };
             root_child_result_i = root_child_result_i + 1;
         };
     }
@@ -2183,8 +2195,14 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
                 let generated_tasks = child_run(child_world);
                 next = ecs_parallel_scoped_task_set_extend<R, M>(next, generated_tasks);
                 total_child_scopes = total_child_scopes + 1;
-                if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };
-                if child_lane == 2 { total_child_scope_external = total_child_scope_external + 1; };
+                if child_lane == 1 {
+                    total_child_scope_local = total_child_scope_local + 1;
+                    ticked_scope = true;
+                };
+                if child_lane == 2 {
+                    total_child_scope_external = total_child_scope_external + 1;
+                    if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
+                };
                 child_i = child_i + 1;
             };
         }
@@ -2267,8 +2285,14 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
                 let generated_tasks = child_run(child_world);
                 next = ecs_parallel_scoped_task_set_extend<R, M>(next, generated_tasks);
                 total_child_scopes = total_child_scopes + 1;
-                if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };
-                if child_lane == 2 { total_child_scope_external = total_child_scope_external + 1; };
+                if child_lane == 1 {
+                    total_child_scope_local = total_child_scope_local + 1;
+                    ticked_scope = true;
+                };
+                if child_lane == 2 {
+                    total_child_scope_external = total_child_scope_external + 1;
+                    if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
+                };
                 child_result_i = child_result_i + 1;
             };
         }
