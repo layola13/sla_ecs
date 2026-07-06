@@ -165,7 +165,7 @@ struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
 }
 }
 
-@expand_tuple(5, 8, T) {
+@expand_tuple(5, 9, T) {
 struct TableErasedAnyOf$N<@join(T, ", ") { $T }> {
     entity: Entity,
 @each(T) {
@@ -2455,7 +2455,7 @@ fn table_erased_world_query_any_of$N_auto<@join(T, ", ") { $T }, R, M>(world: Ta
 }
 }
 
-@expand_tuple(5, 8, T) {
+@expand_tuple(5, 9, T) {
 fn table_erased_world_query_any_of$N<@join(T, ", ") { $T }, R, M>(world: TableErasedWorld<R, M>, @join(T, ", ") { component_id_$I: i32, type_id_$I: i32 }, @join(T, ", ") { default_$I: fn() -> $T }) -> Query<TableErasedAnyOf$N<@join(T, ", ") { $T }>> {
     let query = query_new<TableErasedAnyOf$N<@join(T, ", ") { $T }>>();
     let i: i64 = 0;
@@ -3668,6 +3668,7 @@ const TABLE_ERASED_AUX_TYPE: i32 = 305;
 const TABLE_ERASED_EXTRA_TYPE: i32 = 306;
 const TABLE_ERASED_MORE_TYPE: i32 = 307;
 const TABLE_ERASED_BONUS_TYPE: i32 = 308;
+const TABLE_ERASED_PRIME_TYPE: i32 = 309;
 
 struct TableErasedPos { x: i32, y: i32 }
 struct TableErasedVel { x: i32, y: i32 }
@@ -3677,6 +3678,7 @@ struct TableErasedAux { value: i32 }
 struct TableErasedExtra { value: i32 }
 struct TableErasedMore { value: i32 }
 struct TableErasedBonus { value: i32 }
+struct TableErasedPrime { value: i32 }
 struct TableErasedTime { tick: i32 }
 struct TableErasedEvent { amount: i32 }
 
@@ -3690,6 +3692,7 @@ fn table_erased_aux_default() -> TableErasedAux { return TableErasedAux { value:
 fn table_erased_extra_default() -> TableErasedExtra { return TableErasedExtra { value: 0 }; }
 fn table_erased_more_default() -> TableErasedMore { return TableErasedMore { value: 0 }; }
 fn table_erased_bonus_default() -> TableErasedBonus { return TableErasedBonus { value: 0 }; }
+fn table_erased_prime_default() -> TableErasedPrime { return TableErasedPrime { value: 0 }; }
 fn table_erased_vel_marker_pair_default() -> TableErasedPairValue<TableErasedVel, TableErasedMarker> { return TableErasedPairValue<TableErasedVel, TableErasedMarker> { first: table_erased_vel_default(), second: table_erased_marker_default() }; }
 fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErasedEvent> { return table_erased_world_new<TableErasedTime, TableErasedEvent>(table_erased_time_default(), table_erased_event_default()); }
 
@@ -5459,6 +5462,21 @@ fn table_erased_test_world_new() -> TableErasedWorld<TableErasedTime, TableErase
     if any8_bonus_present != 1 { panic(12689); };
     if any8_more_sum != 20000 { panic(12690); };
     if any8_bonus_sum != 30000 { panic(12691); };
+
+    let (w27, prime) = table_erased_world_register_table<TableErasedTime, TableErasedEvent>(w26, TABLE_ERASED_PRIME_TYPE, ecs_box_drop<TableErasedPrime>);
+    let w28 = table_erased_world_insert<TableErasedPrime, TableErasedTime, TableErasedEvent>(w27, e1, prime.id, TABLE_ERASED_PRIME_TYPE, TableErasedPrime { value: 50000 });
+    let any9 = table_erased_world_query_any_of9_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra, TableErasedMore, TableErasedBonus, TableErasedPrime, TableErasedTime, TableErasedEvent>(w28, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_MORE_TYPE, TABLE_ERASED_BONUS_TYPE, TABLE_ERASED_PRIME_TYPE, table_erased_pos_default, table_erased_vel_default, table_erased_marker_default, table_erased_tag_default, table_erased_aux_default, table_erased_extra_default, table_erased_more_default, table_erased_bonus_default, table_erased_prime_default);
+    if len(any9.items) != 4 { panic(12880); };
+    let any9_prime_present: i32 = 0;
+    let any9_prime_sum: i32 = 0;
+    let any9_i: i64 = 0;
+    let any9_count = len(any9.items) as i64;
+    while any9_i < any9_count {
+        if any9.items[any9_i].value_8.has_value { any9_prime_present = any9_prime_present + 1; any9_prime_sum = any9_prime_sum + any9.items[any9_i].value_8.value.value; };
+        any9_i = any9_i + 1;
+    }
+    if any9_prime_present != 1 { panic(12881); };
+    if any9_prime_sum != 50000 { panic(12882); };
 
     let pos_any8 = table_erased_world_query_with_any_of8_auto<TableErasedPos, TableErasedMarker, TableErasedVel, TableErasedAux, TableErasedExtra, TableErasedTag, TableErasedMore, TableErasedBonus, TableErasedPos, TableErasedTime, TableErasedEvent>(w26, TABLE_ERASED_POS_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_MORE_TYPE, TABLE_ERASED_BONUS_TYPE, TABLE_ERASED_POS_TYPE, table_erased_marker_default, table_erased_vel_default, table_erased_aux_default, table_erased_extra_default, table_erased_tag_default, table_erased_more_default, table_erased_bonus_default, table_erased_pos_default);
     if len(pos_any8.items) != 3 { panic(12692); };
