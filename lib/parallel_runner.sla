@@ -2005,8 +2005,22 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
     while root_child_result_i < root_child_scope_result_count {
         let child_lane = tasks.child_scope_result_lanes[root_child_result_i];
         let result_run = tasks.child_scope_result_runs[root_child_result_i];
-        let result_world = shared.clone();
-        let result_value = result_run(result_world);
+        let result_value: i32 = 0;
+        if child_lane == 0 {
+            if pool.max_batch_width > 0 {
+                let result_world = shared.clone();
+                result_value = thread::spawn(^|| result_run(result_world)).join().unwrap();
+                any_threads = true;
+                if options.tick_task_pool_executor { ticked_pool = true; };
+            } else {
+                let result_world = shared.clone();
+                result_value = result_run(result_world);
+                ticked_pool = true;
+            };
+        } else {
+            let result_world = shared.clone();
+            result_value = result_run(result_world);
+        };
         result_values.push(result_value);
         result_rounds.push(depth);
         result_lanes.push(3);
@@ -2014,9 +2028,24 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
         total_ran = total_ran + 1;
         total_child_scope_results = total_child_scope_results + 1;
         let child_run = tasks.child_scope_result_child_runs[root_child_result_i];
-        let child_world = shared.clone();
-        let child_tasks = child_run(child_world);
-        pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, child_tasks);
+        if child_lane == 0 {
+            if pool.max_batch_width > 0 {
+                let child_world = shared.clone();
+                let generated_tasks = thread::spawn(^|| child_run(child_world)).join().unwrap();
+                pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, generated_tasks);
+                any_threads = true;
+                if options.tick_task_pool_executor { ticked_pool = true; };
+            } else {
+                let child_world = shared.clone();
+                let generated_tasks = child_run(child_world);
+                pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, generated_tasks);
+                ticked_pool = true;
+            };
+        } else {
+            let child_world = shared.clone();
+            let generated_tasks = child_run(child_world);
+            pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, generated_tasks);
+        };
         total_child_scopes = total_child_scopes + 1;
         if child_lane == 0 { total_child_scope_pool = total_child_scope_pool + 1; };
         if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };
@@ -2088,8 +2117,22 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
         while child_result_i < child_scope_result_count {
             let child_lane = pending.child_scope_result_lanes[child_result_i];
             let result_run = pending.child_scope_result_runs[child_result_i];
-            let result_world = shared.clone();
-            let result_value = result_run(result_world);
+            let result_value: i32 = 0;
+            if child_lane == 0 {
+                if pool.max_batch_width > 0 {
+                    let result_world = shared.clone();
+                    result_value = thread::spawn(^|| result_run(result_world)).join().unwrap();
+                    any_threads = true;
+                    if options.tick_task_pool_executor { ticked_pool = true; };
+                } else {
+                    let result_world = shared.clone();
+                    result_value = result_run(result_world);
+                    ticked_pool = true;
+                };
+            } else {
+                let result_world = shared.clone();
+                result_value = result_run(result_world);
+            };
             result_values.push(result_value);
             result_rounds.push(depth);
             result_lanes.push(3);
@@ -2097,9 +2140,24 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
             total_ran = total_ran + 1;
             total_child_scope_results = total_child_scope_results + 1;
             let child_run = pending.child_scope_result_child_runs[child_result_i];
-            let child_world = shared.clone();
-            let child_tasks = child_run(child_world);
-            next = ecs_parallel_scoped_task_set_extend<R, M>(next, child_tasks);
+            if child_lane == 0 {
+                if pool.max_batch_width > 0 {
+                    let child_world = shared.clone();
+                    let generated_tasks = thread::spawn(^|| child_run(child_world)).join().unwrap();
+                    next = ecs_parallel_scoped_task_set_extend<R, M>(next, generated_tasks);
+                    any_threads = true;
+                    if options.tick_task_pool_executor { ticked_pool = true; };
+                } else {
+                    let child_world = shared.clone();
+                    let generated_tasks = child_run(child_world);
+                    next = ecs_parallel_scoped_task_set_extend<R, M>(next, generated_tasks);
+                    ticked_pool = true;
+                };
+            } else {
+                let child_world = shared.clone();
+                let generated_tasks = child_run(child_world);
+                next = ecs_parallel_scoped_task_set_extend<R, M>(next, generated_tasks);
+            };
             total_child_scopes = total_child_scopes + 1;
             if child_lane == 0 { total_child_scope_pool = total_child_scope_pool + 1; };
             if child_lane == 1 { total_child_scope_local = total_child_scope_local + 1; };

@@ -1934,3 +1934,27 @@ fn mp_child_scope_empty(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParal
     if result.wave_count != 0 { panic(24487); };
     if ecs_parallel_scope_run_result_len(result) != 0 { panic(24488); };
 }
+
+@test "task pool recursive scope runs pool child result generator on worker"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_child_scope_with_result<i32, i32>(tasks0, mp_plan_f, mp_child_scope_empty);
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive<i32, i32>(pool, w0, tasks1);
+    if result.mismatch { panic(24489); };
+    if result.used_threads != true { panic(24490); };
+    if result.ticked_pool_executor != true { panic(24491); };
+    if result.ticked_scope_executor { panic(24492); };
+    if result.ticked_external_executor { panic(24493); };
+    if result.thread_sum != 17 { panic(24494); };
+    if result.ran_count != 1 { panic(24495); };
+    if result.child_scope_count != 1 { panic(24496); };
+    if result.child_scope_result_count != 1 { panic(24497); };
+    if result.child_scope_pool_count != 1 { panic(24498); };
+    if result.recursive_depth != 1 { panic(24499); };
+    if result.wave_count != 0 { panic(24500); };
+    if ecs_parallel_scope_run_result_len(result) != 1 { panic(24501); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 17 { panic(24502); };
+    if ecs_parallel_scope_run_result_round_at(result, 0) != 0 { panic(24503); };
+    if ecs_parallel_scope_run_result_lane_at(result, 0) != 3 { panic(24504); };
+}
