@@ -32,6 +32,11 @@ struct EcsParallelFnCatalog<R, M> {
     accesses: Vec<TableErasedSystemAccess>,
 }
 
+struct EcsParallelTaskPool {
+    worker_count: i64,
+    max_batch_width: i64,
+}
+
 fn ecs_parallel_ready_batch_run_result(plan: EcsExecutorRunPlan, thread_sum: i32, ran_count: i64, skipped_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelReadyBatchRunResult {
     return EcsParallelReadyBatchRunResult { plan: plan, thread_sum: thread_sum, ran_count: ran_count, skipped_count: skipped_count, used_threads: used_threads, mismatch: mismatch };
 }
@@ -66,6 +71,22 @@ fn ecs_parallel_fn_catalog_find_slot<R, M>(catalog: EcsParallelFnCatalog<R, M>, 
         i = i + 1;
     }
     return -1;
+}
+
+fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
+    let workers = worker_count;
+    if workers < 1 { workers = 1; };
+    let width = workers;
+    if width > 4 { width = 4; };
+    return EcsParallelTaskPool { worker_count: workers, max_batch_width: width };
+}
+
+fn ecs_parallel_task_pool_worker_count(pool: EcsParallelTaskPool) -> i64 {
+    return pool.worker_count;
+}
+
+fn ecs_parallel_task_pool_batch_width(pool: EcsParallelTaskPool) -> i64 {
+    return pool.max_batch_width;
 }
 
 fn ecs_parallel_run_mut_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess) -> i32 {
@@ -517,6 +538,14 @@ fn ecs_parallel_run_ready_all_dynamic_catalog_up_to4<R, M>(world: TableErasedWor
     }
     p.stalled = true;
     return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+}
+
+fn ecs_parallel_task_pool_run_ready_dynamic_catalog_batch<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
+    return ecs_parallel_run_ready_dynamic_catalog_batch_up_to4<R, M>(world, plan, catalog, pool.max_batch_width);
+}
+
+fn ecs_parallel_task_pool_run_ready_all_dynamic_catalog<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
+    return ecs_parallel_run_ready_all_dynamic_catalog_up_to4<R, M>(world, plan, catalog, pool.max_batch_width);
 }
 
 fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {
