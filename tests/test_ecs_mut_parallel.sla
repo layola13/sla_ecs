@@ -60,6 +60,14 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     return 31;
 }
 
+fn mp_lifecycle_spawn_one() -> i32 {
+    return 1;
+}
+
+fn mp_lifecycle_destroy_two() -> i32 {
+    return 2;
+}
+
 fn mp_child_scope_bc(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParallelScopedTaskSet<i32, i32> {
     let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
     let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_b);
@@ -596,6 +604,30 @@ fn mp_child_scope_result_fgh(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> Ecs
     if ecs_executor_state_is_completed(result.plan.executor.state, 3) { panic(24132); };
     if ecs_executor_run_plan_run_at(result.plan, 0) != 0 { panic(24133); };
     if ecs_executor_run_plan_run_at(result.plan, 1) != 1 { panic(24134); };
+}
+
+@test "task pool lifecycle callbacks run per worker"() {
+    let pool = ecs_parallel_task_pool_new(4);
+    let result = ecs_parallel_task_pool_run_lifecycle_callbacks(pool, mp_lifecycle_spawn_one, mp_lifecycle_destroy_two);
+    if result.mismatch { panic(24603); };
+    if result.used_threads != true { panic(24604); };
+    if result.worker_count != 4 { panic(24605); };
+    if result.spawn_count != 4 { panic(24606); };
+    if result.destroy_count != 4 { panic(24607); };
+    if result.spawn_sum != 4 { panic(24608); };
+    if result.destroy_sum != 8 { panic(24609); };
+}
+
+@test "task pool lifecycle callbacks skip zero workers"() {
+    let pool = ecs_parallel_task_pool_new(0);
+    let result = ecs_parallel_task_pool_run_lifecycle_callbacks(pool, mp_lifecycle_spawn_one, mp_lifecycle_destroy_two);
+    if result.mismatch { panic(24610); };
+    if result.used_threads { panic(24611); };
+    if result.worker_count != 0 { panic(24612); };
+    if result.spawn_count != 0 { panic(24613); };
+    if result.destroy_count != 0 { panic(24614); };
+    if result.spawn_sum != 0 { panic(24615); };
+    if result.destroy_sum != 0 { panic(24616); };
 }
 
 @test "task pool all runs worker limited waves"() {

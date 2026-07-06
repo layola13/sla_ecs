@@ -37,6 +37,21 @@ struct EcsParallelTaskPool {
     max_batch_width: i64,
 }
 
+struct EcsParallelTaskPoolLifecycleWorkerResult {
+    spawn_value: i32,
+    destroy_value: i32,
+}
+
+struct EcsParallelTaskPoolLifecycleResult {
+    worker_count: i64,
+    spawn_count: i64,
+    destroy_count: i64,
+    spawn_sum: i32,
+    destroy_sum: i32,
+    used_threads: bool,
+    mismatch: bool,
+}
+
 struct EcsParallelScopeOptions {
     tick_task_pool_executor: bool,
     use_external_executor: bool,
@@ -88,6 +103,20 @@ fn ecs_parallel_ready_batch_run_result(plan: EcsExecutorRunPlan, thread_sum: i32
 
 fn ecs_parallel_catalog_ready_selection(plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped_count: i64, mismatch: bool) -> EcsParallelCatalogReadySelection {
     return EcsParallelCatalogReadySelection { plan: plan, batch: batch, skipped_count: skipped_count, mismatch: mismatch };
+}
+
+fn ecs_parallel_task_pool_lifecycle_worker_result(spawn_value: i32, destroy_value: i32) -> EcsParallelTaskPoolLifecycleWorkerResult {
+    return EcsParallelTaskPoolLifecycleWorkerResult { spawn_value: spawn_value, destroy_value: destroy_value };
+}
+
+fn ecs_parallel_task_pool_lifecycle_result(worker_count: i64, spawn_count: i64, destroy_count: i64, spawn_sum: i32, destroy_sum: i32, used_threads: bool, mismatch: bool) -> EcsParallelTaskPoolLifecycleResult {
+    return EcsParallelTaskPoolLifecycleResult { worker_count: worker_count, spawn_count: spawn_count, destroy_count: destroy_count, spawn_sum: spawn_sum, destroy_sum: destroy_sum, used_threads: used_threads, mismatch: mismatch };
+}
+
+fn ecs_parallel_task_pool_lifecycle_worker_run(on_spawn: fn() -> i32, on_destroy: fn() -> i32) -> EcsParallelTaskPoolLifecycleWorkerResult {
+    let spawn_value = on_spawn();
+    let destroy_value = on_destroy();
+    return ecs_parallel_task_pool_lifecycle_worker_result(spawn_value, destroy_value);
 }
 
 fn ecs_parallel_scope_options_default() -> EcsParallelScopeOptions {
@@ -340,6 +369,31 @@ fn ecs_parallel_task_pool_worker_count(pool: EcsParallelTaskPool) -> i64 {
 
 fn ecs_parallel_task_pool_batch_width(pool: EcsParallelTaskPool) -> i64 {
     return pool.max_batch_width;
+}
+
+fn ecs_parallel_task_pool_run_lifecycle_callbacks(pool: EcsParallelTaskPool, on_spawn: fn() -> i32, on_destroy: fn() -> i32) -> EcsParallelTaskPoolLifecycleResult {
+    if pool.worker_count <= 0 { return ecs_parallel_task_pool_lifecycle_result(pool.worker_count, 0, 0, 0, 0, false, false); };
+    let handles: Vec<JoinHandle<EcsParallelTaskPoolLifecycleWorkerResult>> = Vec::new();
+    let spawn_i: i64 = 0;
+    while spawn_i < pool.worker_count {
+        handles.push(thread::spawn(^|| ecs_parallel_task_pool_lifecycle_worker_run(on_spawn, on_destroy)));
+        spawn_i = spawn_i + 1;
+    }
+    let spawn_count: i64 = 0;
+    let destroy_count: i64 = 0;
+    let spawn_sum: i32 = 0;
+    let destroy_sum: i32 = 0;
+    let join_i: i64 = 0;
+    while join_i < len(handles) as i64 {
+        let worker_result = handles[join_i].join().unwrap();
+        spawn_count = spawn_count + 1;
+        destroy_count = destroy_count + 1;
+        spawn_sum = spawn_sum + worker_result.spawn_value;
+        destroy_sum = destroy_sum + worker_result.destroy_value;
+        join_i = join_i + 1;
+    }
+    let mismatch = spawn_count != pool.worker_count || destroy_count != pool.worker_count;
+    return ecs_parallel_task_pool_lifecycle_result(pool.worker_count, spawn_count, destroy_count, spawn_sum, destroy_sum, true, mismatch);
 }
 
 fn ecs_parallel_run_mut_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess) -> i32 {
