@@ -37,12 +37,28 @@ struct EcsParallelTaskPool {
     max_batch_width: i64,
 }
 
+struct EcsParallelScopeRunResult {
+    thread_sum: i32,
+    ran_count: i64,
+    wave_count: i64,
+    used_threads: bool,
+    mismatch: bool,
+}
+
+struct EcsParallelScopedTaskSet<R, M> {
+    runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>,
+}
+
 fn ecs_parallel_ready_batch_run_result(plan: EcsExecutorRunPlan, thread_sum: i32, ran_count: i64, skipped_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelReadyBatchRunResult {
     return EcsParallelReadyBatchRunResult { plan: plan, thread_sum: thread_sum, ran_count: ran_count, skipped_count: skipped_count, used_threads: used_threads, mismatch: mismatch };
 }
 
 fn ecs_parallel_catalog_ready_selection(plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped_count: i64, mismatch: bool) -> EcsParallelCatalogReadySelection {
     return EcsParallelCatalogReadySelection { plan: plan, batch: batch, skipped_count: skipped_count, mismatch: mismatch };
+}
+
+fn ecs_parallel_scope_run_result(thread_sum: i32, ran_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, ran_count: ran_count, wave_count: wave_count, used_threads: used_threads, mismatch: mismatch };
 }
 
 fn ecs_parallel_fn_catalog_new<R, M>() -> EcsParallelFnCatalog<R, M> {
@@ -71,6 +87,20 @@ fn ecs_parallel_fn_catalog_find_slot<R, M>(catalog: EcsParallelFnCatalog<R, M>, 
         i = i + 1;
     }
     return -1;
+}
+
+fn ecs_parallel_scoped_task_set_new<R, M>() -> EcsParallelScopedTaskSet<R, M> {
+    let runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32> = Vec::new();
+    return EcsParallelScopedTaskSet<R, M> { runs: runs };
+}
+
+fn ecs_parallel_scoped_task_set_spawn<R, M>(tasks: EcsParallelScopedTaskSet<R, M>, run: fn(Arc<*TableErasedWorld<R, M>>) -> i32) -> EcsParallelScopedTaskSet<R, M> {
+    tasks.runs.push(run);
+    return tasks;
+}
+
+fn ecs_parallel_scoped_task_set_len<R, M>(tasks: EcsParallelScopedTaskSet<R, M>) -> i64 {
+    return len(tasks.runs) as i64;
 }
 
 fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
@@ -1536,6 +1566,44 @@ fn ecs_parallel_task_pool_scope_run_ready_dynamic_catalog_batch<R, M>(pool: EcsP
 
 fn ecs_parallel_task_pool_scope_run_ready_all_dynamic_catalog<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
     return ecs_parallel_task_pool_run_ready_all_dynamic_catalog<R, M>(pool, world, plan, catalog);
+}
+
+fn ecs_parallel_task_pool_scope_run_tasks<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopeRunResult {
+    let count = ecs_parallel_scoped_task_set_len<R, M>(tasks);
+    if count == 0 { return ecs_parallel_scope_run_result(0, 0, 0, false, false); };
+    let width = pool.max_batch_width;
+    if width <= 0 { return ecs_parallel_scope_run_result(0, 0, 0, false, true); };
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let waves: i64 = 0;
+    let offset: i64 = 0;
+    while offset < count {
+        let batch_count = width;
+        let remaining = count - offset;
+        if batch_count > remaining { batch_count = remaining; };
+        let handles: Vec<JoinHandle<i32>> = Vec::new();
+        let i: i64 = 0;
+        while i < batch_count {
+            let run = tasks.runs[offset + i];
+            let task_world = shared.clone();
+            let handle = thread::spawn(^|| run(task_world));
+            handles.push(handle);
+            i = i + 1;
+        }
+        let j: i64 = 0;
+        while j < len(handles) as i64 {
+            let handle = handles[j];
+            total_sum = total_sum + handle.join().unwrap();
+            j = j + 1;
+        }
+        total_ran = total_ran + batch_count;
+        waves = waves + 1;
+        offset = offset + batch_count;
+    }
+    return ecs_parallel_scope_run_result(total_sum, total_ran, waves, true, false);
 }
 
 fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {

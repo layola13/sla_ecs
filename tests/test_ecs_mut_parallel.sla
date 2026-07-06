@@ -1429,3 +1429,44 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if ecs_executor_state_completed_count(result.plan.executor.state) != 10 { panic(24243); };
     if ecs_executor_run_plan_run_count(result.plan) != 10 { panic(24244); };
 }
+
+@test "task pool scoped task set waves by worker count"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks1, mp_plan_b);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks2, mp_plan_c);
+    let tasks4 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks3, mp_plan_d);
+    let tasks5 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks4, mp_plan_e);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(tasks5) != 5 { panic(24245); };
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, tasks5);
+    if result.mismatch { panic(24246); };
+    if result.used_threads != true { panic(24247); };
+    if result.thread_sum != 39 { panic(24248); };
+    if result.ran_count != 5 { panic(24249); };
+    if result.wave_count != 3 { panic(24250); };
+}
+
+@test "task pool scoped task set runs ten dynamic tasks"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks1, mp_plan_b);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks2, mp_plan_c);
+    let tasks4 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks3, mp_plan_d);
+    let tasks5 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks4, mp_plan_e);
+    let tasks6 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks5, mp_plan_f);
+    let tasks7 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks6, mp_plan_g);
+    let tasks8 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks7, mp_plan_h);
+    let tasks9 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks8, mp_plan_i);
+    let tasks10 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks9, mp_plan_j);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(tasks10) != 10 { panic(24251); };
+    let pool = ecs_parallel_task_pool_new(17);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, tasks10);
+    if result.mismatch { panic(24252); };
+    if result.used_threads != true { panic(24253); };
+    if result.thread_sum != 158 { panic(24254); };
+    if result.ran_count != 10 { panic(24255); };
+    if result.wave_count != 1 { panic(24256); };
+}
