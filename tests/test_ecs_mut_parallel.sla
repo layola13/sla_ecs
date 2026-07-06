@@ -60,6 +60,27 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     return 31;
 }
 
+fn mp_child_scope_bc(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParallelScopedTaskSet<i32, i32> {
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_b);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks1, mp_plan_c);
+    return tasks2;
+}
+
+fn mp_child_scope_de(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParallelScopedTaskSet<i32, i32> {
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks0, mp_plan_d);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(tasks1, mp_plan_e);
+    return tasks2;
+}
+
+fn mp_child_scope_nested(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParallelScopedTaskSet<i32, i32> {
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_b);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_child_scope<i32, i32>(tasks1, mp_child_scope_de);
+    return tasks2;
+}
+
 @test "mut batch parallel sums disjoint systems"() {
     let w0 = table_erased_world_new<i32, i32>(0, 0);
     let acc_a = table_erased_system_access_none();
@@ -1691,4 +1712,66 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if result.ticked_pool_executor { panic(24358); };
     if result.ticked_scope_executor { panic(24359); };
     if result.ticked_external_executor { panic(24360); };
+}
+
+@test "task pool recursive scope runs generated child tasks"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_child_scope<i32, i32>(tasks1, mp_child_scope_bc);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(tasks2) != 1 { panic(24361); };
+    if ecs_parallel_scoped_task_set_child_scope_len<i32, i32>(tasks2) != 1 { panic(24362); };
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive<i32, i32>(pool, w0, tasks2);
+    if result.mismatch { panic(24363); };
+    if result.thread_sum != 15 { panic(24364); };
+    if result.ran_count != 3 { panic(24365); };
+    if result.child_scope_count != 1 { panic(24366); };
+    if result.recursive_depth != 2 { panic(24367); };
+    if result.wave_count != 2 { panic(24368); };
+    if ecs_parallel_scope_run_result_len(result) != 3 { panic(24369); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 3 { panic(24370); };
+    if ecs_parallel_scope_run_result_at(result, 1) != 5 { panic(24371); };
+    if ecs_parallel_scope_run_result_at(result, 2) != 7 { panic(24372); };
+}
+
+@test "task pool recursive scope runs nested generated child scopes"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_child_scope<i32, i32>(tasks0, mp_child_scope_nested);
+    let pool = ecs_parallel_task_pool_new(2);
+    let options = ecs_parallel_scope_options_with_executor(true, true);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<i32, i32>(pool, w0, tasks1, options);
+    if result.mismatch { panic(24373); };
+    if result.thread_sum != 29 { panic(24374); };
+    if result.ran_count != 3 { panic(24375); };
+    if result.local_count != 1 { panic(24376); };
+    if result.external_count != 1 { panic(24377); };
+    if result.child_scope_count != 2 { panic(24378); };
+    if result.recursive_depth != 3 { panic(24379); };
+    if result.ticked_pool_executor != true { panic(24380); };
+    if result.ticked_scope_executor != true { panic(24381); };
+    if result.ticked_external_executor != true { panic(24382); };
+    if ecs_parallel_scope_run_result_len(result) != 3 { panic(24383); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 5 { panic(24384); };
+    if ecs_parallel_scope_run_result_at(result, 1) != 11 { panic(24385); };
+    if ecs_parallel_scope_run_result_at(result, 2) != 13 { panic(24386); };
+}
+
+@test "task pool recursive scope preserves child generators through extend"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let parent0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let parent1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(parent0, mp_plan_a);
+    let child0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let child1 = ecs_parallel_scoped_task_set_spawn_child_scope<i32, i32>(child0, mp_child_scope_bc);
+    let parent2 = ecs_parallel_scoped_task_set_extend<i32, i32>(parent1, child1);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(parent2) != 1 { panic(24387); };
+    if ecs_parallel_scoped_task_set_child_scope_len<i32, i32>(parent2) != 1 { panic(24388); };
+    let pool = ecs_parallel_task_pool_new(4);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive<i32, i32>(pool, w0, parent2);
+    if result.mismatch { panic(24389); };
+    if result.thread_sum != 15 { panic(24390); };
+    if result.ran_count != 3 { panic(24391); };
+    if result.child_scope_count != 1 { panic(24392); };
+    if result.recursive_depth != 2 { panic(24393); };
 }

@@ -49,6 +49,8 @@ struct EcsParallelScopeRunResult {
     local_count: i64,
     external_count: i64,
     wave_count: i64,
+    child_scope_count: i64,
+    recursive_depth: i64,
     used_threads: bool,
     ticked_pool_executor: bool,
     ticked_scope_executor: bool,
@@ -60,6 +62,7 @@ struct EcsParallelScopedTaskSet<R, M> {
     runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>,
     on_scope_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>,
     external_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>,
+    child_scope_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> EcsParallelScopedTaskSet<R, M>>,
     run_order_positions: Vec<i64>,
     on_scope_order_positions: Vec<i64>,
     external_order_positions: Vec<i64>,
@@ -83,15 +86,19 @@ fn ecs_parallel_scope_options_with_executor(tick_task_pool_executor: bool, use_e
 
 fn ecs_parallel_scope_run_result(thread_sum: i32, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
     let result_values: Vec<i32> = Vec::new();
-    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, child_scope_count: 0, recursive_depth: 0, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
 }
 
 fn ecs_parallel_scope_run_result_with_values(thread_sum: i32, result_values: Vec<i32>, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
-    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, child_scope_count: 0, recursive_depth: 0, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
 }
 
 fn ecs_parallel_scope_run_result_with_values_and_executor_flags(thread_sum: i32, result_values: Vec<i32>, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, ticked_pool_executor: bool, ticked_scope_executor: bool, ticked_external_executor: bool, mismatch: bool) -> EcsParallelScopeRunResult {
-    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: ticked_pool_executor, ticked_scope_executor: ticked_scope_executor, ticked_external_executor: ticked_external_executor, mismatch: mismatch };
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, child_scope_count: 0, recursive_depth: 0, used_threads: used_threads, ticked_pool_executor: ticked_pool_executor, ticked_scope_executor: ticked_scope_executor, ticked_external_executor: ticked_external_executor, mismatch: mismatch };
+}
+
+fn ecs_parallel_scope_run_result_recursive(thread_sum: i32, result_values: Vec<i32>, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, child_scope_count: i64, recursive_depth: i64, used_threads: bool, ticked_pool_executor: bool, ticked_scope_executor: bool, ticked_external_executor: bool, mismatch: bool) -> EcsParallelScopeRunResult {
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, child_scope_count: child_scope_count, recursive_depth: recursive_depth, used_threads: used_threads, ticked_pool_executor: ticked_pool_executor, ticked_scope_executor: ticked_scope_executor, ticked_external_executor: ticked_external_executor, mismatch: mismatch };
 }
 
 fn ecs_parallel_scope_run_result_len(result: EcsParallelScopeRunResult) -> i64 {
@@ -134,10 +141,11 @@ fn ecs_parallel_scoped_task_set_new<R, M>() -> EcsParallelScopedTaskSet<R, M> {
     let runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32> = Vec::new();
     let on_scope_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32> = Vec::new();
     let external_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32> = Vec::new();
+    let child_scope_runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> EcsParallelScopedTaskSet<R, M>> = Vec::new();
     let run_order_positions: Vec<i64> = Vec::new();
     let on_scope_order_positions: Vec<i64> = Vec::new();
     let external_order_positions: Vec<i64> = Vec::new();
-    return EcsParallelScopedTaskSet<R, M> { runs: runs, on_scope_runs: on_scope_runs, external_runs: external_runs, run_order_positions: run_order_positions, on_scope_order_positions: on_scope_order_positions, external_order_positions: external_order_positions };
+    return EcsParallelScopedTaskSet<R, M> { runs: runs, on_scope_runs: on_scope_runs, external_runs: external_runs, child_scope_runs: child_scope_runs, run_order_positions: run_order_positions, on_scope_order_positions: on_scope_order_positions, external_order_positions: external_order_positions };
 }
 
 fn ecs_parallel_scoped_task_set_spawn<R, M>(tasks: EcsParallelScopedTaskSet<R, M>, run: fn(Arc<*TableErasedWorld<R, M>>) -> i32) -> EcsParallelScopedTaskSet<R, M> {
@@ -161,6 +169,11 @@ fn ecs_parallel_scoped_task_set_spawn_on_external<R, M>(tasks: EcsParallelScoped
     return tasks;
 }
 
+fn ecs_parallel_scoped_task_set_spawn_child_scope<R, M>(tasks: EcsParallelScopedTaskSet<R, M>, run: fn(Arc<*TableErasedWorld<R, M>>) -> EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopedTaskSet<R, M> {
+    tasks.child_scope_runs.push(run);
+    return tasks;
+}
+
 fn ecs_parallel_scoped_task_set_len<R, M>(tasks: EcsParallelScopedTaskSet<R, M>) -> i64 {
     return (len(tasks.runs) + len(tasks.on_scope_runs) + len(tasks.external_runs)) as i64;
 }
@@ -175,6 +188,10 @@ fn ecs_parallel_scoped_task_set_on_scope_len<R, M>(tasks: EcsParallelScopedTaskS
 
 fn ecs_parallel_scoped_task_set_external_len<R, M>(tasks: EcsParallelScopedTaskSet<R, M>) -> i64 {
     return len(tasks.external_runs) as i64;
+}
+
+fn ecs_parallel_scoped_task_set_child_scope_len<R, M>(tasks: EcsParallelScopedTaskSet<R, M>) -> i64 {
+    return len(tasks.child_scope_runs) as i64;
 }
 
 fn ecs_parallel_scoped_task_set_find_order_slot(positions: Vec<i64>, order_pos: i64) -> i64 {
@@ -206,6 +223,12 @@ fn ecs_parallel_scoped_task_set_extend<R, M>(parent: EcsParallelScopedTaskSet<R,
             };
         };
         order_pos = order_pos + 1;
+    }
+    let child_scope_i: i64 = 0;
+    let child_scope_n = ecs_parallel_scoped_task_set_child_scope_len<R, M>(child);
+    while child_scope_i < child_scope_n {
+        parent = ecs_parallel_scoped_task_set_spawn_child_scope<R, M>(parent, child.child_scope_runs[child_scope_i]);
+        child_scope_i = child_scope_i + 1;
     }
     return parent;
 }
@@ -1680,6 +1703,13 @@ fn ecs_parallel_task_pool_scope_run_tasks<R, M>(pool: EcsParallelTaskPool, world
 }
 
 fn ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    return ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool, shared, tasks, options);
+}
+
+fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool, shared: Arc<*TableErasedWorld<R, M>>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
     let count = ecs_parallel_scoped_task_set_threaded_len<R, M>(tasks);
     let local_count = ecs_parallel_scoped_task_set_on_scope_len<R, M>(tasks);
     let external_count = ecs_parallel_scoped_task_set_external_len<R, M>(tasks);
@@ -1689,9 +1719,6 @@ fn ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool: EcsParallelTa
     if count > 0 {
         if width <= 0 { return ecs_parallel_scope_run_result(0, 0, 0, 0, 0, false, true); };
     };
-    let world_box = Box::new(world);
-    let world_ptr = Box::into_raw(world_box);
-    let shared = Arc::new(world_ptr);
     let total_sum: i32 = 0;
     let total_ran: i64 = 0;
     let waves: i64 = 0;
@@ -1751,6 +1778,105 @@ fn ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool: EcsParallelTa
         external_i = external_i + 1;
     }
     return ecs_parallel_scope_run_result_with_values_and_executor_flags(total_sum, result_values, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0, external_count > 0 && options.use_external_executor, false);
+}
+
+fn ecs_parallel_task_pool_scope_run_tasks_recursive<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopeRunResult {
+    return ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool, world, tasks, ecs_parallel_scope_options_default());
+}
+
+fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let total_local: i64 = 0;
+    let total_external: i64 = 0;
+    let total_waves: i64 = 0;
+    let total_child_scopes: i64 = 0;
+    let depth: i64 = 0;
+    let any_threads = false;
+    let ticked_pool = false;
+    let ticked_scope = false;
+    let ticked_external = false;
+    let result_values: Vec<i32> = Vec::new();
+    let guard: i64 = 0;
+
+    let root_direct_count = ecs_parallel_scoped_task_set_len<R, M>(tasks);
+    let root_child_scope_count = ecs_parallel_scoped_task_set_child_scope_len<R, M>(tasks);
+    if root_direct_count == 0 {
+        if root_child_scope_count == 0 { return ecs_parallel_scope_run_result_recursive(total_sum, result_values, total_ran, total_local, total_external, total_waves, total_child_scopes, depth, any_threads, ticked_pool, ticked_scope, ticked_external, false); };
+    };
+    let pending = ecs_parallel_scoped_task_set_new<R, M>();
+    let root_child_i: i64 = 0;
+    while root_child_i < root_child_scope_count {
+        let child_run = tasks.child_scope_runs[root_child_i];
+        let child_world = shared.clone();
+        let child_tasks = child_run(child_world);
+        pending = ecs_parallel_scoped_task_set_extend<R, M>(pending, child_tasks);
+        total_child_scopes = total_child_scopes + 1;
+        root_child_i = root_child_i + 1;
+    }
+    if root_direct_count > 0 {
+        let pass_result = ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool, shared.clone(), tasks, options);
+        if pass_result.mismatch { return ecs_parallel_scope_run_result_recursive(total_sum + pass_result.thread_sum, result_values, total_ran + pass_result.ran_count, total_local + pass_result.local_count, total_external + pass_result.external_count, total_waves + pass_result.wave_count, total_child_scopes, depth + 1, any_threads || pass_result.used_threads, ticked_pool || pass_result.ticked_pool_executor, ticked_scope || pass_result.ticked_scope_executor, ticked_external || pass_result.ticked_external_executor, true); };
+        total_sum = total_sum + pass_result.thread_sum;
+        total_ran = total_ran + pass_result.ran_count;
+        total_local = total_local + pass_result.local_count;
+        total_external = total_external + pass_result.external_count;
+        total_waves = total_waves + pass_result.wave_count;
+        if pass_result.used_threads { any_threads = true; };
+        if pass_result.ticked_pool_executor { ticked_pool = true; };
+        if pass_result.ticked_scope_executor { ticked_scope = true; };
+        if pass_result.ticked_external_executor { ticked_external = true; };
+        let root_value_i: i64 = 0;
+        while root_value_i < ecs_parallel_scope_run_result_len(pass_result) {
+            result_values.push(ecs_parallel_scope_run_result_at(pass_result, root_value_i));
+            root_value_i = root_value_i + 1;
+        }
+    };
+    depth = depth + 1;
+    guard = guard + 1;
+
+    while guard < 64 {
+        let direct_count = ecs_parallel_scoped_task_set_len<R, M>(pending);
+        let child_scope_count = ecs_parallel_scoped_task_set_child_scope_len<R, M>(pending);
+        if direct_count == 0 {
+            if child_scope_count == 0 { return ecs_parallel_scope_run_result_recursive(total_sum, result_values, total_ran, total_local, total_external, total_waves, total_child_scopes, depth, any_threads, ticked_pool, ticked_scope, ticked_external, false); };
+        };
+        let next = ecs_parallel_scoped_task_set_new<R, M>();
+        let child_i: i64 = 0;
+        while child_i < child_scope_count {
+            let child_run = pending.child_scope_runs[child_i];
+            let child_world = shared.clone();
+            let child_tasks = child_run(child_world);
+            next = ecs_parallel_scoped_task_set_extend<R, M>(next, child_tasks);
+            total_child_scopes = total_child_scopes + 1;
+            child_i = child_i + 1;
+        }
+        if direct_count > 0 {
+            let pass_result = ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool, shared.clone(), pending, options);
+            if pass_result.mismatch { return ecs_parallel_scope_run_result_recursive(total_sum + pass_result.thread_sum, result_values, total_ran + pass_result.ran_count, total_local + pass_result.local_count, total_external + pass_result.external_count, total_waves + pass_result.wave_count, total_child_scopes, depth + 1, any_threads || pass_result.used_threads, ticked_pool || pass_result.ticked_pool_executor, ticked_scope || pass_result.ticked_scope_executor, ticked_external || pass_result.ticked_external_executor, true); };
+            total_sum = total_sum + pass_result.thread_sum;
+            total_ran = total_ran + pass_result.ran_count;
+            total_local = total_local + pass_result.local_count;
+            total_external = total_external + pass_result.external_count;
+            total_waves = total_waves + pass_result.wave_count;
+            if pass_result.used_threads { any_threads = true; };
+            if pass_result.ticked_pool_executor { ticked_pool = true; };
+            if pass_result.ticked_scope_executor { ticked_scope = true; };
+            if pass_result.ticked_external_executor { ticked_external = true; };
+            let value_i: i64 = 0;
+            while value_i < ecs_parallel_scope_run_result_len(pass_result) {
+                result_values.push(ecs_parallel_scope_run_result_at(pass_result, value_i));
+                value_i = value_i + 1;
+            }
+        };
+        pending = next;
+        depth = depth + 1;
+        guard = guard + 1;
+    }
+    return ecs_parallel_scope_run_result_recursive(total_sum, result_values, total_ran, total_local, total_external, total_waves, total_child_scopes, depth, any_threads, ticked_pool, ticked_scope, ticked_external, true);
 }
 
 fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {
