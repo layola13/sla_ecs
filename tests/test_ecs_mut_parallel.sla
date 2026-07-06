@@ -1981,3 +1981,37 @@ fn mp_child_scope_empty(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsParal
     if result.wave_count != 0 { panic(24516); };
     if ecs_parallel_scope_run_result_len(result) != 0 { panic(24517); };
 }
+
+@test "task pool recursive scope batches pool child result generators by workers"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_child_scope_with_result<i32, i32>(tasks0, mp_plan_f, mp_child_scope_empty);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_child_scope_with_result<i32, i32>(tasks1, mp_plan_g, mp_child_scope_empty);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn_child_scope_with_result<i32, i32>(tasks2, mp_plan_h, mp_child_scope_empty);
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks_recursive<i32, i32>(pool, w0, tasks3);
+    if result.mismatch { panic(24518); };
+    if result.used_threads != true { panic(24519); };
+    if result.ticked_pool_executor != true { panic(24520); };
+    if result.thread_sum != 59 { panic(24521); };
+    if result.ran_count != 3 { panic(24522); };
+    if result.child_scope_count != 3 { panic(24523); };
+    if result.child_scope_result_count != 3 { panic(24524); };
+    if result.child_scope_pool_count != 3 { panic(24525); };
+    if result.child_scope_local_count != 0 { panic(24526); };
+    if result.child_scope_external_count != 0 { panic(24527); };
+    if result.child_scope_wave_count != 0 { panic(24528); };
+    if result.child_scope_result_wave_count != 2 { panic(24529); };
+    if result.recursive_depth != 1 { panic(24530); };
+    if result.wave_count != 0 { panic(24531); };
+    if ecs_parallel_scope_run_result_len(result) != 3 { panic(24532); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 17 { panic(24533); };
+    if ecs_parallel_scope_run_result_at(result, 1) != 19 { panic(24534); };
+    if ecs_parallel_scope_run_result_at(result, 2) != 23 { panic(24535); };
+    if ecs_parallel_scope_run_result_round_at(result, 0) != 0 { panic(24536); };
+    if ecs_parallel_scope_run_result_round_at(result, 1) != 0 { panic(24537); };
+    if ecs_parallel_scope_run_result_round_at(result, 2) != 0 { panic(24538); };
+    if ecs_parallel_scope_run_result_lane_at(result, 0) != 3 { panic(24539); };
+    if ecs_parallel_scope_run_result_lane_at(result, 1) != 3 { panic(24540); };
+    if ecs_parallel_scope_run_result_lane_at(result, 2) != 3 { panic(24541); };
+}
