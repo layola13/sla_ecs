@@ -326,7 +326,7 @@ fn ecs_parallel_scoped_task_set_extend<R, M>(parent: EcsParallelScopedTaskSet<R,
 
 fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
     let workers = worker_count;
-    if workers < 1 { workers = 1; };
+    if workers < 0 { workers = 0; };
     let width = workers;
     return EcsParallelTaskPool { worker_count: workers, max_batch_width: width };
 }
@@ -1727,8 +1727,7 @@ fn ecs_parallel_run_selected_dynamic_catalog_batch_unbounded<R, M>(world: TableE
     let sum: i32 = 0;
     let j: i64 = 0;
     while j < len(handles) as i64 {
-        let handle = handles[j];
-        sum = sum + handle.join().unwrap();
+        sum = sum + handles[j].join().unwrap();
         j = j + 1;
     }
     return ecs_parallel_catalog_complete_batch(plan, batch, sum, count, skipped, true);
@@ -1800,6 +1799,65 @@ fn ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool: EcsParallelTa
     return ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool, shared, tasks, options);
 }
 
+fn ecs_parallel_task_pool_scope_run_tasks_shared_serial<R, M>(shared: Arc<*TableErasedWorld<R, M>>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
+    let count = ecs_parallel_scoped_task_set_threaded_len<R, M>(tasks);
+    let local_count = ecs_parallel_scoped_task_set_on_scope_len<R, M>(tasks);
+    let external_count = ecs_parallel_scoped_task_set_external_len<R, M>(tasks);
+    let total_count = count + local_count + external_count;
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let result_values: Vec<i32> = Vec::new();
+    let result_rounds: Vec<i64> = Vec::new();
+    let result_lanes: Vec<i64> = Vec::new();
+    let value_i: i64 = 0;
+    while value_i < total_count {
+        result_values.push(0);
+        result_rounds.push(0);
+        result_lanes.push(0);
+        value_i = value_i + 1;
+    }
+    let serial_i: i64 = 0;
+    while serial_i < count {
+        let run = tasks.runs[serial_i];
+        let task_world = shared.clone();
+        let value = run(task_world);
+        let order_pos = tasks.run_order_positions[serial_i];
+        result_values[order_pos] = value;
+        result_rounds[order_pos] = 0;
+        result_lanes[order_pos] = 0;
+        total_sum = total_sum + value;
+        total_ran = total_ran + 1;
+        serial_i = serial_i + 1;
+    }
+    let local_i: i64 = 0;
+    while local_i < local_count {
+        let run = tasks.on_scope_runs[local_i];
+        let task_world = shared.clone();
+        let value = run(task_world);
+        let order_pos = tasks.on_scope_order_positions[local_i];
+        result_values[order_pos] = value;
+        result_rounds[order_pos] = 0;
+        result_lanes[order_pos] = 1;
+        total_sum = total_sum + value;
+        total_ran = total_ran + 1;
+        local_i = local_i + 1;
+    }
+    let external_i: i64 = 0;
+    while external_i < external_count {
+        let run = tasks.external_runs[external_i];
+        let task_world = shared.clone();
+        let value = run(task_world);
+        let order_pos = tasks.external_order_positions[external_i];
+        result_values[order_pos] = value;
+        result_rounds[order_pos] = 0;
+        result_lanes[order_pos] = 2;
+        total_sum = total_sum + value;
+        total_ran = total_ran + 1;
+        external_i = external_i + 1;
+    }
+    return ecs_parallel_scope_run_result_with_metadata_and_executor_flags(total_sum, result_values, result_rounds, result_lanes, total_ran, local_count, external_count, 0, false, count > 0, local_count > 0, external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
+}
+
 fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool, shared: Arc<*TableErasedWorld<R, M>>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
     let count = ecs_parallel_scoped_task_set_threaded_len<R, M>(tasks);
     let local_count = ecs_parallel_scoped_task_set_on_scope_len<R, M>(tasks);
@@ -1807,9 +1865,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool
     let total_count = count + local_count + external_count;
     if total_count == 0 { return ecs_parallel_scope_run_result(0, 0, 0, 0, 0, false, false); };
     let width = pool.max_batch_width;
-    if count > 0 {
-        if width <= 0 { return ecs_parallel_scope_run_result(0, 0, 0, 0, 0, false, true); };
-    };
+    if width <= 0 { return ecs_parallel_task_pool_scope_run_tasks_shared_serial<R, M>(shared, tasks, options); };
     let total_sum: i32 = 0;
     let total_ran: i64 = 0;
     let waves: i64 = 0;
@@ -1839,8 +1895,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool
         }
         let j: i64 = 0;
         while j < len(handles) as i64 {
-            let handle = handles[j];
-            let value = handle.join().unwrap();
+            let value = handles[j].join().unwrap();
             let order_pos = tasks.run_order_positions[offset + j];
             result_values[order_pos] = value;
             result_rounds[order_pos] = 0;
@@ -2041,7 +2096,8 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
                 value_i = value_i + 1;
             }
         };
-        pending = next;
+        let next_parent = ecs_parallel_scoped_task_set_new<R, M>();
+        pending = ecs_parallel_scoped_task_set_extend<R, M>(next_parent, next);
         depth = depth + 1;
         guard = guard + 1;
     }

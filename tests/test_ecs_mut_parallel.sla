@@ -1753,6 +1753,35 @@ fn mp_child_scope_nested(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsPara
     if result.ticked_external_executor { panic(24360); };
 }
 
+@test "task pool scoped task set zero workers drains pool tasks on scope thread"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks1, mp_plan_b);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks2, mp_plan_d);
+    let pool = ecs_parallel_task_pool_new(0);
+    if ecs_parallel_task_pool_worker_count(pool) != 0 { panic(24457); };
+    if ecs_parallel_task_pool_batch_width(pool) != 0 { panic(24458); };
+    let options = ecs_parallel_scope_options_with_executor(false, false);
+    let result = ecs_parallel_task_pool_scope_run_tasks_with_options<i32, i32>(pool, w0, tasks3, options);
+    if result.mismatch { panic(24459); };
+    if result.used_threads { panic(24460); };
+    if result.thread_sum != 19 { panic(24461); };
+    if result.ran_count != 3 { panic(24462); };
+    if result.local_count != 1 { panic(24463); };
+    if result.wave_count != 0 { panic(24464); };
+    if result.ticked_pool_executor != true { panic(24465); };
+    if result.ticked_scope_executor != true { panic(24466); };
+    if result.ticked_external_executor { panic(24467); };
+    if ecs_parallel_scope_run_result_len(result) != 3 { panic(24468); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 3 { panic(24469); };
+    if ecs_parallel_scope_run_result_lane_at(result, 0) != 0 { panic(24470); };
+    if ecs_parallel_scope_run_result_at(result, 1) != 5 { panic(24471); };
+    if ecs_parallel_scope_run_result_lane_at(result, 1) != 0 { panic(24472); };
+    if ecs_parallel_scope_run_result_at(result, 2) != 11 { panic(24473); };
+    if ecs_parallel_scope_run_result_lane_at(result, 2) != 1 { panic(24474); };
+}
+
 @test "task pool recursive scope runs generated child tasks"() {
     let w0 = table_erased_world_new<i32, i32>(0, 0);
     let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
