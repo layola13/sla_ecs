@@ -1640,3 +1640,55 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if ecs_parallel_scope_run_result_len(result) != 1 { panic(24338); };
     if ecs_parallel_scope_run_result_at(result, 0) != 3 { panic(24339); };
 }
+
+@test "task pool scoped task set default executor options"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks1, mp_plan_b);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(tasks2, mp_plan_c);
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, tasks3);
+    if result.mismatch { panic(24340); };
+    if result.thread_sum != 15 { panic(24341); };
+    if result.ran_count != 3 { panic(24342); };
+    if result.ticked_pool_executor != true { panic(24343); };
+    if result.ticked_scope_executor != true { panic(24344); };
+    if result.ticked_external_executor { panic(24345); };
+}
+
+@test "task pool scoped task set external executor option"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(tasks0, mp_plan_c);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(tasks1, mp_plan_d);
+    let pool = ecs_parallel_task_pool_new(3);
+    let options = ecs_parallel_scope_options_with_executor(true, true);
+    let result = ecs_parallel_task_pool_scope_run_tasks_with_options<i32, i32>(pool, w0, tasks2, options);
+    if result.mismatch { panic(24346); };
+    if result.thread_sum != 18 { panic(24347); };
+    if result.ran_count != 2 { panic(24348); };
+    if result.used_threads { panic(24349); };
+    if result.ticked_pool_executor { panic(24350); };
+    if result.ticked_scope_executor { panic(24351); };
+    if result.ticked_external_executor != true { panic(24352); };
+}
+
+@test "task pool scoped task set can skip pool executor tick"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks0, mp_plan_a);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks1, mp_plan_b);
+    let tasks3 = ecs_parallel_scoped_task_set_spawn<i32, i32>(tasks2, mp_plan_c);
+    let pool = ecs_parallel_task_pool_new(2);
+    let options = ecs_parallel_scope_options_with_executor(false, false);
+    let result = ecs_parallel_task_pool_scope_run_tasks_with_options<i32, i32>(pool, w0, tasks3, options);
+    if result.mismatch { panic(24353); };
+    if result.used_threads != true { panic(24354); };
+    if result.thread_sum != 15 { panic(24355); };
+    if result.ran_count != 3 { panic(24356); };
+    if result.wave_count != 2 { panic(24357); };
+    if result.ticked_pool_executor { panic(24358); };
+    if result.ticked_scope_executor { panic(24359); };
+    if result.ticked_external_executor { panic(24360); };
+}

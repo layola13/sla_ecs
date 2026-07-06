@@ -37,6 +37,11 @@ struct EcsParallelTaskPool {
     max_batch_width: i64,
 }
 
+struct EcsParallelScopeOptions {
+    tick_task_pool_executor: bool,
+    use_external_executor: bool,
+}
+
 struct EcsParallelScopeRunResult {
     thread_sum: i32,
     result_values: Vec<i32>,
@@ -45,6 +50,9 @@ struct EcsParallelScopeRunResult {
     external_count: i64,
     wave_count: i64,
     used_threads: bool,
+    ticked_pool_executor: bool,
+    ticked_scope_executor: bool,
+    ticked_external_executor: bool,
     mismatch: bool,
 }
 
@@ -65,13 +73,25 @@ fn ecs_parallel_catalog_ready_selection(plan: EcsExecutorRunPlan, batch: EcsExec
     return EcsParallelCatalogReadySelection { plan: plan, batch: batch, skipped_count: skipped_count, mismatch: mismatch };
 }
 
+fn ecs_parallel_scope_options_default() -> EcsParallelScopeOptions {
+    return EcsParallelScopeOptions { tick_task_pool_executor: true, use_external_executor: false };
+}
+
+fn ecs_parallel_scope_options_with_executor(tick_task_pool_executor: bool, use_external_executor: bool) -> EcsParallelScopeOptions {
+    return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: use_external_executor };
+}
+
 fn ecs_parallel_scope_run_result(thread_sum: i32, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
     let result_values: Vec<i32> = Vec::new();
-    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, mismatch: mismatch };
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
 }
 
 fn ecs_parallel_scope_run_result_with_values(thread_sum: i32, result_values: Vec<i32>, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
-    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, mismatch: mismatch };
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: used_threads, ticked_scope_executor: local_count > 0, ticked_external_executor: false, mismatch: mismatch };
+}
+
+fn ecs_parallel_scope_run_result_with_values_and_executor_flags(thread_sum: i32, result_values: Vec<i32>, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, ticked_pool_executor: bool, ticked_scope_executor: bool, ticked_external_executor: bool, mismatch: bool) -> EcsParallelScopeRunResult {
+    return EcsParallelScopeRunResult { thread_sum: thread_sum, result_values: result_values, ran_count: ran_count, local_count: local_count, external_count: external_count, wave_count: wave_count, used_threads: used_threads, ticked_pool_executor: ticked_pool_executor, ticked_scope_executor: ticked_scope_executor, ticked_external_executor: ticked_external_executor, mismatch: mismatch };
 }
 
 fn ecs_parallel_scope_run_result_len(result: EcsParallelScopeRunResult) -> i64 {
@@ -1656,6 +1676,10 @@ fn ecs_parallel_task_pool_scope_run_ready_all_dynamic_catalog<R, M>(pool: EcsPar
 }
 
 fn ecs_parallel_task_pool_scope_run_tasks<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopeRunResult {
+    return ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool, world, tasks, ecs_parallel_scope_options_default());
+}
+
+fn ecs_parallel_task_pool_scope_run_tasks_with_options<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
     let count = ecs_parallel_scoped_task_set_threaded_len<R, M>(tasks);
     let local_count = ecs_parallel_scoped_task_set_on_scope_len<R, M>(tasks);
     let external_count = ecs_parallel_scoped_task_set_external_len<R, M>(tasks);
@@ -1726,7 +1750,7 @@ fn ecs_parallel_task_pool_scope_run_tasks<R, M>(pool: EcsParallelTaskPool, world
         total_ran = total_ran + 1;
         external_i = external_i + 1;
     }
-    return ecs_parallel_scope_run_result_with_values(total_sum, result_values, total_ran, local_count, external_count, waves, count > 0, false);
+    return ecs_parallel_scope_run_result_with_values_and_executor_flags(total_sum, result_values, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0, external_count > 0 && options.use_external_executor, false);
 }
 
 fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {
