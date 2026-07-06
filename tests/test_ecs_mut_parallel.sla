@@ -586,3 +586,30 @@ fn mp_plan_e(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if ecs_executor_run_plan_run_at(result.plan, 3) != 3 { panic(24144); };
     if ecs_executor_run_plan_run_at(result.plan, 4) != 4 { panic(24145); };
 }
+
+@test "task pool applies deferred and clears unapplied"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, true, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let acc_a = table_erased_system_access_none();
+    let acc_b = table_erased_system_access_none();
+    acc_a.write_components.push(MPA_ID);
+    acc_b.write_components.push(MPB_ID);
+    let catalog0 = ecs_parallel_fn_catalog_new<i32, i32>();
+    let catalog1 = ecs_parallel_fn_catalog_add<i32, i32>(catalog0, 0, mp_plan_a, acc_a);
+    let catalog2 = ecs_parallel_fn_catalog_add<i32, i32>(catalog1, 1, mp_plan_b, acc_b);
+    let pool = ecs_parallel_task_pool_new(2);
+
+    let result = ecs_parallel_task_pool_run_ready_all_dynamic_catalog<i32, i32>(pool, w0, p2, catalog2);
+    if result.mismatch { panic(24146); };
+    if result.thread_sum != 8 { panic(24147); };
+    if result.ran_count != 2 { panic(24148); };
+    if ecs_executor_run_plan_apply_count(result.plan) != 1 { panic(24149); };
+    if ecs_executor_run_plan_apply_at(result.plan, 0) != 0 { panic(24150); };
+    if ecs_executor_state_unapplied_count(result.plan.executor.state) != 0 { panic(24151); };
+}

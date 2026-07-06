@@ -193,6 +193,21 @@
     if ecs_executor_run_plan_apply_count(p4) != 1 { panic(82941); };
     if ecs_executor_run_plan_apply_at(p4, 0) != 0 { panic(82942); };
     if ecs_executor_run_plan_is_stalled(p4) != false { panic(82943); };
+    if ecs_executor_state_unapplied_count(p4.executor.state) != 0 { panic(82978); };
+}
+
+@test "executor_run_plan_clears_non_deferred_unapplied"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let p3 = ecs_executor_run_plan_drive_all_batched(p2, 2);
+    if ecs_executor_state_completed_count(p3.executor.state) != 2 { panic(82979); };
+    if ecs_executor_run_plan_apply_count(p3) != 0 { panic(82980); };
+    if ecs_executor_state_unapplied_count(p3.executor.state) != 0 { panic(82981); };
 }
 
 @test "executor_run_plan_skips_run_condition_false"() {
