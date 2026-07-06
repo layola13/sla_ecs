@@ -1695,6 +1695,24 @@ fn mp_child_scope_nested(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> EcsPara
     if result.ticked_external_executor != true { panic(24352); };
 }
 
+@test "task pool scoped task set same external executor avoids double tick"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let tasks1 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(tasks0, mp_plan_b);
+    let tasks2 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(tasks1, mp_plan_c);
+    let pool = ecs_parallel_task_pool_new(3);
+    let options = ecs_parallel_scope_options_with_external_identity(true, true, true);
+    let result = ecs_parallel_task_pool_scope_run_tasks_with_options<i32, i32>(pool, w0, tasks2, options);
+    if result.mismatch { panic(24394); };
+    if result.thread_sum != 12 { panic(24395); };
+    if result.ran_count != 2 { panic(24396); };
+    if result.local_count != 1 { panic(24397); };
+    if result.external_count != 1 { panic(24398); };
+    if result.ticked_pool_executor { panic(24399); };
+    if result.ticked_scope_executor != true { panic(24400); };
+    if result.ticked_external_executor { panic(24401); };
+}
+
 @test "task pool scoped task set can skip pool executor tick"() {
     let w0 = table_erased_world_new<i32, i32>(0, 0);
     let tasks0 = ecs_parallel_scoped_task_set_new<i32, i32>();

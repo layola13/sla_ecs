@@ -40,6 +40,7 @@ struct EcsParallelTaskPool {
 struct EcsParallelScopeOptions {
     tick_task_pool_executor: bool,
     use_external_executor: bool,
+    external_executor_is_scope: bool,
 }
 
 struct EcsParallelScopeRunResult {
@@ -77,11 +78,15 @@ fn ecs_parallel_catalog_ready_selection(plan: EcsExecutorRunPlan, batch: EcsExec
 }
 
 fn ecs_parallel_scope_options_default() -> EcsParallelScopeOptions {
-    return EcsParallelScopeOptions { tick_task_pool_executor: true, use_external_executor: false };
+    return EcsParallelScopeOptions { tick_task_pool_executor: true, use_external_executor: false, external_executor_is_scope: true };
 }
 
 fn ecs_parallel_scope_options_with_executor(tick_task_pool_executor: bool, use_external_executor: bool) -> EcsParallelScopeOptions {
-    return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: use_external_executor };
+    return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: use_external_executor, external_executor_is_scope: use_external_executor != true };
+}
+
+fn ecs_parallel_scope_options_with_external_identity(tick_task_pool_executor: bool, use_external_executor: bool, external_executor_is_scope: bool) -> EcsParallelScopeOptions {
+    return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: use_external_executor, external_executor_is_scope: external_executor_is_scope };
 }
 
 fn ecs_parallel_scope_run_result(thread_sum: i32, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
@@ -1777,7 +1782,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool
         total_ran = total_ran + 1;
         external_i = external_i + 1;
     }
-    return ecs_parallel_scope_run_result_with_values_and_executor_flags(total_sum, result_values, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0, external_count > 0 && options.use_external_executor, false);
+    return ecs_parallel_scope_run_result_with_values_and_executor_flags(total_sum, result_values, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0, external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
 }
 
 fn ecs_parallel_task_pool_scope_run_tasks_recursive<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopeRunResult {
