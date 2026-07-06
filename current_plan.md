@@ -1,14 +1,14 @@
 # sla_ecs Current Plan — Bevy ECS Parity (per-dimension)
 
-Last updated: 2026-07-04
+Last updated: 2026-07-06
 
 ## Overall Status
-- Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~93–96%, behavioral parity ~82–87%. Not 100%: a general dynamic multithreaded executor and full runtime reflection remain incomplete (see README ⚠️ / ❌).
-- Counts (measured 2026-07-04): 246 lib `.sla` modules; 172 `tests/*.sla` files; 90 `examples/*.sla`; 3,798 source `.sla` `@test` annotations across lib/tests/examples (3,368 in `tests/`, 351 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,392 after Batch 124.
-- Tests verified on the SA backend; focused Batches 112–126 also pass the default backend after the Batch 122 hash-map refs unblocker. SAB can still hit codegen limits on large/import-heavy paths, where SA remains the verified fallback.
+- Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~94–96%, behavioral parity ~86–91%. Not 100%: full TaskPool/Scope-style worker scheduling and full runtime reflection remain incomplete (see README ⚠️ / ❌).
+- Counts (measured 2026-07-06): 248 lib `.sla` modules; 174 `tests/*.sla` files; 90 `examples/*.sla`; 3,842 source `.sla` `@test` annotations across lib/tests/examples (3,409 in `tests/`, 354 in `lib/`, 79 in `examples`). Historical isolated-test batch total is 3,433 after Batch 136.
+- Tests verified on the SA backend; focused Batches 112–136 also pass representative default backend suites after the Batch 122 hash-map refs unblocker and the later SAB call-target/thread-function-pointer fixes, except large/import-heavy whole-file paths that are explicitly documented as compiler-size/cleanup issues. Batch 136's dynamic `Vec<fn>` catalog runner passes generated SA and focused default/SAB smoke, while whole-file default/SAB aggregation currently exposes `UseAfterMove tmp_67`, recorded in `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_aggregate_mut_parallel_use_after_move_issue_cn.md`. Current ECS completion evidence should prefer generated SA (`--test-backend sa`) unless a task explicitly targets SAB behavior; SAB findings are reported to compiler docs rather than fixed directly in this stream.
 - Every bevy_ecs module has isolated parity tests covering its public API surface, except the two genuinely incomplete areas noted above.
 
-## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-04: 246 lib / 172 tests / 3,798 source `.sla` @test total. Sub-list below is historical per-area summary
+## Completed (verified on SA backend) — see README "Bevy ECS Parity Assessment"; counts measured 2026-07-06: 248 lib / 174 tests / 3,842 source `.sla` @test total. Sub-list below is historical per-area summary
 1. System Registry (8)
 2. EntityCommands (14)
 3. ChangeDetection (19)
@@ -147,7 +147,7 @@ Last updated: 2026-07-04
 ## Remaining (minor)
 - Full SAB backend verification once compiler large-file limit is resolved
 - Continue refining edge cases as bevy_ecs evolves
-- src/never.rs: Never type alias (language-level, no semantic API to test)
+- Full runtime reflection remains intentionally out of scope until a downstream scene/editor/scripting subsystem needs reflected handles; API-surface descriptors are covered by `lib/reflect*.sla` and `lib/app_type_registry.sla`.
 
 ## Batch 27 — entity_mut (2026-07-02)
 - lib/entity_mut.sla: EcsEntityMut (id/location/archetype/contains/get/get_ref/get_mut/insert/remove/components/reborrow/into_readonly/as_readonly/get_change_ticks_by_id) + EcsFilteredEntityMut (allow/is_allowed/get/id/from_inner/inner/into_filtered)
@@ -747,3 +747,78 @@ Last updated: 2026-07-04
 - Verification passed with `SA_PLUGIN_DEV=1 sa sla check lib/entity_allocator_extras.sla`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla --test-backend sa`, `SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_allocator_extras_isolated.sla`, and `git diff --check`.
 - Feature progress: Bevy ECS entity/mod.rs `EntityAllocator::alloc_many` now tracks iterator-style progress instead of only a summary pair; overall estimate remains API parity ~94–96%, behavioral parity ~82–87% because the major remaining gaps are still the dynamic multithread executor and full runtime reflection.
 ### Grand Total unchanged: 3392 isolated tests across 172 test files, 246 lib modules, all passing on SA backend; Batch 126 also passes default backend.
+
+## Batch 127 — never_facade (2026-07-06)
+- lib/never.sla: EcsNever uninhabited marker facade for src/never.rs parity. SLA has no language-level never type, so this is a no-constructor marker with stable metadata and panic-only absurd helpers.
+- 2 isolated tests — test_ecs_lib_never_isolated.sla; focused run sees 4 tests including lib inline sanity tests.
+- Tests: 3392 → 3394, lib modules: 246 → 247, test files: 172 → 173; source `.sla` @test total: 3,802.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/never.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_never_isolated.sla --test-backend sa`.
+- src/never.rs ✓ (library-level marker facade)
+
+## Batch 128 — app_type_registry_descriptors (2026-07-06)
+- lib/app_type_registry.sla: EcsAppTypeRegistry + EcsAppFunctionRegistry descriptor registries for reflect::AppTypeRegistry/AppFunctionRegistry parity. Covers descriptor registration/replacement/query/order plus type-data slots for component/resource/event/message/bundle/from_world/map_entities. This is descriptor API-surface parity, not full bevy_reflect runtime reflection.
+- 11 isolated tests — test_ecs_lib_app_type_registry_isolated.sla.
+- Tests: 3394 → 3405, lib modules: 247 → 248, test files: 173 → 174; source `.sla` @test total: 3,813.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/app_type_registry.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_app_type_registry_isolated.sla --test-backend sa`; default `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_app_type_registry_isolated.sla`.
+- src/reflect/mod.rs AppTypeRegistry/AppFunctionRegistry ✓ (descriptor registry surface)
+
+## Batch 129 — executor_multi_threaded_drive_plan (2026-07-06)
+- lib/executor_multi_threaded.sla: EcsExecutorSystemSpec + EcsExecutorRunPlan drive-plan layer for the multi-threaded executor surface. Covers ready selection, drive_one/drive_all, dependency/dependent propagation, run-condition skip handling, deferred apply tracking, exclusive/local flag metadata, and run/apply/skip order accessors. Also fixes `ecs_executor_state_running_count` to count running systems.
+- 4 isolated tests — test_ecs_lib_executor_multi_threaded_isolated.sla.
+- Tests: 3405 → 3409, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,817.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_multi_threaded_isolated.sla --test-backend sa`; default `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_multi_threaded_isolated.sla`.
+- src/schedule/executor/multi_threaded.rs ✓ (explicit plan-driving surface; full TaskPool/Scope dynamic executor remains out of scope)
+
+## Batch 130 — result_recoverable_facades (2026-07-06)
+- lib/ecs_world.sla: extended library-owned Result recoverable world facades with `ecs_world_try_despawn_result`, `ecs_world_try_get_mut`, `ecs_world_try_get_resource_ref`, `ecs_world_try_get_resource_mut`, and `ecs_world_try_modify_resource`; `ecs_world_try_query_single` now returns `ERR_QUERY_MULTIPLE_MATCH()` when more than one entity matches.
+- tests/test_ecs_result_facades.sla: added 3 stable focused tests covering Result world despawn, mutable component accessor errors, and resource ref/mut/modify errors. A `Result<EntityItem<T>>` focused-filter cleanup trap was reported to the SLA compiler docs instead of worked around in compiler source.
+- Tests: 3409 → 3412, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,820.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/ecs_world.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_result_facades.sla --test-backend sa` passes with 172 tests; default/SAB focused filters for the three stable new tests pass.
+- Compiler issue doc: `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/result_entityitem_filter_cleanup_issue_cn.md` records the `Result<EntityItem<T>>` filter cleanup / SAB `VerificationTrap` issue.
+- src/world/error.rs + recoverable World try_* facade surface ✓ (library-owned Result path, no compiler keywords)
+
+## Batch 131 — entity_map_serialization_snapshot (2026-07-06)
+- lib/entity_map_entities.sla: added structured serialization/entity-mapping helpers for Bevy scene/entity remap flows. `EcsEntityMapSnapshot` encodes `SceneEntityMapper` as `[next_remote, count, src, dst, ...]`, restores from snapshots with truncated-pair tolerance, and adds batch `get_or_allocate_many` plus `apply_many` helpers with missing-source reporting.
+- tests/test_ecs_lib_entity_map_entities_isolated.sla: added 5 isolated tests for snapshot encoding, snapshot restoration, truncated snapshot recovery, duplicate-preserving batch allocation, and strict/identity map application.
+- Tests: 3412 → 3417, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,825.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/entity_map_entities.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_map_entities_isolated.sla --test-backend sa`; default `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_entity_map_entities_isolated.sla`.
+- src/entity/map_entities.rs + scene serialization remap surface ✓ (library-level snapshot/remap, no compiler serde)
+
+## Batch 132 — executor_ready_batch_model (2026-07-06)
+- lib/executor_multi_threaded.sla: added ready-batch selection and completion for the multi-threaded executor plan layer. `EcsExecutorReadyBatch` and `EcsExecutorReadyBatchResult` model one batch of ready systems; ordinary non-exclusive/non-local systems can be selected up to a width limit, while exclusive/local systems serialize as singleton batches. Added `ecs_executor_run_plan_take_ready_batch`, `ecs_executor_run_plan_complete_ready_batch`, `ecs_executor_run_plan_drive_ready_batch`, and `ecs_executor_run_plan_drive_all_batched`.
+- lib/executor_multi_threaded.sla: fixed false run-condition semantics so skipped systems release dependents instead of stalling downstream systems. New helper path: `ecs_executor_state_release_dependents`, `ecs_executor_state_skip_system_with_dependents`, and `ecs_executor_run_plan_skip_ready`.
+- tests/test_ecs_lib_executor_multi_threaded_isolated.sla: added 4 focused isolated tests for ready-batch width selection, exclusive/local singleton serialization, skipped-system dependent release, and batched drive order/deferred apply tracking. Existing run-condition test was updated to expect downstream execution after a skip.
+- lib/system_param_table_erased.sla: also retains the adjacent ordinary table-erased `Query<Entity> + Commands` runner slice (`TableErasedEntityQueryCommandsParam`, `table_erased_run_entity_query_commands_system`) with one inline regression for deferred Commands semantics.
+- Tests: 3417 → 3421 isolated tests, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,830.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused SA tests with `--jobs 1 --trace-panic` for `executor_ready_group_selects_two`, `executor_ready_group_serializes_one`, `executor_ready_group_releases_dependents`, `executor_ready_group_drive_width`, and `executor_run_plan_skips_run_condition_false`; default/SAB smoke for `executor_ready_group_selects_two` and `executor_ready_group_drive_width`. Also verified `SA_PLUGIN_DEV=1 sa sla check lib/system_param_table_erased.sla`, focused SA/default for `table erased entity query commands param defers spawned entity`, and whole-file SA `lib/system_param_table_erased.sla` with 125 passed.
+- Feature progress: Bevy ECS schedule/executor multi-threaded plan layer 85% -> 90%; overall estimate moves to API parity ~94–96%, behavioral parity ~83–88%. Remaining gap: connecting ready batches to a general thread-backed TaskPool/Scope-style dynamic runner with full access-conflict grouping.
+
+## Batch 133 — executor_ready_batch_up_to3_thread_bridge (2026-07-06)
+- lib/parallel_runner.sla: added `EcsParallelReadyBatchRunResult`, `ecs_parallel_run_ready_pair_batch`, `ecs_parallel_run_mut_triple_batch`, `ecs_parallel_run_ready_triple_batch`, `ecs_parallel_run_single_batch`, and `ecs_parallel_run_ready_batch_up_to3`, the first concrete bridges from `EcsExecutorRunPlan` ready-batch selection into pthread-backed runners. The up-to-3 dispatch entry takes one ready batch, serializes one-wide exclusive/local batches, routes two-wide batches to the pair runner, routes three-wide batches to the triple runner, and completes the executor plan so dependents become ready.
+- tests/test_ecs_mut_parallel.sla: added 5 tests proving pair bridge advancement, pair mismatch rejection without starting threads, triple bridge completion releasing a dependent system, width dispatch selecting pair when max width is 3 but only two systems are ready, and width dispatch serializing one exclusive system while releasing its dependent.
+- Tests: 3421 -> 3426 isolated tests, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,835.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA tests for all five new ready-batch bridge/dispatch cases; whole-file generated-SA `tests/test_ecs_mut_parallel.sla` with 75 passed. Default/SAB focused smoke currently fails with `UnknownRegister: callee is not declared`; compiler issue recorded at `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_thread_fnptr_ready_batch_unknown_register_issue_cn.md` without modifying compiler source.
+- Feature progress: Bevy ECS schedule/executor multi-threaded threaded bridge 0% -> 55%; executor plan + ready-batch layer remains 90%. Overall estimate remains API parity ~94–96%, behavioral parity ~83–88% because arbitrary-N TaskPool/Scope-style dynamic scheduling and full runtime reflection remain outside the completed behavior set.
+
+## Batch 134 — executor_ready_all_up_to3_loop (2026-07-06)
+- lib/parallel_runner.sla: added `ecs_parallel_run_ready_catalog_batch_up_to3`, a catalog-aware batch bridge that maps the actual ready system indexes onto a fixed three-function catalog instead of assuming first/second/third positional order. Added `ecs_parallel_run_ready_all_up_to3`, which repeatedly takes ready batches, dispatches singleton/pair/triple work, accumulates thread sum/run/skip metadata, and exits on completion, mismatch, or stall.
+- tests/test_ecs_mut_parallel.sla: added `all dispatch two waves`, `all dispatch skip releases dependent`, and `all dispatch mismatch status`. These cover a pair wave releasing a singleton dependent wave, a false run-condition skip releasing its dependent within the loop, and an unknown ready system returning mismatch/stalled without an infinite loop.
+- Tests: 3426 -> 3429 isolated tests, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,838.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; whole-file generated-SA `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_mut_parallel.sla --test-backend sa --jobs 1 --trace-panic` passes with 78 tests. Focused default/SAB smoke passes for ready pair/triple/width and the three new all-dispatch cases. Whole-file default/SAB aggregation fails with `UseAfterMove tmp_67`; compiler issue recorded at `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_aggregate_mut_parallel_use_after_move_issue_cn.md` without modifying compiler source.
+- Feature progress: Bevy ECS schedule/executor multi-threaded threaded bridge 55% -> 70%; executor plan + ready-batch layer remains 90%+. Overall estimate moves to API parity ~94–96%, behavioral parity ~84–89% because arbitrary-N function catalogs, conflict-selected dynamic grouping, and full TaskPool/Scope semantics remain outside the completed behavior set.
+
+## Batch 135 — executor_ready_nonconflicting_up_to3 (2026-07-06)
+- lib/parallel_runner.sla: added access-conflict-aware ready-batch selection for the fixed three-function executor catalog. `ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3` greedily walks ready systems, skips false run-condition systems while releasing dependents, serializes exclusive/local systems as singleton batches, and admits only systems whose `TableErasedSystemAccess` is compatible with already selected systems.
+- lib/parallel_runner.sla: added `ecs_parallel_run_ready_nonconflicting_catalog_batch_up_to3` and `ecs_parallel_run_ready_all_nonconflicting_up_to3`, so conflicting ready systems are left ready and drained in later waves instead of panicking or reporting a mismatch.
+- tests/test_ecs_mut_parallel.sla: added `nonconflict batch skips conflicting ready` and `nonconflict conflict waves`, covering a ready set where systems 0 and 1 both write the same component while system 2 is compatible. The first batch runs 0+2 on threads; the loop then drains 1 as a later singleton.
+- Tests: 3429 -> 3431 isolated tests, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,840.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA tests for both new cases; whole-file generated-SA `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_mut_parallel.sla --test-backend sa --jobs 1 --trace-panic` passes with 80 tests. Focused default/SAB smoke passes for both new cases. Whole-file default/SAB aggregation still fails with the known `UseAfterMove tmp_67`; compiler issue doc updated at `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_aggregate_mut_parallel_use_after_move_issue_cn.md` without modifying compiler source.
+- Feature progress: Bevy ECS schedule/executor multi-threaded threaded bridge 70% -> 80%; executor plan + ready-batch layer remains 90%+. Overall estimate moves to API parity ~94–96%, behavioral parity ~85–90% because arbitrary-N catalogs and full TaskPool/Scope semantics remain outside the completed behavior set.
+
+## Batch 136 — executor_ready_dynamic_catalog_up_to3 (2026-07-06)
+- lib/parallel_runner.sla: added `EcsParallelFnCatalog<R, M>` with dynamic `Vec<i64>` system ids, `Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>` runners, and `Vec<TableErasedSystemAccess>` access metadata. Added constructor/add/len/find-slot helpers.
+- lib/parallel_runner.sla: added dynamic-catalog ready selection and dispatch: `ecs_parallel_take_ready_dynamic_catalog_batch_up_to3`, `ecs_parallel_run_selected_dynamic_catalog_batch_up_to3`, `ecs_parallel_run_ready_dynamic_catalog_batch_up_to3`, and `ecs_parallel_run_ready_all_dynamic_catalog_up_to3`. Catalog length can exceed three; current concrete execution width remains capped at three per batch.
+- tests/test_ecs_mut_parallel.sla: added `dynamic catalog first wave` and `dynamic catalog waves`, covering a four-system catalog where systems 0 and 1 conflict, systems 2 and 3 are compatible, first wave runs 0+2+3, and the loop drains 1 in a later singleton wave.
+- Tests: 3431 -> 3433 isolated tests, lib modules unchanged: 248, test files unchanged: 174; source `.sla` @test total: 3,842.
+- Verification: `SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA tests for both new cases; whole-file generated-SA `timeout 120s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_mut_parallel.sla --test-backend sa --jobs 1 --trace-panic` passes with 82 tests. Focused default/SAB smoke passes for both dynamic catalog cases. Whole-file default/SAB aggregation still fails with the known `UseAfterMove tmp_67`; compiler issue doc updated at `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_aggregate_mut_parallel_use_after_move_issue_cn.md` without modifying compiler source.
+- Feature progress: Bevy ECS schedule/executor multi-threaded threaded bridge 80% -> 88%; executor plan + ready-batch layer remains 90%+. Overall estimate moves to API parity ~94–96%, behavioral parity ~86–91% because full TaskPool/Scope worker scheduling remains outside the completed behavior set.

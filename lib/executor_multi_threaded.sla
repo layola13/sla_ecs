@@ -30,6 +30,36 @@ struct EcsMultiThreadedExecutor {
     deferred_applied: i64,
 }
 
+struct EcsExecutorSystemSpec {
+    system_index: i64,
+    is_exclusive: bool,
+    is_local: bool,
+    has_deferred: bool,
+    should_run: bool,
+}
+
+struct EcsExecutorRunPlan {
+    executor: EcsMultiThreadedExecutor,
+    specs: Vec<EcsExecutorSystemSpec>,
+    dependents: Vec<Vec<i64>>,
+    run_order: Vec<i64>,
+    apply_order: Vec<i64>,
+    skipped_order: Vec<i64>,
+    stalled: bool,
+}
+
+struct EcsExecutorReadyBatch {
+    systems: Vec<i64>,
+    skipped: Vec<i64>,
+    is_exclusive: bool,
+    is_local: bool,
+}
+
+struct EcsExecutorReadyBatchResult {
+    plan: EcsExecutorRunPlan,
+    batch: EcsExecutorReadyBatch,
+}
+
 fn ecs_executor_state_new() -> EcsExecutorState {
     return EcsExecutorState {
         evaluated_sets: Vec::new(), ready_systems: Vec::new(), ready_systems_copy: Vec::new(),
@@ -153,17 +183,7 @@ fn ecs_executor_state_is_running(s: EcsExecutorState, system_index: i64) -> bool
     return s.running_systems[system_index];
 }
 
-// complete_system: mark a system as completed, decrement dependents
-fn ecs_executor_state_complete_system(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>) -> EcsExecutorState {
-    if system_index >= 0 {
-        if system_index < len(s.running_systems) as i64 {
-            s.running_systems[system_index] = false;
-            s.completed_systems[system_index] = true;
-            s.unapplied_systems[system_index] = true;
-            if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
-        };
-    };
-    // Decrement dependencies for dependents
+fn ecs_executor_state_release_dependents(s: EcsExecutorState, dependents: Vec<i64>) -> EcsExecutorState {
     let i: i64 = 0;
     let n: i64 = len(dependents) as i64;
     while i < n {
@@ -183,6 +203,19 @@ fn ecs_executor_state_complete_system(s: EcsExecutorState, system_index: i64, de
     return s;
 }
 
+// complete_system: mark a system as completed, decrement dependents
+fn ecs_executor_state_complete_system(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.running_systems) as i64 {
+            s.running_systems[system_index] = false;
+            s.completed_systems[system_index] = true;
+            s.unapplied_systems[system_index] = true;
+            if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
+        };
+    };
+    return ecs_executor_state_release_dependents(s, dependents);
+}
+
 fn ecs_executor_state_is_completed(s: EcsExecutorState, system_index: i64) -> bool {
     if system_index < 0 { return false; };
     if system_index >= len(s.completed_systems) as i64 { return false; };
@@ -195,9 +228,15 @@ fn ecs_executor_state_skip_system(s: EcsExecutorState, system_index: i64) -> Ecs
         if system_index < len(s.skipped_systems) as i64 {
             s.skipped_systems[system_index] = true;
             s.completed_systems[system_index] = true;
+            s.ready_systems[system_index] = false;
         };
     };
     return s;
+}
+
+fn ecs_executor_state_skip_system_with_dependents(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>) -> EcsExecutorState {
+    let skipped = ecs_executor_state_skip_system(s, system_index);
+    return ecs_executor_state_release_dependents(skipped, dependents);
 }
 
 fn ecs_executor_state_is_skipped(s: EcsExecutorState, system_index: i64) -> bool {
@@ -252,9 +291,9 @@ fn ecs_executor_state_ready_count(s: EcsExecutorState) -> i64 {
 fn ecs_executor_state_running_count(s: EcsExecutorState) -> i64 {
     let count: i64 = 0;
     let i: i64 = 0;
-    let n: i64 = len(s.ready_systems) as i64;
+    let n: i64 = len(s.running_systems) as i64;
     while i < n {
-        if s.ready_systems[i] { count = count + 1; };
+        if s.running_systems[i] { count = count + 1; };
         i = i + 1;
     }
     return count;
@@ -286,3 +325,223 @@ fn ecs_multi_threaded_executor_is_starting(e: EcsMultiThreadedExecutor, system_i
     if system_index >= len(e.starting_systems) as i64 { return false; };
     return e.starting_systems[system_index];
 }
+
+fn ecs_executor_system_spec_new(system_index: i64, is_exclusive: bool, is_local: bool, has_deferred: bool, should_run: bool) -> EcsExecutorSystemSpec {
+    return EcsExecutorSystemSpec { system_index: system_index, is_exclusive: is_exclusive, is_local: is_local, has_deferred: has_deferred, should_run: should_run };
+}
+
+fn ecs_executor_run_plan_new(e: EcsMultiThreadedExecutor) -> EcsExecutorRunPlan {
+    return EcsExecutorRunPlan {
+        executor: e,
+        specs: Vec::new(),
+        dependents: Vec::new(),
+        run_order: Vec::new(),
+        apply_order: Vec::new(),
+        skipped_order: Vec::new(),
+        stalled: false,
+    };
+}
+
+fn ecs_executor_ready_batch_new() -> EcsExecutorReadyBatch {
+    return EcsExecutorReadyBatch { systems: Vec::new(), skipped: Vec::new(), is_exclusive: false, is_local: false };
+}
+
+fn ecs_executor_ready_batch_result(plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch) -> EcsExecutorReadyBatchResult {
+    return EcsExecutorReadyBatchResult { plan: plan, batch: batch };
+}
+
+fn ecs_executor_run_plan_add_system(p: EcsExecutorRunPlan, spec: EcsExecutorSystemSpec, dependencies: i64, dependents: Vec<i64>) -> EcsExecutorRunPlan {
+    p.specs.push(spec);
+    p.dependents.push(dependents);
+    p.executor.state = ecs_executor_state_set_dependencies(p.executor.state, spec.system_index, dependencies);
+    if dependencies == 0 {
+        p.executor = ecs_multi_threaded_executor_mark_starting(p.executor, spec.system_index);
+        p.executor.state = ecs_executor_state_mark_ready(p.executor.state, spec.system_index);
+    };
+    return p;
+}
+
+fn ecs_executor_run_plan_spec_at(p: EcsExecutorRunPlan, system_index: i64) -> EcsExecutorSystemSpec {
+    let i: i64 = 0;
+    let cnt = len(p.specs) as i64;
+    while i < cnt {
+        if p.specs[i].system_index == system_index { return p.specs[i]; };
+        i = i + 1;
+    }
+    return ecs_executor_system_spec_new(system_index, false, false, false, false);
+}
+
+fn ecs_executor_run_plan_dependents_at(p: EcsExecutorRunPlan, system_index: i64) -> Vec<i64> {
+    let i: i64 = 0;
+    let cnt = len(p.specs) as i64;
+    while i < cnt {
+        if p.specs[i].system_index == system_index { return p.dependents[i]; };
+        i = i + 1;
+    }
+    return Vec::new();
+}
+
+fn ecs_executor_run_plan_next_ready(p: EcsExecutorRunPlan) -> i64 {
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true { return i; };
+            };
+        };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn ecs_executor_run_plan_apply_deferred_for(p: EcsExecutorRunPlan, system_index: i64, spec: EcsExecutorSystemSpec) -> EcsExecutorRunPlan {
+    if spec.has_deferred {
+        p.executor.state = ecs_executor_state_apply_deferred_system(p.executor.state, system_index);
+        p.executor.deferred_applied = p.executor.deferred_applied + 1;
+        p.apply_order.push(system_index);
+    };
+    return p;
+}
+
+fn ecs_executor_run_plan_skip_ready(p: EcsExecutorRunPlan, system_index: i64) -> EcsExecutorRunPlan {
+    let deps = ecs_executor_run_plan_dependents_at(p, system_index);
+    p.executor.state = ecs_executor_state_skip_system_with_dependents(p.executor.state, system_index, deps);
+    p.executor.systems_skipped = p.executor.systems_skipped + 1;
+    p.skipped_order.push(system_index);
+    return p;
+}
+
+fn ecs_executor_run_plan_take_ready_batch(p: EcsExecutorRunPlan, max_width: i64) -> EcsExecutorReadyBatchResult {
+    let batch = ecs_executor_ready_batch_new();
+    let width = max_width;
+    if width <= 0 { return ecs_executor_ready_batch_result(p, batch); };
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if len(batch.systems) as i64 >= width { return ecs_executor_ready_batch_result(p, batch); };
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true {
+                    let spec = ecs_executor_run_plan_spec_at(p, i);
+                    if spec.should_run != true {
+                        p = ecs_executor_run_plan_skip_ready(p, i);
+                        batch.skipped.push(i);
+                    } else {
+                        if spec.is_exclusive || spec.is_local {
+                            if len(batch.systems) as i64 == 0 {
+                                batch.systems.push(i);
+                                batch.is_exclusive = spec.is_exclusive;
+                                batch.is_local = spec.is_local;
+                            };
+                            return ecs_executor_ready_batch_result(p, batch);
+                        } else {
+                            if batch.is_exclusive != true {
+                                if batch.is_local != true { batch.systems.push(i); };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return ecs_executor_ready_batch_result(p, batch);
+}
+
+fn ecs_executor_run_plan_complete_ready_batch(p: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch) -> EcsExecutorRunPlan {
+    let i: i64 = 0;
+    let cnt = len(batch.systems) as i64;
+    while i < cnt {
+        let system_index = batch.systems[i];
+        let spec = ecs_executor_run_plan_spec_at(p, system_index);
+        p.executor.state = ecs_executor_state_start_system(p.executor.state, system_index, spec.is_exclusive, spec.is_local);
+        p.run_order.push(system_index);
+        p.executor.systems_run = p.executor.systems_run + 1;
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    while j < cnt {
+        let completed_index = batch.systems[j];
+        let completed_spec = ecs_executor_run_plan_spec_at(p, completed_index);
+        let deps = ecs_executor_run_plan_dependents_at(p, completed_index);
+        p.executor.state = ecs_executor_state_complete_system(p.executor.state, completed_index, deps);
+        p = ecs_executor_run_plan_apply_deferred_for(p, completed_index, completed_spec);
+        j = j + 1;
+    }
+    return p;
+}
+
+fn ecs_executor_run_plan_drive_one(p: EcsExecutorRunPlan) -> EcsExecutorRunPlan {
+    let next = ecs_executor_run_plan_next_ready(p);
+    if next < 0 {
+        if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
+        return p;
+    };
+    let spec = ecs_executor_run_plan_spec_at(p, next);
+    if spec.should_run != true {
+        return ecs_executor_run_plan_skip_ready(p, next);
+    };
+    p.executor.state = ecs_executor_state_start_system(p.executor.state, next, spec.is_exclusive, spec.is_local);
+    p.run_order.push(next);
+    p.executor.systems_run = p.executor.systems_run + 1;
+    let deps = ecs_executor_run_plan_dependents_at(p, next);
+    p.executor.state = ecs_executor_state_complete_system(p.executor.state, next, deps);
+    p = ecs_executor_run_plan_apply_deferred_for(p, next, spec);
+    return p;
+}
+
+fn ecs_executor_run_plan_drive_ready_batch(p: EcsExecutorRunPlan, max_width: i64) -> EcsExecutorRunPlan {
+    let taken = ecs_executor_run_plan_take_ready_batch(p, max_width);
+    if len(taken.batch.systems) as i64 == 0 {
+        if len(taken.batch.skipped) as i64 == 0 {
+            if ecs_executor_state_completed_count(taken.plan.executor.state) < taken.plan.executor.state.system_count { taken.plan.stalled = true; };
+        };
+        return taken.plan;
+    };
+    return ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+}
+
+fn ecs_executor_run_plan_drive_all_batched(p: EcsExecutorRunPlan, max_width: i64) -> EcsExecutorRunPlan {
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count { return p; };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        p = ecs_executor_run_plan_drive_ready_batch(p, max_width);
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before { return p; };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return p;
+}
+
+fn ecs_executor_run_plan_drive_all(p: EcsExecutorRunPlan) -> EcsExecutorRunPlan {
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count { return p; };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        p = ecs_executor_run_plan_drive_one(p);
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before { return p; };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return p;
+}
+
+fn ecs_executor_run_plan_run_count(p: EcsExecutorRunPlan) -> i64 { return len(p.run_order) as i64; }
+fn ecs_executor_run_plan_apply_count(p: EcsExecutorRunPlan) -> i64 { return len(p.apply_order) as i64; }
+fn ecs_executor_run_plan_skipped_count(p: EcsExecutorRunPlan) -> i64 { return len(p.skipped_order) as i64; }
+fn ecs_executor_run_plan_run_at(p: EcsExecutorRunPlan, index: i64) -> i64 { return p.run_order[index]; }
+fn ecs_executor_run_plan_apply_at(p: EcsExecutorRunPlan, index: i64) -> i64 { return p.apply_order[index]; }
+fn ecs_executor_run_plan_skipped_at(p: EcsExecutorRunPlan, index: i64) -> i64 { return p.skipped_order[index]; }
+fn ecs_executor_run_plan_is_stalled(p: EcsExecutorRunPlan) -> bool { return p.stalled; }
+fn ecs_executor_ready_batch_count(batch: EcsExecutorReadyBatch) -> i64 { return len(batch.systems) as i64; }
+fn ecs_executor_ready_batch_skipped_count(batch: EcsExecutorReadyBatch) -> i64 { return len(batch.skipped) as i64; }
+fn ecs_executor_ready_batch_at(batch: EcsExecutorReadyBatch, index: i64) -> i64 { return batch.systems[index]; }
+fn ecs_executor_ready_batch_skipped_at(batch: EcsExecutorReadyBatch, index: i64) -> i64 { return batch.skipped[index]; }
+fn ecs_executor_ready_batch_is_exclusive(batch: EcsExecutorReadyBatch) -> bool { return batch.is_exclusive; }
+fn ecs_executor_ready_batch_is_local(batch: EcsExecutorReadyBatch) -> bool { return batch.is_local; }

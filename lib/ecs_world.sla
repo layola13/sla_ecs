@@ -2778,8 +2778,62 @@ fn ecs_world_try_query_single<T, R, M>(world: TableErasedWorld<R, M>, type_id: i
     if count < 1 {
         return result_err<EntityItem<T>>(ERR_QUERY_NO_MATCH(), default_value);
     };
+    if count > 1 {
+        return result_err<EntityItem<T>>(ERR_QUERY_MULTIPLE_MATCH(), default_value);
+    };
     let item = table_erased_world_query_single_auto<T, R, M>(world, type_id);
     return result_ok<EntityItem<T>>(item);
+}
+
+// Fallible despawn. Returns Result<World>: ok with the despawned world when the
+// entity is alive, err with ERR_ENTITY_NOT_FOUND and the unchanged world when it
+// is stale or unknown.
+fn ecs_world_try_despawn_result<R, M>(world: TableErasedWorld<R, M>, entity: Entity) -> Result<TableErasedWorld<R, M>> {
+    if table_erased_world_is_alive<R, M>(world, entity) != true {
+        return result_err<TableErasedWorld<R, M>>(ERR_ENTITY_NOT_FOUND(), world);
+    };
+    let w = table_erased_world_despawn<R, M>(world, entity);
+    return result_ok<TableErasedWorld<R, M>>(w);
+}
+
+// Fallible mutable component access. The ok value is the linear Mut<T>-like
+// accessor; callers write it back with ecs_world_get_mut_writeback.
+fn ecs_world_try_get_mut<T, R, M>(world: TableErasedWorld<R, M>, entity: Entity, type_id: i32, default_value: T) -> Result<EcsMut<T>> {
+    let entity_ok = table_erased_world_query_entities_contains<R, M>(world, entity);
+    let default_mut = EcsMut<T> { entity: entity, value: default_value, added_tick: 0, changed_tick: 0 };
+    if entity_ok != true {
+        return result_err<EcsMut<T>>(ERR_ENTITY_NOT_FOUND(), default_mut);
+    };
+    let has_comp = table_erased_world_has_type<R, M>(world, entity, type_id);
+    if has_comp != true {
+        return result_err<EcsMut<T>>(ERR_COMPONENT_NOT_FOUND(), default_mut);
+    };
+    let accessor = ecs_world_get_mut<T, R, M>(world, entity, type_id);
+    return result_ok<EcsMut<T>>(accessor);
+}
+
+// Fallible resource Ref/Mut accessors. The default value only occupies the err
+// payload; result_error_code carries the failure reason.
+fn ecs_world_try_get_resource_ref<R, M>(world: TableErasedWorld<R, M>, default_value: R) -> Result<EcsResourceRef<R>> {
+    let default_ref = EcsResourceRef<R> { value: default_value, added_tick: 0, changed_tick: 0 };
+    if table_erased_world_has_resource<R, M>(world) != true {
+        return result_err<EcsResourceRef<R>>(ERR_RESOURCE_NOT_FOUND(), default_ref);
+    };
+    return result_ok<EcsResourceRef<R>>(ecs_world_resource_ref<R, M>(world));
+}
+
+fn ecs_world_try_get_resource_mut<R, M>(world: TableErasedWorld<R, M>, default_value: R) -> Result<EcsResourceRef<R>> {
+    return ecs_world_try_get_resource_ref<R, M>(world, default_value);
+}
+
+// Fallible resource modification. The closure is only invoked when the resource
+// exists, so missing-resource flows stay recoverable and side-effect-free.
+fn ecs_world_try_modify_resource<R, M>(world: TableErasedWorld<R, M>, run: fn(TableErasedWorld<R, M>, R) -> (TableErasedWorld<R, M>, R)) -> Result<TableErasedWorld<R, M>> {
+    if table_erased_world_has_resource<R, M>(world) != true {
+        return result_err<TableErasedWorld<R, M>>(ERR_RESOURCE_NOT_FOUND(), world);
+    };
+    let w = ecs_world_modify_resource<R, M>(world, run);
+    return result_ok<TableErasedWorld<R, M>>(w);
 }
 
 // ============================================================================

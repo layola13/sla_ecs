@@ -6,8 +6,67 @@
 // non-conflicting access run on threads sharing one world by raw pointer.
 @import "world_table_erased.sla"
 @import "table_erased_access.sla"
+@import "executor_multi_threaded.sla"
 @import "sa_std/core/arc.sa"
 @import "sa_std/thread.sa"
+
+struct EcsParallelReadyBatchRunResult {
+    plan: EcsExecutorRunPlan,
+    thread_sum: i32,
+    ran_count: i64,
+    skipped_count: i64,
+    used_threads: bool,
+    mismatch: bool,
+}
+
+struct EcsParallelCatalogReadySelection {
+    plan: EcsExecutorRunPlan,
+    batch: EcsExecutorReadyBatch,
+    skipped_count: i64,
+    mismatch: bool,
+}
+
+struct EcsParallelFnCatalog<R, M> {
+    system_indexes: Vec<i64>,
+    runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32>,
+    accesses: Vec<TableErasedSystemAccess>,
+}
+
+fn ecs_parallel_ready_batch_run_result(plan: EcsExecutorRunPlan, thread_sum: i32, ran_count: i64, skipped_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelReadyBatchRunResult {
+    return EcsParallelReadyBatchRunResult { plan: plan, thread_sum: thread_sum, ran_count: ran_count, skipped_count: skipped_count, used_threads: used_threads, mismatch: mismatch };
+}
+
+fn ecs_parallel_catalog_ready_selection(plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped_count: i64, mismatch: bool) -> EcsParallelCatalogReadySelection {
+    return EcsParallelCatalogReadySelection { plan: plan, batch: batch, skipped_count: skipped_count, mismatch: mismatch };
+}
+
+fn ecs_parallel_fn_catalog_new<R, M>() -> EcsParallelFnCatalog<R, M> {
+    let system_indexes: Vec<i64> = Vec::new();
+    let runs: Vec<fn(Arc<*TableErasedWorld<R, M>>) -> i32> = Vec::new();
+    let accesses: Vec<TableErasedSystemAccess> = Vec::new();
+    return EcsParallelFnCatalog<R, M> { system_indexes: system_indexes, runs: runs, accesses: accesses };
+}
+
+fn ecs_parallel_fn_catalog_add<R, M>(catalog: EcsParallelFnCatalog<R, M>, system_index: i64, run: fn(Arc<*TableErasedWorld<R, M>>) -> i32, access: TableErasedSystemAccess) -> EcsParallelFnCatalog<R, M> {
+    catalog.system_indexes.push(system_index);
+    catalog.runs.push(run);
+    catalog.accesses.push(access);
+    return catalog;
+}
+
+fn ecs_parallel_fn_catalog_len<R, M>(catalog: EcsParallelFnCatalog<R, M>) -> i64 {
+    return len(catalog.system_indexes) as i64;
+}
+
+fn ecs_parallel_fn_catalog_find_slot<R, M>(catalog: EcsParallelFnCatalog<R, M>, system_index: i64) -> i64 {
+    let i: i64 = 0;
+    let n = ecs_parallel_fn_catalog_len<R, M>(catalog);
+    while i < n {
+        if catalog.system_indexes[i] == system_index { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
 
 fn ecs_parallel_run_mut_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess) -> i32 {
     if table_erased_access_conflicts(first_access, second_access) { panic(23010); };
@@ -19,6 +78,22 @@ fn ecs_parallel_run_mut_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc
     let first_handle = thread::spawn(^|| first(first_ptr));
     let second_handle = thread::spawn(^|| second(second_ptr));
     return first_handle.join().unwrap() + second_handle.join().unwrap();
+}
+
+fn ecs_parallel_run_mut_triple_batch<R, M>(world: TableErasedWorld<R, M>, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> i32 {
+    if table_erased_access_conflicts(first_access, second_access) { panic(23011); };
+    if table_erased_access_conflicts(first_access, third_access) { panic(23012); };
+    if table_erased_access_conflicts(second_access, third_access) { panic(23013); };
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let first_ptr = shared.clone();
+    let second_ptr = shared.clone();
+    let third_ptr = shared.clone();
+    let first_handle = thread::spawn(^|| first(first_ptr));
+    let second_handle = thread::spawn(^|| second(second_ptr));
+    let third_handle = thread::spawn(^|| third(third_ptr));
+    return first_handle.join().unwrap() + second_handle.join().unwrap() + third_handle.join().unwrap();
 }
 
 // Read-only parallel batch runner (Bevy read-only parallel execution). Two
@@ -33,4 +108,619 @@ fn ecs_parallel_run_readonly_batch<R, M>(world: TableErasedWorld<R, M>, first: f
     let first_handle = thread::spawn(^|| first(first_ptr));
     let second_handle = thread::spawn(^|| second(second_ptr));
     return first_handle.join().unwrap() + second_handle.join().unwrap();
+}
+
+fn ecs_parallel_run_single_batch<R, M>(world: TableErasedWorld<R, M>, run: fn(Arc<*TableErasedWorld<R, M>>) -> i32) -> i32 {
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    return run(shared);
+}
+
+fn ecs_parallel_run_ready_pair_batch<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, first_system_index: i64, second_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let taken = ecs_executor_run_plan_take_ready_batch(plan, 2);
+    let skipped = ecs_executor_ready_batch_skipped_count(taken.batch);
+    if ecs_executor_ready_batch_count(taken.batch) != 2 {
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if ecs_executor_ready_batch_is_exclusive(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_at(taken.batch, 0) != first_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_at(taken.batch, 1) != second_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+
+    let sum = ecs_parallel_run_mut_batch<R, M>(world, first, second, first_access, second_access);
+    let plan2 = ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+    return ecs_parallel_ready_batch_run_result(plan2, sum, 2, skipped, true, false);
+}
+
+fn ecs_parallel_run_ready_triple_batch<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let taken = ecs_executor_run_plan_take_ready_batch(plan, 3);
+    let skipped = ecs_executor_ready_batch_skipped_count(taken.batch);
+    if ecs_executor_ready_batch_count(taken.batch) != 3 {
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if ecs_executor_ready_batch_is_exclusive(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_at(taken.batch, 0) != first_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_at(taken.batch, 1) != second_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_at(taken.batch, 2) != third_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+
+    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, second, third, first_access, second_access, third_access);
+    let plan2 = ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+    return ecs_parallel_ready_batch_run_result(plan2, sum, 3, skipped, true, false);
+}
+
+fn ecs_parallel_run_ready_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let width = max_width;
+    if width <= 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, 0, false, true); };
+    if width > 3 { width = 3; };
+    let taken = ecs_executor_run_plan_take_ready_batch(plan, width);
+    let skipped = ecs_executor_ready_batch_skipped_count(taken.batch);
+    let count = ecs_executor_ready_batch_count(taken.batch);
+    if count == 0 {
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if count == 1 {
+        if ecs_executor_ready_batch_at(taken.batch, 0) != first_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        let sum = ecs_parallel_run_single_batch<R, M>(world, first);
+        let plan2 = ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+        return ecs_parallel_ready_batch_run_result(plan2, sum, 1, skipped, false, false);
+    };
+    if count == 2 {
+        if ecs_executor_ready_batch_is_exclusive(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_is_local(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_at(taken.batch, 0) != first_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_at(taken.batch, 1) != second_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        let sum = ecs_parallel_run_mut_batch<R, M>(world, first, second, first_access, second_access);
+        let plan2 = ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+        return ecs_parallel_ready_batch_run_result(plan2, sum, 2, skipped, true, false);
+    };
+    if count == 3 {
+        if ecs_executor_ready_batch_is_exclusive(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_is_local(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_at(taken.batch, 0) != first_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_at(taken.batch, 1) != second_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        if ecs_executor_ready_batch_at(taken.batch, 2) != third_system_index { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+        let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, second, third, first_access, second_access, third_access);
+        let plan2 = ecs_executor_run_plan_complete_ready_batch(taken.plan, taken.batch);
+        return ecs_parallel_ready_batch_run_result(plan2, sum, 3, skipped, true, false);
+    };
+    return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+}
+
+fn ecs_parallel_catalog_complete_batch(plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, sum: i32, ran_count: i64, skipped_count: i64, used_threads: bool) -> EcsParallelReadyBatchRunResult {
+    let plan2 = ecs_executor_run_plan_complete_ready_batch(plan, batch);
+    return ecs_parallel_ready_batch_run_result(plan2, sum, ran_count, skipped_count, used_threads, false);
+}
+
+fn ecs_parallel_catalog_index_known(system_index: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64) -> bool {
+    if system_index == first_system_index { return true; };
+    if system_index == second_system_index { return true; };
+    if system_index == third_system_index { return true; };
+    return false;
+}
+
+fn ecs_parallel_catalog_pair_conflicts(left_index: i64, right_index: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> bool {
+    if left_index == right_index { return true; };
+    if left_index == first_system_index {
+        if right_index == second_system_index { return table_erased_access_conflicts(first_access, second_access); };
+        if right_index == third_system_index { return table_erased_access_conflicts(first_access, third_access); };
+        return true;
+    };
+    if left_index == second_system_index {
+        if right_index == first_system_index { return table_erased_access_conflicts(second_access, first_access); };
+        if right_index == third_system_index { return table_erased_access_conflicts(second_access, third_access); };
+        return true;
+    };
+    if left_index == third_system_index {
+        if right_index == first_system_index { return table_erased_access_conflicts(third_access, first_access); };
+        if right_index == second_system_index { return table_erased_access_conflicts(third_access, second_access); };
+        return true;
+    };
+    return true;
+}
+
+fn ecs_parallel_catalog_conflicts_with_batch(batch: EcsExecutorReadyBatch, candidate_index: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> bool {
+    let i: i64 = 0;
+    let n = ecs_executor_ready_batch_count(batch);
+    while i < n {
+        let existing = ecs_executor_ready_batch_at(batch, i);
+        if ecs_parallel_catalog_pair_conflicts(existing, candidate_index, first_system_index, second_system_index, third_system_index, first_access, second_access, third_access) { return true; };
+        i = i + 1;
+    }
+    return false;
+}
+
+fn ecs_parallel_dynamic_catalog_pair_conflicts<R, M>(catalog: EcsParallelFnCatalog<R, M>, left_index: i64, right_index: i64) -> bool {
+    if left_index == right_index { return true; };
+    let left_slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, left_index);
+    if left_slot < 0 { return true; };
+    let right_slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, right_index);
+    if right_slot < 0 { return true; };
+    return table_erased_access_conflicts(catalog.accesses[left_slot], catalog.accesses[right_slot]);
+}
+
+fn ecs_parallel_dynamic_catalog_conflicts_with_batch<R, M>(catalog: EcsParallelFnCatalog<R, M>, batch: EcsExecutorReadyBatch, candidate_index: i64) -> bool {
+    let i: i64 = 0;
+    let n = ecs_executor_ready_batch_count(batch);
+    while i < n {
+        let existing = ecs_executor_ready_batch_at(batch, i);
+        if ecs_parallel_dynamic_catalog_pair_conflicts<R, M>(catalog, existing, candidate_index) { return true; };
+        i = i + 1;
+    }
+    return false;
+}
+
+fn ecs_parallel_take_ready_dynamic_catalog_batch_up_to3<R, M>(p: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelCatalogReadySelection {
+    let batch = ecs_executor_ready_batch_new();
+    let skipped_count: i64 = 0;
+    let width = max_width;
+    if width <= 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+    if width > 3 { width = 3; };
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if ecs_executor_ready_batch_count(batch) >= width { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false); };
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true {
+                    let spec = ecs_executor_run_plan_spec_at(p, i);
+                    if spec.should_run != true {
+                        p = ecs_executor_run_plan_skip_ready(p, i);
+                        batch.skipped.push(i);
+                        skipped_count = skipped_count + 1;
+                    } else {
+                        let slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, i);
+                        if slot < 0 {
+                            if ecs_executor_ready_batch_count(batch) == 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if spec.is_exclusive || spec.is_local {
+                            if ecs_executor_ready_batch_count(batch) == 0 {
+                                batch.systems.push(i);
+                                batch.is_exclusive = spec.is_exclusive;
+                                batch.is_local = spec.is_local;
+                            };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if ecs_parallel_dynamic_catalog_conflicts_with_batch<R, M>(catalog, batch, i) != true {
+                            batch.systems.push(i);
+                        };
+                    };
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+}
+
+fn ecs_parallel_run_selected_dynamic_catalog_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped: i64, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
+    let count = ecs_executor_ready_batch_count(batch);
+    if count == 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if count == 1 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        let sa = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, a);
+        if sa < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let run_a = catalog.runs[sa];
+        let sum = ecs_parallel_run_single_batch<R, M>(world, run_a);
+        return ecs_parallel_catalog_complete_batch(plan, batch, sum, 1, skipped, false);
+    };
+    if ecs_executor_ready_batch_is_exclusive(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if count == 2 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        let b = ecs_executor_ready_batch_at(batch, 1);
+        let sa = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, a);
+        if sa < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let sb = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, b);
+        if sb < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let run_a = catalog.runs[sa];
+        let run_b = catalog.runs[sb];
+        let access_a = catalog.accesses[sa];
+        let access_b = catalog.accesses[sb];
+        let sum = ecs_parallel_run_mut_batch<R, M>(world, run_a, run_b, access_a, access_b);
+        return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+    };
+    if count == 3 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        let b = ecs_executor_ready_batch_at(batch, 1);
+        let c = ecs_executor_ready_batch_at(batch, 2);
+        let sa = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, a);
+        if sa < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let sb = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, b);
+        if sb < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let sc = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, c);
+        if sc < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        let run_a = catalog.runs[sa];
+        let run_b = catalog.runs[sb];
+        let run_c = catalog.runs[sc];
+        let access_a = catalog.accesses[sa];
+        let access_b = catalog.accesses[sb];
+        let access_c = catalog.accesses[sc];
+        let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, run_a, run_b, run_c, access_a, access_b, access_c);
+        return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+    };
+    return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true);
+}
+
+fn ecs_parallel_run_ready_dynamic_catalog_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelReadyBatchRunResult {
+    let selected = ecs_parallel_take_ready_dynamic_catalog_batch_up_to3<R, M>(plan, catalog, max_width);
+    if selected.mismatch { return ecs_parallel_ready_batch_run_result(selected.plan, 0, 0, selected.skipped_count, false, true); };
+    return ecs_parallel_run_selected_dynamic_catalog_batch_up_to3<R, M>(world, selected.plan, selected.batch, selected.skipped_count, catalog);
+}
+
+fn ecs_parallel_run_ready_all_dynamic_catalog_up_to3<R, M>(world: TableErasedWorld<R, M>, p: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelReadyBatchRunResult {
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let total_skipped: i64 = 0;
+    let any_threads = false;
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count {
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, false);
+        };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        let result = ecs_parallel_run_ready_dynamic_catalog_batch_up_to3<R, M>(world, p, catalog, max_width);
+        p = result.plan;
+        if result.used_threads { any_threads = true; };
+        total_sum = total_sum + result.thread_sum;
+        total_ran = total_ran + result.ran_count;
+        total_skipped = total_skipped + result.skipped_count;
+        if result.mismatch {
+            if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before {
+            if after < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+}
+
+fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {
+    let batch = ecs_executor_ready_batch_new();
+    let skipped_count: i64 = 0;
+    let width = max_width;
+    if width <= 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+    if width > 3 { width = 3; };
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if ecs_executor_ready_batch_count(batch) >= width { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false); };
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true {
+                    let spec = ecs_executor_run_plan_spec_at(p, i);
+                    if spec.should_run != true {
+                        p = ecs_executor_run_plan_skip_ready(p, i);
+                        batch.skipped.push(i);
+                        skipped_count = skipped_count + 1;
+                    } else {
+                        if ecs_parallel_catalog_index_known(i, first_system_index, second_system_index, third_system_index) != true {
+                            if ecs_executor_ready_batch_count(batch) == 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if spec.is_exclusive || spec.is_local {
+                            if ecs_executor_ready_batch_count(batch) == 0 {
+                                batch.systems.push(i);
+                                batch.is_exclusive = spec.is_exclusive;
+                                batch.is_local = spec.is_local;
+                            };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if ecs_parallel_catalog_conflicts_with_batch(batch, i, first_system_index, second_system_index, third_system_index, first_access, second_access, third_access) != true {
+                            batch.systems.push(i);
+                        };
+                    };
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+}
+
+fn ecs_parallel_run_selected_catalog_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let count = ecs_executor_ready_batch_count(batch);
+    if count == 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if count == 1 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        if a == first_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, first);
+            return ecs_parallel_catalog_complete_batch(plan, batch, sum, 1, skipped, false);
+        };
+        if a == second_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, second);
+            return ecs_parallel_catalog_complete_batch(plan, batch, sum, 1, skipped, false);
+        };
+        if a == third_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, third);
+            return ecs_parallel_catalog_complete_batch(plan, batch, sum, 1, skipped, false);
+        };
+        return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true);
+    };
+    if ecs_executor_ready_batch_is_exclusive(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if count == 2 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        let b = ecs_executor_ready_batch_at(batch, 1);
+        if a == first_system_index {
+            if b == second_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, first, second, first_access, second_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+            if b == third_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, first, third, first_access, third_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+        };
+        if a == second_system_index {
+            if b == first_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, second, first, second_access, first_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+            if b == third_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, second, third, second_access, third_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+        };
+        if a == third_system_index {
+            if b == first_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, third, first, third_access, first_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+            if b == second_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, third, second, third_access, second_access);
+                return ecs_parallel_catalog_complete_batch(plan, batch, sum, 2, skipped, true);
+            };
+        };
+        return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true);
+    };
+    if count == 3 {
+        let a = ecs_executor_ready_batch_at(batch, 0);
+        let b = ecs_executor_ready_batch_at(batch, 1);
+        let c = ecs_executor_ready_batch_at(batch, 2);
+        if a == first_system_index {
+            if b == second_system_index {
+                if c == third_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, second, third, first_access, second_access, third_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+            if b == third_system_index {
+                if c == second_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, third, second, first_access, third_access, second_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+        };
+        if a == second_system_index {
+            if b == first_system_index {
+                if c == third_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, second, first, third, second_access, first_access, third_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+            if b == third_system_index {
+                if c == first_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, second, third, first, second_access, third_access, first_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+        };
+        if a == third_system_index {
+            if b == first_system_index {
+                if c == second_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, third, first, second, third_access, first_access, second_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+            if b == second_system_index {
+                if c == first_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, third, second, first, third_access, second_access, first_access);
+                    return ecs_parallel_catalog_complete_batch(plan, batch, sum, 3, skipped, true);
+                };
+            };
+        };
+        return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true);
+    };
+    return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true);
+}
+
+fn ecs_parallel_run_ready_catalog_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let width = max_width;
+    if width <= 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, 0, false, true); };
+    if width > 3 { width = 3; };
+    let taken = ecs_executor_run_plan_take_ready_batch(plan, width);
+    let skipped = ecs_executor_ready_batch_skipped_count(taken.batch);
+    let count = ecs_executor_ready_batch_count(taken.batch);
+    if count == 0 {
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if count == 1 {
+        let a = ecs_executor_ready_batch_at(taken.batch, 0);
+        if a == first_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, first);
+            return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 1, skipped, false);
+        };
+        if a == second_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, second);
+            return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 1, skipped, false);
+        };
+        if a == third_system_index {
+            let sum = ecs_parallel_run_single_batch<R, M>(world, third);
+            return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 1, skipped, false);
+        };
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if ecs_executor_ready_batch_is_exclusive(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(taken.batch) { return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true); };
+    if count == 2 {
+        let a = ecs_executor_ready_batch_at(taken.batch, 0);
+        let b = ecs_executor_ready_batch_at(taken.batch, 1);
+        if a == first_system_index {
+            if b == second_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, first, second, first_access, second_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            if b == third_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, first, third, first_access, third_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        if a == second_system_index {
+            if b == first_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, second, first, second_access, first_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            if b == third_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, second, third, second_access, third_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        if a == third_system_index {
+            if b == first_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, third, first, third_access, first_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            if b == second_system_index {
+                let sum = ecs_parallel_run_mut_batch<R, M>(world, third, second, third_access, second_access);
+                return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 2, skipped, true);
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    if count == 3 {
+        let a = ecs_executor_ready_batch_at(taken.batch, 0);
+        let b = ecs_executor_ready_batch_at(taken.batch, 1);
+        let c = ecs_executor_ready_batch_at(taken.batch, 2);
+        if a == first_system_index {
+            if b == second_system_index {
+                if c == third_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, second, third, first_access, second_access, third_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            if b == third_system_index {
+                if c == second_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, first, third, second, first_access, third_access, second_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        if a == second_system_index {
+            if b == first_system_index {
+                if c == third_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, second, first, third, second_access, first_access, third_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            if b == third_system_index {
+                if c == first_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, second, third, first, second_access, third_access, first_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        if a == third_system_index {
+            if b == first_system_index {
+                if c == second_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, third, first, second, third_access, first_access, second_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            if b == second_system_index {
+                if c == first_system_index {
+                    let sum = ecs_parallel_run_mut_triple_batch<R, M>(world, third, second, first, third_access, second_access, first_access);
+                    return ecs_parallel_catalog_complete_batch(taken.plan, taken.batch, sum, 3, skipped, true);
+                };
+            };
+            return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+        };
+        return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+    };
+    return ecs_parallel_ready_batch_run_result(taken.plan, 0, 0, skipped, false, true);
+}
+
+fn ecs_parallel_run_ready_nonconflicting_catalog_batch_up_to3<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let selected = ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(plan, max_width, first_system_index, second_system_index, third_system_index, first_access, second_access, third_access);
+    if selected.mismatch { return ecs_parallel_ready_batch_run_result(selected.plan, 0, 0, selected.skipped_count, false, true); };
+    return ecs_parallel_run_selected_catalog_batch_up_to3<R, M>(world, selected.plan, selected.batch, selected.skipped_count, first_system_index, second_system_index, third_system_index, first, second, third, first_access, second_access, third_access);
+}
+
+fn ecs_parallel_run_ready_all_up_to3<R, M>(world: TableErasedWorld<R, M>, p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let total_skipped: i64 = 0;
+    let any_threads = false;
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count {
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, false);
+        };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        let result = ecs_parallel_run_ready_catalog_batch_up_to3<R, M>(world, p, max_width, first_system_index, second_system_index, third_system_index, first, second, third, first_access, second_access, third_access);
+        p = result.plan;
+        if result.used_threads { any_threads = true; };
+        total_sum = total_sum + result.thread_sum;
+        total_ran = total_ran + result.ran_count;
+        total_skipped = total_skipped + result.skipped_count;
+        if result.mismatch {
+            if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before {
+            if after < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+}
+
+fn ecs_parallel_run_ready_all_nonconflicting_up_to3<R, M>(world: TableErasedWorld<R, M>, p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first: fn(Arc<*TableErasedWorld<R, M>>) -> i32, second: fn(Arc<*TableErasedWorld<R, M>>) -> i32, third: fn(Arc<*TableErasedWorld<R, M>>) -> i32, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelReadyBatchRunResult {
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let total_skipped: i64 = 0;
+    let any_threads = false;
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count {
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, false);
+        };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        let result = ecs_parallel_run_ready_nonconflicting_catalog_batch_up_to3<R, M>(world, p, max_width, first_system_index, second_system_index, third_system_index, first, second, third, first_access, second_access, third_access);
+        p = result.plan;
+        if result.used_threads { any_threads = true; };
+        total_sum = total_sum + result.thread_sum;
+        total_ran = total_ran + result.ran_count;
+        total_skipped = total_skipped + result.skipped_count;
+        if result.mismatch {
+            if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before {
+            if after < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
 }

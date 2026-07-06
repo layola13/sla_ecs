@@ -12,15 +12,13 @@ This project expects the SA toolchain built from https://github.com/layola13/sci
 and the SLA plugin available through `SA_PLUGIN_DEV=1` during focused local
 checks.
 
-`sa sla test` is now the default SAB-first test path for this project. The SLA
-plugin writes managed SAB under `.sla-cache/sab/` and passes that artifact to
-`sa test`. The legacy `.test.sa` backend is only used when explicitly requested
-with `--test-backend sa`; default `auto` and explicit `--test-backend sab` both
-stay on the SAB artifact path. Focused tests should still be wrapped in
-`timeout 120s`; build/install commands should not use that timeout wrapper.
-Cold focused runs may spend 20s+ filling the SA backend cache, while repeated
-runs should normally return in roughly 2-3s once `.sla-cache/sab/` and SA's
-incremental cache are warm.
+Focused ECS verification should prefer generated SA while SAB remains under
+active compiler development. Use `sa sla test <file> --test-backend sa` for
+completion evidence unless a task explicitly targets SAB behavior. SAB build or
+disassembly checks are useful for compiler issue reports, but SAB-only success
+is not required for ECS feature completion. Focused tests should still be
+wrapped in `timeout 120s`; build/install commands should not use that timeout
+wrapper.
 
 ## Architecture
 
@@ -416,9 +414,9 @@ SA_PLUGIN_DEV=1 sa plugin install --dev /home/vscode/projects/sa_plugins/sa_plug
 
 ## Bevy ECS Parity Assessment
 
-Based on an audit of `~/projects/bevy/crates/bevy_ecs` (re-verified 2026-07-04), sla_ecs's completion varies by dimension — **API surface parity ~94–96%, behavioral parity ~82–87%**. The single headline figures below are one-dimensional summaries and must be read together with the ⚠️/❌/Gaps sections: the two genuinely behavioral gaps (general dynamic multithreaded executor and runtime reflection) are described there and are excluded from the fully-implemented claim.
+Based on an audit of `~/projects/bevy/crates/bevy_ecs` (re-verified 2026-07-06), sla_ecs's completion varies by dimension — **API surface parity ~94–96%, behavioral parity ~86–91%**. The single headline figures below are one-dimensional summaries and must be read together with the ⚠️/❌/Gaps sections: the remaining behavioral gaps (full TaskPool/Scope-style worker scheduling and runtime reflection) are described there and are excluded from the fully-implemented claim.
 
-Measured counts: 246 lib `.sla` modules, 172 `tests/*.sla` files, 90 `examples/*.sla`, and **3,798 source `.sla` `@test` annotations** across `lib/`+`tests/`+`examples/` (3,368 in `tests/`, 351 inline in `lib/`, 79 in `examples`; historical isolated-test batch total is 3,392 after Batch 126). All listed modules cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, and Archetype+Entity+Storage, verified on the SA backend. The SAB backend still hits codegen limitations on large/import-heavy paths (SA backend is the verified fallback there), but Batches 112–126 now pass their focused default backend suites after the Batch 122 hash-map refs unblocker.
+Measured counts: 248 lib `.sla` modules, 174 `tests/*.sla` files, 90 `examples/*.sla`, and **3,842 source `.sla` `@test` annotations** across `lib/`+`tests/`+`examples/` (3,409 in `tests/`, 354 inline in `lib/`, 79 in `examples`; historical isolated-test batch total is 3,433 after Batch 136). All listed modules cover System Registry, EntityCommands, ChangeDetection, Query completeness, Observer+Lifecycle+NonSend, Relationship traversal, ComponentInfo+EntityDisabling+BundleInfo, Schedule config, Archetype+Entity+Storage, Never, AppTypeRegistry/AppFunctionRegistry descriptor registries, explicit multi-threaded executor plan driving, ready-batch selection, ready-pair/triple bridges, width-dispatch up to 3 into the real pthread-backed runner, a looping fixed three-function ready-batch runner, access-conflict-aware ready-batch grouping, and dynamic `Vec<fn>` executor catalogs that can schedule arbitrary catalog lengths in width-3 waves, plus library-owned recoverable Result facades and structured scene/entity remap snapshots, verified on the SA backend. Focused Batches 112–136 also pass representative default backend suites after the Batch 122 hash-map refs unblocker and the later SAB call-target/thread-function-pointer fixes, except large/import-heavy or compiler-cleanup edge paths documented under `sa_plugin_sla/docs/`; whole-file default/SAB aggregation currently exposes `UseAfterMove tmp_67`, recorded in `sa_plugin_sla/docs/sab_aggregate_mut_parallel_use_after_move_issue_cn.md`, so whole-file completion evidence remains the generated SA backend.
 
 ### ✅ Production-Ready (Fully Implemented + Verified)
 - Entity allocation with generation and free-list recycling
@@ -445,7 +443,7 @@ Measured counts: 246 lib `.sla` modules, 172 `tests/*.sla` files, 90 `examples/*
 - **EntityMapper** entity remapping for cloning/serialization
 - **Result<T> error handling** (`ecs_world_try_get`/`try_get_resource`/`try_query_single`)
 - **Typed SystemSet/ScheduleLabel** via traits (`EcsScheduleLabelTrait`/`EcsSystemSetTrait`)
-- **Reflection ECS surface** (fn-pointer tables `EcsReflectComponent`/`ReflectFromWorld`/`ReflectEvent` mirror Bevy's `Reflect*Fns` shapes; this is API surface only — not full runtime reflection, see ❌ below)
+- **Reflection ECS surface** (fn-pointer tables `EcsReflectComponent`/`ReflectFromWorld`/`ReflectEvent` mirror Bevy's `Reflect*Fns` shapes; `lib/app_type_registry.sla` provides `AppTypeRegistry`/`AppFunctionRegistry` descriptor registries; this is API surface only — not full runtime reflection, see ❌ below)
 - **Unified World facade** covering full `bevy_ecs::world::World` public API
 - **System Registry** (`register_system`/`run_system`/`unregister_system`/`run_system_cached`, Bevy `system_registry.rs` parity)
 - **EntityCommands completeness** (`try_insert`/`remove_if`/`try_remove`/`retain`/`insert_if_new`/`trigger`/`observe`/entry pattern: `or_insert`/`or_default`/`or_from_world`/`and_modify`)
@@ -456,13 +454,15 @@ Measured counts: 246 lib `.sla` modules, 172 `tests/*.sla` files, 90 `examples/*
 ### ⚠️ Partially Implemented
 - **Multithreaded parallel execution — partial, one wired path and one unwired path:**
   - *Wired & verified:* `lib/parallel_runner.sla` provides real pthread-backed disjoint mutable / read-only batch runners `ecs_parallel_run_mut_batch` and `ecs_parallel_run_readonly_batch` (two systems share the world via `Arc<*TableErasedWorld<R,M>>` and run on two `thread::spawn` calls). Backed by the sla `thread::spawn`/`join` lowering -> `sa_std/thread.sa` macros -> sci `sa_pthread_host.c` libpthread runtime. Verified by `tests/test_ecs_mut_parallel.sla` on the SA backend. (The function names `ecs_world_run_readonly_batch_parallel` / `ecs_world_run_mut_batch_parallel` quoted in earlier revisions of this file do not exist in code — the actual names are `ecs_parallel_run_*`.)
-  - *Unwired:* `lib/executor_multi_threaded.sla` faithfully mirrors Bevy's `ExecutorState` dependency-satisfaction state machine (ready/running/completed bitsets, dependency counts, exclusive/local thread flags) but contains **no `thread::spawn`, no run/next/tick/drive main loop, and no TaskPool/Scope abstraction**, and has **no call sites outside its own isolated test file**. It is a faithful but not-yet-integrated component, not Bevy's general `MultiThreadedExecutor`. SAB still hits its codegen gap on the wired path (SA is the verified fallback).
+  - *Ready-batch bridge:* `ecs_parallel_run_ready_pair_batch`, `ecs_parallel_run_ready_triple_batch`, and `ecs_parallel_run_ready_batch_up_to3` now take ready batches from `EcsExecutorRunPlan`, validate ordinary non-exclusive/non-local shape/order for threaded batches, run pair/triple batches through pthread runners, serialize one-wide exclusive/local batches, and complete the executor plan so dependents become ready. This closes the first real bridges from Bevy-like executor planning into actual threaded execution.
+  - *Remaining executor gap:* `lib/executor_multi_threaded.sla` mirrors Bevy's `ExecutorState` dependency-satisfaction state machine (ready/running/completed bitsets, dependency counts, exclusive/local thread flags) and has `EcsExecutorRunPlan` / ready-batch drive helpers. It still does **not** provide a general TaskPool/Scope abstraction or arbitrary-N dynamic worker scheduling, so it remains partial relative to Bevy's general dynamic threaded `MultiThreadedExecutor`.
 
 ### ❌ Not Applicable / Compiler-Limited
-- **Runtime reflection — deliberately not implemented (and not needed for sla_ecs's scope).** Bevy's `bevy_ecs::reflect` is an adapter over `bevy_reflect` (~25,045 lines / 147 files), whose entire mechanism rests on language primitives SLA does not have: `TypeId`, `dyn Any`/`as_any`, and `#[derive(Reflect)]`-injected TypePath/typeinfo. A direct port would require first adding a runtime type system to the SA/SLA compiler itself — that is language engineering outside the sla_ecs boundary, not ECS work.
-  - *No consumer exists in sla_ecs.* Real reflection exists for scene (de)serialization, editor inspection, dynamic scripting, hot-reload, and runtime `insert_reflect`/`from_reflect` operation by reflected handle. sla_ecs has **none** of these subsystems (no `bevy_scene`-style serialization, no editor, no scripting) and nothing calls `AppTypeRegistry`/`ReflectComponent` — `lib/reflect*.sla` is referenced only by its own isolated test `tests/test_ecs_reflect.sla`; `World`/`Commands` do not call it. It is shape-aligned-but-unused.
+- **Runtime reflection — deliberately not implemented (and not needed for sla_ecs's scope).** Bevy's `bevy_ecs::reflect` is an adapter over `bevy_reflect` (~25,045 lines / 147 files), whose full mechanism rests on language/runtime primitives SLA does not have: native `TypeId::of::<T>()`, `dyn Any` downcast, and `#[derive(Reflect)]`-injected TypePath/typeinfo. A direct port would require first adding a runtime type system to the SA/SLA compiler itself — that is language engineering outside the sla_ecs boundary, not ECS work.
+  - *Descriptor registries exist, full reflected handles do not.* `lib/app_type_registry.sla` models `AppTypeRegistry` / `AppFunctionRegistry` as explicit descriptor registries: stable numeric ids, type paths, function handles, and ECS `Reflect*` type-data slots. This closes the ECS API-surface gap without pretending to provide bevy_reflect-style arbitrary value introspection.
+  - *No runtime reflection consumer exists in sla_ecs.* Real reflection exists for scene (de)serialization, editor inspection, dynamic scripting, hot-reload, and runtime `insert_reflect`/`from_reflect` operation by reflected handle. sla_ecs has **none** of these subsystems (no `bevy_scene`-style serialization, no editor, no scripting). `lib/reflect*.sla` and `lib/app_type_registry.sla` are shape-aligned ECS descriptors; `World`/`Commands` do not depend on a reflected-handle runtime.
   - *Equivalent coverage already exists via SLA idioms.* What Bevy does with reflection is covered statically here: `lib/ecs_metadata.sla` (`EcsMetadataDescriptor`) + `lib/world_table_erased.sla` type-id lookup helpers give by-type-id register/insert/query; `commands_table_erased_*` / `world_table_erased_*` give erased by-id operations on components/bundles/resources/messages; `DynamicWorld<A,B,R,M>` + the table-erased path give dynamic components. This is "doing Bevy's reflection job in the way SLA should", not "porting Bevy's reflection primitives".
-  - *Decision.* `lib/reflect*.sla` is kept as API-surface alignment (fn-pointer tables mirroring `Reflect*Fns` shapes) and explicitly **not** as a usable runtime reflection system; no further investment is planned unless a downstream subsystem that consumes a reflected handle (e.g. a scene serializer) is added to sla_ecs. The present `EcsAuton` is a project-local numeric-id allocator, semantically different from `AppTypeRegistry`.
+  - *Decision.* `lib/reflect*.sla` and `lib/app_type_registry.sla` are kept as API-surface alignment (fn-pointer/type-data descriptor tables mirroring `Reflect*Fns`, `AppTypeRegistry`, and `AppFunctionRegistry` shapes) and explicitly **not** as a usable runtime reflection system; no further investment is planned unless a downstream subsystem that consumes a reflected handle (e.g. a scene serializer) is added to sla_ecs.
 
 All core Bevy README-level semantics (entity/component/bundle/world/query/system/schedule/observer/relationship/message/change-detection/storage CLI demo flow) are present and verified through end-to-end demos and focused test suites. The two genuinely incomplete areas — a general dynamic multithreaded executor and runtime reflection — remain as described above and are **not** counted in the fully-implemented list above.
 
@@ -503,7 +503,7 @@ sla_ecs 不是"把 bevy_ecs 直译成 SLA",而是"用 SLA 应该用的方式做 
 ### 6. 真线程从 pthread 起,而非 async task + TaskPool::scope
 - **Rust/bevy**:`MultiThreadedExecutor` 基于 async tasks + `TaskPool::scope`,按任务图动态调度到线程池。
 - **SLA**:另一条更直接的路径——sla 编译器原生降 `thread::spawn(闭包)` → `sa_std/thread.sa` 宏 → sci `sa_pthread_host.c` 经 `dlsym` 调 libpthread(详见 README ⚠️ 一条)。无 async runtime。
-- **映射策略**:**已有真线程并行**(`lib/parallel_runner.sla` 固定 2 个 `thread::spawn`,共享 `Arc<*World>`),但**Bevy 的动态任务图多线程执行器未做**——`lib/executor_multi_threaded.sla` 只复刻了 `ExecutorState` 依赖满足状态机,无 `run/next/tick/drive` 主循环、无 TaskPool、未被连通。
+- **映射策略**:**已有真线程并行**(`lib/parallel_runner.sla` 固定 2 个 `thread::spawn`,共享 `Arc<*World>`),`lib/executor_multi_threaded.sla` 也已有显式 `EcsExecutorRunPlan` plan/drive 层来推进 ready/dependency/deferred/skip 顺序;但**Bevy 的动态 TaskPool::scope 多线程执行器仍未做**——当前不是可动态分发任意系统图到线程池的 executor。
 - **结论**:线程原语支持的不是问题,缺的是"动态任务图调度层"。
 
 ### 7. 泛型 + 一律类型擦除而非 `dyn System`
