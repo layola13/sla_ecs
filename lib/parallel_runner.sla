@@ -77,7 +77,6 @@ fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
     let workers = worker_count;
     if workers < 1 { workers = 1; };
     let width = workers;
-    if width > 9 { width = 9; };
     return EcsParallelTaskPool { worker_count: workers, max_batch_width: width };
 }
 
@@ -1405,12 +1404,130 @@ fn ecs_parallel_run_ready_all_dynamic_catalog_up_to9<R, M>(world: TableErasedWor
     return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
 }
 
+fn ecs_parallel_take_ready_dynamic_catalog_batch_unbounded<R, M>(p: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelCatalogReadySelection {
+    let batch = ecs_executor_ready_batch_new();
+    let skipped_count: i64 = 0;
+    let width = max_width;
+    if width <= 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if ecs_executor_ready_batch_count(batch) >= width { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false); };
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true {
+                    let spec = ecs_executor_run_plan_spec_at(p, i);
+                    if spec.should_run != true {
+                        p = ecs_executor_run_plan_skip_ready(p, i);
+                        batch.skipped.push(i);
+                        skipped_count = skipped_count + 1;
+                    } else {
+                        let slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, i);
+                        if slot < 0 {
+                            if ecs_executor_ready_batch_count(batch) == 0 { return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, true); };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if spec.is_exclusive || spec.is_local {
+                            if ecs_executor_ready_batch_count(batch) == 0 {
+                                batch.systems.push(i);
+                                batch.is_exclusive = spec.is_exclusive;
+                                batch.is_local = spec.is_local;
+                            };
+                            return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+                        };
+                        if ecs_parallel_dynamic_catalog_conflicts_with_batch<R, M>(catalog, batch, i) != true {
+                            batch.systems.push(i);
+                        };
+                    };
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return ecs_parallel_catalog_ready_selection(p, batch, skipped_count, false);
+}
+
+fn ecs_parallel_run_selected_dynamic_catalog_batch_unbounded<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, batch: EcsExecutorReadyBatch, skipped: i64, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
+    let count = ecs_executor_ready_batch_count(batch);
+    if count <= 9 { return ecs_parallel_run_selected_dynamic_catalog_batch_up_to9<R, M>(world, plan, batch, skipped, catalog); };
+    if ecs_executor_ready_batch_is_exclusive(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    if ecs_executor_ready_batch_is_local(batch) { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+    let check: i64 = 0;
+    while check < count {
+        let system_index = ecs_executor_ready_batch_at(batch, check);
+        let slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, system_index);
+        if slot < 0 { return ecs_parallel_ready_batch_run_result(plan, 0, 0, skipped, false, true); };
+        check = check + 1;
+    }
+    let world_box = Box::new(world);
+    let world_ptr = Box::into_raw(world_box);
+    let shared = Arc::new(world_ptr);
+    let handles: Vec<JoinHandle<i32>> = Vec::new();
+    let i: i64 = 0;
+    while i < count {
+        let system_index = ecs_executor_ready_batch_at(batch, i);
+        let slot = ecs_parallel_fn_catalog_find_slot<R, M>(catalog, system_index);
+        let run = catalog.runs[slot];
+        let task_world = shared.clone();
+        let handle = thread::spawn(^|| run(task_world));
+        handles.push(handle);
+        i = i + 1;
+    }
+    let sum: i32 = 0;
+    let j: i64 = 0;
+    while j < len(handles) as i64 {
+        let handle = handles[j];
+        sum = sum + handle.join().unwrap();
+        j = j + 1;
+    }
+    return ecs_parallel_catalog_complete_batch(plan, batch, sum, count, skipped, true);
+}
+
+fn ecs_parallel_run_ready_dynamic_catalog_batch_unbounded<R, M>(world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelReadyBatchRunResult {
+    let selected = ecs_parallel_take_ready_dynamic_catalog_batch_unbounded<R, M>(plan, catalog, max_width);
+    if selected.mismatch { return ecs_parallel_ready_batch_run_result(selected.plan, 0, 0, selected.skipped_count, false, true); };
+    return ecs_parallel_run_selected_dynamic_catalog_batch_unbounded<R, M>(world, selected.plan, selected.batch, selected.skipped_count, catalog);
+}
+
+fn ecs_parallel_run_ready_all_dynamic_catalog_unbounded<R, M>(world: TableErasedWorld<R, M>, p: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>, max_width: i64) -> EcsParallelReadyBatchRunResult {
+    let total_sum: i32 = 0;
+    let total_ran: i64 = 0;
+    let total_skipped: i64 = 0;
+    let any_threads = false;
+    let guard: i64 = 0;
+    let limit = p.executor.state.system_count * 2 + 1;
+    while guard < limit {
+        if ecs_executor_state_completed_count(p.executor.state) >= p.executor.state.system_count {
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, false);
+        };
+        let before = ecs_executor_state_completed_count(p.executor.state);
+        let result = ecs_parallel_run_ready_dynamic_catalog_batch_unbounded<R, M>(world, p, catalog, max_width);
+        p = result.plan;
+        if result.used_threads { any_threads = true; };
+        total_sum = total_sum + result.thread_sum;
+        total_ran = total_ran + result.ran_count;
+        total_skipped = total_skipped + result.skipped_count;
+        if result.mismatch {
+            if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        let after = ecs_executor_state_completed_count(p.executor.state);
+        if after == before {
+            if after < p.executor.state.system_count { p.stalled = true; };
+            return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+        };
+        guard = guard + 1;
+    }
+    p.stalled = true;
+    return ecs_parallel_ready_batch_run_result(p, total_sum, total_ran, total_skipped, any_threads, true);
+}
+
 fn ecs_parallel_task_pool_run_ready_dynamic_catalog_batch<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
-    return ecs_parallel_run_ready_dynamic_catalog_batch_up_to9<R, M>(world, plan, catalog, pool.max_batch_width);
+    return ecs_parallel_run_ready_dynamic_catalog_batch_unbounded<R, M>(world, plan, catalog, pool.max_batch_width);
 }
 
 fn ecs_parallel_task_pool_run_ready_all_dynamic_catalog<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, plan: EcsExecutorRunPlan, catalog: EcsParallelFnCatalog<R, M>) -> EcsParallelReadyBatchRunResult {
-    return ecs_parallel_run_ready_all_dynamic_catalog_up_to9<R, M>(world, plan, catalog, pool.max_batch_width);
+    return ecs_parallel_run_ready_all_dynamic_catalog_unbounded<R, M>(world, plan, catalog, pool.max_batch_width);
 }
 
 fn ecs_parallel_take_ready_nonconflicting_catalog_batch_up_to3(p: EcsExecutorRunPlan, max_width: i64, first_system_index: i64, second_system_index: i64, third_system_index: i64, first_access: TableErasedSystemAccess, second_access: TableErasedSystemAccess, third_access: TableErasedSystemAccess) -> EcsParallelCatalogReadySelection {
