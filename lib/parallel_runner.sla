@@ -157,6 +157,39 @@ fn ecs_parallel_scoped_task_set_external_len<R, M>(tasks: EcsParallelScopedTaskS
     return len(tasks.external_runs) as i64;
 }
 
+fn ecs_parallel_scoped_task_set_find_order_slot(positions: Vec<i64>, order_pos: i64) -> i64 {
+    let i: i64 = 0;
+    let n = len(positions) as i64;
+    while i < n {
+        if positions[i] == order_pos { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn ecs_parallel_scoped_task_set_extend<R, M>(parent: EcsParallelScopedTaskSet<R, M>, child: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopedTaskSet<R, M> {
+    let order_pos: i64 = 0;
+    let total = ecs_parallel_scoped_task_set_len<R, M>(child);
+    while order_pos < total {
+        let threaded_slot = ecs_parallel_scoped_task_set_find_order_slot(child.run_order_positions, order_pos);
+        if threaded_slot >= 0 {
+            parent = ecs_parallel_scoped_task_set_spawn<R, M>(parent, child.runs[threaded_slot]);
+        } else {
+            let local_slot = ecs_parallel_scoped_task_set_find_order_slot(child.on_scope_order_positions, order_pos);
+            if local_slot >= 0 {
+                parent = ecs_parallel_scoped_task_set_spawn_on_scope<R, M>(parent, child.on_scope_runs[local_slot]);
+            } else {
+                let external_slot = ecs_parallel_scoped_task_set_find_order_slot(child.external_order_positions, order_pos);
+                if external_slot >= 0 {
+                    parent = ecs_parallel_scoped_task_set_spawn_on_external<R, M>(parent, child.external_runs[external_slot]);
+                };
+            };
+        };
+        order_pos = order_pos + 1;
+    }
+    return parent;
+}
+
 fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
     let workers = worker_count;
     if workers < 1 { workers = 1; };

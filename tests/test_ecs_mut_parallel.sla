@@ -1591,3 +1591,52 @@ fn mp_plan_j(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> i32 {
     if ecs_parallel_scope_run_result_at(result, 2) != 5 { panic(24313); };
     if ecs_parallel_scope_run_result_at(result, 3) != 13 { panic(24314); };
 }
+
+@test "task pool scoped task set merges child in order"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let parent0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let parent1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(parent0, mp_plan_a);
+    let child0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let child1 = ecs_parallel_scoped_task_set_spawn_on_scope<i32, i32>(child0, mp_plan_d);
+    let child2 = ecs_parallel_scoped_task_set_spawn<i32, i32>(child1, mp_plan_b);
+    let child3 = ecs_parallel_scoped_task_set_spawn_on_external<i32, i32>(child2, mp_plan_c);
+    let parent2 = ecs_parallel_scoped_task_set_extend<i32, i32>(parent1, child3);
+    let parent3 = ecs_parallel_scoped_task_set_spawn<i32, i32>(parent2, mp_plan_e);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(parent3) != 5 { panic(24315); };
+    if ecs_parallel_scoped_task_set_threaded_len<i32, i32>(parent3) != 3 { panic(24316); };
+    if ecs_parallel_scoped_task_set_on_scope_len<i32, i32>(parent3) != 1 { panic(24317); };
+    if ecs_parallel_scoped_task_set_external_len<i32, i32>(parent3) != 1 { panic(24318); };
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, parent3);
+    if result.mismatch { panic(24319); };
+    if result.thread_sum != 39 { panic(24320); };
+    if result.ran_count != 5 { panic(24321); };
+    if result.local_count != 1 { panic(24322); };
+    if result.external_count != 1 { panic(24323); };
+    if result.wave_count != 2 { panic(24324); };
+    if ecs_parallel_scope_run_result_len(result) != 5 { panic(24325); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 3 { panic(24326); };
+    if ecs_parallel_scope_run_result_at(result, 1) != 11 { panic(24327); };
+    if ecs_parallel_scope_run_result_at(result, 2) != 5 { panic(24328); };
+    if ecs_parallel_scope_run_result_at(result, 3) != 7 { panic(24329); };
+    if ecs_parallel_scope_run_result_at(result, 4) != 13 { panic(24330); };
+}
+
+@test "task pool scoped task set empty child merge preserves parent"() {
+    let w0 = table_erased_world_new<i32, i32>(0, 0);
+    let parent0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let parent1 = ecs_parallel_scoped_task_set_spawn<i32, i32>(parent0, mp_plan_a);
+    let child0 = ecs_parallel_scoped_task_set_new<i32, i32>();
+    let parent2 = ecs_parallel_scoped_task_set_extend<i32, i32>(parent1, child0);
+    if ecs_parallel_scoped_task_set_len<i32, i32>(parent2) != 1 { panic(24331); };
+    if ecs_parallel_scoped_task_set_threaded_len<i32, i32>(parent2) != 1 { panic(24332); };
+    if ecs_parallel_scoped_task_set_on_scope_len<i32, i32>(parent2) != 0 { panic(24333); };
+    if ecs_parallel_scoped_task_set_external_len<i32, i32>(parent2) != 0 { panic(24334); };
+    let pool = ecs_parallel_task_pool_new(2);
+    let result = ecs_parallel_task_pool_scope_run_tasks<i32, i32>(pool, w0, parent2);
+    if result.mismatch { panic(24335); };
+    if result.thread_sum != 3 { panic(24336); };
+    if result.ran_count != 1 { panic(24337); };
+    if ecs_parallel_scope_run_result_len(result) != 1 { panic(24338); };
+    if ecs_parallel_scope_run_result_at(result, 0) != 3 { panic(24339); };
+}
