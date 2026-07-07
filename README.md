@@ -12,13 +12,14 @@ This project expects the SA toolchain built from https://github.com/layola13/sci
 and the SLA plugin available through `SA_PLUGIN_DEV=1` during focused local
 checks.
 
-Focused ECS verification should prefer generated SA while SAB remains under
-active compiler development. Use `sa sla test <file> --test-backend sa` for
-completion evidence unless a task explicitly targets SAB behavior. SAB build or
-disassembly checks are useful for compiler issue reports, but SAB-only success
-is not required for ECS feature completion. Focused tests should still be
-wrapped in `timeout 120s`; build/install commands should not use that timeout
-wrapper.
+Focused ECS verification should not persist generated SA artifacts in this
+repository. `*.test.sa` files are generated compiler output, are ignored, and
+must not be committed. Use the SAB/default path for focused verification; when
+SAB compilation fails, do not fall back to generated-SA completion evidence.
+Instead, report the compiler issue under
+`/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/` with the failing command
+and diagnostic. Focused tests should still be wrapped in `timeout 120s`;
+build/install commands should not use that timeout wrapper.
 
 ## Architecture
 
