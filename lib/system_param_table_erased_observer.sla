@@ -67,6 +67,11 @@ struct TableErasedObserverPairMutReadonlyPairParamSet<A, B> {
     read_query: Query<TableErasedPair<A, B>>,
 }
 
+struct TableErasedObserverTwoPairMutParamSet<A, B, C, D> {
+    first_query: Query<TableErasedPairMut<A, B>>,
+    second_query: Query<TableErasedPairMut<C, D>>,
+}
+
 struct TableErasedObserverPairMutCommandsParam<A, B, R, M> {
     query: Query<TableErasedPairMut<A, B>>,
     commands: TableErasedObserverCommandsParam<R, M>,
@@ -243,6 +248,10 @@ fn table_erased_observer_message_mutator_write_default_with_message_id<M>(param:
 
 fn table_erased_observer_pair_mut_readonly_pair_param_set<A, B>(mut_query: Query<TableErasedPairMut<A, B>>, read_query: Query<TableErasedPair<A, B>>) -> TableErasedObserverPairMutReadonlyPairParamSet<A, B> {
     return TableErasedObserverPairMutReadonlyPairParamSet<A, B> { mut_query: mut_query, read_query: read_query };
+}
+
+fn table_erased_observer_two_pair_mut_param_set<A, B, C, D>(first_query: Query<TableErasedPairMut<A, B>>, second_query: Query<TableErasedPairMut<C, D>>) -> TableErasedObserverTwoPairMutParamSet<A, B, C, D> {
+    return TableErasedObserverTwoPairMutParamSet<A, B, C, D> { first_query: first_query, second_query: second_query };
 }
 
 fn table_erased_observer_pair_mut_commands_param<A, B, R, M>(query: Query<TableErasedPairMut<A, B>>, commands: TableErasedObserverCommandsParam<R, M>) -> TableErasedObserverPairMutCommandsParam<A, B, R, M> {
@@ -489,6 +498,23 @@ fn table_erased_observer_run_pair_mut_readonly_pair_param_set_system_auto<A, B, 
     let first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_type_id);
     let second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_type_id);
     return table_erased_observer_run_pair_mut_readonly_pair_param_set_system<A, B, R, M>(world, first_component_id, first_type_id, second_component_id, second_type_id, run);
+}
+
+fn table_erased_observer_run_two_pair_mut_param_set_system<A, B, C, D, R, M>(world: TableErasedObserverWorld<R, M>, first_pair_first_component_id: i32, first_pair_first_type_id: i32, first_pair_second_component_id: i32, first_pair_second_type_id: i32, second_pair_first_component_id: i32, second_pair_first_type_id: i32, second_pair_second_component_id: i32, second_pair_second_type_id: i32, run: fn(TableErasedObserverTwoPairMutParamSet<A, B, C, D>) -> TableErasedObserverTwoPairMutParamSet<A, B, C, D>) -> TableErasedObserverWorld<R, M> {
+    let first_query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_pair_first_component_id, first_pair_first_type_id, first_pair_second_component_id, first_pair_second_type_id);
+    let second_query = table_erased_world_query_pair_mut_first<C, D, R, M>(world.table, second_pair_first_component_id, second_pair_first_type_id, second_pair_second_component_id, second_pair_second_type_id);
+    let param0 = table_erased_observer_two_pair_mut_param_set<A, B, C, D>(first_query, second_query);
+    let param1 = run(param0);
+    let world1 = table_erased_observer_apply_pair_mut_updates<A, B, R, M>(world, param1.first_query);
+    return table_erased_observer_apply_pair_mut_updates<C, D, R, M>(world1, param1.second_query);
+}
+
+fn table_erased_observer_run_two_pair_mut_param_set_system_auto<A, B, C, D, R, M>(world: TableErasedObserverWorld<R, M>, first_pair_first_type_id: i32, first_pair_second_type_id: i32, second_pair_first_type_id: i32, second_pair_second_type_id: i32, run: fn(TableErasedObserverTwoPairMutParamSet<A, B, C, D>) -> TableErasedObserverTwoPairMutParamSet<A, B, C, D>) -> TableErasedObserverWorld<R, M> {
+    let first_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_pair_first_type_id);
+    let first_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_pair_second_type_id);
+    let second_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_first_type_id);
+    let second_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_second_type_id);
+    return table_erased_observer_run_two_pair_mut_param_set_system<A, B, C, D, R, M>(world, first_pair_first_component_id, first_pair_first_type_id, first_pair_second_component_id, first_pair_second_type_id, second_pair_first_component_id, second_pair_first_type_id, second_pair_second_component_id, second_pair_second_type_id, run);
 }
 
 fn table_erased_observer_run_pair_mut_commands_system<A, B, R, M>(world: TableErasedObserverWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedObserverPairMutCommandsParam<A, B, R, M>) -> TableErasedObserverPairMutCommandsParam<A, B, R, M>) -> TableErasedObserverWorld<R, M> {
@@ -2108,6 +2134,24 @@ fn table_erased_observer_pair_mut_readonly_pair_param_set_system(param: TableEra
     return table_erased_observer_pair_mut_readonly_pair_param_set<TableErasedPos, TableErasedVel>(param.mut_query, param.read_query);
 }
 
+fn table_erased_observer_two_pair_mut_param_set_system(param: TableErasedObserverTwoPairMutParamSet<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag>) -> TableErasedObserverTwoPairMutParamSet<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag> {
+    let first_count = len(param.first_query.items) as i32;
+    let second_count = len(param.second_query.items) as i32;
+    let i: i64 = 0;
+    let first_len = len(param.first_query.items) as i64;
+    while i < first_len {
+        param.first_query.items[i].first.value = TableErasedPos { x: param.first_query.items[i].first.value.x + param.first_query.items[i].second.x + second_count, y: param.first_query.items[i].first.value.y };
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    let second_len = len(param.second_query.items) as i64;
+    while j < second_len {
+        param.second_query.items[j].first.value = TableErasedMarker { value: param.second_query.items[j].first.value.value + param.second_query.items[j].second.value + first_count };
+        j = j + 1;
+    }
+    return table_erased_observer_two_pair_mut_param_set<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag>(param.first_query, param.second_query);
+}
+
 fn table_erased_observer_pair_mut_commands_system(param: TableErasedObserverPairMutCommandsParam<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>) -> TableErasedObserverPairMutCommandsParam<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent> {
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
@@ -2972,6 +3016,35 @@ fn table_erased_observer_param_direct_event_system(param: TableErasedObserverEve
     if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w9, e2, position.id, TABLE_ERASED_POS_TYPE).x != 52 { panic(14403); };
     if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w9.table, e2, position.id, before - 1) != true { panic(14404); };
     if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w9.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != 2 { panic(14405); };
+}
+
+@test "table erased observer ParamSet writes two disjoint pair mut queries"() {
+    let w0 = table_erased_observer_test_world_new();
+    let (w1, position) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, tag) = table_erased_observer_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let (w5, e1) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w4);
+    let (w6, e2) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w5);
+    let (w7, e3) = table_erased_observer_world_spawn<TableErasedTime, TableErasedEvent>(w6);
+    let w8 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w7, e1, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
+    let w9 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w8, e1, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 2, y: 0 });
+    let w10 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w9, e1, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 10 });
+    let w11 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w10, e1, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 3 });
+    let w12 = table_erased_observer_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w11, e2, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 20, y: 0 });
+    let w13 = table_erased_observer_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w12, e2, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
+    let w14 = table_erased_observer_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w13, e3, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 7 });
+    let w15 = table_erased_observer_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w14, e3, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 8 });
+    let before = w15.table.registry.change_tick;
+    let w16 = table_erased_observer_run_two_pair_mut_param_set_system_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedTime, TableErasedEvent>(w15, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, table_erased_observer_two_pair_mut_param_set_system);
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w16, e1, position.id, TABLE_ERASED_POS_TYPE).x != 9 { panic(14416); };
+    if table_erased_observer_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w16, e2, position.id, TABLE_ERASED_POS_TYPE).x != 26 { panic(14417); };
+    if table_erased_observer_world_get<TableErasedMarker, TableErasedTime, TableErasedEvent>(w16, e1, marker.id, TABLE_ERASED_MARKER_TYPE).value != 15 { panic(14418); };
+    if table_erased_observer_world_get<TableErasedMarker, TableErasedTime, TableErasedEvent>(w16, e3, marker.id, TABLE_ERASED_MARKER_TYPE).value != 17 { panic(14419); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w16.table, e1, position.id, before - 1) != true { panic(14420); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w16.table, e1, marker.id, before - 1) != true { panic(14421); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w16.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != 2 { panic(14422); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w16.table, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE) != 2 { panic(14423); };
 }
 
 @test "table erased observer pair mut commands param writes query before commands apply"() {
