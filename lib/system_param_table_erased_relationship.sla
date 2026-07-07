@@ -102,6 +102,12 @@ struct TableErasedRelationshipTwoPairMutParamSet<A, B, C, D> {
     second_query: Query<TableErasedPairMut<C, D>>,
 }
 
+struct TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F> {
+    first_query: Query<TableErasedPairMut<A, B>>,
+    second_query: Query<TableErasedPairMut<C, D>>,
+    third_query: Query<TableErasedPairMut<E, F>>,
+}
+
 struct TableErasedRelationshipPairMutCommandsParam<A, B, R, M> {
     query: Query<TableErasedPairMut<A, B>>,
     commands: TableErasedRelationshipCommandsParam<R, M>,
@@ -257,6 +263,10 @@ fn table_erased_relationship_pair_mut_readonly_pair_param_set<A, B>(mut_query: Q
 
 fn table_erased_relationship_two_pair_mut_param_set<A, B, C, D>(first_query: Query<TableErasedPairMut<A, B>>, second_query: Query<TableErasedPairMut<C, D>>) -> TableErasedRelationshipTwoPairMutParamSet<A, B, C, D> {
     return TableErasedRelationshipTwoPairMutParamSet<A, B, C, D> { first_query: first_query, second_query: second_query };
+}
+
+fn table_erased_relationship_three_pair_mut_param_set<A, B, C, D, E, F>(first_query: Query<TableErasedPairMut<A, B>>, second_query: Query<TableErasedPairMut<C, D>>, third_query: Query<TableErasedPairMut<E, F>>) -> TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F> {
+    return TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F> { first_query: first_query, second_query: second_query, third_query: third_query };
 }
 
 fn table_erased_relationship_pair_mut_commands_param<A, B, R, M>(query: Query<TableErasedPairMut<A, B>>, commands: TableErasedRelationshipCommandsParam<R, M>) -> TableErasedRelationshipPairMutCommandsParam<A, B, R, M> {
@@ -518,6 +528,27 @@ fn table_erased_relationship_run_two_pair_mut_param_set_system_auto<A, B, C, D, 
     let second_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_first_type_id);
     let second_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_second_type_id);
     return table_erased_relationship_run_two_pair_mut_param_set_system<A, B, C, D, R, M>(world, first_pair_first_component_id, first_pair_first_type_id, first_pair_second_component_id, first_pair_second_type_id, second_pair_first_component_id, second_pair_first_type_id, second_pair_second_component_id, second_pair_second_type_id, run);
+}
+
+fn table_erased_relationship_run_three_pair_mut_param_set_system<A, B, C, D, E, F, R, M>(world: TableErasedRelationshipWorld<R, M>, first_pair_first_component_id: i32, first_pair_first_type_id: i32, first_pair_second_component_id: i32, first_pair_second_type_id: i32, second_pair_first_component_id: i32, second_pair_first_type_id: i32, second_pair_second_component_id: i32, second_pair_second_type_id: i32, third_pair_first_component_id: i32, third_pair_first_type_id: i32, third_pair_second_component_id: i32, third_pair_second_type_id: i32, run: fn(TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F>) -> TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F>) -> TableErasedRelationshipWorld<R, M> {
+    let first_query = table_erased_world_query_pair_mut_first<A, B, R, M>(world.table, first_pair_first_component_id, first_pair_first_type_id, first_pair_second_component_id, first_pair_second_type_id);
+    let second_query = table_erased_world_query_pair_mut_first<C, D, R, M>(world.table, second_pair_first_component_id, second_pair_first_type_id, second_pair_second_component_id, second_pair_second_type_id);
+    let third_query = table_erased_world_query_pair_mut_first<E, F, R, M>(world.table, third_pair_first_component_id, third_pair_first_type_id, third_pair_second_component_id, third_pair_second_type_id);
+    let param0 = table_erased_relationship_three_pair_mut_param_set<A, B, C, D, E, F>(first_query, second_query, third_query);
+    let param1 = run(param0);
+    let world1 = table_erased_relationship_apply_pair_mut_updates<A, B, R, M>(world, param1.first_query);
+    let world2 = table_erased_relationship_apply_pair_mut_updates<C, D, R, M>(world1, param1.second_query);
+    return table_erased_relationship_apply_pair_mut_updates<E, F, R, M>(world2, param1.third_query);
+}
+
+fn table_erased_relationship_run_three_pair_mut_param_set_system_auto<A, B, C, D, E, F, R, M>(world: TableErasedRelationshipWorld<R, M>, first_pair_first_type_id: i32, first_pair_second_type_id: i32, second_pair_first_type_id: i32, second_pair_second_type_id: i32, third_pair_first_type_id: i32, third_pair_second_type_id: i32, run: fn(TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F>) -> TableErasedRelationshipThreePairMutParamSet<A, B, C, D, E, F>) -> TableErasedRelationshipWorld<R, M> {
+    let first_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_pair_first_type_id);
+    let first_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, first_pair_second_type_id);
+    let second_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_first_type_id);
+    let second_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, second_pair_second_type_id);
+    let third_pair_first_component_id = table_erased_world_component_id_for_type<R, M>(world.table, third_pair_first_type_id);
+    let third_pair_second_component_id = table_erased_world_component_id_for_type<R, M>(world.table, third_pair_second_type_id);
+    return table_erased_relationship_run_three_pair_mut_param_set_system<A, B, C, D, E, F, R, M>(world, first_pair_first_component_id, first_pair_first_type_id, first_pair_second_component_id, first_pair_second_type_id, second_pair_first_component_id, second_pair_first_type_id, second_pair_second_component_id, second_pair_second_type_id, third_pair_first_component_id, third_pair_first_type_id, third_pair_second_component_id, third_pair_second_type_id, run);
 }
 
 fn table_erased_relationship_run_pair_mut_commands_system<A, B, R, M>(world: TableErasedRelationshipWorld<R, M>, first_component_id: i32, first_type_id: i32, second_component_id: i32, second_type_id: i32, run: fn(TableErasedRelationshipPairMutCommandsParam<A, B, R, M>) -> TableErasedRelationshipPairMutCommandsParam<A, B, R, M>) -> TableErasedRelationshipWorld<R, M> {
@@ -1465,6 +1496,31 @@ fn table_erased_relationship_two_pair_mut_param_set_system(param: TableErasedRel
     return table_erased_relationship_two_pair_mut_param_set<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag>(param.first_query, param.second_query);
 }
 
+fn table_erased_relationship_three_pair_mut_param_set_system(param: TableErasedRelationshipThreePairMutParamSet<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra>) -> TableErasedRelationshipThreePairMutParamSet<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra> {
+    let first_count = len(param.first_query.items) as i32;
+    let second_count = len(param.second_query.items) as i32;
+    let third_count = len(param.third_query.items) as i32;
+    let i: i64 = 0;
+    let first_len = len(param.first_query.items) as i64;
+    while i < first_len {
+        param.first_query.items[i].first.value = TableErasedPos { x: param.first_query.items[i].first.value.x + param.first_query.items[i].second.x + second_count + third_count, y: param.first_query.items[i].first.value.y };
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    let second_len = len(param.second_query.items) as i64;
+    while j < second_len {
+        param.second_query.items[j].first.value = TableErasedMarker { value: param.second_query.items[j].first.value.value + param.second_query.items[j].second.value + first_count + third_count };
+        j = j + 1;
+    }
+    let k: i64 = 0;
+    let third_len = len(param.third_query.items) as i64;
+    while k < third_len {
+        param.third_query.items[k].first.value = TableErasedAux { value: param.third_query.items[k].first.value.value + param.third_query.items[k].second.value + first_count + second_count };
+        k = k + 1;
+    }
+    return table_erased_relationship_three_pair_mut_param_set<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra>(param.first_query, param.second_query, param.third_query);
+}
+
 fn table_erased_relationship_pair_mut_commands_system(param: TableErasedRelationshipPairMutCommandsParam<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent>) -> TableErasedRelationshipPairMutCommandsParam<TableErasedPos, TableErasedVel, TableErasedTime, TableErasedEvent> {
     let i: i64 = 0;
     let cnt = len(param.query.items) as i64;
@@ -2301,6 +2357,54 @@ fn table_erased_relationship_param_reader_writer_res_mut_commands_system(param: 
     if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w21.table, child_a, marker.id, before - 1) != true { panic(12537); };
     if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w21.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != 2 { panic(12538); };
     if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w21.table, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE) != 2 { panic(12539); };
+}
+
+@test "table erased relationship ParamSet writes three disjoint pair mut queries"() {
+    let w0 = table_erased_relationship_test_world_new();
+    let (w1, position) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w0, TABLE_ERASED_POS_TYPE, ecs_box_drop<TableErasedPos>);
+    let (w2, velocity) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w1, TABLE_ERASED_VEL_TYPE, ecs_box_drop<TableErasedVel>);
+    let (w3, marker) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w2, TABLE_ERASED_MARKER_TYPE, ecs_box_drop<TableErasedMarker>);
+    let (w4, tag) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w3, TABLE_ERASED_TAG_TYPE, ecs_box_drop<TableErasedTag>);
+    let (w5, aux) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w4, TABLE_ERASED_AUX_TYPE, ecs_box_drop<TableErasedAux>);
+    let (w6, extra) = table_erased_relationship_world_register_table<TableErasedTime, TableErasedEvent>(w5, TABLE_ERASED_EXTRA_TYPE, ecs_box_drop<TableErasedExtra>);
+    let (w7, kind) = table_erased_relationship_world_register_many<TableErasedTime, TableErasedEvent>(w6, true, false);
+    let (w8, root) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w7);
+    let (w9, child_a) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w8);
+    let (w10, child_b) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w9);
+    let (w11, child_c) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w10);
+    let (w12, child_d) = table_erased_relationship_world_spawn<TableErasedTime, TableErasedEvent>(w11);
+    let w13 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w12, child_a, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 5, y: 0 });
+    let w14 = table_erased_relationship_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w13, child_a, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 2, y: 0 });
+    let w15 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w14, child_a, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 10 });
+    let w16 = table_erased_relationship_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w15, child_a, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 3 });
+    let w17 = table_erased_relationship_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w16, child_a, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 30 });
+    let w18 = table_erased_relationship_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w17, child_a, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 5 });
+    let w19 = table_erased_relationship_world_insert<TableErasedPos, TableErasedTime, TableErasedEvent>(w18, child_b, position.id, TABLE_ERASED_POS_TYPE, TableErasedPos { x: 20, y: 0 });
+    let w20 = table_erased_relationship_world_insert<TableErasedVel, TableErasedTime, TableErasedEvent>(w19, child_b, velocity.id, TABLE_ERASED_VEL_TYPE, TableErasedVel { x: 4, y: 0 });
+    let w21 = table_erased_relationship_world_insert<TableErasedMarker, TableErasedTime, TableErasedEvent>(w20, child_c, marker.id, TABLE_ERASED_MARKER_TYPE, TableErasedMarker { value: 7 });
+    let w22 = table_erased_relationship_world_insert<TableErasedTag, TableErasedTime, TableErasedEvent>(w21, child_c, tag.id, TABLE_ERASED_TAG_TYPE, TableErasedTag { value: 8 });
+    let w23 = table_erased_relationship_world_insert<TableErasedAux, TableErasedTime, TableErasedEvent>(w22, child_d, aux.id, TABLE_ERASED_AUX_TYPE, TableErasedAux { value: 11 });
+    let w24 = table_erased_relationship_world_insert<TableErasedExtra, TableErasedTime, TableErasedEvent>(w23, child_d, extra.id, TABLE_ERASED_EXTRA_TYPE, TableErasedExtra { value: 12 });
+    let w25 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w24, kind.id, child_a, root);
+    let w26 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w25, kind.id, child_b, root);
+    let w27 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w26, kind.id, child_c, root);
+    let w28 = table_erased_relationship_world_set_related<TableErasedTime, TableErasedEvent>(w27, kind.id, child_d, root);
+    let before = w28.table.registry.change_tick;
+    let w29 = table_erased_relationship_run_three_pair_mut_param_set_system_auto<TableErasedPos, TableErasedVel, TableErasedMarker, TableErasedTag, TableErasedAux, TableErasedExtra, TableErasedTime, TableErasedEvent>(w28, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE, table_erased_relationship_three_pair_mut_param_set_system);
+    if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w29, child_a, position.id, TABLE_ERASED_POS_TYPE).x != 11 { panic(12560); };
+    if table_erased_relationship_world_get<TableErasedPos, TableErasedTime, TableErasedEvent>(w29, child_b, position.id, TABLE_ERASED_POS_TYPE).x != 28 { panic(12561); };
+    if table_erased_relationship_world_get<TableErasedMarker, TableErasedTime, TableErasedEvent>(w29, child_a, marker.id, TABLE_ERASED_MARKER_TYPE).value != 17 { panic(12562); };
+    if table_erased_relationship_world_get<TableErasedMarker, TableErasedTime, TableErasedEvent>(w29, child_c, marker.id, TABLE_ERASED_MARKER_TYPE).value != 19 { panic(12563); };
+    if table_erased_relationship_world_get<TableErasedAux, TableErasedTime, TableErasedEvent>(w29, child_a, aux.id, TABLE_ERASED_AUX_TYPE).value != 39 { panic(12564); };
+    if table_erased_relationship_world_get<TableErasedAux, TableErasedTime, TableErasedEvent>(w29, child_d, aux.id, TABLE_ERASED_AUX_TYPE).value != 27 { panic(12565); };
+    if table_erased_relationship_world_source_count<TableErasedTime, TableErasedEvent>(w29, kind.id, root) != 4 { panic(12566); };
+    if entity_eq(table_erased_relationship_world_related<TableErasedTime, TableErasedEvent>(w29, kind.id, child_d), root) != true { panic(12567); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w29.table, child_a, position.id, before - 1) != true { panic(12568); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w29.table, child_a, marker.id, before - 1) != true { panic(12569); };
+    if table_erased_world_changed_since<TableErasedTime, TableErasedEvent>(w29.table, child_a, aux.id, before - 1) != true { panic(12570); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w29.table, TABLE_ERASED_POS_TYPE, TABLE_ERASED_VEL_TYPE) != 2 { panic(12571); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w29.table, TABLE_ERASED_MARKER_TYPE, TABLE_ERASED_TAG_TYPE) != 2 { panic(12572); };
+    if table_erased_world_query_pair_count_auto<TableErasedTime, TableErasedEvent>(w29.table, TABLE_ERASED_AUX_TYPE, TABLE_ERASED_EXTRA_TYPE) != 2 { panic(12573); };
 }
 
 @test "table erased relationship single optional single and populated system params"() {
