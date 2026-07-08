@@ -136,6 +136,53 @@
     if ecs_executor_state_unapplied_count(s4) != 1 { panic(82926); };
 }
 
+@test "executor_finish_run_applies_final_deferred_and_clears_transient_state"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 3, 2);
+    let s0 = e1.state;
+    let s1 = ecs_executor_state_mark_ready(s0, 0);
+    let s2 = ecs_executor_state_start_system(s1, 0, true, true);
+    let dependents = Vec::new();
+    let s3 = ecs_executor_state_complete_system(s2, 0, dependents);
+    let s4 = ecs_executor_state_mark_ready(s3, 1);
+    let s5 = ecs_executor_state_skip_system(s4, 1);
+    let s6 = ecs_executor_state_mark_ready(s5, 2);
+    let s7 = ecs_executor_state_start_system(s6, 2, false, false);
+    s7.ready_systems_copy[2] = true;
+    s7.evaluated_sets[0] = true;
+    e1.state = s7;
+    let finished = ecs_multi_threaded_executor_finish_run(e1);
+    if ecs_executor_state_ready_count(finished.state) != 0 { panic(82982); };
+    if ecs_executor_state_running_count(finished.state) != 0 { panic(82983); };
+    if ecs_executor_state_skipped_count(finished.state) != 0 { panic(82984); };
+    if ecs_executor_state_completed_count(finished.state) != 0 { panic(82985); };
+    if ecs_executor_state_evaluated_set_count(finished.state) != 0 { panic(82986); };
+    if ecs_executor_state_unapplied_count(finished.state) != 0 { panic(82987); };
+    if ecs_executor_state_num_running(finished.state) != 0 { panic(82988); };
+    if ecs_executor_state_local_thread_running(finished.state) { panic(82989); };
+    if ecs_executor_state_exclusive_running(finished.state) { panic(82990); };
+    if finished.deferred_applied != 1 { panic(82991); };
+}
+
+@test "executor_finish_run_without_final_deferred_preserves_unapplied"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 1);
+    let e2 = ecs_multi_threaded_executor_set_apply_final_deferred(e1, false);
+    let s0 = e2.state;
+    let s1 = ecs_executor_state_start_system(s0, 0, false, false);
+    let dependents = Vec::new();
+    let s2 = ecs_executor_state_complete_system(s1, 0, dependents);
+    let s3 = ecs_executor_state_skip_system(s2, 1);
+    s3.evaluated_sets[0] = true;
+    e2.state = s3;
+    let finished = ecs_multi_threaded_executor_finish_run(e2);
+    if ecs_executor_state_completed_count(finished.state) != 0 { panic(82992); };
+    if ecs_executor_state_skipped_count(finished.state) != 0 { panic(82993); };
+    if ecs_executor_state_evaluated_set_count(finished.state) != 0 { panic(82994); };
+    if ecs_executor_state_unapplied_count(finished.state) != 1 { panic(82995); };
+    if finished.deferred_applied != 0 { panic(82996); };
+}
+
 @test "executor_state_out_of_range"() {
     let s = ecs_executor_state_new();
     let s2 = ecs_executor_state_init(s, 5, 3);
@@ -229,6 +276,143 @@
     if ecs_executor_run_plan_run_at(p3, 0) != 1 { panic(82953); };
 }
 
+@test "executor_run_plan_initial_skip_releases_dependent"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    dep0.push(1);
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 1, dep1);
+    let skipped = Vec::new();
+    skipped.push(0);
+    let p3 = ecs_executor_run_plan_apply_initial_skips(p2, skipped);
+    if ecs_executor_state_is_skipped(p3.executor.state, 0) != true { panic(82997); };
+    if ecs_executor_state_is_completed(p3.executor.state, 0) != true { panic(82998); };
+    if ecs_executor_state_is_ready(p3.executor.state, 0) { panic(82999); };
+    if ecs_executor_state_get_dependencies(p3.executor.state, 1) != 0 { panic(83000); };
+    if ecs_executor_state_is_ready(p3.executor.state, 1) != true { panic(83001); };
+    if ecs_executor_run_plan_skipped_count(p3) != 1 { panic(83002); };
+    let p4 = ecs_executor_run_plan_drive_all(p3);
+    if ecs_executor_run_plan_run_count(p4) != 1 { panic(83003); };
+    if ecs_executor_run_plan_run_at(p4, 0) != 1 { panic(83004); };
+    if ecs_executor_state_completed_count(p4.executor.state) != 2 { panic(83005); };
+}
+
+@test "executor_run_plan_initial_skip_ready_system_does_not_run"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let skipped = Vec::new();
+    skipped.push(0);
+    let p3 = ecs_executor_run_plan_apply_initial_skips(p2, skipped);
+    if ecs_executor_state_is_ready(p3.executor.state, 0) { panic(83006); };
+    if ecs_executor_state_is_ready(p3.executor.state, 1) != true { panic(83007); };
+    let p4 = ecs_executor_run_plan_drive_all(p3);
+    if ecs_executor_run_plan_run_count(p4) != 1 { panic(83008); };
+    if ecs_executor_run_plan_run_at(p4, 0) != 1 { panic(83009); };
+    if ecs_executor_state_completed_count(p4.executor.state) != 2 { panic(83010); };
+    if ecs_executor_run_plan_skipped_at(p4, 0) != 0 { panic(83011); };
+}
+
+@test "executor_run_plan_initial_skips_release_shared_dependent_once"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 3, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    dep0.push(2);
+    let dep1 = Vec::new();
+    dep1.push(2);
+    let dep2 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let p3 = ecs_executor_run_plan_add_system(p2, ecs_executor_system_spec_new(2, false, false, false, true), 2, dep2);
+    let skipped = Vec::new();
+    skipped.push(0);
+    skipped.push(0);
+    skipped.push(1);
+    let p4 = ecs_executor_run_plan_apply_initial_skips(p3, skipped);
+    if ecs_executor_run_plan_skipped_count(p4) != 2 { panic(83012); };
+    if ecs_executor_state_get_dependencies(p4.executor.state, 2) != 0 { panic(83013); };
+    if ecs_executor_state_is_ready(p4.executor.state, 2) != true { panic(83014); };
+    let p5 = ecs_executor_run_plan_drive_all(p4);
+    if ecs_executor_run_plan_run_count(p5) != 1 { panic(83015); };
+    if ecs_executor_run_plan_run_at(p5, 0) != 2 { panic(83016); };
+    if ecs_executor_state_completed_count(p5.executor.state) != 3 { panic(83017); };
+}
+
+@test "executor_run_plan_failed_set_condition_marks_pending_skipped_only"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 1);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let systems = Vec::new();
+    systems.push(0);
+    systems.push(1);
+    let p3 = ecs_executor_run_plan_apply_failed_set_condition(p2, 0, systems);
+    if ecs_executor_state_is_set_evaluated(p3.executor.state, 0) != true { panic(83028); };
+    if ecs_executor_state_skipped_count(p3.executor.state) != 2 { panic(83029); };
+    if ecs_executor_state_completed_count(p3.executor.state) != 0 { panic(83030); };
+    if ecs_executor_state_ready_count(p3.executor.state) != 2 { panic(83031); };
+    if ecs_executor_run_plan_skipped_count(p3) != 0 { panic(83032); };
+}
+
+@test "executor_run_plan_pending_skipped_ready_system_releases_dependent"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 1);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    dep0.push(1);
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 1, dep1);
+    let systems = Vec::new();
+    systems.push(0);
+    let p3 = ecs_executor_run_plan_apply_failed_set_condition(p2, 0, systems);
+    if ecs_executor_state_get_dependencies(p3.executor.state, 1) != 1 { panic(83033); };
+    if ecs_executor_state_completed_count(p3.executor.state) != 0 { panic(83034); };
+    let p4 = ecs_executor_run_plan_drive_all(p3);
+    if ecs_executor_run_plan_skipped_count(p4) != 1 { panic(83035); };
+    if ecs_executor_run_plan_skipped_at(p4, 0) != 0 { panic(83036); };
+    if ecs_executor_run_plan_run_count(p4) != 1 { panic(83037); };
+    if ecs_executor_run_plan_run_at(p4, 0) != 1 { panic(83038); };
+    if ecs_executor_state_completed_count(p4.executor.state) != 2 { panic(83039); };
+}
+
+@test "executor_run_plan_pending_skipped_child_waits_for_upstream_dependency"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 3, 1);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    dep0.push(1);
+    let dep1 = Vec::new();
+    dep1.push(2);
+    let dep2 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 1, dep1);
+    let p3 = ecs_executor_run_plan_add_system(p2, ecs_executor_system_spec_new(2, false, false, false, true), 1, dep2);
+    let systems = Vec::new();
+    systems.push(1);
+    let p4 = ecs_executor_run_plan_apply_failed_set_condition(p3, 0, systems);
+    if ecs_executor_state_is_ready(p4.executor.state, 1) { panic(83040); };
+    if ecs_executor_state_get_dependencies(p4.executor.state, 2) != 1 { panic(83041); };
+    let p5 = ecs_executor_run_plan_drive_all(p4);
+    if ecs_executor_run_plan_run_count(p5) != 2 { panic(83042); };
+    if ecs_executor_run_plan_run_at(p5, 0) != 0 { panic(83043); };
+    if ecs_executor_run_plan_run_at(p5, 1) != 2 { panic(83044); };
+    if ecs_executor_run_plan_skipped_count(p5) != 1 { panic(83045); };
+    if ecs_executor_run_plan_skipped_at(p5, 0) != 1 { panic(83046); };
+    if ecs_executor_state_completed_count(p5.executor.state) != 3 { panic(83047); };
+}
+
 @test "executor_run_plan_tracks_exclusive_and_local_systems"() {
     let e0 = ecs_multi_threaded_executor_new();
     let e1 = ecs_multi_threaded_executor_init(e0, 1, 0);
@@ -236,9 +420,30 @@
     let dep0 = Vec::new();
     let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, true, true, false, true), 0, dep0);
     let p2 = ecs_executor_run_plan_drive_one(p1);
-    if ecs_executor_state_exclusive_running(p2.executor.state) != true { panic(82949); };
-    if ecs_executor_state_local_thread_running(p2.executor.state) != true { panic(82950); };
+    if ecs_executor_state_exclusive_running(p2.executor.state) { panic(82949); };
+    if ecs_executor_state_local_thread_running(p2.executor.state) { panic(82950); };
     if ecs_executor_state_completed_count(p2.executor.state) != 1 { panic(82951); };
+}
+
+@test "executor_state_can_spawn_system_respects_active_running_flags"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 3, 0);
+    let base = e1.state;
+    let normal_running = ecs_executor_state_start_system(base, 0, false, false);
+    let exclusive_spec = ecs_executor_system_spec_new(1, true, false, false, true);
+    let normal_spec = ecs_executor_system_spec_new(1, false, false, false, true);
+    if ecs_executor_state_can_spawn_system(normal_running, exclusive_spec) { panic(83018); };
+    if ecs_executor_state_can_spawn_system(normal_running, normal_spec) != true { panic(83019); };
+
+    let local_base = ecs_executor_state_init(ecs_executor_state_new(), 3, 0);
+    let local_running = ecs_executor_state_start_system(local_base, 0, false, true);
+    let local_spec = ecs_executor_system_spec_new(1, false, true, false, true);
+    if ecs_executor_state_can_spawn_system(local_running, local_spec) { panic(83020); };
+    if ecs_executor_state_can_spawn_system(local_running, normal_spec) != true { panic(83021); };
+
+    let exclusive_base = ecs_executor_state_init(ecs_executor_state_new(), 3, 0);
+    let exclusive_running = ecs_executor_state_start_system(exclusive_base, 0, true, true);
+    if ecs_executor_state_can_spawn_system(exclusive_running, normal_spec) { panic(83022); };
 }
 
 @test "executor_ready_group_selects_two"() {
@@ -279,6 +484,39 @@
     let second = ecs_executor_run_plan_take_ready_batch(p4, 3);
     if ecs_executor_ready_batch_count(second.batch) != 1 { panic(82962); };
     if ecs_executor_ready_batch_at(second.batch, 0) != 1 { panic(82963); };
+}
+
+@test "executor_ready_group_waits_while_exclusive_running"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, false, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, true, true, false, true), 0, dep1);
+    let active = ecs_executor_state_start_system(p2.executor.state, 1, true, true);
+    p2.executor.state = active;
+    let taken = ecs_executor_run_plan_take_ready_batch(p2, 2);
+    if ecs_executor_ready_batch_count(taken.batch) != 0 { panic(83023); };
+    if ecs_executor_state_is_ready(taken.plan.executor.state, 0) != true { panic(83024); };
+}
+
+@test "executor_ready_group_defers_blocked_exclusive_and_selects_later_ready"() {
+    let e0 = ecs_multi_threaded_executor_new();
+    let e1 = ecs_multi_threaded_executor_init(e0, 3, 0);
+    let p0 = ecs_executor_run_plan_new(e1);
+    let dep0 = Vec::new();
+    let dep1 = Vec::new();
+    let dep2 = Vec::new();
+    let p1 = ecs_executor_run_plan_add_system(p0, ecs_executor_system_spec_new(0, true, false, false, true), 0, dep0);
+    let p2 = ecs_executor_run_plan_add_system(p1, ecs_executor_system_spec_new(1, false, false, false, true), 0, dep1);
+    let p3 = ecs_executor_run_plan_add_system(p2, ecs_executor_system_spec_new(2, false, false, false, true), 0, dep2);
+    let active = ecs_executor_state_start_system(p3.executor.state, 2, false, false);
+    p3.executor.state = active;
+    let taken = ecs_executor_run_plan_take_ready_batch(p3, 2);
+    if ecs_executor_ready_batch_count(taken.batch) != 1 { panic(83025); };
+    if ecs_executor_ready_batch_at(taken.batch, 0) != 1 { panic(83026); };
+    if ecs_executor_state_is_ready(taken.plan.executor.state, 0) != true { panic(83027); };
 }
 
 @test "executor_ready_group_releases_dependents"() {

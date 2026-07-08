@@ -216,6 +216,20 @@ fn ecs_executor_state_complete_system(s: EcsExecutorState, system_index: i64, de
     return ecs_executor_state_release_dependents(s, dependents);
 }
 
+fn ecs_executor_state_complete_system_with_flags(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>, is_exclusive: bool, is_local: bool) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.running_systems) as i64 {
+            s.running_systems[system_index] = false;
+            s.completed_systems[system_index] = true;
+            s.unapplied_systems[system_index] = true;
+            if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
+            if is_exclusive { s.exclusive_running = false; };
+            if is_local { s.local_thread_running = false; };
+        };
+    };
+    return ecs_executor_state_release_dependents(s, dependents);
+}
+
 fn ecs_executor_state_is_completed(s: EcsExecutorState, system_index: i64) -> bool {
     if system_index < 0 { return false; };
     if system_index >= len(s.completed_systems) as i64 { return false; };
@@ -234,6 +248,17 @@ fn ecs_executor_state_skip_system(s: EcsExecutorState, system_index: i64) -> Ecs
     return s;
 }
 
+fn ecs_executor_state_mark_skipped_pending(s: EcsExecutorState, system_index: i64) -> EcsExecutorState {
+    if system_index >= 0 {
+        if system_index < len(s.skipped_systems) as i64 {
+            if s.completed_systems[system_index] != true {
+                s.skipped_systems[system_index] = true;
+            };
+        };
+    };
+    return s;
+}
+
 fn ecs_executor_state_skip_system_with_dependents(s: EcsExecutorState, system_index: i64, dependents: Vec<i64>) -> EcsExecutorState {
     let skipped = ecs_executor_state_skip_system(s, system_index);
     return ecs_executor_state_release_dependents(skipped, dependents);
@@ -243,6 +268,21 @@ fn ecs_executor_state_is_skipped(s: EcsExecutorState, system_index: i64) -> bool
     if system_index < 0 { return false; };
     if system_index >= len(s.skipped_systems) as i64 { return false; };
     return s.skipped_systems[system_index];
+}
+
+fn ecs_executor_state_mark_set_evaluated(s: EcsExecutorState, set_index: i64) -> EcsExecutorState {
+    if set_index >= 0 {
+        if set_index < len(s.evaluated_sets) as i64 {
+            s.evaluated_sets[set_index] = true;
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_is_set_evaluated(s: EcsExecutorState, set_index: i64) -> bool {
+    if set_index < 0 { return false; };
+    if set_index >= len(s.evaluated_sets) as i64 { return false; };
+    return s.evaluated_sets[set_index];
 }
 
 // apply_deferred: clear unapplied for a system
@@ -310,6 +350,59 @@ fn ecs_executor_state_unapplied_count(s: EcsExecutorState) -> i64 {
     return count;
 }
 
+fn ecs_executor_state_skipped_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.skipped_systems) as i64;
+    while i < n {
+        if s.skipped_systems[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_evaluated_set_count(s: EcsExecutorState) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    let n: i64 = len(s.evaluated_sets) as i64;
+    while i < n {
+        if s.evaluated_sets[i] { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_finish_run(s: EcsExecutorState, apply_final_deferred: bool) -> EcsExecutorState {
+    let i: i64 = 0;
+    let system_n = s.system_count;
+    while i < system_n {
+        s.ready_systems[i] = false;
+        s.ready_systems_copy[i] = false;
+        s.running_systems[i] = false;
+        s.skipped_systems[i] = false;
+        s.completed_systems[i] = false;
+        if apply_final_deferred { s.unapplied_systems[i] = false; };
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    let set_n = s.set_count;
+    while j < set_n {
+        s.evaluated_sets[j] = false;
+        j = j + 1;
+    }
+    s.num_running_systems = 0;
+    s.local_thread_running = false;
+    s.exclusive_running = false;
+    return s;
+}
+
+fn ecs_multi_threaded_executor_finish_run(e: EcsMultiThreadedExecutor) -> EcsMultiThreadedExecutor {
+    let final_unapplied = ecs_executor_state_unapplied_count(e.state);
+    if e.apply_final_deferred { e.deferred_applied = e.deferred_applied + final_unapplied; };
+    e.state = ecs_executor_state_finish_run(e.state, e.apply_final_deferred);
+    return e;
+}
+
 // mark_starting: mark a system as a starting system (no dependencies)
 fn ecs_multi_threaded_executor_mark_starting(e: EcsMultiThreadedExecutor, system_index: i64) -> EcsMultiThreadedExecutor {
     if system_index >= 0 {
@@ -328,6 +421,17 @@ fn ecs_multi_threaded_executor_is_starting(e: EcsMultiThreadedExecutor, system_i
 
 fn ecs_executor_system_spec_new(system_index: i64, is_exclusive: bool, is_local: bool, has_deferred: bool, should_run: bool) -> EcsExecutorSystemSpec {
     return EcsExecutorSystemSpec { system_index: system_index, is_exclusive: is_exclusive, is_local: is_local, has_deferred: has_deferred, should_run: should_run };
+}
+
+fn ecs_executor_state_can_spawn_system(s: EcsExecutorState, spec: EcsExecutorSystemSpec) -> bool {
+    if s.exclusive_running { return false; };
+    if spec.is_exclusive {
+        if s.num_running_systems > 0 { return false; };
+    };
+    if spec.is_local {
+        if s.local_thread_running { return false; };
+    };
+    return true;
 }
 
 fn ecs_executor_run_plan_new(e: EcsMultiThreadedExecutor) -> EcsExecutorRunPlan {
@@ -395,6 +499,23 @@ fn ecs_executor_run_plan_next_ready(p: EcsExecutorRunPlan) -> i64 {
     return -1;
 }
 
+fn ecs_executor_run_plan_next_runnable(p: EcsExecutorRunPlan) -> i64 {
+    let i: i64 = 0;
+    let cnt = p.executor.state.system_count;
+    while i < cnt {
+        if ecs_executor_state_is_ready(p.executor.state, i) {
+            if ecs_executor_state_is_completed(p.executor.state, i) != true {
+                if ecs_executor_state_is_running(p.executor.state, i) != true {
+                    let spec = ecs_executor_run_plan_spec_at(p, i);
+                    if ecs_executor_state_can_spawn_system(p.executor.state, spec) { return i; };
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return -1;
+}
+
 fn ecs_executor_run_plan_apply_deferred_for(p: EcsExecutorRunPlan, system_index: i64, spec: EcsExecutorSystemSpec) -> EcsExecutorRunPlan {
     if spec.has_deferred {
         p.executor.state = ecs_executor_state_apply_deferred_system(p.executor.state, system_index);
@@ -414,6 +535,48 @@ fn ecs_executor_run_plan_skip_ready(p: EcsExecutorRunPlan, system_index: i64) ->
     return p;
 }
 
+fn ecs_executor_run_plan_apply_initial_skips(p: EcsExecutorRunPlan, skipped: Vec<i64>) -> EcsExecutorRunPlan {
+    let i: i64 = 0;
+    let n: i64 = len(skipped) as i64;
+    while i < n {
+        let system_index = skipped[i];
+        if system_index >= 0 {
+            if system_index < p.executor.state.system_count {
+                if ecs_executor_state_is_completed(p.executor.state, system_index) != true {
+                    let deps = ecs_executor_run_plan_dependents_at(p, system_index);
+                    p.executor.state = ecs_executor_state_skip_system_with_dependents(p.executor.state, system_index, deps);
+                    p.executor.systems_skipped = p.executor.systems_skipped + 1;
+                    p.skipped_order.push(system_index);
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return p;
+}
+
+fn ecs_executor_run_plan_apply_failed_set_condition(p: EcsExecutorRunPlan, set_index: i64, systems_in_set: Vec<i64>) -> EcsExecutorRunPlan {
+    if ecs_executor_state_is_set_evaluated(p.executor.state, set_index) {
+        return p;
+    };
+    let i: i64 = 0;
+    let n: i64 = len(systems_in_set) as i64;
+    while i < n {
+        p.executor.state = ecs_executor_state_mark_skipped_pending(p.executor.state, systems_in_set[i]);
+        i = i + 1;
+    }
+    p.executor.state = ecs_executor_state_mark_set_evaluated(p.executor.state, set_index);
+    return p;
+}
+
+fn ecs_executor_run_plan_apply_passed_set_condition(p: EcsExecutorRunPlan, set_index: i64) -> EcsExecutorRunPlan {
+    if ecs_executor_state_is_set_evaluated(p.executor.state, set_index) {
+        return p;
+    };
+    p.executor.state = ecs_executor_state_mark_set_evaluated(p.executor.state, set_index);
+    return p;
+}
+
 fn ecs_executor_run_plan_take_ready_batch(p: EcsExecutorRunPlan, max_width: i64) -> EcsExecutorReadyBatchResult {
     let batch = ecs_executor_ready_batch_new();
     let width = max_width;
@@ -426,20 +589,22 @@ fn ecs_executor_run_plan_take_ready_batch(p: EcsExecutorRunPlan, max_width: i64)
             if ecs_executor_state_is_completed(p.executor.state, i) != true {
                 if ecs_executor_state_is_running(p.executor.state, i) != true {
                     let spec = ecs_executor_run_plan_spec_at(p, i);
-                    if spec.should_run != true {
-                        p = ecs_executor_run_plan_skip_ready(p, i);
-                        batch.skipped.push(i);
-                    } else {
-                        if spec.is_exclusive || spec.is_local {
-                            if len(batch.systems) as i64 == 0 {
-                                batch.systems.push(i);
-                                batch.is_exclusive = spec.is_exclusive;
-                                batch.is_local = spec.is_local;
-                            };
-                            return ecs_executor_ready_batch_result(p, batch);
+                    if ecs_executor_state_can_spawn_system(p.executor.state, spec) {
+                        if spec.should_run != true || ecs_executor_state_is_skipped(p.executor.state, i) {
+                            p = ecs_executor_run_plan_skip_ready(p, i);
+                            batch.skipped.push(i);
                         } else {
-                            if batch.is_exclusive != true {
-                                if batch.is_local != true { batch.systems.push(i); };
+                            if spec.is_exclusive || spec.is_local {
+                                if len(batch.systems) as i64 == 0 {
+                                    batch.systems.push(i);
+                                    batch.is_exclusive = spec.is_exclusive;
+                                    batch.is_local = spec.is_local;
+                                };
+                                return ecs_executor_ready_batch_result(p, batch);
+                            } else {
+                                if batch.is_exclusive != true {
+                                    if batch.is_local != true { batch.systems.push(i); };
+                                };
                             };
                         };
                     };
@@ -467,7 +632,7 @@ fn ecs_executor_run_plan_complete_ready_batch(p: EcsExecutorRunPlan, batch: EcsE
         let completed_index = batch.systems[j];
         let completed_spec = ecs_executor_run_plan_spec_at(p, completed_index);
         let deps = ecs_executor_run_plan_dependents_at(p, completed_index);
-        p.executor.state = ecs_executor_state_complete_system(p.executor.state, completed_index, deps);
+        p.executor.state = ecs_executor_state_complete_system_with_flags(p.executor.state, completed_index, deps, completed_spec.is_exclusive, completed_spec.is_local);
         p = ecs_executor_run_plan_apply_deferred_for(p, completed_index, completed_spec);
         j = j + 1;
     }
@@ -475,20 +640,20 @@ fn ecs_executor_run_plan_complete_ready_batch(p: EcsExecutorRunPlan, batch: EcsE
 }
 
 fn ecs_executor_run_plan_drive_one(p: EcsExecutorRunPlan) -> EcsExecutorRunPlan {
-    let next = ecs_executor_run_plan_next_ready(p);
+    let next = ecs_executor_run_plan_next_runnable(p);
     if next < 0 {
         if ecs_executor_state_completed_count(p.executor.state) < p.executor.state.system_count { p.stalled = true; };
         return p;
     };
     let spec = ecs_executor_run_plan_spec_at(p, next);
-    if spec.should_run != true {
+    if spec.should_run != true || ecs_executor_state_is_skipped(p.executor.state, next) {
         return ecs_executor_run_plan_skip_ready(p, next);
     };
     p.executor.state = ecs_executor_state_start_system(p.executor.state, next, spec.is_exclusive, spec.is_local);
     p.run_order.push(next);
     p.executor.systems_run = p.executor.systems_run + 1;
     let deps = ecs_executor_run_plan_dependents_at(p, next);
-    p.executor.state = ecs_executor_state_complete_system(p.executor.state, next, deps);
+    p.executor.state = ecs_executor_state_complete_system_with_flags(p.executor.state, next, deps, spec.is_exclusive, spec.is_local);
     p = ecs_executor_run_plan_apply_deferred_for(p, next, spec);
     return p;
 }

@@ -7,6 +7,7 @@
 @import "world_table_erased.sla"
 @import "table_erased_access.sla"
 @import "executor_multi_threaded.sla"
+@import "thread_executor.sla"
 @import "sa_std/core/arc.sa"
 @import "sa_std/thread.sa"
 
@@ -50,6 +51,10 @@ struct EcsParallelTaskPoolLifecycleResult {
     destroy_sum: i32,
     used_threads: bool,
     mismatch: bool,
+}
+
+struct EcsParallelMainThreadExecutor {
+    executor: EcsThreadExecutor,
 }
 
 struct EcsParallelScopeOptions {
@@ -119,6 +124,35 @@ fn ecs_parallel_task_pool_lifecycle_worker_run(on_spawn: fn() -> i32, on_destroy
     return ecs_parallel_task_pool_lifecycle_worker_result(spawn_value, destroy_value);
 }
 
+fn ecs_parallel_main_thread_executor_new(owner_thread_id: i64) -> EcsParallelMainThreadExecutor {
+    return EcsParallelMainThreadExecutor { executor: ecs_thread_executor_new(owner_thread_id) };
+}
+
+fn ecs_parallel_main_thread_executor_new_with_id(owner_thread_id: i64, executor_id: i64) -> EcsParallelMainThreadExecutor {
+    return EcsParallelMainThreadExecutor { executor: ecs_thread_executor_new_with_id(owner_thread_id, executor_id) };
+}
+
+fn ecs_parallel_main_thread_executor_default() -> EcsParallelMainThreadExecutor {
+    return ecs_parallel_main_thread_executor_new(0);
+}
+
+fn ecs_parallel_main_thread_executor_owner_thread_id(main: EcsParallelMainThreadExecutor) -> i64 {
+    return main.executor.owner_thread_id;
+}
+
+fn ecs_parallel_main_thread_executor_id(main: EcsParallelMainThreadExecutor) -> i64 {
+    return main.executor.executor_id;
+}
+
+fn ecs_parallel_main_thread_executor_has_ticker(main: EcsParallelMainThreadExecutor, current_thread_id: i64) -> bool {
+    let ticker = ecs_thread_executor_ticker(main.executor, current_thread_id);
+    return ticker.has_ticker;
+}
+
+fn ecs_parallel_main_thread_executor_is_same_id(first: EcsParallelMainThreadExecutor, second: EcsParallelMainThreadExecutor) -> bool {
+    return ecs_thread_executor_is_same_id(first.executor, second.executor);
+}
+
 fn ecs_parallel_scope_options_default() -> EcsParallelScopeOptions {
     return EcsParallelScopeOptions { tick_task_pool_executor: true, use_external_executor: false, external_executor_is_scope: true };
 }
@@ -129,6 +163,12 @@ fn ecs_parallel_scope_options_with_executor(tick_task_pool_executor: bool, use_e
 
 fn ecs_parallel_scope_options_with_external_identity(tick_task_pool_executor: bool, use_external_executor: bool, external_executor_is_scope: bool) -> EcsParallelScopeOptions {
     return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: use_external_executor, external_executor_is_scope: external_executor_is_scope };
+}
+
+fn ecs_parallel_scope_options_with_main_thread_executor(main: EcsParallelMainThreadExecutor, current_thread_id: i64, scope_executor_id: i64, tick_task_pool_executor: bool) -> EcsParallelScopeOptions {
+    let ticker = ecs_thread_executor_ticker(main.executor, current_thread_id);
+    let same_scope = main.executor.executor_id == scope_executor_id;
+    return EcsParallelScopeOptions { tick_task_pool_executor: tick_task_pool_executor, use_external_executor: ticker.has_ticker, external_executor_is_scope: same_scope };
 }
 
 fn ecs_parallel_scope_run_result(thread_sum: i32, ran_count: i64, local_count: i64, external_count: i64, wave_count: i64, used_threads: bool, mismatch: bool) -> EcsParallelScopeRunResult {
@@ -360,6 +400,15 @@ fn ecs_parallel_task_pool_new(worker_count: i64) -> EcsParallelTaskPool {
     let workers = worker_count;
     if workers < 0 { workers = 0; };
     let width = workers;
+    return EcsParallelTaskPool { worker_count: workers, max_batch_width: width };
+}
+
+fn ecs_parallel_task_pool_with_batch_width(worker_count: i64, max_batch_width: i64) -> EcsParallelTaskPool {
+    let workers = worker_count;
+    if workers < 0 { workers = 0; };
+    let width = max_batch_width;
+    if width < 0 { width = 0; };
+    if width > workers { width = workers; };
     return EcsParallelTaskPool { worker_count: workers, max_batch_width: width };
 }
 
