@@ -6499,3 +6499,36 @@ Feature progress: multi-threaded executor drive-all history integration
 sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
 is broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 427 — `lib/executor_multi_threaded_deep.sla` finish-run deferred summaries — DONE
+
+Source focus: `ecs_multi_threaded_executor_finish_run_with_deferred_error`,
+`ecs_multi_threaded_executor_finish_run_with_deferred_handled_error`, and
+`ecs_executor_state_finish_run` in `lib/executor_multi_threaded.sla`.
+
+Deep strategy: add flat `EcsExecutorFinishRunSummaryDeep` rather than nesting
+executor/error/state values. New helpers summarize final-deferred application,
+state cleanup counts after finish-run, disabled-final-deferred preservation of
+unapplied systems, deferred panic payload recording with apply-count stopping
+at the failing system, and deferred handled-error recording while continuing
+through all unapplied systems.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 47
+`@test` entries (+4). New panic band: tests 148200-148226.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 47 passed / 0 failed ✓
+- SA backend: 47 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6728
+tests-dir `@test` annotations | 7363 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor finish-run deferred cleanup
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is broader executor integration scenarios if new Bevy parity gaps are found.
