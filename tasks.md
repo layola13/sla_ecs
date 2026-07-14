@@ -7744,6 +7744,15 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 463 - `executor_multi_threaded_deep` tick-loop no-completion batch summary fix (DONE 2026-07-14)
+- [x] Found and fixed an existing no-completion tick-loop summary behavior gap where a width-2 ready batch was reported as a single selected system, failing `mt_deep_tick_loop_no_completion_waves_ticks_once` and the existing tick-loop summary accessor batch test.
+- [x] Routed `ecs_executor_tick_loop_deep_no_completion_waves3` through the existing drive-ready-batch integration summary and added a local mapper into `EcsExecutorTickLoopSummaryDeep` run/skipped batch fields.
+- [x] Migrated the early no-completion tick-loop assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_tick_loop_summary_deep_*` accessors.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; default backend filters `tick_loop_no_completion_waves`, `tick_loop_summary_accessor`, `tick_loop_skipped_accessor`, and `ready_batch_rescan` pass with `--jobs 1`; SA backend filters `tick_loop_no_completion_waves`, `tick_loop_summary_accessor`, and `tick_loop_skipped_accessor` pass after serial reruns with `timeout 180s` and `--jobs 1`; `git diff --check` passes. An accidental parallel SA backend attempt timed out without panic output, so reported SA results are from serial reruns. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor tick-loop no-completion summary behavior 0% -> 100% for this focused fix; tick-loop summary accessor-usage cleanup 0% -> 100% for the edited early test; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 462 - `executor_multi_threaded_deep` lock-failed drive summary accessor usage cleanup (DONE 2026-07-14)
 - [x] Migrated the early lock-failed drive summary assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_drive_summary_deep_*` accessors.
 - [x] Kept executor implementation, API surface, and test count unchanged.

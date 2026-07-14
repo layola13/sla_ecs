@@ -7701,3 +7701,48 @@ accessor-usage cleanup 0% -> 100% for this test-maintenance slice; overall
 API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
 optional depth is other summary-result direct-field cleanup or broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 463 — `executor_multi_threaded_deep` tick-loop no-completion batch summary fix — DONE
+
+Source focus: `ecs_executor_tick_loop_deep_no_completion_waves3` and the early
+tick-loop summary assertions in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Issue found: migrating the early no-completion tick-loop assertions to
+`ecs_executor_tick_loop_summary_deep_*` accessors exposed an existing behavior
+gap: the helper reported only one selected system for a width-2 ready batch,
+causing `mt_deep_tick_loop_no_completion_waves_ticks_once` and the existing
+tick-loop summary accessor batch test to fail at `148082`/`148639`.
+
+Deep strategy: route no-completion tick-loop summary construction through the
+existing drive-ready-batch integration summary, then map its run/skipped slots
+into `EcsExecutorTickLoopSummaryDeep`. This preserves skipped-first behavior
+while recording the full ready batch width. The early test now uses
+`ecs_executor_tick_loop_summary_deep_*` accessors instead of direct fields.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` remains at 118
+`@test` entries. No new panic band.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `tick_loop_no_completion_waves`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `tick_loop_summary_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `tick_loop_skipped_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `ready_batch_rescan`: 6 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filters rerun serially: `tick_loop_no_completion_waves` 1 passed, `tick_loop_summary_accessor` 2 passed, `tick_loop_skipped_accessor` 2 passed ✓ (`timeout 180s`, `--jobs 1`)
+- An accidental parallel SA-backend attempt timed out without panic output; all reported SA validation above is from the subsequent serial reruns.
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (unchanged): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6799
+tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor tick-loop no-completion summary
+behavior 0% -> 100% for this focused fix; tick-loop summary accessor-usage
+cleanup 0% -> 100% for the edited early test; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is other
+summary-result direct-field cleanup or broader executor integration scenarios
+if new Bevy parity gaps are found.

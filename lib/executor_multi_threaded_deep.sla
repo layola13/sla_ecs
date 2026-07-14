@@ -3406,6 +3406,19 @@ fn _mt_tick_summary_set_rescan_batch1(t: EcsExecutorTickLoopSummaryDeep, r: EcsE
     return t;
 }
 
+fn _mt_tick_summary_set_integration_batch0(t: EcsExecutorTickLoopSummaryDeep, r: EcsExecutorDriveReadyBatchIntegrationSummaryDeep) -> EcsExecutorTickLoopSummaryDeep {
+    t.batch0_count = r.run_count;
+    t.batch0_system0 = r.run0;
+    t.batch0_system1 = r.run1;
+    t.batch0_system2 = r.run2;
+    t.batch0_skipped_count = r.skipped_count;
+    t.batch0_skipped0 = r.skipped0;
+    t.batch0_skipped1 = r.skipped1;
+    t.batch0_skipped2 = r.skipped2;
+    if r.run_count > 0 || r.skipped_count > 0 { t.batch_count = 1; };
+    return t;
+}
+
 fn _mt_state_start_if_selected(s: EcsExecutorStateDeep, selected: i64, spec: EcsExecutorSystemSpecDeep) -> EcsExecutorStateDeep {
     if selected == spec.system_index { return ecs_executor_state_deep_start_system(s, spec); };
     return s;
@@ -3433,14 +3446,14 @@ fn _mt_state_start_summary_batch3(s: EcsExecutorStateDeep, r: EcsExecutorDriveSu
 fn ecs_executor_tick_loop_deep_no_completion_waves3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, max_width: i64) -> EcsExecutorTickLoopSummaryDeep {
     let t = ecs_executor_tick_loop_summary_deep_empty();
     t.tick_count = 1;
-    let batch = ecs_executor_ready_batch_rescan_summary_deep3(
+    let batch = ecs_executor_drive_ready_batch_integration_summary_deep3(
         s, a, b, c,
         -1, -1, -1, 0,
         -1, -1, -1, 0,
         -1, -1, -1, 0,
         max_width
     );
-    return _mt_tick_summary_set_rescan_batch0(t, batch);
+    return _mt_tick_summary_set_integration_batch0(t, batch);
 }
 
 fn ecs_executor_tick_loop_deep_two_completion_waves3(s: EcsExecutorStateDeep, completed0: EcsExecutorSystemSpecDeep, has_deferred0: bool, dep0a: i64, dep0b: i64, dep0c: i64, dep0_count: i64, completed1: EcsExecutorSystemSpecDeep, has_deferred1: bool, dep1a: i64, dep1b: i64, dep1c: i64, dep1_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, max_width: i64) -> EcsExecutorTickLoopSummaryDeep {
