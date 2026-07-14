@@ -22,6 +22,7 @@
 // Batch 439 adds condition-fold and run-history accessor parity helpers.
 // Batch 440 adds error-state and condition-error accessor parity helpers.
 // Batch 442 adds complete-ready-batch summary accessor helpers.
+// Batch 443 adds initial-skip summary accessor helpers.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -821,6 +822,36 @@ fn ecs_executor_initial_skips_summary_deep_empty() -> EcsExecutorInitialSkipsSum
         ready1: 0,
         ready2: 0,
     };
+}
+
+fn ecs_executor_initial_skips_summary_deep_skipped_count(r: EcsExecutorInitialSkipsSummaryDeep) -> i64 { return r.skipped_count; }
+fn ecs_executor_initial_skips_summary_deep_skipped_at(r: EcsExecutorInitialSkipsSummaryDeep, index: i64) -> i64 {
+    if index == 0 && r.skipped_count > 0 { return r.skipped0; };
+    if index == 1 && r.skipped_count > 1 { return r.skipped1; };
+    if index == 2 && r.skipped_count > 2 { return r.skipped2; };
+    return -1;
+}
+fn ecs_executor_initial_skips_summary_deep_ignored_count(r: EcsExecutorInitialSkipsSummaryDeep) -> i64 { return r.ignored_count; }
+fn ecs_executor_initial_skips_summary_deep_ignored_at(r: EcsExecutorInitialSkipsSummaryDeep, index: i64) -> i64 {
+    if index == 0 && r.ignored_count > 0 { return r.ignored0; };
+    if index == 1 && r.ignored_count > 1 { return r.ignored1; };
+    if index == 2 && r.ignored_count > 2 { return r.ignored2; };
+    return -1;
+}
+fn ecs_executor_initial_skips_summary_deep_ready_after(r: EcsExecutorInitialSkipsSummaryDeep) -> i64 { return r.ready_after; }
+fn ecs_executor_initial_skips_summary_deep_completed_after(r: EcsExecutorInitialSkipsSummaryDeep) -> i64 { return r.completed_after; }
+fn ecs_executor_initial_skips_summary_deep_skipped_after(r: EcsExecutorInitialSkipsSummaryDeep) -> i64 { return r.skipped_after; }
+fn ecs_executor_initial_skips_summary_deep_dependencies_at(r: EcsExecutorInitialSkipsSummaryDeep, index: i64) -> i64 {
+    if index == 0 { return r.deps0; };
+    if index == 1 { return r.deps1; };
+    if index == 2 { return r.deps2; };
+    return -1;
+}
+fn ecs_executor_initial_skips_summary_deep_ready_at(r: EcsExecutorInitialSkipsSummaryDeep, index: i64) -> bool {
+    if index == 0 { return r.ready0 != 0; };
+    if index == 1 { return r.ready1 != 0; };
+    if index == 2 { return r.ready2 != 0; };
+    return false;
 }
 
 fn ecs_executor_completion_queue_drain_summary_deep_empty() -> EcsExecutorCompletionQueueDrainSummaryDeep {
