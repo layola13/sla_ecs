@@ -2061,3 +2061,66 @@
     if ecs_executor_completion_queue_drain_summary_deep_ready_after(r) != 1 { panic(148842); };
     if ecs_executor_completion_queue_drain_summary_deep_completed_after(r) != 2 { panic(148843); };
 }
+
+@test "mt_deep_tick_with_completion_accessor_reads_selected_bounds"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_tick_with_completions_summary_deep3(
+        s, -1, -1, -1, 0,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        2
+    );
+    if ecs_executor_tick_with_completions_summary_deep_completed_count(r) != 0 { panic(148860); };
+    if ecs_executor_tick_with_completions_summary_deep_ignored_count(r) != 0 { panic(148861); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_count(r) != 2 { panic(148862); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_at(r, 0) != 0 { panic(148863); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_at(r, 1) != 1 { panic(148864); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_at(r, 2) != -1 { panic(148865); };
+    if ecs_executor_tick_with_completions_summary_deep_skipped_count(r) != 0 { panic(148866); };
+    if ecs_executor_tick_with_completions_summary_deep_running_after(r) != 2 { panic(148867); };
+    if ecs_executor_tick_with_completions_summary_deep_ready_after(r) != 0 { panic(148868); };
+    if ecs_executor_tick_with_completions_summary_deep_stalled(r) { panic(148869); };
+}
+
+@test "mt_deep_tick_with_completion_accessor_reads_skip_dependency_state"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_should_run(b0, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    let r = ecs_executor_tick_with_completions_summary_deep3(
+        s, 0, -1, -1, 1,
+        a, b, c,
+        1, -1, -1, 1,
+        2, -1, -1, 1,
+        -1, -1, -1, 0,
+        1
+    );
+    if ecs_executor_tick_with_completions_summary_deep_completed_count(r) != 1 { panic(148870); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 0) != 0 { panic(148871); };
+    if ecs_executor_tick_with_completions_summary_deep_skipped_count(r) != 1 { panic(148872); };
+    if ecs_executor_tick_with_completions_summary_deep_skipped_at(r, 0) != 1 { panic(148873); };
+    if ecs_executor_tick_with_completions_summary_deep_skipped_at(r, 1) != -1 { panic(148874); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_count(r) != 1 { panic(148875); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_at(r, 0) != 2 { panic(148876); };
+    if ecs_executor_tick_with_completions_summary_deep_dependencies_at(r, 2) != 0 { panic(148877); };
+    if ecs_executor_tick_with_completions_summary_deep_dependencies_at(r, 3) != -1 { panic(148878); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_after(r) != 2 { panic(148879); };
+    if ecs_executor_tick_with_completions_summary_deep_running_after(r) != 1 { panic(148880); };
+    if ecs_executor_tick_with_completions_summary_deep_unapplied_after(r) != 0 { panic(148881); };
+    if ecs_executor_tick_with_completions_summary_deep_local_running(r) { panic(148882); };
+    if ecs_executor_tick_with_completions_summary_deep_exclusive_running(r) { panic(148883); };
+    if ecs_executor_tick_with_completions_summary_deep_ready_at(r, 2) { panic(148884); };
+    if ecs_executor_tick_with_completions_summary_deep_ready_at(r, 3) { panic(148885); };
+}
