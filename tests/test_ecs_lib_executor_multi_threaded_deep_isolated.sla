@@ -1164,3 +1164,98 @@
     if r.completed_after != 1 { panic(148426); };
     if r.unapplied_after != 0 { panic(148427); };
 }
+
+@test "mt_deep_initial_skips_summary_ignores_invalid_indices"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_initial_skips_summary_deep3(
+        s, -1, 0, 4, 3,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.skipped_count != 1 { panic(148440); };
+    if r.skipped0 != 0 { panic(148441); };
+    if r.ignored_count != 2 { panic(148442); };
+    if r.ignored0 != -1 { panic(148443); };
+    if r.ignored1 != 4 { panic(148444); };
+    if r.completed_after != 1 { panic(148445); };
+    if r.skipped_after != 1 { panic(148446); };
+    if r.ready_after != 0 { panic(148447); };
+}
+
+@test "mt_deep_initial_skips_summary_releases_dependents"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_initial_skips_summary_deep3(
+        s, 0, -1, -1, 1,
+        a, b, c,
+        1, 2, -1, 2,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.skipped_count != 1 { panic(148448); };
+    if r.skipped0 != 0 { panic(148449); };
+    if r.ready_after != 2 { panic(148450); };
+    if r.deps1 != 0 { panic(148451); };
+    if r.deps2 != 0 { panic(148452); };
+    if r.ready1 != 1 { panic(148453); };
+    if r.ready2 != 1 { panic(148454); };
+}
+
+@test "mt_deep_initial_skips_summary_ignores_duplicate_after_completion"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_initial_skips_summary_deep3(
+        s, 0, 0, 1, 3,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.skipped_count != 2 { panic(148455); };
+    if r.skipped0 != 0 { panic(148456); };
+    if r.skipped1 != 1 { panic(148457); };
+    if r.ignored_count != 1 { panic(148458); };
+    if r.ignored0 != 0 { panic(148459); };
+    if r.completed_after != 2 { panic(148460); };
+}
+
+@test "mt_deep_initial_skips_summary_ignores_already_completed"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_complete_system(s, a, false);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_initial_skips_summary_deep3(
+        s, 0, 1, 2, 3,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.ignored_count != 1 { panic(148461); };
+    if r.ignored0 != 0 { panic(148462); };
+    if r.skipped_count != 2 { panic(148463); };
+    if r.skipped0 != 1 { panic(148464); };
+    if r.skipped1 != 2 { panic(148465); };
+    if r.completed_after != 3 { panic(148466); };
+    if r.ready_after != 0 { panic(148467); };
+}

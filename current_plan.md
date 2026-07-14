@@ -6671,3 +6671,38 @@ Feature progress: multi-threaded executor complete-ready-batch sub-surface
 0% -> 100% for the flat fixed-arity model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 432 — `lib/executor_multi_threaded_deep.sla` initial-skip summaries — DONE
+
+Source focus: `ecs_executor_run_plan_apply_initial_skips` in
+`lib/executor_multi_threaded.sla`, especially initial skipped-system input
+handling, invalid/completed skip suppression, skipped-order recording, and
+dependent release after each accepted initial skip.
+
+Deep strategy: add flat `EcsExecutorInitialSkipsSummaryDeep` and a fixed-arity
+`ecs_executor_initial_skips_summary_deep3` helper. The helper accepts three
+initial skip slots plus three spec/dependent slot families, records accepted
+and ignored skip ids in scalar slots, uses local completed markers to keep
+duplicate skips deterministic, releases dependents for accepted skips, and
+summarizes post-skip ready/completed/skipped/dependency slots without nesting
+a run plan or Vec-backed skip list.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 67
+`@test` entries (+4). New panic band: tests 148440-148467.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 67 passed / 0 failed ✓
+- SA backend: 67 passed / 0 failed ✓ (`timeout 300s`)
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6748
+tests-dir `@test` annotations | 7384 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor initial-skip sub-surface 0% -> 100%
+for the flat fixed-arity model; overall API parity remains ~94–96%,
+behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.

@@ -12,6 +12,7 @@
 // Batch 429 adds begin-run reset summaries.
 // Batch 430 adds completed-tick error summaries.
 // Batch 431 adds complete-ready-batch summaries.
+// Batch 432 adds initial-skip summaries.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -274,6 +275,27 @@ struct EcsExecutorCompleteReadyBatchSummaryDeep {
     unapplied_after: i64,
     local_thread_running: i32,
     exclusive_running: i32,
+}
+
+@derive(copy)
+struct EcsExecutorInitialSkipsSummaryDeep {
+    skipped_count: i64,
+    skipped0: i64,
+    skipped1: i64,
+    skipped2: i64,
+    ignored_count: i64,
+    ignored0: i64,
+    ignored1: i64,
+    ignored2: i64,
+    ready_after: i64,
+    completed_after: i64,
+    skipped_after: i64,
+    deps0: i64,
+    deps1: i64,
+    deps2: i64,
+    ready0: i32,
+    ready1: i32,
+    ready2: i32,
 }
 
 fn _mt_bool(v: bool) -> i32 {
@@ -540,6 +562,28 @@ fn ecs_executor_complete_ready_batch_summary_deep_empty() -> EcsExecutorComplete
     };
 }
 
+fn ecs_executor_initial_skips_summary_deep_empty() -> EcsExecutorInitialSkipsSummaryDeep {
+    return EcsExecutorInitialSkipsSummaryDeep {
+        skipped_count: 0,
+        skipped0: -1,
+        skipped1: -1,
+        skipped2: -1,
+        ignored_count: 0,
+        ignored0: -1,
+        ignored1: -1,
+        ignored2: -1,
+        ready_after: 0,
+        completed_after: 0,
+        skipped_after: 0,
+        deps0: 0,
+        deps1: 0,
+        deps2: 0,
+        ready0: 0,
+        ready1: 0,
+        ready2: 0,
+    };
+}
+
 fn _mt_ready_batch_rescan_summary_from_state(r: EcsExecutorReadyBatchRescanSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorReadyBatchRescanSummaryDeep {
     r.ready_after = ecs_executor_state_deep_ready_count(s);
     r.completed_after = ecs_executor_state_deep_completed_count(s);
@@ -683,6 +727,33 @@ fn _mt_complete_ready_batch_apply_unapplied(r: EcsExecutorCompleteReadyBatchSumm
         if _mt_unapplied_at(s, i) { r = _mt_complete_ready_batch_push_apply(r, i); };
         i = i + 1;
     }
+    return r;
+}
+
+fn _mt_initial_skips_push_skipped(r: EcsExecutorInitialSkipsSummaryDeep, system_index: i64) -> EcsExecutorInitialSkipsSummaryDeep {
+    if r.skipped_count == 0 { r.skipped0 = system_index; r.skipped_count = 1; return r; };
+    if r.skipped_count == 1 { r.skipped1 = system_index; r.skipped_count = 2; return r; };
+    if r.skipped_count == 2 { r.skipped2 = system_index; r.skipped_count = 3; return r; };
+    return r;
+}
+
+fn _mt_initial_skips_push_ignored(r: EcsExecutorInitialSkipsSummaryDeep, system_index: i64) -> EcsExecutorInitialSkipsSummaryDeep {
+    if r.ignored_count == 0 { r.ignored0 = system_index; r.ignored_count = 1; return r; };
+    if r.ignored_count == 1 { r.ignored1 = system_index; r.ignored_count = 2; return r; };
+    if r.ignored_count == 2 { r.ignored2 = system_index; r.ignored_count = 3; return r; };
+    return r;
+}
+
+fn _mt_initial_skips_summary_from_state(r: EcsExecutorInitialSkipsSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorInitialSkipsSummaryDeep {
+    r.ready_after = ecs_executor_state_deep_ready_count(s);
+    r.completed_after = ecs_executor_state_deep_completed_count(s);
+    r.skipped_after = ecs_executor_state_deep_skipped_count(s);
+    r.deps0 = ecs_executor_state_deep_get_dependencies(s, 0);
+    r.deps1 = ecs_executor_state_deep_get_dependencies(s, 1);
+    r.deps2 = ecs_executor_state_deep_get_dependencies(s, 2);
+    r.ready0 = _mt_bool(ecs_executor_state_deep_is_ready(s, 0));
+    r.ready1 = _mt_bool(ecs_executor_state_deep_is_ready(s, 1));
+    r.ready2 = _mt_bool(ecs_executor_state_deep_is_ready(s, 2));
     return r;
 }
 
@@ -970,6 +1041,153 @@ fn ecs_executor_complete_ready_batch_summary_deep3(s: EcsExecutorStateDeep, sele
         r.completed_count = r.completed_count + 1;
     };
     return _mt_complete_ready_batch_summary_from_state(r, s);
+}
+
+fn _mt_initial_skips_value_at(skip0: i64, skip1: i64, skip2: i64, position: i64) -> i64 {
+    if position == 0 { return skip0; };
+    if position == 1 { return skip1; };
+    if position == 2 { return skip2; };
+    return -1;
+}
+
+fn ecs_executor_initial_skips_summary_deep3(s: EcsExecutorStateDeep, skip0: i64, skip1: i64, skip2: i64, skip_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64) -> EcsExecutorInitialSkipsSummaryDeep {
+    let r = ecs_executor_initial_skips_summary_deep_empty();
+    let completed0: i32 = _mt_bool(_mt_completed_at(s, 0));
+    let completed1: i32 = _mt_bool(_mt_completed_at(s, 1));
+    let completed2: i32 = _mt_bool(_mt_completed_at(s, 2));
+    if skip_count > 0 {
+        let system_index = skip0;
+        let invalid: i32 = 0;
+        if system_index < 0 { invalid = 1; };
+        if invalid == 0 {
+            if system_index >= s.system_count { invalid = 1; };
+        };
+        if invalid != 0 {
+            if r.ignored_count == 0 { r.ignored0 = system_index; };
+            if r.ignored_count == 1 { r.ignored1 = system_index; };
+            if r.ignored_count == 2 { r.ignored2 = system_index; };
+            r.ignored_count = r.ignored_count + 1;
+        } else {
+            let already_completed: i32 = 0;
+            if system_index == 0 { already_completed = completed0; };
+            if system_index == 1 { already_completed = completed1; };
+            if system_index == 2 { already_completed = completed2; };
+            if system_index > 2 {
+                if _mt_completed_at(s, system_index) { already_completed = 1; };
+            };
+            if already_completed != 0 {
+                if r.ignored_count == 0 { r.ignored0 = system_index; };
+                if r.ignored_count == 1 { r.ignored1 = system_index; };
+                if r.ignored_count == 2 { r.ignored2 = system_index; };
+                r.ignored_count = r.ignored_count + 1;
+            } else {
+                let spec = _mt_spec3_by_system_index(a, b, c, system_index);
+                s = _mt_skip_with_history_deps3(
+                    s, spec,
+                    a, b, c,
+                    a_dep0, a_dep1, a_dep2, a_dep_count,
+                    b_dep0, b_dep1, b_dep2, b_dep_count,
+                    c_dep0, c_dep1, c_dep2, c_dep_count
+                );
+                if r.skipped_count == 0 { r.skipped0 = system_index; };
+                if r.skipped_count == 1 { r.skipped1 = system_index; };
+                if r.skipped_count == 2 { r.skipped2 = system_index; };
+                r.skipped_count = r.skipped_count + 1;
+                if system_index == 0 { completed0 = 1; };
+                if system_index == 1 { completed1 = 1; };
+                if system_index == 2 { completed2 = 1; };
+            };
+        };
+    };
+    if skip_count > 1 {
+        let system_index = skip1;
+        let invalid: i32 = 0;
+        if system_index < 0 { invalid = 1; };
+        if invalid == 0 {
+            if system_index >= s.system_count { invalid = 1; };
+        };
+        if invalid != 0 {
+            if r.ignored_count == 0 { r.ignored0 = system_index; };
+            if r.ignored_count == 1 { r.ignored1 = system_index; };
+            if r.ignored_count == 2 { r.ignored2 = system_index; };
+            r.ignored_count = r.ignored_count + 1;
+        } else {
+            let already_completed: i32 = 0;
+            if system_index == 0 { already_completed = completed0; };
+            if system_index == 1 { already_completed = completed1; };
+            if system_index == 2 { already_completed = completed2; };
+            if system_index > 2 {
+                if _mt_completed_at(s, system_index) { already_completed = 1; };
+            };
+            if already_completed != 0 {
+                if r.ignored_count == 0 { r.ignored0 = system_index; };
+                if r.ignored_count == 1 { r.ignored1 = system_index; };
+                if r.ignored_count == 2 { r.ignored2 = system_index; };
+                r.ignored_count = r.ignored_count + 1;
+            } else {
+                let spec = _mt_spec3_by_system_index(a, b, c, system_index);
+                s = _mt_skip_with_history_deps3(
+                    s, spec,
+                    a, b, c,
+                    a_dep0, a_dep1, a_dep2, a_dep_count,
+                    b_dep0, b_dep1, b_dep2, b_dep_count,
+                    c_dep0, c_dep1, c_dep2, c_dep_count
+                );
+                if r.skipped_count == 0 { r.skipped0 = system_index; };
+                if r.skipped_count == 1 { r.skipped1 = system_index; };
+                if r.skipped_count == 2 { r.skipped2 = system_index; };
+                r.skipped_count = r.skipped_count + 1;
+                if system_index == 0 { completed0 = 1; };
+                if system_index == 1 { completed1 = 1; };
+                if system_index == 2 { completed2 = 1; };
+            };
+        };
+    };
+    if skip_count > 2 {
+        let system_index = skip2;
+        let invalid: i32 = 0;
+        if system_index < 0 { invalid = 1; };
+        if invalid == 0 {
+            if system_index >= s.system_count { invalid = 1; };
+        };
+        if invalid != 0 {
+            if r.ignored_count == 0 { r.ignored0 = system_index; };
+            if r.ignored_count == 1 { r.ignored1 = system_index; };
+            if r.ignored_count == 2 { r.ignored2 = system_index; };
+            r.ignored_count = r.ignored_count + 1;
+        } else {
+            let already_completed: i32 = 0;
+            if system_index == 0 { already_completed = completed0; };
+            if system_index == 1 { already_completed = completed1; };
+            if system_index == 2 { already_completed = completed2; };
+            if system_index > 2 {
+                if _mt_completed_at(s, system_index) { already_completed = 1; };
+            };
+            if already_completed != 0 {
+                if r.ignored_count == 0 { r.ignored0 = system_index; };
+                if r.ignored_count == 1 { r.ignored1 = system_index; };
+                if r.ignored_count == 2 { r.ignored2 = system_index; };
+                r.ignored_count = r.ignored_count + 1;
+            } else {
+                let spec = _mt_spec3_by_system_index(a, b, c, system_index);
+                s = _mt_skip_with_history_deps3(
+                    s, spec,
+                    a, b, c,
+                    a_dep0, a_dep1, a_dep2, a_dep_count,
+                    b_dep0, b_dep1, b_dep2, b_dep_count,
+                    c_dep0, c_dep1, c_dep2, c_dep_count
+                );
+                if r.skipped_count == 0 { r.skipped0 = system_index; };
+                if r.skipped_count == 1 { r.skipped1 = system_index; };
+                if r.skipped_count == 2 { r.skipped2 = system_index; };
+                r.skipped_count = r.skipped_count + 1;
+                if system_index == 0 { completed0 = 1; };
+                if system_index == 1 { completed1 = 1; };
+                if system_index == 2 { completed2 = 1; };
+            };
+        };
+    };
+    return _mt_initial_skips_summary_from_state(r, s);
 }
 
 fn _mt_skip_with_history_deps3(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64) -> EcsExecutorStateDeep {
