@@ -1752,3 +1752,42 @@
     if ecs_executor_tick_loop_summary_deep_batch_skipped_count(t, 2) != 0 { panic(148662); };
     if ecs_executor_tick_loop_summary_deep_batch_skipped_at(t, 2, 0) != -1 { panic(148663); };
 }
+
+@test "mt_deep_condition_fold_accessor_parity_reads_fields"() {
+    let f = ecs_executor_condition_fold_deep_outcomes3(
+        12,
+        ecs_executor_condition_outcome_deep_true(),
+        ecs_executor_condition_outcome_deep_false(),
+        ecs_executor_condition_outcome_deep_true(),
+        3
+    );
+    if ecs_executor_condition_fold_deep_should_run(f) { panic(148670); };
+    if ecs_executor_condition_fold_deep_evaluated_count(f) != 3 { panic(148671); };
+    if ecs_executor_condition_fold_deep_aborted(f) { panic(148672); };
+    let aborted = ecs_executor_condition_fold_deep_outcomes3(
+        13,
+        ecs_executor_condition_outcome_deep_error_handler_panic(),
+        ecs_executor_condition_outcome_deep_true(),
+        ecs_executor_condition_outcome_deep_true(),
+        3
+    );
+    if ecs_executor_condition_fold_deep_should_run(aborted) { panic(148673); };
+    if ecs_executor_condition_fold_deep_evaluated_count(aborted) != 1 { panic(148674); };
+    if ecs_executor_condition_fold_deep_aborted(aborted) != true { panic(148675); };
+}
+
+@test "mt_deep_run_history_accessor_parity_reads_counts_and_stall"() {
+    let h = ecs_executor_run_history_deep_new();
+    h = ecs_executor_run_history_deep_push_run(h, 1);
+    h = ecs_executor_run_history_deep_push_apply(h, 2);
+    h = ecs_executor_run_history_deep_push_skipped(h, 3);
+    if ecs_executor_run_history_deep_run_count(h) != 1 { panic(148676); };
+    if ecs_executor_run_history_deep_apply_count(h) != 1 { panic(148677); };
+    if ecs_executor_run_history_deep_skipped_count(h) != 1 { panic(148678); };
+    if ecs_executor_run_history_deep_is_stalled(h) { panic(148679); };
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    let stalled = ecs_executor_run_history_deep_drive_one(ecs_executor_run_history_deep_new(), s, spec);
+    if ecs_executor_run_history_deep_is_stalled(stalled) != true { panic(148680); };
+    if ecs_executor_run_history_deep_run_count(stalled) != 0 { panic(148681); };
+}

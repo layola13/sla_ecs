@@ -19,6 +19,7 @@
 // Batch 436 adds drive-all-batched integration summaries.
 // Batch 437 adds ready-batch and tick-loop accessor parity helpers.
 // Batch 438 adds skipped-batch accessor parity helpers.
+// Batch 439 adds condition-fold and run-history accessor parity helpers.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -519,6 +520,10 @@ fn ecs_executor_condition_fold_deep_new() -> EcsExecutorConditionFoldDeep {
         handled_error_system: -1,
     };
 }
+
+fn ecs_executor_condition_fold_deep_should_run(f: EcsExecutorConditionFoldDeep) -> bool { return f.should_run != 0; }
+fn ecs_executor_condition_fold_deep_evaluated_count(f: EcsExecutorConditionFoldDeep) -> i64 { return f.evaluated_count; }
+fn ecs_executor_condition_fold_deep_aborted(f: EcsExecutorConditionFoldDeep) -> bool { return f.aborted != 0; }
 
 fn ecs_executor_drive_summary_deep_empty() -> EcsExecutorDriveSummaryDeep {
     return EcsExecutorDriveSummaryDeep {
@@ -1331,6 +1336,11 @@ fn ecs_executor_run_history_deep_push_skipped(h: EcsExecutorRunHistoryDeep, syst
     if h.skipped_count == 2 { h.skipped2 = system_index; h.skipped_count = 3; return h; };
     return h;
 }
+
+fn ecs_executor_run_history_deep_run_count(h: EcsExecutorRunHistoryDeep) -> i64 { return h.run_count; }
+fn ecs_executor_run_history_deep_apply_count(h: EcsExecutorRunHistoryDeep) -> i64 { return h.apply_count; }
+fn ecs_executor_run_history_deep_skipped_count(h: EcsExecutorRunHistoryDeep) -> i64 { return h.skipped_count; }
+fn ecs_executor_run_history_deep_is_stalled(h: EcsExecutorRunHistoryDeep) -> bool { return h.stalled != 0; }
 
 fn ecs_executor_run_history_deep_run_at(h: EcsExecutorRunHistoryDeep, index: i64) -> i64 {
     if index == 0 && h.run_count > 0 { return h.run0; };

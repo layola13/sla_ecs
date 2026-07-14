@@ -6898,3 +6898,42 @@ parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 439 — `lib/executor_multi_threaded_deep.sla` condition-fold/run-history accessor parity — DONE
+
+Source focus: shallow accessor helpers in `lib/executor_multi_threaded.sla`
+for condition folds and run-plan history:
+`ecs_executor_condition_fold_should_run`,
+`ecs_executor_condition_fold_evaluated_count`,
+`ecs_executor_condition_fold_aborted`, `ecs_executor_run_plan_run_count`,
+`ecs_executor_run_plan_apply_count`, `ecs_executor_run_plan_skipped_count`,
+and `ecs_executor_run_plan_is_stalled`.
+
+Deep strategy: add scalar read-only accessors over existing
+`EcsExecutorConditionFoldDeep` and `EcsExecutorRunHistoryDeep` fields. This
+does not change drive, fold, or history mutation behavior; it closes the
+remaining accessor parity gap for these flat summaries so tests and downstream
+deep users no longer need direct field reads for counts and stalled/aborted
+booleans.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 90
+`@test` entries (+2). New panic band: tests 148670-148681.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `accessor_parity`: 2 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `accessor_parity`: 2 passed / 0 failed ✓ (`timeout 150s`)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (measured): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6771
+tests-dir `@test` annotations | 7407 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor condition-fold/run-history accessor
+parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
+parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
+depth is broader executor integration scenarios if new Bevy parity gaps are
+found.
