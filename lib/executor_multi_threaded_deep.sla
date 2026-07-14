@@ -1,7 +1,7 @@
 // Deep self-contained core of lib/executor_multi_threaded.sla.
 // Batch 420 focuses on ExecutorState gates and ready-batch selection using cap-16
-// scalar slots instead of Vec bitsets. Later batches can extend the same module with
-// completion/tick handoff facades.
+// scalar slots instead of Vec bitsets. Batch 421 extends the same flat model with
+// skipped/evaluated state, deferred cleanup, dependent release, and tick handoff.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -24,10 +24,18 @@ struct EcsExecutorStateDeep {
     completed4: i32, completed5: i32, completed6: i32, completed7: i32,
     completed8: i32, completed9: i32, completed10: i32, completed11: i32,
     completed12: i32, completed13: i32, completed14: i32, completed15: i32,
+    skipped0: i32, skipped1: i32, skipped2: i32, skipped3: i32,
+    skipped4: i32, skipped5: i32, skipped6: i32, skipped7: i32,
+    skipped8: i32, skipped9: i32, skipped10: i32, skipped11: i32,
+    skipped12: i32, skipped13: i32, skipped14: i32, skipped15: i32,
     unapplied0: i32, unapplied1: i32, unapplied2: i32, unapplied3: i32,
     unapplied4: i32, unapplied5: i32, unapplied6: i32, unapplied7: i32,
     unapplied8: i32, unapplied9: i32, unapplied10: i32, unapplied11: i32,
     unapplied12: i32, unapplied13: i32, unapplied14: i32, unapplied15: i32,
+    evaluated0: i32, evaluated1: i32, evaluated2: i32, evaluated3: i32,
+    evaluated4: i32, evaluated5: i32, evaluated6: i32, evaluated7: i32,
+    evaluated8: i32, evaluated9: i32, evaluated10: i32, evaluated11: i32,
+    evaluated12: i32, evaluated13: i32, evaluated14: i32, evaluated15: i32,
     deps0: i64, deps1: i64, deps2: i64, deps3: i64,
     deps4: i64, deps5: i64, deps6: i64, deps7: i64,
     deps8: i64, deps9: i64, deps10: i64, deps11: i64,
@@ -68,8 +76,12 @@ fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {
         running8: 0, running9: 0, running10: 0, running11: 0, running12: 0, running13: 0, running14: 0, running15: 0,
         completed0: 0, completed1: 0, completed2: 0, completed3: 0, completed4: 0, completed5: 0, completed6: 0, completed7: 0,
         completed8: 0, completed9: 0, completed10: 0, completed11: 0, completed12: 0, completed13: 0, completed14: 0, completed15: 0,
+        skipped0: 0, skipped1: 0, skipped2: 0, skipped3: 0, skipped4: 0, skipped5: 0, skipped6: 0, skipped7: 0,
+        skipped8: 0, skipped9: 0, skipped10: 0, skipped11: 0, skipped12: 0, skipped13: 0, skipped14: 0, skipped15: 0,
         unapplied0: 0, unapplied1: 0, unapplied2: 0, unapplied3: 0, unapplied4: 0, unapplied5: 0, unapplied6: 0, unapplied7: 0,
         unapplied8: 0, unapplied9: 0, unapplied10: 0, unapplied11: 0, unapplied12: 0, unapplied13: 0, unapplied14: 0, unapplied15: 0,
+        evaluated0: 0, evaluated1: 0, evaluated2: 0, evaluated3: 0, evaluated4: 0, evaluated5: 0, evaluated6: 0, evaluated7: 0,
+        evaluated8: 0, evaluated9: 0, evaluated10: 0, evaluated11: 0, evaluated12: 0, evaluated13: 0, evaluated14: 0, evaluated15: 0,
         deps0: 0, deps1: 0, deps2: 0, deps3: 0, deps4: 0, deps5: 0, deps6: 0, deps7: 0,
         deps8: 0, deps9: 0, deps10: 0, deps11: 0, deps12: 0, deps13: 0, deps14: 0, deps15: 0,
     };
@@ -161,6 +173,31 @@ fn _mt_completed_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorS
     return s;
 }
 
+fn _mt_skipped_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.skipped0 != 0; }; if idx == 1 { return s.skipped1 != 0; };
+    if idx == 2 { return s.skipped2 != 0; }; if idx == 3 { return s.skipped3 != 0; };
+    if idx == 4 { return s.skipped4 != 0; }; if idx == 5 { return s.skipped5 != 0; };
+    if idx == 6 { return s.skipped6 != 0; }; if idx == 7 { return s.skipped7 != 0; };
+    if idx == 8 { return s.skipped8 != 0; }; if idx == 9 { return s.skipped9 != 0; };
+    if idx == 10 { return s.skipped10 != 0; }; if idx == 11 { return s.skipped11 != 0; };
+    if idx == 12 { return s.skipped12 != 0; }; if idx == 13 { return s.skipped13 != 0; };
+    if idx == 14 { return s.skipped14 != 0; }; if idx == 15 { return s.skipped15 != 0; };
+    return false;
+}
+
+fn _mt_skipped_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.skipped0 = b; return s; }; if idx == 1 { s.skipped1 = b; return s; };
+    if idx == 2 { s.skipped2 = b; return s; }; if idx == 3 { s.skipped3 = b; return s; };
+    if idx == 4 { s.skipped4 = b; return s; }; if idx == 5 { s.skipped5 = b; return s; };
+    if idx == 6 { s.skipped6 = b; return s; }; if idx == 7 { s.skipped7 = b; return s; };
+    if idx == 8 { s.skipped8 = b; return s; }; if idx == 9 { s.skipped9 = b; return s; };
+    if idx == 10 { s.skipped10 = b; return s; }; if idx == 11 { s.skipped11 = b; return s; };
+    if idx == 12 { s.skipped12 = b; return s; }; if idx == 13 { s.skipped13 = b; return s; };
+    if idx == 14 { s.skipped14 = b; return s; }; if idx == 15 { s.skipped15 = b; return s; };
+    return s;
+}
+
 fn _mt_unapplied_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
     if idx == 0 { return s.unapplied0 != 0; }; if idx == 1 { return s.unapplied1 != 0; };
     if idx == 2 { return s.unapplied2 != 0; }; if idx == 3 { return s.unapplied3 != 0; };
@@ -183,6 +220,31 @@ fn _mt_unapplied_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorS
     if idx == 10 { s.unapplied10 = b; return s; }; if idx == 11 { s.unapplied11 = b; return s; };
     if idx == 12 { s.unapplied12 = b; return s; }; if idx == 13 { s.unapplied13 = b; return s; };
     if idx == 14 { s.unapplied14 = b; return s; }; if idx == 15 { s.unapplied15 = b; return s; };
+    return s;
+}
+
+fn _mt_evaluated_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.evaluated0 != 0; }; if idx == 1 { return s.evaluated1 != 0; };
+    if idx == 2 { return s.evaluated2 != 0; }; if idx == 3 { return s.evaluated3 != 0; };
+    if idx == 4 { return s.evaluated4 != 0; }; if idx == 5 { return s.evaluated5 != 0; };
+    if idx == 6 { return s.evaluated6 != 0; }; if idx == 7 { return s.evaluated7 != 0; };
+    if idx == 8 { return s.evaluated8 != 0; }; if idx == 9 { return s.evaluated9 != 0; };
+    if idx == 10 { return s.evaluated10 != 0; }; if idx == 11 { return s.evaluated11 != 0; };
+    if idx == 12 { return s.evaluated12 != 0; }; if idx == 13 { return s.evaluated13 != 0; };
+    if idx == 14 { return s.evaluated14 != 0; }; if idx == 15 { return s.evaluated15 != 0; };
+    return false;
+}
+
+fn _mt_evaluated_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.evaluated0 = b; return s; }; if idx == 1 { s.evaluated1 = b; return s; };
+    if idx == 2 { s.evaluated2 = b; return s; }; if idx == 3 { s.evaluated3 = b; return s; };
+    if idx == 4 { s.evaluated4 = b; return s; }; if idx == 5 { s.evaluated5 = b; return s; };
+    if idx == 6 { s.evaluated6 = b; return s; }; if idx == 7 { s.evaluated7 = b; return s; };
+    if idx == 8 { s.evaluated8 = b; return s; }; if idx == 9 { s.evaluated9 = b; return s; };
+    if idx == 10 { s.evaluated10 = b; return s; }; if idx == 11 { s.evaluated11 = b; return s; };
+    if idx == 12 { s.evaluated12 = b; return s; }; if idx == 13 { s.evaluated13 = b; return s; };
+    if idx == 14 { s.evaluated14 = b; return s; }; if idx == 15 { s.evaluated15 = b; return s; };
     return s;
 }
 
@@ -260,6 +322,100 @@ fn ecs_executor_state_deep_complete_system(s: EcsExecutorStateDeep, spec: EcsExe
     return s;
 }
 
+fn ecs_executor_state_deep_release_dependent(s: EcsExecutorStateDeep, dep_idx: i64) -> EcsExecutorStateDeep {
+    if dep_idx >= 0 && dep_idx < s.system_count {
+        let deps = _mt_deps_at(s, dep_idx);
+        if deps > 0 { s = _mt_deps_set(s, dep_idx, deps - 1); };
+        if _mt_deps_at(s, dep_idx) == 0 && _mt_completed_at(s, dep_idx) != true && _mt_skipped_at(s, dep_idx) != true {
+            s = _mt_ready_set(s, dep_idx, true);
+        };
+    };
+    return s;
+}
+
+fn ecs_executor_state_deep_release_dependents3(s: EcsExecutorStateDeep, dep0: i64, dep1: i64, dep2: i64, count: i64) -> EcsExecutorStateDeep {
+    if count > 0 { s = ecs_executor_state_deep_release_dependent(s, dep0); };
+    if count > 1 { s = ecs_executor_state_deep_release_dependent(s, dep1); };
+    if count > 2 { s = ecs_executor_state_deep_release_dependent(s, dep2); };
+    return s;
+}
+
+fn ecs_executor_state_deep_complete_system_with_dependents3(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64) -> EcsExecutorStateDeep {
+    s = ecs_executor_state_deep_complete_system(s, spec, has_deferred);
+    return ecs_executor_state_deep_release_dependents3(s, dep0, dep1, dep2, dep_count);
+}
+
+fn ecs_executor_state_deep_skip_system(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
+    if system_index >= 0 && system_index < s.system_count {
+        s = _mt_skipped_set(s, system_index, true);
+        s = _mt_completed_set(s, system_index, true);
+        s = _mt_ready_set(s, system_index, false);
+    };
+    return s;
+}
+
+fn ecs_executor_state_deep_mark_skipped_pending(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
+    if system_index >= 0 && system_index < s.system_count && _mt_completed_at(s, system_index) != true {
+        s = _mt_skipped_set(s, system_index, true);
+    };
+    return s;
+}
+
+fn ecs_executor_state_deep_skip_system_with_dependents3(s: EcsExecutorStateDeep, system_index: i64, dep0: i64, dep1: i64, dep2: i64, dep_count: i64) -> EcsExecutorStateDeep {
+    s = ecs_executor_state_deep_skip_system(s, system_index);
+    return ecs_executor_state_deep_release_dependents3(s, dep0, dep1, dep2, dep_count);
+}
+
+fn ecs_executor_state_deep_mark_set_evaluated(s: EcsExecutorStateDeep, set_index: i64) -> EcsExecutorStateDeep {
+    if set_index >= 0 && set_index < s.set_count { return _mt_evaluated_set(s, set_index, true); };
+    return s;
+}
+
+fn ecs_executor_state_deep_is_set_evaluated(s: EcsExecutorStateDeep, set_index: i64) -> bool {
+    if set_index < 0 || set_index >= s.set_count { return false; };
+    return _mt_evaluated_at(s, set_index);
+}
+
+fn ecs_executor_state_deep_apply_deferred_system(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
+    if system_index >= 0 && system_index < s.system_count { return _mt_unapplied_set(s, system_index, false); };
+    return s;
+}
+
+fn ecs_executor_state_deep_apply_deferred_all(s: EcsExecutorStateDeep) -> EcsExecutorStateDeep {
+    let i: i64 = 0;
+    while i < s.system_count {
+        s = _mt_unapplied_set(s, i, false);
+        i = i + 1;
+    }
+    return s;
+}
+
+fn ecs_executor_state_deep_finish_run(s: EcsExecutorStateDeep, apply_final_deferred: bool) -> EcsExecutorStateDeep {
+    let i: i64 = 0;
+    while i < s.system_count {
+        s = _mt_ready_set(s, i, false);
+        s = _mt_running_set(s, i, false);
+        s = _mt_skipped_set(s, i, false);
+        s = _mt_completed_set(s, i, false);
+        if apply_final_deferred { s = _mt_unapplied_set(s, i, false); };
+        i = i + 1;
+    }
+    let j: i64 = 0;
+    while j < s.set_count {
+        s = _mt_evaluated_set(s, j, false);
+        j = j + 1;
+    }
+    s.num_running_systems = 0;
+    s.local_thread_running = 0;
+    s.exclusive_running = 0;
+    return s;
+}
+
+fn ecs_executor_state_deep_tick_after_completion3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> EcsExecutorReadyBatchDeep {
+    s = ecs_executor_state_deep_complete_system_with_dependents3(s, completed_spec, has_deferred, dep0, dep1, dep2, dep_count);
+    return ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+}
+
 fn ecs_executor_system_spec_deep_new(system_index: i64, is_exclusive: bool, is_local: bool) -> EcsExecutorSystemSpecDeep {
     return EcsExecutorSystemSpecDeep {
         system_index: system_index,
@@ -332,6 +488,7 @@ fn ecs_executor_state_deep_local_running(s: EcsExecutorStateDeep) -> bool { retu
 fn ecs_executor_state_deep_exclusive_running(s: EcsExecutorStateDeep) -> bool { return s.exclusive_running != 0; }
 fn ecs_executor_state_deep_is_running(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_running_at(s, system_index); }
 fn ecs_executor_state_deep_is_completed(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_completed_at(s, system_index); }
+fn ecs_executor_state_deep_is_skipped(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_skipped_at(s, system_index); }
 fn ecs_executor_state_deep_is_unapplied(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_unapplied_at(s, system_index); }
 
 fn ecs_executor_state_deep_ready_count(s: EcsExecutorStateDeep) -> i64 {
@@ -339,6 +496,46 @@ fn ecs_executor_state_deep_ready_count(s: EcsExecutorStateDeep) -> i64 {
     let i: i64 = 0;
     while i < s.system_count {
         if _mt_ready_at(s, i) { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_deep_completed_count(s: EcsExecutorStateDeep) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_completed_at(s, i) { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_deep_unapplied_count(s: EcsExecutorStateDeep) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_unapplied_at(s, i) { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_deep_skipped_count(s: EcsExecutorStateDeep) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_skipped_at(s, i) { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}
+
+fn ecs_executor_state_deep_evaluated_set_count(s: EcsExecutorStateDeep) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    while i < s.set_count {
+        if _mt_evaluated_at(s, i) { count = count + 1; };
         i = i + 1;
     }
     return count;

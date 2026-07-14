@@ -6286,3 +6286,39 @@ ready-batch sub-surface 0% -> 100%; overall API parity remains ~94–96%,
 behavioral parity remains ~86–91%. The immediate no-deep-counterpart queue is
 empty; future executor work should extend `executor_multi_threaded_deep` into
 completion/tick handoff and broader scheduling facades.
+
+
+# Batch 421 — `lib/executor_multi_threaded_deep.sla` completion/tick handoff — DONE
+
+Source focus: the `ExecutorState` dependent-release, skipped/evaluated,
+deferred-application, finish-run, and completion tick handoff sections of
+`lib/executor_multi_threaded.sla`.
+
+Deep strategy: extend the existing flat `EcsExecutorStateDeep` instead of
+adding nested run-plan wrappers. Added cap-16 scalar slot families for skipped
+systems and evaluated sets; added fixed-arity dependent release and
+completion-with-dependents facades; added skip-with-dependents,
+mark-skipped-pending, set-evaluated, apply-deferred-one/all, finish-run, and
+tick-after-completion-to-ready-batch helpers. The tick helper completes one
+running system, releases up to three dependents, and selects the next ready
+batch from three candidates while preserving the Batch 420 gate logic.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 18
+`@test` entries (+8). New panic band: tests 147930-147960.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 18 passed / 0 failed ✓
+- SA backend: 18 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6699
+tests-dir `@test` annotations | 7296 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completion/tick handoff sub-surface
+0% -> 100% for this flat fixed-arity model; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining useful work in this
+module is higher-level run-plan condition folding/error payload facades if
+more executor depth is desired.
