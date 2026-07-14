@@ -6181,3 +6181,37 @@ Next free panic band: 147750+ (Batch 417 used lib 147670-147675 and tests
 147700-147734). Remaining shallow lib files without a deep counterpart are
 `task_scope_executor_drive`, `executor_single_threaded`, and
 `executor_multi_threaded`; all are task/executor/async adjacent.
+
+
+# Batch 418 — `lib/task_scope_executor_drive_deep.sla` (178-line shallow original) — DONE
+
+Source: `lib/task_scope_executor_drive.sla`, which models Bevy
+`TaskPool::scope_with_executor_inner` branch selection over explicit task
+counts. Target: `lib/task_scope_executor_drive_deep.sla` (self-contained,
+no `@import`, no inline `@test` in the lib).
+
+Deep strategy: preserve the four branch constants and scalar drive algorithm,
+add `@derive(copy)` input/result structs, store bool fields as i32 to avoid
+backend ownership edge cases, clamp negative input counts to zero, expose a
+full result accessor surface, and move coverage into an isolated test file.
+The model covers execute-scope, global-scope, external-scope, and
+global+external-scope paths, forced pool ticking when worker count is zero,
+same-executor external suppression, unrelated global latency accounting, and
+executor panic restart accounting.
+
+Test file: `tests/test_ecs_lib_task_scope_executor_drive_deep_isolated.sla`
+(10 `@test` entries). Panic band: tests 147750-147799.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/task_scope_executor_drive_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_task_scope_executor_drive_deep_isolated.sla` ✓
+- Default backend: 10 passed / 0 failed ✓
+- SA backend: 10 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 519 lib modules | 247 `*_deep.sla` modules |
+423 test files | 247 `*_deep_isolated.sla` test files | 90 examples | 6667
+tests-dir `@test` annotations | 7264 lib/tests/examples `@test` annotations.
+Next free panic band: 147810+ (Batch 418 used tests 147750-147799).
+The immediate shallow-deepening queue is now down to the executor modules:
+`executor_single_threaded` and `executor_multi_threaded`.
