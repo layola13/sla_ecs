@@ -277,10 +277,10 @@
         ecs_executor_condition_outcome_deep_false(),
         3
     );
-    if f.should_run != 0 { panic(147985); };
-    if f.evaluated_count != 3 { panic(147986); };
-    if f.aborted != 0 { panic(147987); };
-    if f.system_panic_payloads != 0 { panic(147988); };
+    if ecs_executor_condition_fold_deep_should_run(f) { panic(147985); };
+    if ecs_executor_condition_fold_deep_evaluated_count(f) != 3 { panic(147986); };
+    if ecs_executor_condition_fold_deep_aborted(f) { panic(147987); };
+    if ecs_executor_condition_fold_deep_system_panic_payloads(f) != 0 { panic(147988); };
 }
 
 @test "mt_deep_condition_fold_handled_error_continues"() {
@@ -291,11 +291,11 @@
         ecs_executor_condition_outcome_deep_true(),
         3
     );
-    if f.should_run != 0 { panic(147989); };
-    if f.evaluated_count != 3 { panic(147990); };
-    if f.system_handled_errors != 1 { panic(147991); };
-    if f.handled_error_phase != ecs_executor_panic_phase_deep_run_condition() { panic(147992); };
-    if f.handled_error_system != 8 { panic(147993); };
+    if ecs_executor_condition_fold_deep_should_run(f) { panic(147989); };
+    if ecs_executor_condition_fold_deep_evaluated_count(f) != 3 { panic(147990); };
+    if ecs_executor_condition_fold_deep_system_handled_errors(f) != 1 { panic(147991); };
+    if ecs_executor_condition_fold_deep_handled_error_phase(f) != ecs_executor_panic_phase_deep_run_condition() { panic(147992); };
+    if ecs_executor_condition_fold_deep_handled_error_system(f) != 8 { panic(147993); };
 }
 
 @test "mt_deep_condition_fold_error_handler_panic_aborts"() {
@@ -306,14 +306,14 @@
         ecs_executor_condition_outcome_deep_handled_error(),
         3
     );
-    if f.should_run != 0 { panic(147994); };
-    if f.evaluated_count != 2 { panic(147995); };
-    if f.aborted != 1 { panic(147996); };
-    if f.panic_payload_pending != 1 { panic(147997); };
-    if f.system_panic_payloads != 1 { panic(147998); };
-    if f.panic_payload_phase != ecs_executor_panic_phase_deep_run_condition() { panic(147999); };
-    if f.panic_payload_system != 9 { panic(148000); };
-    if f.system_handled_errors != 0 { panic(148001); };
+    if ecs_executor_condition_fold_deep_should_run(f) { panic(147994); };
+    if ecs_executor_condition_fold_deep_evaluated_count(f) != 2 { panic(147995); };
+    if ecs_executor_condition_fold_deep_aborted(f) != true { panic(147996); };
+    if ecs_executor_condition_fold_deep_panic_payload_pending(f) != true { panic(147997); };
+    if ecs_executor_condition_fold_deep_system_panic_payloads(f) != 1 { panic(147998); };
+    if ecs_executor_condition_fold_deep_panic_payload_phase(f) != ecs_executor_panic_phase_deep_run_condition() { panic(147999); };
+    if ecs_executor_condition_fold_deep_panic_payload_system(f) != 9 { panic(148000); };
+    if ecs_executor_condition_fold_deep_system_handled_errors(f) != 0 { panic(148001); };
 }
 
 @test "mt_deep_failed_and_passed_conditions_update_state"() {
@@ -345,10 +345,10 @@
         2
     );
     let joined = ecs_executor_condition_fold_deep_join(set_fold, sys_fold, false);
-    if joined.should_run != 0 { panic(148007); };
-    if joined.evaluated_count != 4 { panic(148008); };
-    if joined.system_handled_errors != 1 { panic(148009); };
-    if joined.handled_error_system != 10 { panic(148010); };
+    if ecs_executor_condition_fold_deep_should_run(joined) { panic(148007); };
+    if ecs_executor_condition_fold_deep_evaluated_count(joined) != 4 { panic(148008); };
+    if ecs_executor_condition_fold_deep_system_handled_errors(joined) != 1 { panic(148009); };
+    if ecs_executor_condition_fold_deep_handled_error_system(joined) != 10 { panic(148010); };
     let aborted = ecs_executor_condition_fold_deep_outcomes3(
         11,
         ecs_executor_condition_outcome_deep_error_handler_panic(),
@@ -357,9 +357,9 @@
         3
     );
     let joined_abort = ecs_executor_condition_fold_deep_join(aborted, sys_fold, false);
-    if joined_abort.aborted != 1 { panic(148011); };
-    if joined_abort.evaluated_count != 3 { panic(148012); };
-    if joined_abort.panic_payload_system != 11 { panic(148013); };
+    if ecs_executor_condition_fold_deep_aborted(joined_abort) != true { panic(148011); };
+    if ecs_executor_condition_fold_deep_evaluated_count(joined_abort) != 3 { panic(148012); };
+    if ecs_executor_condition_fold_deep_panic_payload_system(joined_abort) != 11 { panic(148013); };
 }
 
 @test "mt_deep_system_spec_drive_flags"() {
