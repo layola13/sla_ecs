@@ -7744,6 +7744,14 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 462 - `executor_multi_threaded_deep` lock-failed drive summary accessor usage cleanup (DONE 2026-07-14)
+- [x] Migrated the early lock-failed drive summary assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_drive_summary_deep_*` accessors.
+- [x] Kept executor implementation, API surface, and test count unchanged.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; `timeout 90s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla --filter "lock_failed_summaries" --jobs 1 --trace-panic` passes 1; `timeout 150s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla --test-backend sa --filter "lock_failed_summaries" --jobs 1 --trace-panic` passes 1; `git diff --check` passes. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor lock-failed drive summary accessor-usage cleanup 0% -> 100% for this test-maintenance slice; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 461 - `executor_multi_threaded_deep` drive-ready-batch summary accessor usage cleanup (DONE 2026-07-14)
 - [x] Migrated the early drive-ready-batch summary assertion in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_drive_summary_deep_*` accessors.
 - [x] Kept executor implementation, API surface, and test count unchanged.

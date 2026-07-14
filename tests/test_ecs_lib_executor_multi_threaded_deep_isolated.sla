@@ -458,13 +458,13 @@
     s = ecs_executor_state_deep_start_system(s, spec);
     s = ecs_executor_state_deep_complete_system(s, spec, true);
     let locked = ecs_executor_tick_loop_deep_lock_failed(3);
-    if locked.lock_failed != 1 { panic(148059); };
-    if locked.pending_count != 1 { panic(148060); };
-    if locked.pending0 != 3 { panic(148061); };
+    if !ecs_executor_drive_summary_deep_lock_failed(locked) { panic(148059); };
+    if ecs_executor_drive_summary_deep_pending_count(locked) != 1 { panic(148060); };
+    if ecs_executor_drive_summary_deep_pending_at(locked, 0) != 3 { panic(148061); };
     let barrier_locked = ecs_executor_tick_loop_deep_apply_deferred_lock_failed(s, 4);
-    if barrier_locked.lock_failed != 1 { panic(148062); };
-    if barrier_locked.apply_count != 1 { panic(148063); };
-    if barrier_locked.pending0 != 4 { panic(148064); };
+    if !ecs_executor_drive_summary_deep_lock_failed(barrier_locked) { panic(148062); };
+    if ecs_executor_drive_summary_deep_apply_count(barrier_locked) != 1 { panic(148063); };
+    if ecs_executor_drive_summary_deep_pending_at(barrier_locked, 0) != 4 { panic(148064); };
 }
 
 @test "mt_deep_tick_loop_no_completion_waves_ticks_once"() {
