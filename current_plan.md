@@ -6249,3 +6249,40 @@ tests-dir `@test` annotations | 7278 lib/tests/examples `@test` annotations.
 Next free panic band: 147880+ (Batch 419 used tests 147810-147871).
 The immediate shallow-deepening queue is now down to
 `executor_multi_threaded`; it is the largest remaining executor model.
+
+
+# Batch 420 — `lib/executor_multi_threaded_deep.sla` (1348-line shallow original) — DONE
+
+Source: `lib/executor_multi_threaded.sla`, the largest remaining executor
+model. Target: `lib/executor_multi_threaded_deep.sla` (self-contained,
+no `@import`).
+
+Deep strategy: cover the core `ExecutorState` gate and ready-batch selection
+surface with cap-16 scalar slots for ready/running/completed/unapplied
+systems and dependency counters. The state remains fully flat to avoid
+nested-copy backend leaks. System specs model send/local/exclusive flags plus
+up to two access-conflict ids; batch selection chooses up to three ready
+systems while honoring completed/dependency gates, local-thread exclusivity,
+exclusive system isolation, running-system conflicts, and access conflicts.
+Completion marks finished systems, preserves unapplied-deferred state, and
+releases local/exclusive gates.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` (10 `@test`
+entries). Panic band: tests 147880-147916.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 10 passed / 0 failed ✓
+- SA backend: 10 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6691
+tests-dir `@test` annotations | 7288 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor core `ExecutorState` gate and
+ready-batch sub-surface 0% -> 100%; overall API parity remains ~94–96%,
+behavioral parity remains ~86–91%. The immediate no-deep-counterpart queue is
+empty; future executor work should extend `executor_multi_threaded_deep` into
+completion/tick handoff and broader scheduling facades.

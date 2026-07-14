@@ -1,0 +1,345 @@
+// Deep self-contained core of lib/executor_multi_threaded.sla.
+// Batch 420 focuses on ExecutorState gates and ready-batch selection using cap-16
+// scalar slots instead of Vec bitsets. Later batches can extend the same module with
+// completion/tick handoff facades.
+
+const ECS_MT_DEEP_CAP: i32 = 16;
+
+@derive(copy)
+struct EcsExecutorStateDeep {
+    system_count: i64,
+    set_count: i64,
+    local_thread_running: i32,
+    exclusive_running: i32,
+    num_running_systems: i64,
+    ready0: i32, ready1: i32, ready2: i32, ready3: i32,
+    ready4: i32, ready5: i32, ready6: i32, ready7: i32,
+    ready8: i32, ready9: i32, ready10: i32, ready11: i32,
+    ready12: i32, ready13: i32, ready14: i32, ready15: i32,
+    running0: i32, running1: i32, running2: i32, running3: i32,
+    running4: i32, running5: i32, running6: i32, running7: i32,
+    running8: i32, running9: i32, running10: i32, running11: i32,
+    running12: i32, running13: i32, running14: i32, running15: i32,
+    completed0: i32, completed1: i32, completed2: i32, completed3: i32,
+    completed4: i32, completed5: i32, completed6: i32, completed7: i32,
+    completed8: i32, completed9: i32, completed10: i32, completed11: i32,
+    completed12: i32, completed13: i32, completed14: i32, completed15: i32,
+    unapplied0: i32, unapplied1: i32, unapplied2: i32, unapplied3: i32,
+    unapplied4: i32, unapplied5: i32, unapplied6: i32, unapplied7: i32,
+    unapplied8: i32, unapplied9: i32, unapplied10: i32, unapplied11: i32,
+    unapplied12: i32, unapplied13: i32, unapplied14: i32, unapplied15: i32,
+    deps0: i64, deps1: i64, deps2: i64, deps3: i64,
+    deps4: i64, deps5: i64, deps6: i64, deps7: i64,
+    deps8: i64, deps9: i64, deps10: i64, deps11: i64,
+    deps12: i64, deps13: i64, deps14: i64, deps15: i64,
+}
+
+@derive(copy)
+struct EcsExecutorSystemSpecDeep {
+    system_index: i64,
+    is_exclusive: i32,
+    is_local: i32,
+    access_conflict0: i64,
+    access_conflict1: i64,
+    access_conflict_count: i64,
+}
+
+@derive(copy)
+struct EcsExecutorReadyBatchDeep {
+    count: i64,
+    system0: i64,
+    system1: i64,
+    system2: i64,
+    is_exclusive: i32,
+    is_local: i32,
+}
+
+fn _mt_bool(v: bool) -> i32 {
+    if v { return 1; };
+    return 0;
+}
+
+fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {
+    return EcsExecutorStateDeep {
+        system_count: 0, set_count: 0, local_thread_running: 0, exclusive_running: 0, num_running_systems: 0,
+        ready0: 0, ready1: 0, ready2: 0, ready3: 0, ready4: 0, ready5: 0, ready6: 0, ready7: 0,
+        ready8: 0, ready9: 0, ready10: 0, ready11: 0, ready12: 0, ready13: 0, ready14: 0, ready15: 0,
+        running0: 0, running1: 0, running2: 0, running3: 0, running4: 0, running5: 0, running6: 0, running7: 0,
+        running8: 0, running9: 0, running10: 0, running11: 0, running12: 0, running13: 0, running14: 0, running15: 0,
+        completed0: 0, completed1: 0, completed2: 0, completed3: 0, completed4: 0, completed5: 0, completed6: 0, completed7: 0,
+        completed8: 0, completed9: 0, completed10: 0, completed11: 0, completed12: 0, completed13: 0, completed14: 0, completed15: 0,
+        unapplied0: 0, unapplied1: 0, unapplied2: 0, unapplied3: 0, unapplied4: 0, unapplied5: 0, unapplied6: 0, unapplied7: 0,
+        unapplied8: 0, unapplied9: 0, unapplied10: 0, unapplied11: 0, unapplied12: 0, unapplied13: 0, unapplied14: 0, unapplied15: 0,
+        deps0: 0, deps1: 0, deps2: 0, deps3: 0, deps4: 0, deps5: 0, deps6: 0, deps7: 0,
+        deps8: 0, deps9: 0, deps10: 0, deps11: 0, deps12: 0, deps13: 0, deps14: 0, deps15: 0,
+    };
+}
+
+fn ecs_executor_state_deep_init(s: EcsExecutorStateDeep, system_count: i64, set_count: i64) -> EcsExecutorStateDeep {
+    s = ecs_executor_state_deep_new();
+    s.system_count = system_count;
+    if s.system_count < 0 { s.system_count = 0; };
+    if s.system_count > ECS_MT_DEEP_CAP as i64 { s.system_count = ECS_MT_DEEP_CAP as i64; };
+    s.set_count = set_count;
+    if s.set_count < 0 { s.set_count = 0; };
+    if s.set_count > ECS_MT_DEEP_CAP as i64 { s.set_count = ECS_MT_DEEP_CAP as i64; };
+    return s;
+}
+
+fn _mt_ready_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.ready0 != 0; }; if idx == 1 { return s.ready1 != 0; };
+    if idx == 2 { return s.ready2 != 0; }; if idx == 3 { return s.ready3 != 0; };
+    if idx == 4 { return s.ready4 != 0; }; if idx == 5 { return s.ready5 != 0; };
+    if idx == 6 { return s.ready6 != 0; }; if idx == 7 { return s.ready7 != 0; };
+    if idx == 8 { return s.ready8 != 0; }; if idx == 9 { return s.ready9 != 0; };
+    if idx == 10 { return s.ready10 != 0; }; if idx == 11 { return s.ready11 != 0; };
+    if idx == 12 { return s.ready12 != 0; }; if idx == 13 { return s.ready13 != 0; };
+    if idx == 14 { return s.ready14 != 0; }; if idx == 15 { return s.ready15 != 0; };
+    return false;
+}
+
+fn _mt_ready_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.ready0 = b; return s; }; if idx == 1 { s.ready1 = b; return s; };
+    if idx == 2 { s.ready2 = b; return s; }; if idx == 3 { s.ready3 = b; return s; };
+    if idx == 4 { s.ready4 = b; return s; }; if idx == 5 { s.ready5 = b; return s; };
+    if idx == 6 { s.ready6 = b; return s; }; if idx == 7 { s.ready7 = b; return s; };
+    if idx == 8 { s.ready8 = b; return s; }; if idx == 9 { s.ready9 = b; return s; };
+    if idx == 10 { s.ready10 = b; return s; }; if idx == 11 { s.ready11 = b; return s; };
+    if idx == 12 { s.ready12 = b; return s; }; if idx == 13 { s.ready13 = b; return s; };
+    if idx == 14 { s.ready14 = b; return s; }; if idx == 15 { s.ready15 = b; return s; };
+    return s;
+}
+
+fn _mt_running_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.running0 != 0; }; if idx == 1 { return s.running1 != 0; };
+    if idx == 2 { return s.running2 != 0; }; if idx == 3 { return s.running3 != 0; };
+    if idx == 4 { return s.running4 != 0; }; if idx == 5 { return s.running5 != 0; };
+    if idx == 6 { return s.running6 != 0; }; if idx == 7 { return s.running7 != 0; };
+    if idx == 8 { return s.running8 != 0; }; if idx == 9 { return s.running9 != 0; };
+    if idx == 10 { return s.running10 != 0; }; if idx == 11 { return s.running11 != 0; };
+    if idx == 12 { return s.running12 != 0; }; if idx == 13 { return s.running13 != 0; };
+    if idx == 14 { return s.running14 != 0; }; if idx == 15 { return s.running15 != 0; };
+    return false;
+}
+
+fn _mt_running_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.running0 = b; return s; }; if idx == 1 { s.running1 = b; return s; };
+    if idx == 2 { s.running2 = b; return s; }; if idx == 3 { s.running3 = b; return s; };
+    if idx == 4 { s.running4 = b; return s; }; if idx == 5 { s.running5 = b; return s; };
+    if idx == 6 { s.running6 = b; return s; }; if idx == 7 { s.running7 = b; return s; };
+    if idx == 8 { s.running8 = b; return s; }; if idx == 9 { s.running9 = b; return s; };
+    if idx == 10 { s.running10 = b; return s; }; if idx == 11 { s.running11 = b; return s; };
+    if idx == 12 { s.running12 = b; return s; }; if idx == 13 { s.running13 = b; return s; };
+    if idx == 14 { s.running14 = b; return s; }; if idx == 15 { s.running15 = b; return s; };
+    return s;
+}
+
+fn _mt_completed_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.completed0 != 0; }; if idx == 1 { return s.completed1 != 0; };
+    if idx == 2 { return s.completed2 != 0; }; if idx == 3 { return s.completed3 != 0; };
+    if idx == 4 { return s.completed4 != 0; }; if idx == 5 { return s.completed5 != 0; };
+    if idx == 6 { return s.completed6 != 0; }; if idx == 7 { return s.completed7 != 0; };
+    if idx == 8 { return s.completed8 != 0; }; if idx == 9 { return s.completed9 != 0; };
+    if idx == 10 { return s.completed10 != 0; }; if idx == 11 { return s.completed11 != 0; };
+    if idx == 12 { return s.completed12 != 0; }; if idx == 13 { return s.completed13 != 0; };
+    if idx == 14 { return s.completed14 != 0; }; if idx == 15 { return s.completed15 != 0; };
+    return false;
+}
+
+fn _mt_completed_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.completed0 = b; return s; }; if idx == 1 { s.completed1 = b; return s; };
+    if idx == 2 { s.completed2 = b; return s; }; if idx == 3 { s.completed3 = b; return s; };
+    if idx == 4 { s.completed4 = b; return s; }; if idx == 5 { s.completed5 = b; return s; };
+    if idx == 6 { s.completed6 = b; return s; }; if idx == 7 { s.completed7 = b; return s; };
+    if idx == 8 { s.completed8 = b; return s; }; if idx == 9 { s.completed9 = b; return s; };
+    if idx == 10 { s.completed10 = b; return s; }; if idx == 11 { s.completed11 = b; return s; };
+    if idx == 12 { s.completed12 = b; return s; }; if idx == 13 { s.completed13 = b; return s; };
+    if idx == 14 { s.completed14 = b; return s; }; if idx == 15 { s.completed15 = b; return s; };
+    return s;
+}
+
+fn _mt_unapplied_at(s: EcsExecutorStateDeep, idx: i64) -> bool {
+    if idx == 0 { return s.unapplied0 != 0; }; if idx == 1 { return s.unapplied1 != 0; };
+    if idx == 2 { return s.unapplied2 != 0; }; if idx == 3 { return s.unapplied3 != 0; };
+    if idx == 4 { return s.unapplied4 != 0; }; if idx == 5 { return s.unapplied5 != 0; };
+    if idx == 6 { return s.unapplied6 != 0; }; if idx == 7 { return s.unapplied7 != 0; };
+    if idx == 8 { return s.unapplied8 != 0; }; if idx == 9 { return s.unapplied9 != 0; };
+    if idx == 10 { return s.unapplied10 != 0; }; if idx == 11 { return s.unapplied11 != 0; };
+    if idx == 12 { return s.unapplied12 != 0; }; if idx == 13 { return s.unapplied13 != 0; };
+    if idx == 14 { return s.unapplied14 != 0; }; if idx == 15 { return s.unapplied15 != 0; };
+    return false;
+}
+
+fn _mt_unapplied_set(s: EcsExecutorStateDeep, idx: i64, v: bool) -> EcsExecutorStateDeep {
+    let b = _mt_bool(v);
+    if idx == 0 { s.unapplied0 = b; return s; }; if idx == 1 { s.unapplied1 = b; return s; };
+    if idx == 2 { s.unapplied2 = b; return s; }; if idx == 3 { s.unapplied3 = b; return s; };
+    if idx == 4 { s.unapplied4 = b; return s; }; if idx == 5 { s.unapplied5 = b; return s; };
+    if idx == 6 { s.unapplied6 = b; return s; }; if idx == 7 { s.unapplied7 = b; return s; };
+    if idx == 8 { s.unapplied8 = b; return s; }; if idx == 9 { s.unapplied9 = b; return s; };
+    if idx == 10 { s.unapplied10 = b; return s; }; if idx == 11 { s.unapplied11 = b; return s; };
+    if idx == 12 { s.unapplied12 = b; return s; }; if idx == 13 { s.unapplied13 = b; return s; };
+    if idx == 14 { s.unapplied14 = b; return s; }; if idx == 15 { s.unapplied15 = b; return s; };
+    return s;
+}
+
+fn _mt_deps_at(s: EcsExecutorStateDeep, idx: i64) -> i64 {
+    if idx == 0 { return s.deps0; }; if idx == 1 { return s.deps1; };
+    if idx == 2 { return s.deps2; }; if idx == 3 { return s.deps3; };
+    if idx == 4 { return s.deps4; }; if idx == 5 { return s.deps5; };
+    if idx == 6 { return s.deps6; }; if idx == 7 { return s.deps7; };
+    if idx == 8 { return s.deps8; }; if idx == 9 { return s.deps9; };
+    if idx == 10 { return s.deps10; }; if idx == 11 { return s.deps11; };
+    if idx == 12 { return s.deps12; }; if idx == 13 { return s.deps13; };
+    if idx == 14 { return s.deps14; }; if idx == 15 { return s.deps15; };
+    return 0;
+}
+
+fn _mt_deps_set(s: EcsExecutorStateDeep, idx: i64, v: i64) -> EcsExecutorStateDeep {
+    let d = v;
+    if d < 0 { d = 0; };
+    if idx == 0 { s.deps0 = d; return s; }; if idx == 1 { s.deps1 = d; return s; };
+    if idx == 2 { s.deps2 = d; return s; }; if idx == 3 { s.deps3 = d; return s; };
+    if idx == 4 { s.deps4 = d; return s; }; if idx == 5 { s.deps5 = d; return s; };
+    if idx == 6 { s.deps6 = d; return s; }; if idx == 7 { s.deps7 = d; return s; };
+    if idx == 8 { s.deps8 = d; return s; }; if idx == 9 { s.deps9 = d; return s; };
+    if idx == 10 { s.deps10 = d; return s; }; if idx == 11 { s.deps11 = d; return s; };
+    if idx == 12 { s.deps12 = d; return s; }; if idx == 13 { s.deps13 = d; return s; };
+    if idx == 14 { s.deps14 = d; return s; }; if idx == 15 { s.deps15 = d; return s; };
+    return s;
+}
+
+fn ecs_executor_state_deep_set_dependencies(s: EcsExecutorStateDeep, system_index: i64, count: i64) -> EcsExecutorStateDeep {
+    if system_index >= 0 && system_index < s.system_count { return _mt_deps_set(s, system_index, count); };
+    return s;
+}
+
+fn ecs_executor_state_deep_get_dependencies(s: EcsExecutorStateDeep, system_index: i64) -> i64 {
+    if system_index < 0 || system_index >= s.system_count { return 0; };
+    return _mt_deps_at(s, system_index);
+}
+
+fn ecs_executor_state_deep_mark_ready(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
+    if system_index >= 0 && system_index < s.system_count && _mt_deps_at(s, system_index) == 0 && _mt_completed_at(s, system_index) != true {
+        return _mt_ready_set(s, system_index, true);
+    };
+    return s;
+}
+
+fn ecs_executor_state_deep_is_ready(s: EcsExecutorStateDeep, system_index: i64) -> bool {
+    if system_index < 0 || system_index >= s.system_count { return false; };
+    return _mt_ready_at(s, system_index);
+}
+
+fn ecs_executor_state_deep_start_system(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> EcsExecutorStateDeep {
+    let idx = spec.system_index;
+    if idx < 0 || idx >= s.system_count { return s; };
+    if _mt_running_at(s, idx) { return s; };
+    s = _mt_ready_set(s, idx, false);
+    s = _mt_running_set(s, idx, true);
+    s.num_running_systems = s.num_running_systems + 1;
+    if spec.is_local != 0 { s.local_thread_running = 1; };
+    if spec.is_exclusive != 0 { s.exclusive_running = 1; s.local_thread_running = 1; };
+    return s;
+}
+
+fn ecs_executor_state_deep_complete_system(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, has_deferred: bool) -> EcsExecutorStateDeep {
+    let idx = spec.system_index;
+    if idx < 0 || idx >= s.system_count { return s; };
+    if _mt_running_at(s, idx) {
+        s = _mt_running_set(s, idx, false);
+        if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
+    };
+    s = _mt_completed_set(s, idx, true);
+    if has_deferred { s = _mt_unapplied_set(s, idx, true); };
+    if spec.is_exclusive != 0 { s.exclusive_running = 0; s.local_thread_running = 0; };
+    if spec.is_local != 0 && spec.is_exclusive == 0 { s.local_thread_running = 0; };
+    return s;
+}
+
+fn ecs_executor_system_spec_deep_new(system_index: i64, is_exclusive: bool, is_local: bool) -> EcsExecutorSystemSpecDeep {
+    return EcsExecutorSystemSpecDeep {
+        system_index: system_index,
+        is_exclusive: _mt_bool(is_exclusive),
+        is_local: _mt_bool(is_local),
+        access_conflict0: -1,
+        access_conflict1: -1,
+        access_conflict_count: 0,
+    };
+}
+
+fn ecs_executor_system_spec_deep_with_conflict(spec: EcsExecutorSystemSpecDeep, other: i64) -> EcsExecutorSystemSpecDeep {
+    if spec.access_conflict_count == 0 { spec.access_conflict0 = other; spec.access_conflict_count = 1; return spec; };
+    if spec.access_conflict_count == 1 { spec.access_conflict1 = other; spec.access_conflict_count = 2; return spec; };
+    return spec;
+}
+
+fn ecs_executor_state_deep_conflicts_with_running(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> bool {
+    if spec.access_conflict_count > 0 && _mt_running_at(s, spec.access_conflict0) { return true; };
+    if spec.access_conflict_count > 1 && _mt_running_at(s, spec.access_conflict1) { return true; };
+    return false;
+}
+
+fn ecs_executor_state_deep_can_spawn_system(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> bool {
+    if spec.system_index < 0 || spec.system_index >= s.system_count { return false; };
+    if _mt_completed_at(s, spec.system_index) { return false; };
+    if _mt_ready_at(s, spec.system_index) != true { return false; };
+    if s.exclusive_running != 0 { return false; };
+    if spec.is_exclusive != 0 && s.num_running_systems > 0 { return false; };
+    if spec.is_local != 0 && s.local_thread_running != 0 { return false; };
+    if ecs_executor_state_deep_conflicts_with_running(s, spec) { return false; };
+    return true;
+}
+
+fn ecs_executor_ready_batch_deep_empty() -> EcsExecutorReadyBatchDeep {
+    return EcsExecutorReadyBatchDeep { count: 0, system0: -1, system1: -1, system2: -1, is_exclusive: 0, is_local: 0 };
+}
+
+fn ecs_executor_ready_batch_deep_at(b: EcsExecutorReadyBatchDeep, index: i64) -> i64 {
+    if index == 0 { return b.system0; };
+    if index == 1 { return b.system1; };
+    if index == 2 { return b.system2; };
+    return -1;
+}
+
+fn ecs_executor_state_deep_take_ready_batch3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> EcsExecutorReadyBatchDeep {
+    let batch = ecs_executor_ready_batch_deep_empty();
+    if ecs_executor_state_deep_can_spawn_system(s, a) {
+        batch.system0 = a.system_index; batch.count = 1; batch.is_exclusive = a.is_exclusive; batch.is_local = a.is_local;
+        s = ecs_executor_state_deep_start_system(s, a);
+    };
+    if batch.is_exclusive == 0 && ecs_executor_state_deep_can_spawn_system(s, b) {
+        if batch.count == 0 { batch.system0 = b.system_index; } else { batch.system1 = b.system_index; };
+        batch.count = batch.count + 1;
+        if b.is_local != 0 { batch.is_local = 1; };
+        s = ecs_executor_state_deep_start_system(s, b);
+    };
+    if batch.is_exclusive == 0 && batch.count < 3 && ecs_executor_state_deep_can_spawn_system(s, c) {
+        if batch.count == 0 { batch.system0 = c.system_index; };
+        if batch.count == 1 { batch.system1 = c.system_index; };
+        if batch.count == 2 { batch.system2 = c.system_index; };
+        batch.count = batch.count + 1;
+        if c.is_local != 0 { batch.is_local = 1; };
+    };
+    return batch;
+}
+
+fn ecs_executor_state_deep_running_count(s: EcsExecutorStateDeep) -> i64 { return s.num_running_systems; }
+fn ecs_executor_state_deep_local_running(s: EcsExecutorStateDeep) -> bool { return s.local_thread_running != 0; }
+fn ecs_executor_state_deep_exclusive_running(s: EcsExecutorStateDeep) -> bool { return s.exclusive_running != 0; }
+fn ecs_executor_state_deep_is_running(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_running_at(s, system_index); }
+fn ecs_executor_state_deep_is_completed(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_completed_at(s, system_index); }
+fn ecs_executor_state_deep_is_unapplied(s: EcsExecutorStateDeep, system_index: i64) -> bool { return _mt_unapplied_at(s, system_index); }
+
+fn ecs_executor_state_deep_ready_count(s: EcsExecutorStateDeep) -> i64 {
+    let count: i64 = 0;
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_ready_at(s, i) { count = count + 1; };
+        i = i + 1;
+    }
+    return count;
+}

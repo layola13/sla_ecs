@@ -1,0 +1,135 @@
+// Isolated deep tests for lib/executor_multi_threaded_deep.sla (Batch 420).
+// Covers fixed-cap ExecutorState gates and ready-batch selection.
+
+@import "lib/executor_multi_threaded_deep.sla"
+
+@test "mt_deep_state_init_clamps_and_starts_empty"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 20, 20);
+    if s.system_count != 16 { panic(147880); };
+    if s.set_count != 16 { panic(147881); };
+    if ecs_executor_state_deep_ready_count(s) != 0 { panic(147882); };
+    if ecs_executor_state_deep_running_count(s) != 0 { panic(147883); };
+}
+
+@test "mt_deep_dependencies_gate_ready"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 2);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    if ecs_executor_state_deep_is_ready(s, 1) { panic(147884); };
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    if ecs_executor_state_deep_is_ready(s, 1) != true { panic(147885); };
+    if ecs_executor_state_deep_get_dependencies(s, 1) != 0 { panic(147886); };
+}
+
+@test "mt_deep_start_and_complete_send_system"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    if ecs_executor_state_deep_can_spawn_system(s, spec) != true { panic(147887); };
+    s = ecs_executor_state_deep_start_system(s, spec);
+    if ecs_executor_state_deep_is_running(s, 0) != true { panic(147888); };
+    if ecs_executor_state_deep_running_count(s) != 1 { panic(147889); };
+    s = ecs_executor_state_deep_complete_system(s, spec, true);
+    if ecs_executor_state_deep_is_running(s, 0) { panic(147890); };
+    if ecs_executor_state_deep_is_completed(s, 0) != true { panic(147891); };
+    if ecs_executor_state_deep_is_unapplied(s, 0) != true { panic(147892); };
+    if ecs_executor_state_deep_running_count(s) != 0 { panic(147893); };
+}
+
+@test "mt_deep_local_gate_blocks_second_local"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let local0 = ecs_executor_system_spec_deep_new(0, false, true);
+    let local1 = ecs_executor_system_spec_deep_new(1, false, true);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, local0);
+    if ecs_executor_state_deep_local_running(s) != true { panic(147894); };
+    if ecs_executor_state_deep_can_spawn_system(s, local1) { panic(147895); };
+    s = ecs_executor_state_deep_complete_system(s, local0, false);
+    if ecs_executor_state_deep_local_running(s) { panic(147896); };
+    if ecs_executor_state_deep_can_spawn_system(s, local1) != true { panic(147897); };
+}
+
+@test "mt_deep_exclusive_gate_blocks_while_any_running"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let send = ecs_executor_system_spec_deep_new(0, false, false);
+    let exclusive = ecs_executor_system_spec_deep_new(1, true, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, send);
+    if ecs_executor_state_deep_can_spawn_system(s, exclusive) { panic(147898); };
+    s = ecs_executor_state_deep_complete_system(s, send, false);
+    if ecs_executor_state_deep_can_spawn_system(s, exclusive) != true { panic(147899); };
+    s = ecs_executor_state_deep_start_system(s, exclusive);
+    if ecs_executor_state_deep_exclusive_running(s) != true { panic(147900); };
+    if ecs_executor_state_deep_local_running(s) != true { panic(147901); };
+}
+
+@test "mt_deep_access_conflict_blocks_candidate"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_conflict(b0, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, a);
+    if ecs_executor_state_deep_can_spawn_system(s, b) { panic(147902); };
+    s = ecs_executor_state_deep_complete_system(s, a, false);
+    if ecs_executor_state_deep_can_spawn_system(s, b) != true { panic(147903); };
+}
+
+@test "mt_deep_ready_batch_selects_nonconflicting_send_systems"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+    if batch.count != 3 { panic(147904); };
+    if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147905); };
+    if ecs_executor_ready_batch_deep_at(batch, 1) != 1 { panic(147906); };
+    if ecs_executor_ready_batch_deep_at(batch, 2) != 2 { panic(147907); };
+}
+
+@test "mt_deep_ready_batch_allows_one_local_only"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, true);
+    let b = ecs_executor_system_spec_deep_new(1, false, true);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+    if batch.count != 2 { panic(147908); };
+    if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147909); };
+    if ecs_executor_ready_batch_deep_at(batch, 1) != 2 { panic(147910); };
+    if batch.is_local != 1 { panic(147911); };
+}
+
+@test "mt_deep_ready_batch_exclusive_stands_alone"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, true, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+    if batch.count != 1 { panic(147912); };
+    if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147913); };
+    if batch.is_exclusive != 1 { panic(147914); };
+}
+
+@test "mt_deep_completed_system_cannot_be_readied_or_spawned"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, spec);
+    s = ecs_executor_state_deep_complete_system(s, spec, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    if ecs_executor_state_deep_is_completed(s, 0) != true { panic(147915); };
+    if ecs_executor_state_deep_can_spawn_system(s, spec) { panic(147916); };
+}
