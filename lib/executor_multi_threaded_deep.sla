@@ -10,6 +10,7 @@
 // Batch 427 adds flat finish-run deferred cleanup summaries.
 // Batch 428 adds ready-batch skip/rescan summaries.
 // Batch 429 adds begin-run reset summaries.
+// Batch 430 adds completed-tick error summaries.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -219,6 +220,39 @@ struct EcsExecutorBeginRunSummaryDeep {
     deferred_handled_errors: i64,
 }
 
+@derive(copy)
+struct EcsExecutorCompletedTickErrorSummaryDeep {
+    tick_count: i64,
+    lock_failed: i32,
+    pending_count: i64,
+    pending0: i64,
+    pending1: i64,
+    pending2: i64,
+    selected_count: i64,
+    selected0: i64,
+    selected1: i64,
+    selected2: i64,
+    skipped_count: i64,
+    skipped0: i64,
+    skipped1: i64,
+    skipped2: i64,
+    apply_count: i64,
+    ready_after: i64,
+    running_after: i64,
+    completed_after: i64,
+    unapplied_after: i64,
+    stalled: i32,
+    panic_payload_pending: i32,
+    system_panic_payloads: i64,
+    deferred_panic_payloads: i64,
+    panic_payload_phase: i64,
+    panic_payload_system: i64,
+    system_handled_errors: i64,
+    deferred_handled_errors: i64,
+    handled_error_phase: i64,
+    handled_error_system: i64,
+}
+
 fn _mt_bool(v: bool) -> i32 {
     if v { return 1; };
     return 0;
@@ -426,11 +460,144 @@ fn ecs_executor_begin_run_summary_deep_empty() -> EcsExecutorBeginRunSummaryDeep
     };
 }
 
+fn ecs_executor_completed_tick_error_summary_deep_empty() -> EcsExecutorCompletedTickErrorSummaryDeep {
+    return EcsExecutorCompletedTickErrorSummaryDeep {
+        tick_count: 0,
+        lock_failed: 0,
+        pending_count: 0,
+        pending0: -1,
+        pending1: -1,
+        pending2: -1,
+        selected_count: 0,
+        selected0: -1,
+        selected1: -1,
+        selected2: -1,
+        skipped_count: 0,
+        skipped0: -1,
+        skipped1: -1,
+        skipped2: -1,
+        apply_count: 0,
+        ready_after: 0,
+        running_after: 0,
+        completed_after: 0,
+        unapplied_after: 0,
+        stalled: 0,
+        panic_payload_pending: 0,
+        system_panic_payloads: 0,
+        deferred_panic_payloads: 0,
+        panic_payload_phase: ecs_executor_panic_phase_deep_none(),
+        panic_payload_system: -1,
+        system_handled_errors: 0,
+        deferred_handled_errors: 0,
+        handled_error_phase: ecs_executor_panic_phase_deep_none(),
+        handled_error_system: -1,
+    };
+}
+
 fn _mt_ready_batch_rescan_summary_from_state(r: EcsExecutorReadyBatchRescanSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorReadyBatchRescanSummaryDeep {
     r.ready_after = ecs_executor_state_deep_ready_count(s);
     r.completed_after = ecs_executor_state_deep_completed_count(s);
     r.running_after = ecs_executor_state_deep_running_count(s);
     return r;
+}
+
+fn _mt_completed_tick_error_from_state(r: EcsExecutorCompletedTickErrorSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.ready_after = ecs_executor_state_deep_ready_count(s);
+    r.running_after = ecs_executor_state_deep_running_count(s);
+    r.completed_after = ecs_executor_state_deep_completed_count(s);
+    r.unapplied_after = ecs_executor_state_deep_unapplied_count(s);
+    return r;
+}
+
+fn _mt_completed_tick_error_from_batch(r: EcsExecutorCompletedTickErrorSummaryDeep, b: EcsExecutorReadyBatchRescanSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.tick_count = 1;
+    r.selected_count = b.selected_count;
+    r.selected0 = b.selected0;
+    r.selected1 = b.selected1;
+    r.selected2 = b.selected2;
+    r.skipped_count = b.skipped_count;
+    r.skipped0 = b.skipped0;
+    r.skipped1 = b.skipped1;
+    r.skipped2 = b.skipped2;
+    r.ready_after = b.ready_after;
+    r.running_after = b.running_after;
+    r.completed_after = b.completed_after;
+    r.unapplied_after = ecs_executor_state_deep_unapplied_count(s);
+    r.stalled = b.stalled;
+    return r;
+}
+
+fn _mt_completed_tick_error_record_system_panic(r: EcsExecutorCompletedTickErrorSummaryDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.panic_payload_pending = 1;
+    r.system_panic_payloads = r.system_panic_payloads + 1;
+    r.panic_payload_phase = ecs_executor_panic_phase_deep_system();
+    r.panic_payload_system = system_index;
+    return r;
+}
+
+fn _mt_completed_tick_error_record_deferred_panic(r: EcsExecutorCompletedTickErrorSummaryDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.panic_payload_pending = 1;
+    r.deferred_panic_payloads = r.deferred_panic_payloads + 1;
+    r.panic_payload_phase = ecs_executor_panic_phase_deep_apply_deferred();
+    r.panic_payload_system = system_index;
+    return r;
+}
+
+fn _mt_completed_tick_error_record_system_handled(r: EcsExecutorCompletedTickErrorSummaryDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.system_handled_errors = r.system_handled_errors + 1;
+    r.handled_error_phase = ecs_executor_panic_phase_deep_system();
+    r.handled_error_system = system_index;
+    return r;
+}
+
+fn _mt_completed_tick_error_record_deferred_handled(r: EcsExecutorCompletedTickErrorSummaryDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.deferred_handled_errors = r.deferred_handled_errors + 1;
+    r.handled_error_phase = ecs_executor_panic_phase_deep_apply_deferred();
+    r.handled_error_system = system_index;
+    return r;
+}
+
+fn _mt_completed_tick_error_pending(r: EcsExecutorCompletedTickErrorSummaryDeep, s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    r.lock_failed = 1;
+    r.pending_count = 1;
+    r.pending0 = system_index;
+    return _mt_completed_tick_error_from_state(r, s);
+}
+
+fn _mt_completed_tick_error_apply_deferred_panic(r: EcsExecutorCompletedTickErrorSummaryDeep, s: EcsExecutorStateDeep, fail_system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let failed: i32 = 0;
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_unapplied_at(s, i) {
+            if failed == 0 {
+                r.apply_count = r.apply_count + 1;
+                if i == fail_system_index {
+                    r = _mt_completed_tick_error_record_deferred_panic(r, i);
+                    failed = 1;
+                };
+            };
+        };
+        i = i + 1;
+    }
+    return r;
+}
+
+fn _mt_completed_tick_error_apply_deferred_handled(r: EcsExecutorCompletedTickErrorSummaryDeep, s: EcsExecutorStateDeep, handled_system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_unapplied_at(s, i) {
+            r.apply_count = r.apply_count + 1;
+            if i == handled_system_index {
+                r = _mt_completed_tick_error_record_deferred_handled(r, i);
+            };
+        };
+        i = i + 1;
+    }
+    return r;
+}
+
+fn _mt_completed_tick_error_apply_deferred_clear(s: EcsExecutorStateDeep) -> EcsExecutorStateDeep {
+    return ecs_executor_state_deep_apply_deferred_all(s);
 }
 
 fn _mt_ready_batch_rescan_push_selected(r: EcsExecutorReadyBatchRescanSummaryDeep, system_index: i64) -> EcsExecutorReadyBatchRescanSummaryDeep {
@@ -734,6 +901,70 @@ fn ecs_executor_ready_batch_rescan_summary_deep3(s: EcsExecutorStateDeep, a: Ecs
         r.stalled = 1;
     };
     return _mt_ready_batch_rescan_summary_from_state(r, s);
+}
+
+fn _mt_completed_tick_error_complete_and_tick3(r: EcsExecutorCompletedTickErrorSummaryDeep, s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    s = ecs_executor_state_deep_complete_system_with_dependents3(s, completed_spec, has_deferred, dep0, dep1, dep2, dep_count);
+    let batch_summary = ecs_executor_ready_batch_rescan_summary_deep3(
+        s, a, b, c,
+        a_dep0, a_dep1, a_dep2, a_dep_count,
+        b_dep0, b_dep1, b_dep2, b_dep_count,
+        c_dep0, c_dep1, c_dep2, c_dep_count,
+        max_width
+    );
+    return _mt_completed_tick_error_from_batch(r, batch_summary, s);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_system_panic3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_record_system_panic(r, completed_spec.system_index);
+    return _mt_completed_tick_error_complete_and_tick3(r, s, completed_spec, has_deferred, dep0, dep1, dep2, dep_count, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count, max_width);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_system_handled3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_record_system_handled(r, completed_spec.system_index);
+    return _mt_completed_tick_error_complete_and_tick3(r, s, completed_spec, has_deferred, dep0, dep1, dep2, dep_count, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count, max_width);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_apply_deferred_panic3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, fail_system_index: i64, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_apply_deferred_panic(r, s, fail_system_index);
+    s = _mt_completed_tick_error_apply_deferred_clear(s);
+    return _mt_completed_tick_error_complete_and_tick3(r, s, completed_spec, false, dep0, dep1, dep2, dep_count, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count, max_width);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_apply_deferred_handled3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, handled_system_index: i64, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_apply_deferred_handled(r, s, handled_system_index);
+    s = _mt_completed_tick_error_apply_deferred_clear(s);
+    return _mt_completed_tick_error_complete_and_tick3(r, s, completed_spec, false, dep0, dep1, dep2, dep_count, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count, max_width);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_system_panic_lock_failed(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_record_system_panic(r, system_index);
+    return _mt_completed_tick_error_pending(r, s, system_index);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_system_handled_lock_failed(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_record_system_handled(r, system_index);
+    return _mt_completed_tick_error_pending(r, s, system_index);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_apply_deferred_panic_lock_failed(s: EcsExecutorStateDeep, system_index: i64, fail_system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_apply_deferred_panic(r, s, fail_system_index);
+    s = _mt_completed_tick_error_apply_deferred_clear(s);
+    return _mt_completed_tick_error_pending(r, s, system_index);
+}
+
+fn ecs_executor_completed_tick_error_summary_deep_apply_deferred_handled_lock_failed(s: EcsExecutorStateDeep, system_index: i64, handled_system_index: i64) -> EcsExecutorCompletedTickErrorSummaryDeep {
+    let r = ecs_executor_completed_tick_error_summary_deep_empty();
+    r = _mt_completed_tick_error_apply_deferred_handled(r, s, handled_system_index);
+    s = _mt_completed_tick_error_apply_deferred_clear(s);
+    return _mt_completed_tick_error_pending(r, s, system_index);
 }
 
 fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {

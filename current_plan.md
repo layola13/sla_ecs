@@ -6602,3 +6602,37 @@ Feature progress: multi-threaded executor begin-run reset sub-surface
 0% -> 100% for the flat fixed-arity model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 430 — `lib/executor_multi_threaded_deep.sla` completed-tick error summaries — DONE
+
+Source focus: the completed tick executor wrappers in
+`lib/executor_multi_threaded.sla`: system panic/handled-error completion,
+ApplyDeferred panic/handled-error completion, and their lock-failed pending
+completion variants.
+
+Deep strategy: add flat `EcsExecutorCompletedTickErrorSummaryDeep` plus
+fixed-arity helpers for normal completed-tick continuation and lock-failed
+pending completion. The helpers combine error payload/handled-error metadata,
+ApplyDeferred barrier apply counts, pending completion slots, skipped ready
+systems, selected ready systems, and post-tick ready/running/completed/
+unapplied counts without nesting executor, tick-loop, or batch structs.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 59
+`@test` entries (+4). New panic band: tests 148340-148377.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 59 passed / 0 failed ✓
+- SA backend: 59 passed / 0 failed ✓ (`timeout 300s`)
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6740
+tests-dir `@test` annotations | 7376 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completed-tick error/pending
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is broader executor integration scenarios if new Bevy parity gaps are found.
