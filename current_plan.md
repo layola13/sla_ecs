@@ -6147,3 +6147,37 @@ Remaining shallow lib files without a deep counterpart are task/async/parallel:
 and `executor_multi_threaded`. Root `reflect` is now deep-covered through the
 flat handle-dispatch model; full runtime reflection remains intentionally
 outside scope per README/current plan.
+
+
+# Batch 417 — `lib/parallel_scope_deep.sla` (105-line shallow original) — DONE
+
+Source: `lib/parallel_scope.sla` (Bevy `ParallelCommands` /
+`ParallelCommandQueue` model using `Vec<i64>` command and thread-id arrays).
+Target: `lib/parallel_scope_deep.sla` (self-contained, no `@import`).
+
+Deep strategy: replace both Vec arrays with cap-16 scalar slot families and
+model insertion-order command recording, per-thread counts, per-thread command
+filtering via `last_get*` companion slots, clear/is_empty, and cap enforcement.
+`EcsParallelCommandsDeep` was initially implemented with a nested
+`EcsParallelCommandQueueDeep`, but SA backend reported the known nested-copy
+struct MemoryLeak pattern. The final version flattens queue slots directly
+inside `EcsParallelCommandsDeep` and uses temporary conversion helpers for
+shared queue logic, so both SA and default backends pass.
+
+Test file: `tests/test_ecs_lib_parallel_scope_deep_isolated.sla` (11
+`@test` entries). Panic band: lib 147670-147675, tests 147700-147734.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/parallel_scope_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_parallel_scope_deep_isolated.sla` ✓
+- Default backend: 11 passed / 0 failed ✓
+- SA backend: 11 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 518 lib modules | 246 `*_deep.sla` modules |
+422 test files | 246 `*_deep_isolated.sla` test files | 90 examples | 6657
+tests-dir `@test` annotations | 7254 lib/tests/examples `@test` annotations.
+Next free panic band: 147750+ (Batch 417 used lib 147670-147675 and tests
+147700-147734). Remaining shallow lib files without a deep counterpart are
+`task_scope_executor_drive`, `executor_single_threaded`, and
+`executor_multi_threaded`; all are task/executor/async adjacent.
