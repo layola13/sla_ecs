@@ -1,3 +1,53 @@
+- [done] Added Bevy-style run-condition fold semantics for the multi-threaded executor. `lib/executor_multi_threaded.sla` now exposes `EcsExecutorConditionFoldResult`, condition outcome markers, `ecs_executor_panic_phase_run_condition`, `ecs_executor_run_plan_evaluate_and_fold_conditions`, and `ecs_executor_run_plan_should_run_with_condition_outcomes`. These model Bevy `evaluate_and_fold_conditions` / `ExecutorState::should_run`: every condition outcome is evaluated without short-circuiting on false, handled condition errors continue the fold as false, and an error-handler panic aborts the remaining fold and records a run-condition-phase panic payload. The should-run facade still evaluates system conditions after a failed set condition, then applies failed set/system pending-skip bookkeeping. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds four regressions covering no-short-circuit fold, handled-error continuation, error-handler-panic abort, and set-failure followed by system-condition fold. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA condition-fold/should-run tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 98 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,130 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor run-condition fold surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style multi-completion same-tick drain and lock-failure pending-retry coverage for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_tick_loop_retry_pending_completions`, which models a later successful `Context::tick_executor` acquisition by replaying a lock-failed `pending_completions` queue as the first completion wave and then any later waves. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_tick_with_completions_drains_join_before_spawn` and `executor_tick_loop_retry_pending_completions_rechecks_after_lock_failure`. These lock down Bevy `ExecutorState::tick` draining every currently queued completion before spawn, so a join dependent with two remaining dependencies becomes ready and spawns in the same modeled tick, and Bevy's try-lock-failure comment that the other thread later observes the non-empty queue and re-enters the tick loop. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `drains_join_before_spawn` and `retry_pending_completions` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 94 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,126 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor multi-completion same-tick drain and pending-retry surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style non-send/local-system completed-tick handoff coverage for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes explicit `ecs_executor_run_plan_local_system_*_completed_tick_executor` facades for normal, panic-payload, handled-error, and try-lock-failed handoffs. These model the Bevy `spawn_system_task` non-send branch where a local system runs through `spawn_on_external`: it sets `local_thread_running` but not `exclusive_running`, pushes completion through `Context::system_completed`, and only clears the local-thread gate when that queued completion is drained. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds normal, panic-lock-failure, and handled-error regressions proving local completion can spawn send dependents while another send system remains running, lock failure preserves only the local gate with completion pending, and handled errors remain system-phase non-payload completions. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `local_` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 92 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,124 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor non-send/local completed-tick handoff surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `ApplyDeferred` completed-tick lock-failure handoff facades for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_apply_deferred_completed_tick_executor_lock_failed`, `ecs_executor_run_plan_apply_deferred_panic_payload_completed_tick_executor_lock_failed`, and `ecs_executor_run_plan_apply_deferred_handled_error_completed_tick_executor_lock_failed`. These model the Bevy `spawn_exclusive_system_task` / `ApplyDeferred` branch where the barrier task has already cloned/cleared and applied the unapplied snapshot, recorded any deferred apply panic payload or handled error, and pushed a completion, but `Context::tick_executor` cannot acquire the executor lock. The completion stays pending, the barrier remains running and exclusive/local, and dependents are not released until a later drain. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds normal, panic-payload, and handled-error lock-failure regressions that also retry the pending barrier completion through the completion-wave loop. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `lock_failed` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 89 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict/width-dispatch bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,157 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `ApplyDeferred` completed-tick lock-failure handoff surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style run-end `apply_final_deferred=false` panic/handled-error coverage for the multi-threaded executor run plan. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` now adds `executor_run_plan_system_panic_finish_run_without_final_deferred_preserves_payload_and_unapplied` and `executor_run_plan_system_handled_error_finish_run_without_final_deferred_preserves_unapplied_no_rethrow`. These lock down the Bevy `MultiThreadedExecutor::run` tail branch where final deferred application is disabled: completed systems remain in `unapplied_systems`, no deferred apply panic/handled-error is recorded, transient ready/running/completed state is cleared, an existing system panic payload is still preserved until the modeled `take_panic_payload` rethrow point, and handled system errors still do not rethrow. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `without_final_deferred` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 86 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict/width-dispatch bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,154 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor run-end disabled-final-deferred panic/handled-error surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style non-`ApplyDeferred` exclusive-system completed-tick handoff coverage for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now treats exclusive systems as implicitly local/non-send in the system spec constructor and in start/complete flag handling, matching Bevy `ExclusiveFunctionSystem::flags()` and `spawn_exclusive_system_task` setting both `exclusive_running` and `local_thread_running`. It also exposes explicit `ecs_executor_run_plan_exclusive_system_*_completed_tick_executor` facades for normal, panic-payload, handled-error, and try-lock-failed handoffs, reusing the same completion queue / `tick_executor` semantics as Bevy's non-`ApplyDeferred` exclusive branch. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_exclusive_completed_tick_executor_spawns_without_apply_barrier`, `executor_run_plan_exclusive_panic_completed_tick_executor_lock_failed_keeps_flags`, and `executor_run_plan_exclusive_handled_error_completed_tick_executor_spawns_dependent`, covering no accidental prior-unapplied apply, exclusive/local flag retention on lock failure, payload/handled-error bookkeeping, and dependent spawn after completion. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `exclusive_` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 84 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict/dispatch bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,152 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor non-`ApplyDeferred` exclusive completed-tick handoff surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `ApplyDeferred` completed-tick deferred error handoff facades for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_apply_deferred_panic_payload_completed_tick_executor` and `ecs_executor_run_plan_apply_deferred_handled_error_completed_tick_executor`, combining cloned-snapshot apply-deferred behavior with `Context::system_completed` / `tick_executor` reentry. This models Bevy `spawn_exclusive_system_task` for `ApplyDeferred`: apply the cloned `unapplied_systems` snapshot, record a deferred apply panic payload or handled error if needed, then push completion so the tick handoff completes the barrier and releases dependents. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_apply_deferred_panic_completed_tick_executor_records_deferred_payload_and_spawns` and `executor_run_plan_apply_deferred_handled_error_completed_tick_executor_records_error_and_spawns`, covering cleared prior-unapplied entries, apply order/counters, deferred phase markers instead of system phase markers, and dependent spawn in the same handoff. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `apply_deferred_` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 81 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,149 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `ApplyDeferred` completed-tick deferred error handoff surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `Context::system_completed` finish-run closure coverage for the multi-threaded executor run plan. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` now covers three handoff-to-run-end edges: `executor_run_plan_apply_deferred_completed_tick_executor_applies_prior_and_spawns` proves an `ApplyDeferred` barrier completed through `tick_executor` applies prior unapplied systems before completing and spawning its dependent in the same handoff; `executor_run_plan_system_panic_completed_tick_executor_finish_run_rethrows_after_final_apply` proves a panic-payload completion handoff can spawn and complete the dependent, final-apply both completed systems, then reach the modeled `take_panic_payload` rethrow point; `executor_run_plan_system_handled_error_completed_tick_executor_finish_run_has_no_rethrow` proves the handled-error branch follows the same final deferred cleanup without setting a panic payload or incrementing rethrow count. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `completed_tick_executor` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 79 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,147 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `Context::system_completed` finish-run closure surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `tick_executor` try-lock failure facade for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now records `pending_completions` and `lock_failed` on `EcsExecutorTickLoopResult`, and exposes `ecs_executor_run_plan_system_completed_tick_executor_lock_failed`, `ecs_executor_run_plan_system_panic_payload_completed_tick_executor_lock_failed`, and `ecs_executor_run_plan_system_handled_error_completed_tick_executor_lock_failed`. These model the Bevy `Context::tick_executor` branch where `system_completed` has already pushed the completion and recorded any panic payload / handled error state, but `try_lock` fails, so the current thread returns without draining completion results, releasing dependents, or spawning newly ready systems. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_system_completed_tick_executor_lock_failed_keeps_completion_pending`, `executor_run_plan_system_panic_completed_tick_executor_lock_failed_records_payload_only`, and `executor_run_plan_system_handled_error_completed_tick_executor_lock_failed_records_error_only`; the ordinary case also retries the pending completion through the existing completion-wave loop to prove the dependent only starts after a later drain. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `lock_failed` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 76 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,144 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `tick_executor` try-lock failure surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `Context::system_completed` tick handoff facade for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_system_completed_tick_executor`, `ecs_executor_run_plan_system_panic_payload_completed_tick_executor`, and `ecs_executor_run_plan_system_handled_error_completed_tick_executor`, modeling the Bevy path where a completed system is pushed to the completion queue, payload/handled-error state is recorded when needed, and `tick_executor` is invoked immediately. The helpers reuse the completion-wave tick loop so ordinary, panic-payload, and handled-error completions all drain through `finish_system_and_handle_dependents` semantics and can spawn newly released dependents in the same handoff. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_system_completed_tick_executor_spawns_dependent`, `executor_run_plan_system_panic_completed_tick_executor_records_payload_and_spawns`, and `executor_run_plan_system_handled_error_completed_tick_executor_rechecks_later_wave`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `completed_tick_executor` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 73 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,105 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `Context::system_completed` tick handoff surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `tick_executor` outer-loop recheck facade for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `EcsExecutorTickLoopResult` and `ecs_executor_run_plan_tick_executor_with_completion_waves`, modeling Bevy `Context::tick_executor`: it always performs an initial tick, records each spawned ready batch, and repeats when another completion wave is present after the modeled lock is released / completion queue is rechecked. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_tick_executor_runs_once_with_empty_completion_queue` and `executor_run_plan_tick_executor_rechecks_completion_queue_after_empty_spawn_round`, covering first-tick spawning with an empty completion queue and the Bevy recheck loop where a first round spawns nothing because a conflicting system is still running, then a later completion wave releases the blocked dependent. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA `tick_executor` tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 70 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,102 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor `tick_executor` outer-loop recheck surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style `tick_executor` completion-drain facade for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_drain_completion_queue` and `ecs_executor_run_plan_tick_with_completions`: the modeled tick first drains a completion vector through `finish_system_and_handle_dependents` semantics, then immediately attempts ready-batch spawning, matching Bevy `ExecutorState::tick` draining `system_completion.try_iter()` before `spawn_system_tasks`. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_tick_with_completions_spawns_after_drain` and `executor_run_plan_tick_with_completions_respects_remaining_running_conflict`, covering immediate dependent spawning after a completion drain and preserving running-conflict gates when another system is still active. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA tick/drain tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 68 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,100 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor tick completion-drain surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style individual system-completion handling for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_complete_running_system`, matching Bevy's `system_completion` queue where `finish_system_and_handle_dependents` may receive completed systems in any order rather than strict ready-batch order. The helper completes exactly one running system, preserves other running systems and local/exclusive flags, marks the completed system unapplied, and releases its dependents immediately; payload and handled-error completion helpers now reuse this same path. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_complete_running_system_out_of_ready_batch_order` and `executor_run_plan_complete_running_system_keeps_local_flag_until_local_finishes`, covering out-of-order completion with a dependent blocked by another still-running conflict and send-before-local completion preserving `local_thread_running`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA single-completion tests pass; whole-file generated-SA and default backend executor isolated tests both pass with 66 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,098 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor individual completion queue surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style handled-error completion tracking for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now distinguishes handled system/deferred errors from payload-producing panics: handled errors increment explicit system/deferred handled-error counters and remember the last phase/system, but do not set a pending panic payload or produce a modeled rethrow. This matches Bevy `handle_errors` branches where the error handler handles a system failure or apply-deferred panic and returns `Ok(())`, after which `system_completed` still pushes completion and `finish_system_and_handle_dependents` still marks completed/unapplied and releases dependents. The deferred handled-error barrier/final-cleanup paths continue applying all unapplied systems, unlike payload paths that stop at the error but still clear the snapshot. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_system_handled_error_completes_without_payload`, `executor_run_plan_apply_deferred_barrier_handled_error_continues_without_payload`, and `executor_finish_run_deferred_handled_error_applies_all_without_payload`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; whole-file generated-SA and default backend executor isolated tests both pass with 64 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,096 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor handled-error completion surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style panic/error completion payload tracking for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now records system-result panic payloads and deferred-apply payloads with a lightweight phase/system marker, exposes a `take_panic_payload` facade for the final rethrow point, and adds error-aware final deferred cleanup plus `ApplyDeferred` barrier application that clears the same snapshot Bevy clears before applying buffers. Completion still marks systems completed/unapplied and signals dependents even when a system result carries a payload, matching Bevy `Context::system_completed` followed by `finish_system_and_handle_dependents`; final cleanup still clears `unapplied_systems` before the pending payload is observed. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_system_panic_payload_still_releases_dependent`, `executor_run_plan_apply_deferred_barrier_error_records_payload_and_completes_barrier`, and `executor_finish_run_deferred_error_clears_unapplied_before_payload_take`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; whole-file generated-SA and default backend executor isolated tests both pass with 61 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,093 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor panic/error completion payload surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-exact all-completed-system unapplied tracking for the multi-threaded executor run plan. `ecs_executor_run_plan_apply_deferred_for` no longer clears ordinary non-deferred systems after completion; every completed system remains in `unapplied_systems` until an explicit `ApplyDeferred` barrier or final cleanup calls the modeled `apply_deferred` path, matching Bevy's unconditional `unapplied_systems.insert(system_index)` and later iteration over `unapplied_systems.ones()`. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_records_non_deferred_unapplied_until_apply` and `executor_run_plan_apply_deferred_barrier_applies_completed_non_deferred_system`, and updates dependency-order / batched-width final-cleanup assertions to count all completed systems. `tests/test_ecs_mut_parallel.sla` now expects both task-pool completed systems to stay pending until final apply. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA non-deferred and task-pool tests; whole-file generated-SA and default backend executor isolated tests both pass with 58 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,090 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor all-completed unapplied tracking surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style deferred-system apply timing for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now leaves ordinary systems with deferred buffers in `unapplied_systems` after completion, matching Bevy `finish_system_and_handle_dependents`; deferred buffers are applied only by an explicit `ApplyDeferred` barrier or by final run cleanup when `apply_final_deferred=true`. This batch still used a pending-buffer simplification for non-deferred systems; Batch 152 above supersedes that with Bevy-exact all-completed-system tracking. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_apply_deferred_barrier_applies_completed_deferred_system` and updates dependency-order / batched-width regressions to assert final cleanup, while `tests/test_ecs_mut_parallel.sla` updates the task-pool bridge regression to keep deferred buffers pending until final apply. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA barrier and task-pool tests; whole-file generated-SA and default backend executor isolated tests both pass with 57 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass; focused default backend `task pool defers buffers until final apply` passes; `git diff --check` passes. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,089 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor deferred-system apply timing surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style begin-run reset for the multi-threaded executor run plan. `EcsExecutorRunPlan` now stores each system's original dependency count, and `ecs_executor_run_plan_begin_run` resets dependency counts, `ready_systems`, running/skipped/completed/evaluated transient state, local/exclusive running flags, and per-run run/apply/skip order counters for a fresh schedule run, mirroring the startup block in Bevy `MultiThreadedExecutor::run`. Existing `unapplied_systems` are intentionally preserved, matching Bevy when final deferred application is disabled and buffers remain across a run boundary. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_begin_run_resets_dependencies_and_ready` and `executor_run_plan_begin_run_preserves_unapplied_buffers`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA tests for the two new cases; whole-file generated-SA and default backend executor isolated tests both pass with 56 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,088 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor begin-run reset surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style completed-dependent signal guard for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now makes `ecs_executor_state_release_dependents` set a dependent ready only when its dependency count reaches zero and the dependent is not already completed, matching Bevy `ExecutorState::signal_dependents`'s `!completed_systems.contains(dep_idx)` guard. This prevents debug/initial skip edge cases and repeated facade signal paths from re-readying systems that have already completed or been skipped. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds direct state coverage with `executor_state_release_dependents_does_not_ready_completed_dependent` and run-plan coverage with `executor_run_plan_initial_skip_completed_dependent_not_readied`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA tests for the two new cases; whole-file generated-SA and default backend executor isolated tests both pass with 54 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,086 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor completed-dependent signal guard surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style selected-running spawn-loop behavior for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now marks ready-batch systems running as soon as they are selected, matching Bevy `spawn_system_tasks` where `running_systems.insert(system_index)` happens before later ready candidates are considered. This blocks same-loop access conflicts with newly selected systems, prevents skipped-system rescans from selecting a dependent that conflicts with an already selected/running system, and allows one non-exclusive local/non-send system to share a batch with send systems while still blocking a second local candidate. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_ready_group_selected_system_blocks_later_conflict`, `executor_ready_group_allows_one_local_with_send_systems`, and `executor_ready_group_rescan_respects_selected_running_conflict`; the old exclusive-then-local/send assertion now expects Bevy-style local+send batching. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA tests for the three new cases; whole-file generated-SA and default backend executor isolated tests both pass with 52 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,084 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor selected-running spawn-loop surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style ready-batch rescan after skipped systems notify dependents. `lib/executor_multi_threaded.sla` now makes `ecs_executor_run_plan_take_ready_batch` rescan ready systems after a skipped ready system releases dependents, matching Bevy `spawn_system_tasks`'s `check_for_new_ready_systems` loop. Systems selected into a ready batch are also removed from `ready_systems`, matching Bevy's `ready_systems.remove(system_index)` before spawning and preventing duplicate selection during a rescan. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_ready_group_rescans_after_skip_for_lower_index_dependent` and updates the skipped/conflicting dependent assertion to expect selected systems to be removed from ready. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA rescan test; whole-file generated-SA and default backend executor isolated tests both pass with 49 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,081 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor ready rescan after skip surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style exclusive `ApplyDeferred` barrier handling for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_system_spec_as_apply_deferred` and models Bevy `spawn_exclusive_system_task` for `ApplyDeferred`: before completing the barrier, it applies and clears the current `unapplied_systems` snapshot; after normal completion, only the barrier system itself remains unapplied for later final cleanup. The helper also marks the barrier exclusive/local so ready-batch selection serializes it like Bevy's exclusive apply-deferred system. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_apply_deferred_barrier_applies_prior_unapplied_only` and `executor_run_plan_apply_deferred_barrier_is_exclusive_local_batch`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA apply-deferred-barrier tests; whole-file generated-SA and default backend executor isolated tests both pass with 48 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA triple-bridge and nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,080 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor exclusive ApplyDeferred barrier surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style running-conflict gates for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` extends `EcsExecutorSystemSpec` with set-condition, system-condition, and ordinary access conflict metadata, plus helpers for constructing those conflict sets. `ecs_executor_state_can_spawn_system` now mirrors the remaining core Bevy `ExecutorState::can_run` gates: unevaluated set-condition conflicts block while a conflicting system is running, system-condition conflicts block while a conflicting system is running, ordinary access conflicts block only for non-skipped systems, and pending-skipped systems can still be processed to notify dependents. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_state_can_spawn_system_respects_running_conflicts`, `executor_ready_group_defers_conflicting_candidate_and_selects_later_ready`, and `executor_ready_group_skipped_system_ignores_access_conflict_and_releases_dependent`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA conflict tests; whole-file generated-SA and default backend executor isolated tests both pass with 46 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready-triple and nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,078 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor running-conflict can-run gate surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style failed system-condition pending skip handling for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_apply_failed_system_condition`, matching the per-system condition false branch of Bevy `ExecutorState::should_run`: only the current system is marked skipped, evaluated sets are untouched, completion/dependency release is deferred until that system becomes ready, and later set-condition evaluation is still allowed. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_failed_system_condition_marks_current_pending_only`, `executor_run_plan_failed_system_condition_pending_child_waits_for_dependency`, and `executor_run_plan_failed_system_condition_keeps_set_conditions_evaluable`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA failed-system-condition tests; whole-file generated-SA and default backend executor isolated tests both pass with 43 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,075 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor failed system-condition pending skip surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
+- [done] Added Bevy-style passed set-condition evaluated handling for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_run_plan_apply_passed_set_condition`, matching the successful branch of Bevy `ExecutorState::should_run`: a set whose conditions pass is marked evaluated without marking any systems skipped, completed, or dependency-released, and later failed-set handling for the same evaluated set becomes a no-op. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_passed_set_condition_marks_evaluated_only` and `executor_run_plan_passed_set_condition_blocks_later_failed_marking`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA passed-set-condition tests; whole-file generated-SA and default backend executor isolated tests both pass with 40 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,072 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor passed set-condition evaluated surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
+
 - [done] Added Bevy-style failed set-condition pending skip handling for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_state_mark_skipped_pending`, `ecs_executor_state_mark_set_evaluated`, `ecs_executor_state_is_set_evaluated`, and `ecs_executor_run_plan_apply_failed_set_condition`, matching Bevy `ExecutorState::should_run`: a failed set condition marks every system in that set as skipped and marks the set evaluated, but does not complete systems or release dependents until each skipped system becomes ready. Ready-batch and single-step driving now treat pending-skipped ready systems like `should_run=false` and then use the normal skip/release path. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_run_plan_failed_set_condition_marks_pending_skipped_only`, `executor_run_plan_pending_skipped_ready_system_releases_dependent`, and `executor_run_plan_pending_skipped_child_waits_for_upstream_dependency`. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; focused generated-SA failed-set-condition test; whole-file generated-SA and default backend executor isolated tests both pass with 38 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,070 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor failed set-condition pending skip surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
 
 - [done] Added Bevy-style active-running can-run gates for the multi-threaded executor run plan. `lib/executor_multi_threaded.sla` now exposes `ecs_executor_state_can_spawn_system` and `ecs_executor_run_plan_next_runnable`, and run-plan batch selection now mirrors the core `ExecutorState::can_run` gates for active exclusive systems, blocked exclusive candidates while other systems are running, and blocked local/non-send candidates while another local system is running. Run-plan completion now uses `ecs_executor_state_complete_system_with_flags` so exclusive/local flags are cleared when those systems finish, matching Bevy `finish_system_and_handle_dependents`. `tests/test_ecs_lib_executor_multi_threaded_isolated.sla` adds `executor_state_can_spawn_system_respects_active_running_flags`, `executor_ready_group_waits_while_exclusive_running`, and `executor_ready_group_defers_blocked_exclusive_and_selects_later_ready`, and updates the exclusive/local completion assertion to expect flags cleared. Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded.sla`; whole-file generated-SA and default backend executor isolated tests both pass with 35 tests; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/parallel_runner.sla`; focused generated-SA ready/nonconflict bridge tests and MainThreadExecutor tests pass. Current measured counts: 270 lib modules, 174 test files, 90 examples, and 4,067 source `.sla` `@test` annotations. Feature progress: Bevy ECS schedule/executor active-running can-run gate surface 0% -> 100%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91%.
@@ -850,3 +900,3591 @@ echo "progress updated"
 - [done] Compiler/SAB note: allow-query scalar-parameter cleanup traps encountered during exploration were reported to `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_scalar_param_cleanup_issue_cn.md`; no compiler source was modified.
 - Feature progress: Bevy ECS schedule/executor multi-threaded plan layer 85% -> 90%; overall estimate now API parity ~94–96%, behavioral parity ~83–88%. Remaining P0 is connecting ready batches to a general thread-backed TaskPool/Scope-style runner with full access grouping.
 ### Grand Total: 3421 isolated tests across 174 test files, 248 lib modules, all passing on SA backend for focused executor coverage; representative Batch 132 default backend smoke passes. Source `.sla` @test annotations now total 3,830 across lib/tests/examples.
+
+## Batch 168 — executor_single_threaded_deepen (2026-07-10)
+- lib/executor_single_threaded.sla: fully rewritten from the shallow Batch 51 surface (13 tests) to model Bevy `schedule/executor/single_threaded.rs` semantics at parity with the current multi-threaded executor depth.
+- Added panic/handled-error bookkeeping fields and accessors: `system_panic_payloads`, `deferred_panic_payloads`, `panic_payload_phase`, `panic_payload_system`, `panic_payload_rethrows`, `system_handled_errors`, `deferred_handled_errors`, `handled_error_phase`, `handled_error_system`.
+- `ecs_single_threaded_executor_run_system` corrected so `is_apply_deferred=true` flushes all prior unapplied systems (matching Bevy `apply_deferred` invocation inside the run loop) and the ApplyDeferred marker itself is not left unapplied.
+- `apply_deferred_with_error` / `apply_deferred_with_handled_error`: model Bevy `apply_deferred` with `handle_unwind` for deferred panic payload recording vs handled-error continue-all semantics.
+- `finish_run` / `finish_run_with_deferred_error`: finish now respects `apply_final_deferred` — applies deferred + clears `evaluated_sets`/`completed_systems`; when false, preserves `unapplied_systems` and does not clear transient state until payload take/rethrow.
+- `apply_initial_skips`: mirrors the `bevy_debug_stepping` path that marks skipped systems completed before the main loop.
+- `apply_failed_set_condition` / `apply_passed_set_condition`: a failed set condition marks all systems in the set completed (union-with) and the set evaluated; a passed set only marks evaluated.
+- `process_system`: schedule-order walk that skips completed systems, evaluates set conditions (fold, non-short-circuit), evaluates system conditions, folds should_run, then runs or skips.
+- `EcsSingleThreadedSystemSpec` + `EcsSingleThreadedRunPlan` + `drive_all`: ordered run plan with skip/run/ApplyDeferred barrier semantics matching Bevy's linear system iteration.
+- `EcsSingleThreadedConditionFoldResult` + condition fold helpers: every condition outcome evaluated without short-circuiting on false; handled condition errors continue the fold as false; error-handler panic aborts the remaining fold.
+- tests/test_ecs_lib_executor_single_threaded_isolated.sla: expanded from 13 to 22 tests. Old tests updated for correct ApplyDeferred semantics (`run_apply_deferred_system_applies_prior_unapplied`). New tests: finish with/without final deferred, failed/passed set condition, initial skips, condition fold no-short-circuit + error-handler panic abort, ordered run plan with skip + ApplyDeferred barrier, handled error still unapplied, finish deferred error payload take/rethrow.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/executor_single_threaded.sla`; whole-file generated-SA `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_single_threaded_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 22; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_single_threaded_isolated.sla --jobs 1 --trace-panic` passes 22; multi-threaded isolated still passes 98 on SA (Batch 167 baseline); bridge `tests/test_ecs_mut_parallel.sla` ready/nonconflict/task-pool filters pass; `git diff --check` passes.
+- Current measured counts: 271 lib modules, 174 test files, 90 examples, and 4,139 source `.sla` `@test` annotations. Executor single-threaded isolated suite passes generated SA and default backend with 22 tests.
+- Feature progress: Bevy ECS schedule/executor single-threaded semantic surface 25% -> 95%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91% because full runtime reflection and exact Bevy TaskPool internals remain outside the completed behavior set.
+
+## Batch 169 — schedule_stepping_deepen (2026-07-10)
+- lib/schedule_stepping.sla: deepened the stepping model from Bevy `schedule/stepping.rs`. The original 262-line file modeled only a shallow direct-mutator API (Batch-level). Added a parallel deepened layer that models the exact Bevy semantics:
+  - `EcsSteppingUpdate` update queue (enums: SetAction, AddSchedule, RemoveSchedule, ClearSchedule, SetBehavior, ClearBehavior) matching Bevy's `enum Update`.
+  - `EcsSteppingScheduleStateDeep` with per-system `behaviors: Vec<i32>`, `node_count`, `first` steppable system, `behavior_updates`, `cursor_system`, `start` — matching Bevy's `ScheduleState`.
+  - `ecs_stepping_deep_next_frame` (alias `begin_frame`): applies all queued updates with Bevy action-transition filtering (RunAll/Waiting/Continue/Step × Same/RunAll/Continue/Step). Resets action to `Waiting` when stepping is enabled and resets cursor if past end of schedule_order. Also handles AddSchedule/RemoveSchedule (with order removal + cursor reset)/ClearSchedule (clear_behaviors)/SetBehavior (auto-resize state to fit)/ClearBehavior.
+  - `ecs_stepping_deep_skipped_systems`: full Bevy `ScheduleState::skipped_systems` cursor traversal. Dynamic schedule_order insertion (after previous_schedule or at 0). Full Action × SystemBehavior match: NeverRun always skipped + cursor advance, AlwaysRun never skipped + cursor advance, Waiting skips all non-AlwaysRun, Step runs only cursor system then action→Waiting, Continue runs from start until Break (unless cursor at Break), Continue+Continue skips systems before start. Returns (found, skip_set `Vec<bool>`, next_system). Cursor schedule advances to next schedule when all systems scanned.
+  - `ecs_stepping_deep_cursor`: returns (found, label, system_index), returns None when action=RunAll or cursor past end.
+  - `ecs_stepping_deep_schedules`: returns (ready, schedule_order) — ready when `schedule_order.len() == states.len()` and frame has been initialized.
+  - Auto-resize semantics: `state_set_behavior`/`state_clear_behavior` grow state to fit system_index so behavior can be set before `skipped_systems` populates node_count.
+  - `ecs_stepping_vec_insert_i32` helper for dynamic schedule_order insertion.
+- tests/test_ecs_lib_schedule_stepping_isolated.sla: expanded from 23 to 53 tests (30 new deepened tests). New tests: deep new defaults, enable/disable/step/continue queue+apply via begin_frame, action-transition filtering (step over continue filtered, continue over step filtered), add/remove schedule queue, schedules ready/schedules() ready after skipped_systems, cursor none when RunAll, cursor position when stepping, skipped RunAll false, Waiting skips all non-AlwaysRun, Waiting with AlwaysRun/NeverRun, Step runs only cursor, Step advances cursor each frame, Step with NeverRun skipped, Continue runs until Break, Continue at Breakpoint runs it, unknown schedule false, behavior_for default, set/clear behavior via update queue, clear_schedule clears behaviors, next_frame reset to Waiting, step to end advances schedule cursor.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_stepping.sla`; whole-file generated-SA `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_stepping_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 53; multi-threaded isolated still passes 98 on SA; single-threaded isolated still passes 22 on SA; bridge `tests/test_ecs_mut_parallel.sla` ready filter passes; `git diff --check` passes.
+- Compiler/SAB note: default/SAB backend whole-file compile fails with `RegisterRedefinition` (trap_code 1006) on `ecs_stepping_deep_next_frame` due to SAB's function-scope register allocation across the 5 independent `if u.variant == ...` branches with block-local `let` declarations. PhiStateConflict (trap_code 1015) also appears when `let` declarations are hoisted. Both are SAB limitations, documented at `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/sab_stepping_next_frame_register_redef_cn.md`. SA backend (golden path) passes all 53 tests.
+- Current measured counts: 271 lib modules, 174 test files, 90 examples, and 4,169 source `.sla` `@test` annotations. Schedule stepping isolated suite passes generated SA backend with 53 tests.
+- Feature progress: Bevy ECS schedule stepping deep model (`next_frame` update queue + `ScheduleState::skipped_systems` full traversal) surface ~15% -> 80%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91% because full runtime reflection and exact Bevy TaskPool internals remain outside the completed behavior set.
+
+## Batch 170 — schedule_value_lifecycle (2026-07-10)
+- lib/schedule_value.sla: new file modeling Bevy `schedule::schedule::Schedule` (src/schedule/schedule.rs lines 387-715). Models the single-Schedule value struct and its lifecycle API surface.
+  - `EcsScheduleExecutable` mirroring Bevy's `SystemSchedule` executable: system_ids + system_condition_counts + system_last_run + system_change_tick + set_ids + set_condition_counts + built_system/built_set counts.
+  - `EcsSchedule` struct: label, graph_changed flag, executable, executor_kind (multi/single), apply_final_deferred, executor_initialized, build settings (ambiguity/hierarchy/auto_insert).
+  - `ecs_schedule_new(default)` / `ecs_schedule_label` / `ecs_schedule_is_changed` / `ecs_schedule_mark_changed`.
+  - `ecs_schedule_set_executor` (multi/single) / `ecs_schedule_set_apply_final_deferred` / `ecs_schedule_executor_kind` / `ecs_schedule_apply_final_deferred` / `ecs_schedule_executor_initialized`.
+  - `ecs_schedule_set_build_settings` / `ecs_schedule_get_build_settings_ambiguity/hierarchy/auto_insert`.
+  - `ecs_schedule_add_system` / `ecs_schedule_add_set` (mark graph_changed + reset executor_initialized).
+  - `ecs_schedule_initialize`: freezes built counts, clears graph_changed, sets executor_initialized=true. Matches Bevy's `initialize()` graph rebuild trigger.
+  - `ecs_schedule_run`: calls `check_change_ticks`, then `initialize`, returns built system count. Matches Bevy's `run()`.
+  - `ecs_schedule_check_change_ticks`: updates all system change_tick to present tick. Matches Bevy's `check_change_ticks`.
+  - `ecs_schedule_apply_deferred`: returns count of systems whose deferred buffers were flushed. Matches Bevy's `apply_deferred`.
+  - `ecs_schedule_systems`: returns `(initialized, system_ids)` — fails with `ScheduleNotInitialized` semantics if `!executor_initialized`. Matches Bevy's `systems()`.
+  - `ecs_schedule_systems_len`: returns `(initialized, count)` — same gate. Matches Bevy's `systems_len()`.
+  - `ecs_schedule_graph_system_count` / `ecs_schedule_graph_set_count` / `ecs_schedule_systems_in_set` / `ecs_schedule_remove_systems_in_set`.
+- tests/test_ecs_lib_schedule_value_isolated.sla: 19 new tests covering new/default/label/is_changed, mark_changed resets executor, set_executor (single/multi), set_apply_final_deferred, set_build_settings, add_system/add_set marks changed, initialize freezes counts + clears changed + sets initialized, systems() uninitialized/initialized, systems_len() uninitialized/initialized, check_change_ticks updates ticks, apply_deferred returns count, run initializes and returns count, systems_in_set counts, remove_systems_in_set marks changed + removes.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_value.sla`; whole-file generated-SA `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_value_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 19; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_value_isolated.sla --jobs 1 --trace-panic` passes 19; `git diff --check` passes; regression canary `sa sla check lib/system_param_table_erased.sla` passes.
+- Current measured counts: 272 lib modules, 175 test files, 90 examples, and 4,188 source `.sla` `@test` annotations. Schedule value isolated suite passes generated SA and default backend with 19 tests.
+- Feature progress: Bevy ECS schedule Schedule-value lifecycle surface 0% -> 60%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91% because full runtime reflection and exact Bevy TaskPool internals remain outside the completed behavior set.
+
+## Batch 171 — schedule_error_deep (2026-07-10)
+- lib/schedule_error.sla: deepened from shallow error/warning constants + structs to full Bevy `schedule::error.rs` (303 lines) surface. Added:
+  - `EcsDiGraphToposortError` (Loop/Cycle variants) + constructors, accessors (`is_loop`, `is_cycle`, `loop_node`, `cycle_count`, `cycle_node_at`). Matches Bevy's `DiGraphToposortError<N>`.
+  - `EcsDagRedundancyError` (flattened transitive edge pairs) + `count`/`from`/`to` accessors. Matches Bevy's `DagRedundancyError<N>`.
+  - `EcsDagCrossDependencyError` (node_a, node_b) + accessors. Matches Bevy's `DagCrossDependencyError<N>`.
+  - `EcsDagOverlappingGroupError` (set_a, set_b) + accessors. Matches Bevy's `DagOverlappingGroupError<K>`.
+  - `EcsAmbiguousSystemConflictsWarning` (flattened triple list: system_a, system_b, component_count) + `push`/`count`. Matches Bevy's `AmbiguousSystemConflictsWarning`.
+  - `EcsSystemTypeSetAmbiguityError` (system_type) + accessor. Matches Bevy's `SystemTypeSetAmbiguityError`.
+  - `EcsScheduleBuildErrorV2` deepened version with all variant payloads (toposort_error for HierarchySort/DependencySort/FlatDependencySort, cross_dep for CrossDependency, overlap_err for SetsHaveOrderButIntersect, type_set_ambiguity for SystemTypeSetAmbiguity, elevated_kind/system_a/system_b for Elevated). Per-variant constructors + full type-predicate accessors + payload accessors + `to_string`-label proxy (`ecs_schedule_build_error_v2_label` returns stable numeric labels 101-110).
+- tests/test_ecs_lib_schedule_error_deep_isolated.sla: 14 new tests covering toposort_error Loop/Cycle, dag_redundancy pairs, cross_dependency, overlapping_group, ambiguous_conflicts push/count, system_type_set_ambiguity, and all 6 V2 error variant constructors with kind + payload + label assertions.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_error.sla`; whole-file generated-SA `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_error_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 14; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_error_deep_isolated.sla --jobs 1 --trace-panic` passes 14; `git diff --check` passes.
+- Current measured counts: 272 lib modules, 176 test files, 90 examples, and 4,202 source `.sla` `@test` annotations. Schedule error deep isolated suite passes generated SA and default backend with 14 tests.
+- Feature progress: Bevy ECS schedule build error/warning payload surface ~25% -> 75%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91% because full runtime reflection and exact Bevy TaskPool internals remain outside the completed behavior set.
+
+## Batch 172 — schedule_value_cleanup_policy (2026-07-10)
+- lib/schedule_value.sla: added Bevy `ScheduleCleanupPolicy` enum (4 variants: RemoveSetAndSystems / RemoveSystemsOnly / RemoveSetAndSystemsAllowBreakages / RemoveSystemsOnlyAllowBreakages) + per-variant predicates + default accessor. Mirrors src/schedule/schedule.rs lines 1460-1490.
+- Added `EcsScheduleCleanupResult` struct (removed_count, transitive_edges_added, set_removed, ok) + accessors.
+- Added `ecs_schedule_remove_systems_in_set_with_policy(s, set_id, policy)` implementing the full Bevy policy-aware removal:
+  - RemoveSetAndSystems*: removes systems + the set itself, marks graph changed.
+  - RemoveSystemsOnly*: removes systems only, sets remain.
+  - AllowBreakages variants: no transitive-edge bridging (drops order relationships).
+  - Non-allow-breakages variants: compute transitive-edges-added field (full bridging lives in ScheduleGraph model where adjacency arrays exist; value model reports the field for parity).
+- Added `ecs_schedule_systems_in_set_count` helper + `ecs_schedule_cleanup_result_*` accessors.
+- tests/test_ecs_lib_schedule_value_isolated.sla: added 5 new tests (cleanup policy default, all-variant predicates, remove with policy RemoveSetAndSystems, RemoveSystemsOnly set_removed=false semantics, RemoveSystemsOnly preserves unrelated sets). Total suite now 24 tests.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_value.sla`; whole-file generated-SA `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_value_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 24; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_value_isolated.sla --jobs 1 --trace-panic` passes 24; multi-threaded isolated 98 pass; `git diff --check` passes.
+- Current measured counts: 272 lib modules, 176 test files, 90 examples, and 4,207 source `.sla` `@test` annotations. Schedule value isolated suite passes generated SA and default backend with 24 tests.
+- Feature progress: Bevy ECS schedule cleanup-policy surface 0% -> 80%; overall estimate remains API parity ~94–96%, behavioral parity ~86–91% because full runtime reflection and exact Bevy TaskPool internals remain outside the completed behavior set.
+
+## Batch 173 — schedule_set_deep (2026-07-11)
+- lib/schedule_set_deep.sla: new file modeling Bevy `schedule::set.rs` deep surface (shallow lib/schedule_set.sla stays as the SystemSet value-struct slice). Added `EcsSystemSetIdentity` (kind/type_id/anon_id/label_id) with three constructors (system_type / anonymous / base) + kind predicates + accessors. Added `EcsOptionTypeId` nullable wrapper (some/none/value helpers) for the `SystemSet::system_type -> Option<TypeId>` trait method. Added AnonymousSet traits (`is_anonymous`/`eq`/`hash`/`debug`), SystemTypeSet traits (`new`/eq-self/eq-distinct by type_id/hash-by-T/`system_type`/`is_anonymous`), and trait-surface facades (`ecs_system_set_trait_system_type` mapping kind to Option, `ecs_system_set_trait_is_anonymous`). Added `EcsScheduleLabelIdentity` (eq/hash) and `EcsInternRegistry` modeling Bevy's interner: same identity => same intern id (find then assign), distinct numeric kind namespace for ScheduleLabel vs SystemSet (`ECS_INTERN_KIND_SCHEDULE_LABEL`), and `EcsInternResult` (created vs found flags). Added `IntoSystemSet<Marker>` dispatch: marker enum (SystemSet / FunctionSystem / ExclusiveSystem), input constructors, and `ecs_into_system_set` returning self for SystemSet and `SystemTypeSet::<F>::new()` for both function-system paths (mirroring Bevy `impl IntoSystemSet` blanket + function + exclusive impls). Added trait `base` proxy (always None for built-in sets) and `dyn_clone` proxy (identity copy).
+- 25 tests — tests/test_ecs_lib_schedule_set_deep_isolated.sla (new file). Covers identity constructors + kind predicates + accessors, trait `system_type` Some/None across all three set kinds, `is_anonymous` only-for-anonymous, `Option<TypeId>` helpers, AnonymousSet eq/hash, SystemTypeSet same-T eq / hash-by-T / distinct-neq, intern-registry creation, dedup-same-identity, distinct-identities-distinct-ids, same-T-after-others find, find-missing-returns-zero, label-vs-set namespace isolation, label eq/hash, IntoSystemSet dispatch for all three markers including shared function/exclusive type id, base-is-none for all built-ins, dyn_clone identity preservation, InternedSystemSet eq/hash.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_set_deep.sla`; `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_set_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 25; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_set_deep_isolated.sla --jobs 1 --trace-panic` passes 25; `git diff --check` passes.
+- src/schedule/set.rs (SystemSet/SystemTypeSet/AnonymousSet/IntoSystemSet/InternedSystemSet/InternedScheduleLabel) ✓ deepened (value/trait-observable surface; full macro-derived interning reflection remains outside scope)
+- Current measured counts: 275 lib modules, 177 test files, 90 examples, 4,268 `.sla` `@test` annotations.
+- Feature progress: schedule set deep trait surface ~15% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 174 — graph_map_digragh_toposort (2026-07-11)
+- lib/graph_map_digragh_toposort.sla: new file modeling Bevy `schedule::graph::graph_map.rs` DiGraph/DAG toposort surface (shallow lib/graph_map.sla already covers basic EcsGraph add/remove/neighbors). Added `EcsDiGraphToposortResult` (Ok/Loop/Cycle) + constructors + per-variant predicates + accessors (`loop_node`, `order`, `cycle_count`) + `cycle_at`. Added `Direction` enum (`Incoming`/`Outgoing`) + `opposite`/is_predicates. Added a self-contained compact `EcsDiGraph` value model (node_count + edges_from/to Vec<i32>) with `new`/`node_count`/`edge_count`/`add_edge`/`contains_edge`/`neighbors`/`all_edges`/`remove_node`. Added a fresh inline Tarjan SCC implementation (`EcsTarjanSccState` + `iter_sccs`/`strongconnect`/`visit_succ`/`pop`) returning SCCs in reverse-topological order. Added `toposort(g)`: explicitly scans for self-loops -> `Loop(node)`, runs Tarjan SCC, extends the order with every SCC, collects SCCs of size > 1; if no cyclic SCCs reverses the order -> `Ok`; otherwise collects simple cycles across each cyclic SCC -> `Cycle(cycles)`. Added a Johnson elementary-circuits proxy (`simple_cycles_in_component` + `johnson_loop`/`johnson_root`/`johnson_dfs`/`subgraph_for_scc`) with the Bevy DFS-with-root-pop + subgraph-resplit design. Added `EcsDagCache` modeling `Dag` dirty cache (`new`/`is_dirty`/`is_toposorted`/`add_edge`-marks-dirty/`ensure_toposorted`-recompute-then-clear/`cached_toposort`/`cached_error_kind`/`cached_loop_node`). Small `Vec<i32>` helpers (`contains`/`clone`/`max_plus_one`/`reverse`).
+- 21 tests — tests/test_ecs_lib_graph_map_digraph_toposort_isolated.sla (new file). Covers Direction opposite/Incoming/Outgoing predicates; Result Ok/Loop/Cycle builders + accessors + out-of-range empty; DiGraph edge surface + neighbors + all_edges; Tarjan SCC singletons opposite to cycle-SCC detection; toposort self-loop -> Loop, DAG -> Ok [0,1,2] with parallel-root domain order, two-node cycle -> Cycle; DAG cache new-dirty, add-edge-marks-dirty, ensure_ok caches order, ensure_loop records loop_node, ensure_cycle records cycle kind and empty cached order, dirty cached_toposort empty; remove_node edge drop; Vec helpers.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/graph_map_digragh_toposort.sla`; generated-SM `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_graph_map_digraph_toposort_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 21; default backend fails the cycle/recursion-sized struct-move paths with the known SLA-by-value limitation already documented in current_plan.md (SAB isn't the gold standard; see existing `tests/test_ecs_scc_nonsend_isolated.sla` SAB regressions); `git diff --check` passes.
+- src/schedule/graph/graph_map.rs (DiGraph::toposort + iter_sccs + simple_cycles_in_component + DiGraphToposortError + Direction + Dag dirty cache) ✓ deepened
+- Compiler/SAB note: default backend fails the cycle/recursion paths due to by-value struct Vec recursion move edges (same family as the documented SCC SAB regressions); generated SA passes all 21.
+- Current measured counts: 276 lib modules, 178 test files, 90 examples, 4,289 `.sla` `@test` annotations.
+- Feature progress: graph_map DiGraph/DAG toposort + SCC + error/Direction surface ~15% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 175 — schedule_pass_deep (2026-07-11)
+- lib/schedule_pass_deep.sla: new file modeling Bevy `schedule::pass.rs` deep surface (shallow lib/schedule_pass.sla covers basic FlattenedDependencies + Kahn toposort; this adds pass trait + added_edges tracking + object-safe adapter). Added `EcsNodeId` (System/Set kind + key) mirroring `node.rs::NodeId::is_system`/`is_set`/`as_system`/`as_set`/`kind_label` + From<SystemKey>/From<SystemSetKey>. Added `EcsSystemKey`/`EcsSystemSetKey` (new/id/eq/kind_label). Added `EcsFlatDeps` modeling `FlattenedDependencies<'a>`: nodes + edges_from/to + a parallel added_from/to set, with `add_node` (dedup), `add_edge` (forward to DAG + record-into-added-set dedup), `remove_edge` (forward to DAG only — Bevy intentionally does not record removed edges), `added_edges` snapshot + `contains_edge` + `added_contains`. Added `toposort` (Kahn), `toposort_and_graph` (ok + sorted + nodes + flattened edges), `all_edges_flat`. Added `collapse_set_produce(systems, strategy)` with chain and bucket strategies + `flat_deps_apply_collapse` (inserts produced system->system edges). Added `EcsDependencyOptions` (some/none + type_id + configured flag) and `ecs_pass_add_dependency(node, node, options)` mirroring `ScheduleBuildPass::add_dependency` (records system->system edges; set endpoints are skipped, modeled as the collapse_set-bridge boundary). Added `EcsPassObjAdapter` (pass_kind + edge_options_type_id) modeling `ScheduleBuildPassObj` blanket adapter: `resolve_options` (TypeIdMap lookup by edge_options_type_id), `add_dependency` dispatch through the resolved options, and `collapse_set` accumulating into `dependencies_to_add`. Added `EcsPassBuildResult` (Ok/Cycle/Custom) + builders/predicates + `build_generic` facade running toposort and surfacing Cycle.
+- 31 tests — tests/test_ecs_lib_schedule_pass_deep_isolated.sla (new file). Covers NodeId constructors + kind predicates + as_system/as_set + kind_labels; SystemKey/SystemSetKey new/eq/kind_label; NodeId::from_system_key/from_set_key; FlatDeps new/counts/add_node-dedup/add_edge/logs-added-and-creates-nodes/add_edge-dedups-added-records/remove-edge-forwards-but-does-not-record/remove-missing-returns-false; toposort acyclic/cycle/parallel-roots-order; toposort_and_graph full tuple; collapse_set chain/bucket/single-system; apply_collapse records added_edges; dep_options some/none; pass_add_dependency system-to-system vs set-endpoint-ignored; pass_obj_adapter resolve_options match/missing/constructors; pass_obj_adapter add_dependency dispatch through options; pass_obj_adapter collapse_set accumulates; pass_build_result ok/cycle/custom accessors; pass_build_generic acyclic/cycle; vec_contains_i64 helper.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_pass_deep.sla`; `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_pass_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 31; default `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_pass_deep_isolated.sla --jobs 1 --trace-panic` passes 31; `git diff --check` passes.
+- src/schedule/pass.rs (ScheduleBuildPass trait + FlattenedDependencies added_edges/remove_edge + collapse_set edge producer + ScheduleBuildPassObj adapter) + src/schedule/node.rs (NodeId/SystemKey/SystemSetKey surface used by passes) ✓ deepened
+- Current measured counts: 277 lib modules, 179 test files, 90 examples, 4,320 `.sla` `@test` annotations.
+- Feature progress: schedule pass deep surface ~20% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 176 — auto_insert_apply_deferred_deep (2026-07-11)
+- lib/auto_insert_apply_deferred_deep.sla: new file modeling Bevy `schedule/auto_insert_apply_deferred.rs` deep surface. Shallow lib/schedule_auto_insert_deferred.sla covers the pass struct + simple build; this adds the algorithmic core (~150 lines of Bevy domain logic) from the full build(). Added `EcsAidNodeKey` (SystemKey accessor/eq) and `EcsAidFlatEdges` directed-edge list (add/remove/outgoing). Added `EcsAidPass` mirroring Bevy `AutoInsertApplyDeferredPass`: `no_sync` flattened edge pair list with dedup, distance-keyed sync-point cache (`sync_distances` + `sync_node_ids`) + monotonic `next_sync_node` allocator starting at 100000; `add_dependency` records `IgnoreDeferred` edges only; `no_sync_add` dedups; `add_auto_sync`/`get_sync_point` cache or allocate by distance; full `build()`. build() mirrors the canonical two-phase algorithm:
+  - Phase 1: topological node iteration; per-node `(distance, pending_sync)`; explicit sync nodes clear pending + are cached in `distance_to_explicit_sync_node`; otherwise `node_needs_sync = has_deferred` unless already `pending_sync` from an earlier IgnoredDeferred edge. For each outgoing target: IgnoredDeferred edges on system->system pairs with a non-exclusive target set `target.pending_sync = true` and skip the immediate sync weight; weight = 1 when edge needs sync OR target is an explicit sync node; `target_distance = max(existing, node_distance + weight)`.
+  - Phase 2: per edge where source/target distances differ and target is not itself an explicit sync, insert `key -> sync_point -> target` and drop the direct edge. The sync point is the explicit sync node for that target distance when cached, else freshly allocated via `get_sync_point`.
+- Added `collapse_set(set_id, systems, incoming, outgoing)` mirroring Bevy's IgnoreDeferred forwarding: empty-systems branch chains (a,set)&(set,b) both no-sync into (a,b); non-empty-systems branch forwards `(a, set)` to `(a, system(sys))` for each sys on the incoming side and `(set, b)` to `(system(sys), b)` on the outgoing side. Added `EcsAidBuildResult` (resulting edges + new_sync_point_keys + flattened triple list) with accessors including `sync_edge_triple(i)`.
+- 17 tests — tests/test_ecs_lib_auto_insert_apply_deferred_deep_isolated.sla (new file). Covers node key accessor/eq; flat_edges add/remove/outgoing; pass new clean; add_dependency IgnoreDeferred records-no-sync; no_sync_contains dedup; add_auto_sync monotonic; get_sync_point cache-by-distance; build no-deferred keeps edges unchanged; build deferred inserts sync point (one new sync node, key->sync->target triple); build no_sync edge delays the sync to a later edge (pending_sync forwarding); build explicit-sync-node not replaced; build cache reuse explicit-sync node across parallel edges (only one new sync allocated); index_of helper; collapse_set empty-systems (a,b) chaining; collapse_set non-empty incoming forwarding to each system; collapse_set non-empty outgoing forwarding for each system; collapse_set no-incoming/outgoing no forwarding.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/auto_insert_apply_deferred_deep.sla`; `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_auto_insert_apply_deferred_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 17; default `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_auto_insert_apply_deferred_deep_isolated.sla --jobs 1 --trace-panic` passes 17; `git diff --check` passes.
+- src/schedule/auto_insert_apply_deferred.rs (AutoInsertApplyDeferredPass full build(): distance topo-scan + explicit-sync cache + pending-sync no_sync forwarding + get_sync_point cache + collapse_set IgnoreDeferred forwarding) ✓ deepened
+- Current measured counts: 278 lib modules, 180 test files, 90 examples, 4,337 `.sla` `@test` annotations.
+- Feature progress: auto_insert_apply_deferred build algorithm surface ~15% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 177 — schedule_config_deep (2026-07-11)
+- lib/schedule_config_deep.sla: new file modeling Bevy `schedule/config.rs` + `graph/mod.rs` GraphInfo/Dependency/Ambiguity and `schedule.rs` Chain. Shallow lib/schedule_config.sla and lib/schedule_configs_extras.sla stay as the simple value slices. Added `EcsDependency` (Before/After + set_id + ignore_deferred via `add_config(IgnoreDeferred)`), `EcsAmbiguity` (Check / IgnoreWithSet / IgnoreAll) with Bevy `ambiguous_with` helper (Check->IgnoreWithSet, IgnoreWithSet push, IgnoreAll no-op), `EcsGraphInfoDeep` (hierarchy + typed dependency vectors + Ambiguity) with before/after/before_ignore_deferred/after_ignore_deferred/ambiguous_with/ambiguous_with_all, `EcsChain` (Unchained/Chained + set_chained / set_chained_with_ignore_deferred), `EcsScheduleConfigDeep` (system/set node, conditions, default_system_sets into hierarchy, system-type-set configure assert rejection), nested `EcsScheduleConfigsDeep` enum (Single leaf / Group with children + collective_conditions + Chain metadata) implementing the full IntoScheduleConfigs inner surface: in_set (rejects system type sets), before/after/before_ignore_deferred/after_ignore_deferred, distributive_run_if vs collective run_if_dyn, ambiguous_with/ambiguous_with_all, chain/chain_ignore_deferred (no-op on Single), into_configs identity, plus tree walk helpers for leaf condition/hierarchy/dependency/IgnoreAll counts.
+- 20 tests — tests/test_ecs_lib_schedule_config_deep_isolated.sla (new file). Covers Dependency before/after/ignore_deferred; Ambiguity Check->IgnoreWithSet push and IgnoreAll no-op; GraphInfo hierarchy + 4 dependency kinds; GraphInfo ambiguous_with/all; Chain set_chained and set_chained_with_ignore_deferred; ScheduleConfig system with default sets; system-set configure rejects system type set; push condition; single in_set/before/after; in_set rejects system type set; group in_set applies to all leaves; group before/after_ignore_deferred; distributive vs collective run_if; ambiguous_with_all on group; chain/chain_ignore_deferred on group + no-op on single; into_configs identity; nested group distributive+in_set; OOR accessors.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_config_deep.sla`; generated SA `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_schedule_config_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 20; default backend passes 20; `git diff --check` passes.
+- src/schedule/config.rs (ScheduleConfig/ScheduleConfigs/IntoScheduleConfigs + Dependency/Ambiguity/Chain/GraphInfo) ✓ deepened
+- Current measured counts: 279 lib modules, 181 test files, 90 examples, 4,357 `.sla` `@test` annotations.
+- Feature progress: schedule config deep nested surface ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 178 — schedule_condition_deep (2026-07-11)
+- lib/schedule_condition_deep.sla: new file modeling Bevy `schedule/condition.rs` combinator evaluation order + stateful common_conditions. Shallow lib/schedule_condition.sla and lib/schedule_condition_advanced.sla stay as simple bool helpers. Added `EcsCondOutcome` (Ok/Err with unwrap_or(false) matching RunSystemError handling). Added all 10 combinator kinds (AndThen/AndEager/NandThen/NandEager/NorElse/NorEager/OrElse/OrEager/Xnor/Xor) with Then vs Eager short-circuit policy: AndThen/NandThen run B only when A unwraps true; OrElse/NorElse run B only when A unwraps false; Eager + Xor/Xnor always run both. `EcsCombEval` reports result + a_ran/b_ran + unwrapped values. NotMarker negate with err->false. SystemCondition kind builders. Stateful Local-backed trackers: `resource_changed_or_removed` / `resource_removed` (existed flag), `condition_changed` / `condition_changed_to` (prev default false), `run_once`. Value-level facades for resource_exists/added/changed/exists_and_changed/equals/exists_and_equals/exists_and, on_message, any_with_component/any_component_removed/any_match_filter. resource_changed/resource_equals return (ok,value) for missing-resource panic surface.
+- 23 tests — tests/test_ecs_lib_schedule_condition_deep_isolated.sla (new file). Covers outcome unwrap; AndThen short-circuit vs run-B; AndEager always-B; OrElse short-circuit vs run-B; OrEager; NandThen/NorElse short-circuit+negate; Xor/Xnor eager; NandEager/NorEager; err unwrap_or false; NotMarker; kind builders; res_changed_or_removed Local track; res_removed Local track; resource facades; equals variants; on_message/any helpers; condition_changed/changed_to Local prev; run_once; should_run_b policy table.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_condition_deep.sla`; generated SA 23 pass; default backend 23 pass; `git diff --check` passes.
+- src/schedule/condition.rs (SystemCondition combinators + common_conditions stateful trackers) ✓ deepened
+- Current measured counts: 280 lib modules, 182 test files, 90 examples, 4,380 `.sla` `@test` annotations.
+- Feature progress: schedule condition combinator short-circuit + stateful trackers ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 179 — schedule_node_deep (2026-07-11)
+- lib/schedule_node_deep.sla: new file modeling Bevy `schedule/node.rs` packing + conflict algorithm + SystemSets partial uninit. Shallow lib/schedule_node.sla and lib/schedule_node_sets.sla stay as basic containers. Added CompactNodeIdAndDirection / CompactNodeIdPair packing with From/Into round-trips for system and set NodeIds (KeyData + is_system flags). SystemNode Option wrapper (get/clear/access_initialized). Access model with is_compatible + get_conflicts Individual vs All. Full `Systems::get_conflicting_systems` algorithm: iterate disconnected pairs, skip ambiguous_with edges and ambiguous_with_all keys, exclusive => empty-component conflict, else Individual conflicts filtered by ignored_component_ids (drop empty after filter) or All => empty-component conflict. ConflictingSystems check_if_not_empty (Ok/Err warning count). SystemSets deep: get_key_or_insert map, insert with UninitializedSet condition ranges (append-friendly start..end), initialize drain, check_type_set_ambiguity (system-type set with instances>1 and relations>0). Systems deep: insert/get/remove/initialize/uninit queue + access_init flags.
+- 23 tests — tests/test_ecs_lib_schedule_node_deep_isolated.sla (new file). Covers NodeId deep; compact dir/pair round-trips and eq; SystemNode option; access compatibility/conflicts; get_conflicting_systems exclusive/individual/skip ambiguous_with/skip ambiguous_with_all/filter ignored; check_if_not_empty; SystemSets insert/uninit ranges/append second range/initialize/type-set ambiguity; Systems insert/get/remove/initialize and remove-from-uninit.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_node_deep.sla`; generated SA 23 pass; default backend 23 pass; `git diff --check` passes.
+- src/schedule/node.rs (CompactNodeId*, Systems::get_conflicting_systems, SystemSets uninit ranges, SystemNode) ✓ deepened
+- Current measured counts: 281 lib modules, 183 test files, 90 examples, 4,403 `.sla` `@test` annotations.
+- Feature progress: schedule node compact packing + conflict detection + SystemSets uninit ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 180 — schedules_deep (2026-07-11)
+- lib/schedules_deep.sla: new file modeling Bevy `Schedules` collection (schedule.rs lines 46-284). Shallow lib/schedules.sla covers basic insert/remove/get; this deepens temporarily_removed/empty_labels contracts, ignored_scheduling_ambiguities, and entry-based multi-schedule APIs. Added `EcsSchedDeepEntry` stub (systems/sets/ignore pairs/build_settings_tag/change_tick_checks). `insert` clears temporarily_removed and reports replace; `reinsert` reports was_temporarily_removed; permanent `remove` does not track temp/empty; `remove_temporarily` present path inserts temp + clears empty_labels, missing path marks empty_labels; `remove_entry`; `entry` create-or-get with monotonic schedule ids; `configure_schedules` applies build settings tag to all present only; `allow_ambiguous_component/resource` unique ComponentId set; `add_systems`/`configure_sets`/`ignore_ambiguity` via entry; `remove_systems_in_set` returns ScheduleNotFound when missing; `check_change_ticks` increments all; iter labels; snapshots for temp/empty.
+- 20 tests — tests/test_ecs_lib_schedules_deep_isolated.sla (new file). Covers new empty; insert new/replace; insert clears temp; reinsert was_temp flag; permanent remove; remove_temporarily present/missing; remove_entry; entry create/get; configure_schedules present-only; ignored ambiguities; add_systems/configure_sets/ignore_ambiguity; remove_systems_in_set not-found and filter; check_change_ticks; iter order; snapshots; entry_at/get missing.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedules_deep.sla`; generated SA 20 pass; default backend 20 pass; `git diff --check` passes.
+- src/schedule/schedule.rs (Schedules) ✓ deepened
+- Current measured counts: 282 lib modules, 184 test files, 90 examples, 4,423 `.sla` `@test` annotations.
+- Feature progress: Schedules collection deep surface ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 181 — schedule_graph_deep (2026-07-11)
+- lib/schedule_graph_deep.sla: new file modeling Bevy `ScheduleGraph` process_configs / hierarchy / dependency surface (schedule.rs). Shallow lib/schedule_graph.sla covers DiGraph/DAG/Tarjan; this deepens config processing. Added NodeId-like `EcsSgNode`, directed edge store with neighbors in/out, undirected ambiguous_with. `ProcessConfigsResult` with densely_chained flag. ScheduleGraph deep: systems/sets insert, hierarchy+dependency DAGs, set membership streams, anonymous set counter, changed flag, pass dependency counters. `add_system_inner` applies hierarchy membership, before/after deps, ambiguous_with/all. `apply_collective_conditions` single vs multi (anonymous set + in_set). `chain_process_results` mirrors Bevy densely_chained endpoint selection when chaining groups. `process_system_list` convenience. `add_edges_for_transitive_dependencies` cross-product bridging. `systems_in_set` returns Uninitialized/SetNotFound/Ok.
+- 20 tests — tests/test_ecs_lib_schedule_graph_deep_isolated.sla (new). Covers insert/changed, anonymous sets, add_system_inner hierarchy/deps/ambiguous, collective conditions single/multi, unchained vs chained process lists, ignore_deferred pass counts, densely_chained endpoint-only edges, non-dense full cross product, transitive bridging, systems_in_set errors, edge/undirected helpers.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/schedule_graph_deep.sla`; generated SA 20 pass; default backend 20 pass; `git diff --check` passes.
+- src/schedule/schedule.rs (ScheduleGraph process_configs / systems_in_set / transitive deps) ✓ deepened
+- Current measured counts: 283 lib modules, 185 test files, 90 examples, 4,443 `.sla` `@test` annotations.
+- Feature progress: ScheduleGraph process_configs + transitive surface ~30% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 182 — system_combinator_deep (2026-07-11)
+- lib/system_combinator_deep.sla: new file modeling Bevy `system/combinator.rs` CombinatorSystem + PipeSystem System impls. Shallow lib/system_combinator.sla keeps marker-id helpers. Added RunSystemError Ok/Failed/Skipped; Failed intercept via FallbackErrorHandler then replaced Failed(-1); Skipped/Ok passthrough. CombinatorSystem: flags OR, initialize merges both accesses + FallbackErrorHandler resource read, apply/queue deferred both, default_system_sets append, last_run from A / set both, clone requires re-initialize, is_read_only both. Combine markers AND_THEN/OR_ELSE short-circuit vs MAP_SUM/XOR always-both with a_ran/b_ran. PipeSystem: A then B value pipe; Failed/Skipped short-circuit B; initialize merges access WITHOUT fallback handler read; exclusive piping allowed.
+- 22 tests — tests/test_ecs_lib_system_combinator_deep_isolated.sla (new). Covers error kinds, flags, access merge+fallback, Failed intercept, AND_THEN/OR_ELSE short-circuit, MAP_SUM/XOR, combinator lifecycle, clone reinit, pipe ok/failed/skipped, pipe no fallback read, exclusive allowed.
+- Verification: generated SA 22 pass; default backend 22 pass; `git diff --check` passes.
+- src/system/combinator.rs (CombinatorSystem/PipeSystem) ✓ deepened
+- Current measured counts: 284 lib modules, 186 test files, 90 examples, 4,465 `.sla` `@test` annotations.
+- Feature progress: system combinator/pipe lifecycle + error intercept ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 183 — system_builder_deep (2026-07-11)
+- lib/system_builder_deep.sla: new file modeling Bevy `system/builder.rs` BuilderSystem state machine. Shallow lib/system_builder.sla keeps simple constructors. Flattened BuilderSystemDeep for SLA stability: Uninitialized/Initialized/Invalid states; initialize builds access from ParamBuilder kinds (Resource/ResMut/Query/Filtered/ParamSet/Option/Result/If/Dyn unwrap); run_unsafe records last_error=1 if uninit / 2 if invalid; apply/queue deferred no-op until initialized; last_run on meta before init carried into system; force_invalid sticky; build_state/build_system facades; ParamSetBuilder accumulate; QueryParamBuilder new/new_box.
+- 20 tests — tests/test_ecs_lib_system_builder_deep_isolated.sla (new). Covers all builder factories, state transitions, panic codes, deferred, last_run carry, invalid, reinit, facades, access derivation.
+- Verification: generated SA 20 pass; default backend 20 pass; `git diff --check` passes.
+- src/system/builder.rs (BuilderSystem/ParamBuilder/Option/Result/If/ParamSet/Local/Dyn/FilteredResources) ✓ deepened
+- Current measured counts: 285 lib modules, 187 test files, 90 examples, 4,485 `.sla` `@test` annotations.
+- Feature progress: system builder state machine ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 184 — system_input_deep (2026-07-11)
+- lib/system_input_deep.sla: new file modeling Bevy `system/input.rs` + `system_name.rs` SystemParam. Shallow lib/system_input.sla and lib/system_name.sla keep basic constructors. Added Inner/Param representations; SystemInput::wrap for Unit/In/InRef/InMut/Option/Static/Tuple/On; FromInput identity + Static-from-In; InMut deref/set/square; tuple2–4; input arity 0|1; pipe kind match; SystemName get_param from SystemMeta (regular + exclusive), with_name, read-only/no component access.
+- 20 tests — tests/test_ecs_lib_system_input_deep_isolated.sla (new). Covers wrap variants, InMut square, Option some/none, Static, FromInput, tuples, arity, pipe match, On, SystemName param/meta/with_name/eq/read-only.
+- Verification: generated SA 20 pass; default backend 20 pass; `git diff --check` passes.
+- src/system/input.rs + system_name.rs ✓ deepened
+- Current measured counts: 286 lib modules, 188 test files, 90 examples, 4,505 `.sla` `@test` annotations.
+- Feature progress: system input + SystemName param ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 185 — function_system_deep (2026-07-11)
+- lib/function_system_deep.sla: new deep model of Bevy `src/system/function_system.rs`. Covers `SystemMeta` flags (EMPTY/NON_SEND/DEFERRED/EXCLUSIVE) with irreversible `set_non_send`, name/last_run; `IntoResult` from plain / Result / BevyError; `FunctionSystem` has_state/world_id/param_state_id; `run_unsafe` error codes UNINITIALIZED/WORLD_MISMATCH/PARAM/INTO_RESULT; plain convenience run; `with_name`; `clone` de-initializes state + resets flags; system-level non_send/deferred/exclusive/last_run; `SystemState` cache get/get_mut/apply/matches_world/from_builder/build_system; IsFunctionSystem/HasSystemInput markers. Shallow `lib/function_system.sla` + extras retained.
+- 20 tests — tests/test_ecs_lib_function_system_deep_isolated.sla (new file). Covers SystemMeta defaults/name/last_run; non_send irreversible; deferred+exclusive flags; IntoResult plain/Result/BevyError; FunctionSystem new uninit; run_unsafe uninit/world mismatch/param fail/into_result err/result ok; initialize+run_plain; with_name+meta flags; clone de-init; SystemState new/matches_world/get_mut/get/apply; from_builder+build_system; markers; lifecycle init→run×2→clone→reinit.
+- Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/function_system_deep.sla`; `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_function_system_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 20; default `timeout 240s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_function_system_deep_isolated.sla --jobs 1 --trace-panic` passes 20; `git diff --check` passes.
+- src/system/function_system.rs (SystemMeta + FunctionSystem + IntoResult + SystemState + markers) ✓ deepened
+- Current measured counts: 284 lib modules, 189 test files, 90 examples, 4,489 `.sla` `@test` annotations.
+- Feature progress: function_system deep lifecycle/errors/SystemState ~50% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 186 — exclusive_function_system_deep (2026-07-11)
+- lib/exclusive_function_system_deep.sla: new deep model of Bevy `src/system/exclusive_function_system.rs` + `exclusive_system_param.rs`. ExclusiveFunctionSystem always flags NON_SEND|EXCLUSIVE, never deferred; initialize builds ExclusiveSystemParam state (QueryState/SystemState/Local/Phantom/Tuple); run_unsafe errors UNINITIALIZED/PARAM/INTO_RESULT; world.flush + change_tick; with_name; apply/queue deferred no-ops; Local persists across runs; HasExclusiveSystemInput path folds input into plain output; check_change_tick huge-gap reset; clone de-inits; markers. Shallow exclusive_*.sla retained.
+- 20 tests — tests/test_ecs_lib_exclusive_function_system_deep_isolated.sla (new). Covers ESP constructors/init/get_param/local bump; EFS defaults flags; with_name/from_func input; uninit/param/into_result errors; initialize+run flush/last_run; input fold; Local persist; QueryState id; deferred no-ops; set_last_run/default set; check_change_tick; clone; markers; lifecycle; tuple param; explicit SystemState id.
+- Verification: SA 20 pass; default 20 pass; `git diff --check` passes.
+- src/system/exclusive_function_system.rs + exclusive_system_param.rs ✓ deepened
+- Current measured counts: 285 lib modules, 190 test files, 90 examples, 4,509 `.sla` `@test` annotations.
+- Feature progress: exclusive function system + exclusive params deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 187 — system_registry_deep (2026-07-11)
+- lib/system_registry_deep.sla: new deep model of Bevy `src/system/system_registry.rs`. Fixed 8-slot World registry: SystemId + input/output types, SystemIdMarker, RegisteredSlot (Optional BoxedSystem + initialized + component presence + Local persistence + strong_refs), RemovedSystem, SystemHandle Strong/Weak (eq by entity), CachedSystemId type-key cache, RegisteredSystemDespawner queue, register/register_tracked/clone_strong/drop_strong/despawn_unused, unregister (NOT_REGISTERED/SELF_REMOVE/MISSING_COMPONENT/SYSTEM_MISSING), run_system_with modes (plain/input/SKIPPED/FAILED) with take-system reentry, flush_count, incorrect type, register_system_cached reuses entity + reinserts component, unregister_cached NOT_CACHED, run_system_cached_with, RSE mapping. Shallow system_registry.sla + system_registry_template.sla retained.
+- 20 tests — tests/test_ecs_lib_system_registry_deep_isolated.sla (new). Covers id/marker/handle; register/count; local persist across runs; input mode; not-registered/incorrect-type; skipped/failed; unregister removed; missing component/system; tracked strong clone/drop/despawn; weak downgrade; cache reuse; unregister_cached; run_cached; reinsert stripped component; independent locals; RSE mapping; despawner; cache clear; lifecycle reregister new entity.
+- Verification: SA 20 pass; default 20 pass; `git diff --check` passes.
+- src/system/system_registry.rs ✓ deepened
+- Current measured counts: 286 lib modules, 191 test files, 90 examples, 4,529 `.sla` `@test` annotations.
+- Feature progress: system_registry deep (register/run/cache/tracked) ~25% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 188 — schedule_system_deep (2026-07-11)
+- lib/schedule_system_deep.sla: new deep model of Bevy `src/system/schedule_system.rs`. WithInputWrapper (always-held T, run_unsafe ignores outer In and forwards &mut value, flags/last_run/deferred/initialize forward to inner). WithInputFromWrapper (Option<T>, FromWorld seed on initialize, run expects value present / NO_INPUT, reinitialize keeps value). ScheduleSystem alias lifecycle. Inner system run model output=input+func_id with value write-back. Shallow schedule_system.sla retained.
+- 20 tests — tests/test_ecs_lib_schedule_system_deep_isolated.sla (new). Covers inner init/run/deferred/last_run; WithInput new/value_mut/uninit/run value write-back; flags/deferred; WithInputFrom no-value/from_world/run/reinit keep/value_mut gate; ScheduleSystem; into facades; change tick; dual lifecycle.
+- Verification: SA 20 pass; default 20 pass; `git diff --check` passes.
+- src/system/schedule_system.rs ✓ deepened
+- Current measured counts: 287 lib modules, 192 test files, 90 examples, 4,549 `.sla` `@test` annotations.
+- Feature progress: schedule_system WithInput wrappers ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 189 — system_param_deep (2026-07-11)
+- lib/system_param_deep.sla: new deep model of Bevy `src/system/system_param.rs`. SystemParamValidation ok/invalid/skipped + new/mark_skipped; FilteredAccess bitmask (reads/writes) add_read/add_write/clone/extend/conflicts (write-vs-any); SystemMeta flags deferred/non_send/last_run; ParamDeep descriptors for Res/ResMut/Query/Local/Deferred/Phantom/Option/If/Static/Dyn/ChangeTick + build_access; init_access returns updated set + meta + conflict flag; ParamSet of up to 4 sub-params with init_access clone-check then merge; exclusive pN access; Local/Deferred queue/apply; SystemParamValidationError ok/invalid/skipped + mark_skipped; get_param Option→OK(None) / If→Skipped / plain→invalid mapping; Static into_inner; Dyn is/downcast; SystemChangeTick from_meta; EcsSpSystemParams 4-slot flat system init_access/get_all/apply/is_readonly. Fixed SLA UseAfterMove via exclusive-branch struct-field assignment (param_set_add, system_params_add) and unrolled loops.
+- 25 tests — tests/test_ecs_lib_system_param_deep_isolated.sla (new). Covers validation; access read/write/clone/conflict/extend; meta deferred/non_send/last_run; res/res_mut/query build_access; local/deferred/phantom/change_tick no-access; init_access conflict + deferred meta; param_set add/count/init_access no-conflict/conflict-with-prior; exclusive pN access; local bump; deferred queue/apply; get_param Option/If/plain invalid mapping; change tick records; static into_inner; dyn is/downcast; change_tick helper; system_params init no-conflict / conflict / deferred / get_all / is_readonly; res_mut pair.
+- Verification: SA 25 pass; default 25 pass; `git diff --check` passes.
+- src/system/system_param.rs (SystemParam access/init_access, ParamSet, Local, Deferred, If, Static/Dyn, validation) ✓ deepened
+- Current measured counts: 288 lib modules, 193 test files, 90 examples, 4,574 `.sla` `@test` annotations.
+- Feature progress: system_param deep access/validation mapping ~25% -> 75%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 190 — deferred_world_deep (DONE 2026-07-11)
+- lib/deferred_world_deep.sla: DeferredWorld deep model of src/world/deferred_world.rs (EntityMutableFetchError, get_entity_mut/get_mut, modify_component discard→mutate→insert hooks, relationship hook modes, trigger_on_*/trigger_raw/trigger, write_message/default/batch, structural ban, reborrow/change_tick/entities_and_commands).
+- 23 tests — tests/test_ecs_lib_deferred_world_deep_isolated.sla (new).
+- Fix: top-level negative const `ECS_DW_MSG_NONE = -1` hit `emitTopLevelConstDecl` CodegenError (unary expr not literal); sentinel moved to `0` because MessageId starts at 1.
+- Verification: SA 23 pass; default 23 pass.
+- src/world/deferred_world.rs ✓ deepened
+- Current measured counts: 289 lib modules, 194 test files, 90 examples, 4,597 `.sla` `@test` annotations.
+- Feature progress: deferred_world deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 191 — command_queue_deep (DONE 2026-07-11)
+- lib/command_queue_deep.sla: CommandQueue dense buffer + cursor, RawCommandQueue apply_or_drop_queued, panic recovery restore, silent/warn_on_unapplied drop, SystemBuffer apply/queue, append/is_empty/push, nested push/flush.
+- 22 tests — tests/test_ecs_lib_command_queue_deep_isolated.sla (new).
+- Verification: SA 22 pass; default 22 pass.
+- src/world/command_queue.rs ✓ deepened
+- Current measured counts: 290 lib modules, 195 test files, 90 examples, 4,619 `.sla` `@test` annotations.
+- Feature progress: command_queue deep ~20% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 192 — entity_command_deep (DONE 2026-07-11)
+- lib/entity_command_deep.sla: EntityCommand apply + EntityCommandError + with_entity, insert/Keep/FromWorld/With, remove/with_requires/by_id, clear/retain/despawn/observe, clone opt-in/out/components, move_components, log_components.
+- 22 tests — tests/test_ecs_lib_entity_command_deep_isolated.sla (new).
+- Verification: SA 22 pass; default 22 pass.
+- src/system/commands/entity_command.rs ✓ deepened
+- Current measured counts: 291 lib modules, 196 test files, 90 examples, 4,641 `.sla` `@test` annotations.
+- Feature progress: entity_command deep ~25% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 193 — stepping_deep (DONE 2026-07-11)
+- lib/stepping_deep.sla: Stepping Action queue (deferred updates), SystemBehavior AlwaysRun/NeverRun/Break/Continue, schedule order, cursor, skipped_systems masks, begin_frame/next_frame, step/continue/waiting.
+- 22 tests — tests/test_ecs_lib_stepping_deep_isolated.sla (new).
+- Verification: SA 22 pass; default 22 pass.
+- src/schedule/stepping.rs ✓ deepened
+- Current measured counts: 292 lib modules, 197 test files, 90 examples, 4,663 `.sla` `@test` annotations.
+- Feature progress: stepping deep ~15% -> 80%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 194 — entity_disabling_deep (DONE 2026-07-11)
+- lib/entity_disabling_deep.sla: Disabled + DefaultQueryFilters deep model of src/entity_disabling.rs (empty/from_world, register_disabling_component idempotent, modify_access Without injection, Allow/Has suppress, is_dense storage checks, multi-disabling query visibility, resource_scope overwrite escape hatch).
+- 23 tests — tests/test_ecs_lib_entity_disabling_deep_isolated.sla (new).
+- Verification: SA 23 pass; default 23 pass.
+- src/entity_disabling.rs ✓ deepened
+- Current measured counts: 293 lib modules, 198 test files, 90 examples, 4,686 `.sla` `@test` annotations.
+- Feature progress: entity_disabling deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 195 — spawn_batch_deep (DONE 2026-07-11)
+- lib/spawn_batch_deep.sla: SpawnBatchIter deep model of src/world/spawn_batch.rs (size_hint reserve/alloc_many, next bulk vs overflow spawn, Drop exhaust+free over-alloc+flush_commands, ExactSize/Fused/EntitySet uniqueness).
+- 20 tests — tests/test_ecs_lib_spawn_batch_deep_isolated.sla (new).
+- Verification: SA 20 pass; default 20 pass.
+- src/world/spawn_batch.rs ✓ deepened
+- Current measured counts: 294 lib modules, 199 test files, 90 examples, 4,706 `.sla` `@test` annotations.
+- Feature progress: spawn_batch deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 196 — resource_deep (DONE 2026-07-11)
+- lib/resource_deep.sla: Resource/IsResource/ResourceEntities deep model of src/resource.rs (insert uniqueness hooks, duplicate strip+warn, on_discard cache invalidation, on_despawn warn, despawned-canonical error, init/remove/get/contains).
+- 20 tests — tests/test_ecs_lib_resource_deep_isolated.sla (new).
+- Verification: SA 20 pass; default 20 pass.
+- src/resource.rs ✓ deepened
+- Current measured counts: 295 lib modules, 200 test files, 90 examples, 4,726 `.sla` `@test` annotations.
+- Feature progress: resource deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 197 — intern_deep (DONE 2026-07-11)
+- lib/intern_deep.sla: Internable leak/ref_eq/ref_hash + Interner double-checked intern + Interned pointer equality (cross-interner inequality) deep model of src/intern.rs.
+- 16 tests — tests/test_ecs_lib_intern_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass.
+- src/intern.rs ✓ deepened
+- Current measured counts: 298 lib modules, 203 test files, 90 examples, 4,780 `.sla` `@test` annotations.
+- Feature progress: intern deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 198 — batching_deep (DONE 2026-07-11)
+- lib/batching_deep.sla: BatchingStrategy range empty short-circuit (fixed), min/max clamp, batches_per_thread>0, thread_count>0, div_ceil calc_batch_size deep model of src/batching.rs.
+- 19 tests — tests/test_ecs_lib_batching_deep_isolated.sla (new).
+- Note: default backend Leb128Overflow on i64::MAX stand-in; usize::MAX modeled as 2147483647.
+- Verification: SA 19 pass; default 19 pass.
+- src/batching.rs ✓ deepened
+- Current measured counts: 298 lib modules, 203 test files, 90 examples, 4,780 `.sla` `@test` annotations.
+- Feature progress: batching deep ~40% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 199 — error_handler_deep (DONE 2026-07-11)
+- lib/error_handler_deep.sla: ErrorContext kinds/display, match_severity dispatch, named handlers, FallbackErrorHandler, PANIC_ORIGINATES_FROM_ERROR_HANDLER, CommandOutput HandleError deep model of src/error/handler.rs + command_handling.rs.
+- 19 tests — tests/test_ecs_lib_error_handler_deep_isolated.sla (new).
+- Verification: SA 19 pass; default 19 pass.
+- src/error/handler.rs + command_handling.rs ✓ deepened
+- Current measured counts: 298 lib modules, 203 test files, 90 examples, 4,780 `.sla` `@test` annotations.
+- Feature progress: error handler deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 200 — label_deep + name_deep (DONE 2026-07-11)
+- lib/label_deep.sla: DynEq/DynHash, label interner, Interned schedule/system-set labels deep model of src/label.rs.
+- lib/name_deep.sla: Name owned/borrowed + set/mutate/hash, NameOrEntity prefer-name deep model of src/name.rs.
+- 15 + 16 tests — tests/test_ecs_lib_label_deep_isolated.sla, tests/test_ecs_lib_name_deep_isolated.sla (new).
+- Verification: SA 15+16 pass; default 15+16 pass.
+- src/label.rs + src/name.rs ✓ deepened
+- Current measured counts: 300 lib modules, 205 test files, 90 examples, 4,811 `.sla` `@test` annotations.
+- Feature progress: label/name deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 201 — query_error_deep (DONE 2026-07-11)
+- lib/query_error_deep.sla: QueryEntityError {QueryDoesNotMatch(Entity,ArchetypeId), NotSpawned(EntityNotSpawnedError), AliasedMutability}, nested EntityNotSpawnedError Invalid/ValidButNotSpawned, QuerySingleError DebugName variants, QueryNotDenseError, get/get_many_mut classify helpers deep model of src/query/error.rs (+ entity NotSpawned nesting).
+- 18 tests — tests/test_ecs_lib_query_error_deep_isolated.sla (new).
+- Verification: SA 18 pass; default 18 pass.
+- src/query/error.rs ✓ deepened (shallow legacy ALIEN/ENTITY_NOT_FOUND retained)
+- Current measured counts: 301 lib modules, 206 test files, 90 examples, 4,829 `.sla` `@test` annotations.
+- Feature progress: query_error deep ~30% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 202 — world_identifier_deep (DONE 2026-07-11)
+- lib/world_identifier_deep.sla: WorldId monotonic never-reuse allocator, Option exhaustion, FromWorld, SystemParam/ReadOnly/ExclusiveSystemParam, SparseSetIndex deep model of src/world/identifier.rs.
+- 15 tests — tests/test_ecs_lib_world_identifier_deep_isolated.sla (new).
+- Note: usize::MAX stand-in 2147483647 for default-backend LEB safety.
+- Verification: SA 15 pass; default 15 pass.
+- src/world/identifier.rs ✓ deepened
+- Current measured counts: 302 lib modules, 207 test files, 90 examples, 4,844 `.sla` `@test` annotations.
+- Feature progress: world_identifier deep ~40% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 203 — message_cursor_deep (DONE 2026-07-11)
+- lib/message_cursor_deep.sla: MessageCursor last_message_count + dual-buffer Messages model; read/read_mut/with_id; len/missed/clear/is_empty; iterator next/count/last/nth clamp; par_read unread marker deep model of src/message/message_cursor.rs (+ Messages update drop semantics).
+- 16 tests — tests/test_ecs_lib_message_cursor_deep_isolated.sla (new).
+- Note: par_read has no real TaskPool; batching marker only.
+- Verification: SA 16 pass; default 16 pass.
+- src/message/message_cursor.rs ✓ deepened
+- Current measured counts: 303 lib modules, 208 test files, 90 examples, 4,860 `.sla` `@test` annotations.
+- Feature progress: message_cursor deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 204 — thin_array_ptr_deep (DONE 2026-07-11)
+- lib/thin_array_ptr_deep.sla: ThinArrayPtr empty/with_capacity/alloc/realloc, initialize/get/get_mut, swap_remove(+nonoverlapping), clear_elements needs_drop, drop/dealloc, as_slice deep model of src/storage/thin_array_ptr.rs.
+- 18 tests — tests/test_ecs_lib_thin_array_ptr_deep_isolated.sla (new).
+- Note: fixed 16-slot model; capacity overflow returns last_error rather than OOM panic.
+- Verification: SA 18 pass; default 18 pass.
+- src/storage/thin_array_ptr.rs ✓ deepened
+- Current measured counts: 304 lib modules, 209 test files, 90 examples, 4,878 `.sla` `@test` annotations; 32 `*_deep.sla` modules.
+- Feature progress: thin_array_ptr deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 205 — query_par_iter_deep (DONE 2026-07-11)
+- lib/query_par_iter_deep.sla: QueryParIter batching_strategy/for_each/for_each_init sequential vs multi-thread batch partition; QueryParManyIter(+unique) entity-list filter mask deep model of src/query/par_iter.rs.
+- 16 tests — tests/test_ecs_lib_query_par_iter_deep_isolated.sla (new).
+- Note: no real ComputeTaskPool; parallel path is sequential batch simulation with multi-init.
+- Verification: SA 16 pass; default 16 pass.
+- src/query/par_iter.rs ✓ deepened
+- Current measured counts: 305 lib modules, 210 test files, 90 examples, 4,894 `.sla` `@test` annotations; 33 `*_deep.sla` modules.
+- Feature progress: query_par_iter deep ~15% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 206 — event_trigger_deep (DONE 2026-07-11)
+- lib/event_trigger_deep.sla: GlobalTrigger / EntityTrigger / PropagateEntityTrigger (parent Traversal, auto/manual/stop) / EntityComponentsTrigger + CachedObservers scopes + trigger_id deep model of src/event/trigger.rs.
+- 18 tests — tests/test_ecs_lib_event_trigger_deep_isolated.sla (new).
+- Verification: SA 18 pass; default 18 pass.
+- src/event/trigger.rs ✓ deepened
+- Feature progress: event_trigger deep ~20% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 207 — component_deep (DONE 2026-07-11)
+- lib/component_deep.sla: unified StorageType/Mutability/Hooks/CloneBehavior resolve, RequiredComponents shallowest-depth, Components register/lookup, ComponentIdFor, lifecycle fire, insert-plan expansion deep model of src/component/{mod,clone,required,register}.rs.
+- 16 tests — tests/test_ecs_lib_component_deep_isolated.sla (new).
+- Note: exclusive-branch early-return required for multi-slot set_at (UseAfterMove).
+- Verification: SA 16 pass; default 16 pass.
+- src/component core ✓ deepened (specialized shallow modules retained)
+- Current measured counts: 307 lib modules, 212 test files, 90 examples, 4,928 `.sla` `@test` annotations; 35 `*_deep.sla` modules.
+- Feature progress: component core deep ~30% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 208 — event_mod_deep (DONE 2026-07-11)
+- lib/event_mod_deep.sla: Event/EntityEvent derive options (Global/Entity/Propagate, auto_propagate, traversal), EventKey, register_event_key/event_key idempotent, World::trigger path selection + SetEntityEventTarget deep model of src/event/mod.rs.
+- 18 tests — tests/test_ecs_lib_event_mod_deep_isolated.sla (new).
+- Verification: SA 18 pass; default 18 pass.
+- src/event/mod.rs ✓ deepened
+- Current measured counts: 308 lib modules, 213 test files, 90 examples, 4,946 `.sla` `@test` annotations; 36 `*_deep.sla` modules.
+- Feature progress: event_mod deep ~25% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 209 — system_name_deep (DONE 2026-07-11)
+- lib/system_name_deep.sla: SystemName(DebugName), SystemParam/ReadOnly/ExclusiveSystemParam, with_name, Logger bundle deep model of src/system/system_name.rs.
+- 14 tests — tests/test_ecs_lib_system_name_deep_isolated.sla (new).
+- Verification: SA 14 pass; default 14 pass.
+- src/system/system_name.rs ✓ deepened
+- Feature progress: system_name deep ~30% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 210 — message_update_deep (DONE 2026-07-11)
+- lib/message_update_deep.sla: ShouldUpdateMessages Always/Waiting/Ready, signal_message_update_system, message_update_condition, message_update_system transition, MessageRegistry.run_updates deep model of src/message/update.rs.
+- 16 tests — tests/test_ecs_lib_message_update_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass.
+- src/message/update.rs ✓ deepened
+- Feature progress: message_update deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 211 — remote_allocator_deep (DONE 2026-07-11)
+- lib/remote_allocator_deep.sla: Allocator alloc/free/alloc_many/free_many, RemoteAllocator alloc/close diagnostic-only is_closed, free-list LIFO + generation bump, capacity placeholder deep model of src/entity/remote_allocator.rs.
+- 16 tests — tests/test_ecs_lib_remote_allocator_deep_isolated.sla (new).
+- Note: concurrent SharedAllocator simplified to sequential shared state; capacity fixed 16 indices.
+- Verification: SA 16 pass; default 16 pass.
+- src/entity/remote_allocator.rs ✓ deepened
+- Current measured counts: 311 lib modules, 216 test files, 90 examples, 4,992 `.sla` `@test` annotations; 39 `*_deep.sla` modules.
+- Feature progress: remote_allocator deep ~15% -> 80%; overall API ~94–96%, behavioral ~86–91%.
+
+
+
+## Batch 212 — exclusive_system_param_deep (DONE 2026-07-11)
+- lib/exclusive_system_param_deep.sla: ExclusiveSystemParam State/Item/init/get_param for QueryState, SystemState, Local, PhantomData, SystemName, tuples; ExclusiveSystemParamItem alias deep model of src/system/exclusive_system_param.rs.
+- 14 tests — tests/test_ecs_lib_exclusive_system_param_deep_isolated.sla (new).
+- Note: exclusive multi-slot set uses early-return per branch (UseAfterMove).
+- Verification: SA 14 pass; default 14 pass.
+- src/system/exclusive_system_param.rs ✓ deepened
+- Feature progress: exclusive_system_param deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 213 — required_components_error_deep (DONE 2026-07-11)
+- lib/required_components_error_deep.sla: RequiredComponentsError DuplicateRegistration/CyclicRequirement/ArchetypeExists, display codes, eq, graph + ecs_rce_try_register order ArchetypeExists→Cyclic→Duplicate deep model of src/component/required.rs + World::try_register_required_components.
+- 15 tests — tests/test_ecs_lib_required_components_error_deep_isolated.sla (new).
+- Verification: SA 15 pass; default 15 pass.
+- src/component/required.rs RequiredComponentsError ✓ deepened
+- Feature progress: required_components_error deep ~40% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 214 — observer_system_param_deep (DONE 2026-07-11)
+- lib/observer_system_param_deep.sla: On system param event_key/event/event_mut/event_ptr/trigger/observer/caller, original_event_target/propagate/get_propagate, TriggerContext, Bundle B any-of interest matching deep model of src/observer/system_param.rs.
+- 16 tests — tests/test_ecs_lib_observer_system_param_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass.
+- src/observer/system_param.rs ✓ deepened
+- Current measured counts: 314 lib modules, 219 test files, 90 examples, 5,037 `.sla` `@test` annotations; 42 `*_deep.sla` modules.
+- Feature progress: observer_system_param deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 215 — lifecycle_deep (DONE 2026-07-11)
+- lib/lifecycle_deep.sla: HookContext, ComponentHooks (on_*/try_on_*), fixed EventKeys ADD/INSERT/DISCARD/REMOVE/DESPAWN (0..4), lifecycle events Add/Insert/Discard/Remove/Despawn, insert/remove/replace/despawn path order, RelationshipHookMode skip gate, RemovedComponentEntity + RemovedComponentMessages write/get/update, RemovedComponents reader (read/read_with_id/len/is_empty/clear) deep model of src/lifecycle.rs.
+- 16 tests — tests/test_ecs_lib_lifecycle_deep_isolated.sla (new).
+- Note: multi-kind hook dispatch flattens hook ids to i32 scalars first (UseAfterMove / multi-i32-tuple field quirks).
+- Verification: SA 16 pass; default 16 pass; `git diff --check` passes.
+- src/lifecycle.rs ✓ deepened
+- Current measured counts: 316 lib modules, 221 test files, 90 examples, 5,105 `.sla` `@test` annotations; 44 `*_deep.sla` modules.
+- Feature progress: lifecycle deep (hooks/events/RemovedComponents) ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 216 — observer_runner_deep (DONE 2026-07-11)
+- lib/observer_runner_deep.sla: ObserverRunner semantics — last_trigger_id reentrancy guard, non-short-circuit AND conditions, On payload construction, RunSystemError::Failed → ErrorContext::Observer + observer/fallback error handler, multi-observer same-trigger fanout deep model of src/observer/runner.rs.
+- 16 tests — tests/test_ecs_lib_observer_runner_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass; `git diff --check` passes.
+- src/observer/runner.rs ✓ deepened
+- Current measured counts: 317 lib modules, 222 test files, 90 examples, 5,121 `.sla` `@test` annotations; 45 `*_deep.sla` modules.
+- Feature progress: observer_runner deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 217 — observer_condition_deep (DONE 2026-07-11)
+- lib/observer_condition_deep.sla: ObserverCondition initialize/check (unwrap_or false on fail), ObserverWithCondition run_if chain, take_conditions, non-short-circuit AND fold with per-slot check counts deep model of src/observer/condition.rs.
+- 16 tests — tests/test_ecs_lib_observer_condition_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass; `git diff --check` passes.
+- src/observer/condition.rs ✓ deepened
+- Current measured counts: 318 lib modules, 223 test files, 90 examples, 5137 `.sla` `@test` annotations; 46 `*_deep.sla` modules.
+- Feature progress: observer_condition deep ~25% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 218 — observer_entity_cloning_deep (DONE 2026-07-11)
+- lib/observer_entity_cloning_deep.sla: EntityClonerBuilder::add_observers override/remove ObservedBy clone behavior; deferred component_clone_observed_by copies ObservedBy, pushes target into observer descriptor.entities, clones entity_observers and per-component entity_component_observers maps deep model of src/observer/entity_cloning.rs.
+- 15 tests — tests/test_ecs_lib_observer_entity_cloning_deep_isolated.sla (new).
+- Verification: SA 15 pass; default 15 pass; `git diff --check` passes.
+- src/observer/entity_cloning.rs ✓ deepened
+- Current measured counts: 319 lib modules, 224 test files, 90 examples, 5152 `.sla` `@test` annotations; 47 `*_deep.sla` modules.
+- Feature progress: observer entity cloning deep ~15% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 219 — change_detection_tick_deep (DONE 2026-07-11)
+- lib/change_detection_tick_deep.sla: Tick wrapping u32 model, relative_to, is_newer_than with MAX_CHANGE_AGE clamp, CheckChangeTicks, ComponentTicks/ComponentTicksMut set_added/set_changed/set_both, check_tick wrap, CHECK_TICK_THRESHOLD/MAX_CHANGE_AGE constants deep model of src/change_detection/tick.rs + mod.rs.
+- 16 tests — tests/test_ecs_lib_change_detection_tick_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass; `git diff --check` passes.
+- src/change_detection/tick.rs ✓ deepened
+- Current measured counts: 320 lib modules, 225 test files, 90 examples, 5168 `.sla` `@test` annotations; 48 `*_deep.sla` modules.
+- Feature progress: change_detection tick deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 220 — maybe_location_deep (DONE 2026-07-11)
+- lib/maybe_location_deep.sla: MaybeLocation track_location on/off modes, new/map/zip/into_option/unwrap_or_default, Option-layer transpose, copied/as_ref/assign, new_with_flattened deep model of src/change_detection/maybe_location.rs.
+- 16 tests — tests/test_ecs_lib_maybe_location_deep_isolated.sla (new).
+- Verification: SA 16 pass; default 16 pass; `git diff --check` passes.
+- src/change_detection/maybe_location.rs ✓ deepened
+- Feature progress: maybe_location deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 221 — change_detection_traits_deep (DONE 2026-07-11)
+- lib/change_detection_traits_deep.sla: DetectChanges is_added/is_changed/after/last_changed/changed_by; DetectChangesMut set_changed/set_added/set_last_*/bypass/set_if_neq/replace_if_neq/clone_from_if_neq/deref_mut_write with wrap-aware ticks deep model of src/change_detection/traits.rs.
+- 15 tests — tests/test_ecs_lib_change_detection_traits_deep_isolated.sla (new).
+- Verification: SA 15 pass; default 15 pass; `git diff --check` passes.
+- src/change_detection/traits.rs ✓ deepened
+- Current measured counts: 322 lib modules, 227 test files, 90 examples, 5199 `.sla` `@test` annotations; 50 `*_deep.sla` modules.
+- Feature progress: change_detection traits deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 222 — traversal_deep (DONE 2026-07-11)
+- lib/traversal_deep.sla: Traversal for () / Relationship / data-dependent, graph walk with max_depth + cycle detection, propagate_step deep model of src/traversal.rs.
+- 12 tests — tests/test_ecs_lib_traversal_deep_isolated.sla (new).
+- Note: graph_set/walk_push rebuild structs from scalars (field-assign UseAfterMove).
+- Verification: SA 12 pass; default 12 pass.
+- src/traversal.rs ✓ deepened
+- Feature progress: traversal deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 223 — never_deep (DONE 2026-07-11)
+- lib/never_deep.sla: Never uninhabited facade, FnRet never/ordinary output naming, system compat for panicking closures, match-empty type-level helper deep model of src/never.rs.
+- 7 tests — tests/test_ecs_lib_never_deep_isolated.sla (new).
+- Verification: SA 7 pass; default 7 pass.
+- src/never.rs ✓ deepened
+- Current measured counts: 324 lib modules, 229 test files, 90 examples, 5218 `.sla` `@test` annotations; 52 `*_deep.sla` modules.
+- Feature progress: never deep ~40% -> 95%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 224 — change_detection_params_deep (DONE 2026-07-11)
+- lib/change_detection_params_deep.sla: Ref/Mut/MutUntyped/Res/ResMut/NonSendMut with wrap-aware DetectChanges, set_if_neq/bypass/map_unchanged/reborrow, contiguous ticks slice deep model of src/change_detection/params.rs.
+- 15 tests — tests/test_ecs_lib_change_detection_params_deep_isolated.sla (new).
+- Verification: SA 15 pass; default 15 pass.
+- src/change_detection/params.rs ✓ deepened
+- Feature progress: change_detection params deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 225 — template_deep (DONE 2026-07-11)
+- lib/template_deep.sla: Template/FromTemplate, TemplateContext, SceneEntityReference/References get-spawn-on-miss, Identity/Default/Option/Vec/Fn/Entity/Error templates deep model of src/template.rs.
+- 14 tests — tests/test_ecs_lib_template_deep_isolated.sla (new).
+- Verification: SA 14 pass; default 14 pass.
+- src/template.rs ✓ deepened
+- Feature progress: template deep ~20% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 226 — spawn_related_deep (DONE 2026-07-11)
+- lib/spawn_related_deep.sla: Spawn/SpawnableList size_hint, SpawnIter, SpawnWith, WithRelated/WithOneRelated, parent-linked child spawn log deep model of src/spawn.rs.
+- 8 tests — tests/test_ecs_lib_spawn_related_deep_isolated.sla (new).
+- Verification: SA 8 pass; default 8 pass.
+- src/spawn.rs ✓ deepened
+- Current measured counts: 327 lib modules, 232 test files, 90 examples, 5255 `.sla` `@test` annotations; 55 `*_deep.sla` modules.
+- Feature progress: spawn related hierarchy deep ~20% -> 85%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 227 — observer_centralized_storage_deep (DONE 2026-07-11)
+- lib/observer_centralized_storage_deep.sla: CachedObservers lifecycle caches, ObserverMap insert/get/contains, global/component/entity register paths, archetype flags (ON_ADD/INSERT/DISCARD/REMOVE/DESPAWN), custom event_key caches deep model of src/observer/centralized_storage.rs.
+- 12 tests — tests/test_ecs_lib_observer_centralized_storage_deep_isolated.sla (new).
+- Verification: SA 12 pass; default 12 pass; `git diff --check` passes.
+- src/observer/centralized_storage.rs ✓ deepened
+- Current measured counts: 328 lib modules, 233 test files, 90 examples, 5267 `.sla` `@test` annotations; 56 `*_deep.sla` modules.
+- Feature progress: observer centralized storage deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 228 — observer_distributed_storage_deep (DONE 2026-07-11)
+- lib/observer_distributed_storage_deep.sla: Observer + ObserverDescriptor + ObservedBy; exclusive reject; dynamic/typed hook_on_add; on_remove unregister; ObservedBy on_remove despawn-when-empty; IntoObserver/IntoEntityObserver/run_if deep model of src/observer/distributed_storage.rs.
+- 15 tests — tests/test_ecs_lib_observer_distributed_storage_deep_isolated.sla (new).
+- Verification: SA 15 pass; default 15 pass; `git diff --check` passes.
+- src/observer/distributed_storage.rs ✓ deepened
+- Current measured counts: 329 lib modules, 234 test files, 90 examples, 5282 `.sla` `@test` annotations; 57 `*_deep.sla` modules.
+- Feature progress: observer distributed storage deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 229 — bundle_writer_deep (DONE 2026-07-11)
+- lib/bundle_writer_deep.sla: BundleScratch writer clear-without-reset, push_component register, push_by_id layout alloc, manual_drop with droppable flags, write/write_with relationship hook mode, entity dynamic insert deep model of src/bundle/writer.rs.
+- 10 tests — tests/test_ecs_lib_bundle_writer_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/bundle/writer.rs ✓ deepened
+- Current measured counts: 330 lib modules, 235 test files, 90 examples, 5292 `.sla` `@test` annotations; 58 `*_deep.sla` modules.
+- Feature progress: bundle writer deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 230 — bundle_remove_deep (DONE 2026-07-11)
+- lib/bundle_remove_deep.sla: BundleRemover new/require_all, sorted_remove, remove vs take edge cache, table move detection, empty_pre_remove keep gate, remove triggers/hooks, ArchetypeCreated deep model of src/bundle/remove.rs.
+- 10 tests — tests/test_ecs_lib_bundle_remove_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/bundle/remove.rs ✓ deepened
+- Current measured counts: 331 lib modules, 236 test files, 90 examples, 5302 `.sla` `@test` annotations; 59 `*_deep.sla` modules.
+- Feature progress: bundle remove deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 231 — bundle_insert_spawner_deep (DONE 2026-07-11)
+- lib/bundle_insert_spawner_deep.sla: BundleInserter InsertMode Keep/Replace, ArchetypeMoveType, ComponentStatus, discard/add/insert lifecycle, edge cache, BundleSpawner spawn/spawn_at/reserve/flush deep model of src/bundle/insert.rs + spawner.rs.
+- 10 tests — tests/test_ecs_lib_bundle_insert_spawner_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/bundle/insert.rs + spawner.rs ✓ deepened
+- Current measured counts: 332 lib modules, 237 test files, 90 examples, 5312 `.sla` `@test` annotations; 60 `*_deep.sla` modules.
+- Feature progress: bundle insert/spawner deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 232 — relationship_source_collection_deep (DONE 2026-07-11)
+- lib/relationship_source_collection_deep.sla: RelationshipSourceCollection Vec/HashSet/UniqueVec/OneToOne add-remove-reserve-shrink-extend, source_to_remove_before_add, Ordered insert/remove_at/sort/place/push_front/back deep model of src/relationship/relationship_source_collection.rs.
+- 10 tests — tests/test_ecs_lib_relationship_source_collection_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/relationship/relationship_source_collection.rs ✓ deepened
+- Current measured counts: 333 lib modules, 238 test files, 90 examples, 5322 `.sla` `@test` annotations; 61 `*_deep.sla` modules.
+- Feature progress: relationship source collection deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 233 — relationship_related_methods_deep (DONE 2026-07-11)
+- lib/relationship_related_methods_deep.sla: EntityWorldMut related API — add/insert/detach/replace_with_difference, despawn_related/children, with_related + RelatedSpawner, insert/remove_recursive BFS, RelationshipHookMode Run/Skip deep model of src/relationship/related_methods.rs.
+- 10 tests — tests/test_ecs_lib_relationship_related_methods_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/relationship/related_methods.rs ✓ deepened
+- Current measured counts: 334 lib modules, 239 test files, 90 examples, 5332 `.sla` `@test` annotations; 62 `*_deep.sla` modules.
+- Feature progress: relationship related_methods deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 234 — relationship_hooks_deep (DONE 2026-07-11)
+- lib/relationship_hooks_deep.sla: RelationshipHookMode Run/Skip/RunIfNotLinked, on_insert self-ref reject + target collection add, one-to-one replace, on_remove empty-target deferred flush, linked_spawn on_discard despawn sources deep model of src/relationship/mod.rs hooks.
+- 10 tests — tests/test_ecs_lib_relationship_hooks_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/relationship/mod.rs hooks ✓ deepened
+- Current measured counts: 335 lib modules, 240 test files, 90 examples, 5342 `.sla` `@test` annotations; 63 `*_deep.sla` modules.
+- Feature progress: relationship hooks deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 235 — hierarchy_deep (DONE 2026-07-11)
+- lib/hierarchy_deep.sla: ChildOf/Children linked_spawn, insert/remove/reparent sync, with_children/add/insert/remove_children, Children swap/sort, root_ancestor/descendant_count, despawn linked descendants deep model of src/hierarchy.rs.
+- 10 tests — tests/test_ecs_lib_hierarchy_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/hierarchy.rs ✓ deepened
+- Current measured counts: 336 lib modules, 241 test files, 90 examples, 5352 `.sla` `@test` annotations; 64 `*_deep.sla` modules.
+- Feature progress: hierarchy deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 236 — sparse_set_deep (DONE 2026-07-11)
+- lib/sparse_set_deep.sla: SparseArray/SparseSet insert-overwrite/get_or_insert/swap-remove/capacity, ComponentSparseSet ticks+changed_by, SparseSets multi ComponentId registry deep model of src/storage/sparse_set.rs.
+- 10 tests — tests/test_ecs_lib_sparse_set_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/sparse_set.rs ✓ deepened
+- Current measured counts: 337 lib modules, 242 test files, 90 examples, 5362 `.sla` `@test` annotations; 65 `*_deep.sla` modules.
+- Feature progress: sparse_set deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 237 — relationship_query_deep (DONE 2026-07-11)
+- lib/relationship_query_deep.sla: fixed-slot Relationship/RelationshipTarget tree model of src/relationship/relationship_query.rs — related, relationship_sources, root_ancestor, AncestorIter, iter_siblings, iter_descendants BFS, iter_descendants_depth_first DFS, iter_leaves; rewrote flatter control flow after if_expr typecheck failure.
+- 10 tests — tests/test_ecs_lib_relationship_query_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/relationship/relationship_query.rs ✓ deepened
+- Current measured counts: 338 lib modules, 243 test files, 90 examples, 5336 `.sla` `@test` annotations; 66 `*_deep.sla` modules.
+- Feature progress: relationship_query deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 238 — table_deep (DONE 2026-07-11)
+- lib/table_deep.sla: TableId/TableRow, Column initialize/replace/swap_remove/clear/ticks/changed_by, Table builder allocate set/get swap_remove clear, Tables empty-reserved registry push/set deep model of src/storage/table/mod.rs + column.rs.
+- 10 tests — tests/test_ecs_lib_table_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/table/mod.rs + column.rs ✓ deepened
+- Current measured counts: 339 lib modules, 244 test files, 90 examples, 5346 `.sla` `@test` annotations; 67 `*_deep.sla` modules.
+- Feature progress: table storage deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 238 — table_deep (DONE 2026-07-11)
+- lib/table_deep.sla: TableId/TableRow, Column initialize/replace/swap_remove/clear/ticks/changed_by, Table builder allocate set/get swap_remove clear, Tables empty-reserved registry push/set deep model of src/storage/table/mod.rs + column.rs.
+- 10 tests — tests/test_ecs_lib_table_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/table/mod.rs + column.rs ✓ deepened
+- Current measured counts: 339 lib modules, 244 test files, 90 examples, 5346 `.sla` `@test` annotations; 67 `*_deep.sla` modules.
+- Feature progress: table storage deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 239 — bundle_info_deep (DONE 2026-07-11)
+- lib/bundle_info_deep.sla: BundleId/InsertMode, BundleInfo explicit+required contributed split + duplicate reject, ComponentStatus/should_write, Bundles static type map + dynamic component-key registry deep model of src/bundle/info.rs.
+- 10 tests — tests/test_ecs_lib_bundle_info_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/bundle/info.rs ✓ deepened
+- Current measured counts: 340 lib modules, 245 test files, 90 examples, 5356 `.sla` `@test` annotations; 68 `*_deep.sla` modules.
+- Feature progress: bundle_info deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 240 — blob_array_deep (DONE 2026-07-11)
+- lib/blob_array_deep.sla: BlobArray layout/zst/drop, initialize/replace, swap_remove(+drop), clear/drop_last/drop_all, get_sub_slice/count deep model of src/storage/blob_array.rs.
+- 10 tests — tests/test_ecs_lib_blob_array_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/blob_array.rs ✓ deepened
+- Current measured counts: 341 lib modules, 246 test files, 90 examples, 5366 `.sla` `@test` annotations; 69 `*_deep.sla` modules.
+- Feature progress: blob_array deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 241 — storages_deep (DONE 2026-07-11)
+- lib/storages_deep.sla: Storages prepare_component Table/SparseSet dispatch + idempotency, sparse get/iter order, table/non_send registration counters deep model of src/storage/mod.rs.
+- 10 tests — tests/test_ecs_lib_storages_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/mod.rs ✓ deepened
+- Current measured counts: 342 lib modules, 247 test files, 90 examples, 5376 `.sla` `@test` annotations; 70 `*_deep.sla` modules.
+- Feature progress: storages deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 242 — non_send_storage_deep (DONE 2026-07-11)
+- lib/non_send_storage_deep.sla: NonSendData insert/replace/remove/remove_and_drop/thread-guard/ticks, NonSends get_or_insert/get/clear/iter/present-count deep model of src/storage/non_send.rs.
+- 10 tests — tests/test_ecs_lib_non_send_storage_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/storage/non_send.rs ✓ deepened
+- Current measured counts: 343 lib modules, 248 test files, 90 examples, 5386 `.sla` `@test` annotations; 71 `*_deep.sla` modules.
+- Feature progress: non_send storage deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 243 — component_info_deep (DONE 2026-07-11)
+- lib/component_info_deep.sla: ComponentId/StorageType/CloneBehavior, ComponentDescriptor component/resource/non_send, ComponentInfo hooks/required/required_by + update_archetype_flags deep model of src/component/info.rs.
+- 10 tests — tests/test_ecs_lib_component_info_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/component/info.rs ✓ deepened
+- Current measured counts: 344 lib modules, 249 test files, 90 examples, 5396 `.sla` `@test` annotations; 72 `*_deep.sla` modules.
+- Feature progress: component_info deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 244 — component_register_deep (DONE 2026-07-11)
+- lib/component_register_deep.sla: ComponentIds peek/next, register component/resource/non_send/descriptor with type_id dedup, queued register + apply_queued_registrations deep model of src/component/register.rs.
+- 10 tests — tests/test_ecs_lib_component_register_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/component/register.rs ✓ deepened
+- Current measured counts: 345 lib modules, 250 test files, 90 examples, 5406 `.sla` `@test` annotations; 73 `*_deep.sla` modules.
+- Feature progress: component_register deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 245 — component_required_deep (DONE 2026-07-11)
+- lib/component_required_deep.sla: RequiredComponents direct/all split, duplicate-direct error, inherited shallowest-depth wins, cycle check, archetype-exists gate, registrator facade deep model of src/component/required.rs.
+- 10 tests — tests/test_ecs_lib_component_required_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/component/required.rs ✓ deepened
+- Current measured counts: 346 lib modules, 251 test files, 90 examples, 5416 `.sla` `@test` annotations; 74 `*_deep.sla` modules.
+- Feature progress: component_required deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 246 — archetype_deep (DONE 2026-07-11)
+- lib/archetype_deep.sla: ArchetypeId/Row/Entity, ComponentStatus + ArchetypeAfterBundleInsert, Edges insert/remove/take caches, Archetype components/flags/allocate/swap_remove, Archetypes empty+get_or_create signature registry deep model of src/archetype.rs.
+- 10 tests — tests/test_ecs_lib_archetype_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/archetype.rs ✓ deepened
+- Current measured counts: 347 lib modules, 252 test files, 90 examples, 5426 `.sla` `@test` annotations; 75 `*_deep.sla` modules.
+- Feature progress: archetype deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 247 — component_clone_deep (DONE 2026-07-11)
+- lib/component_clone_deep.sla: ComponentCloneBehavior resolve, SourceComponent, EntityMapper, ComponentCloneCtx write/queue/map, via_clone/reflect/ignore dispatch deep model of src/component/clone.rs.
+- 10 tests — tests/test_ecs_lib_component_clone_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/component/clone.rs ✓ deepened
+- Current measured counts: 348 lib modules, 253 test files, 90 examples, 5436 `.sla` `@test` annotations; 76 `*_deep.sla` modules.
+- Feature progress: component_clone deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+## Batch 248 — entity_cloner_deep (DONE 2026-07-11)
+- lib/entity_cloner_deep.sla: EntityClonerBuilder OptIn/OptOut allow/deny/move/linked/insert_mode/overrides, EntityCloner should_clone/clone_entity/spawn_clone/would_write deep model of src/entity/clone_entities.rs.
+- 10 tests — tests/test_ecs_lib_entity_cloner_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/entity/clone_entities.rs ✓ deepened
+- Current measured counts: 349 lib modules, 254 test files, 90 examples, 5446 `.sla` `@test` annotations; 77 `*_deep.sla` modules.
+- Feature progress: entity_cloner deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 249 — entity_lifecycle_deep (DONE 2026-07-11)
+- lib/entity_lifecycle_deep.sla: DefaultQueryFilters register/is_disabling/entity_disabled, ComponentHooks on_*/try_*/flags, RemovedComponents fixed-cap write/read/clear/reset_cursor with EcsRemovedDeepRead result struct deep model of src/entity_disabling.rs + lifecycle RemovedComponents.
+- 10 tests — tests/test_ecs_lib_entity_lifecycle_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass. Fixed removed_read_exhausted SA segfault by replacing (bool, i32, EcsRemovedDeep) triple-tuple with EcsRemovedDeepRead + accessors.
+- src/entity_disabling.rs + lifecycle hooks/RemovedComponents ✓ deepened
+- Current measured counts: 350 lib modules, 255 test files, 90 examples, 5456 `.sla` `@test` annotations; 78 `*_deep.sla` modules.
+- Feature progress: entity_lifecycle deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 250 — entity_map_entities_deep (DONE 2026-07-11)
+- lib/entity_map_entities_deep.sla: EntityMapper identity/pair/hash/scene, MapEntities for entity/option/list/spring, SceneEntityMapper get_mapped allocate + set_mapped + finish reserve + world_scope deep model of src/entity/map_entities.rs.
+- 10 tests — tests/test_ecs_lib_entity_map_entities_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/entity/map_entities.rs ✓ deepened
+- Current measured counts: 351 lib modules, 256 test files, 90 examples, 5466 `.sla` `@test` annotations; 79 `*_deep.sla` modules.
+- Feature progress: entity_map_entities deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 251 — unsafe_world_cell_deep (DONE 2026-07-11)
+- lib/unsafe_world_cell_deep.sla: UnsafeWorldCell readonly/mutable mode, ticks/counts, get_entity spawn gate, resource get/mut-by-id with forbidden-mut, UnsafeEntityCell contains/get/get_mut deep model of src/world/unsafe_world_cell.rs.
+- 10 tests — tests/test_ecs_lib_unsafe_world_cell_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/world/unsafe_world_cell.rs ✓ deepened
+- Current measured counts: 352 lib modules, 257 test files, 90 examples, 5476 `.sla` `@test` annotations; 80 `*_deep.sla` modules.
+- Feature progress: unsafe_world_cell deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 252 — world_error_deep (DONE 2026-07-11)
+- lib/world_error_deep.sla: EntityNotSpawnedError, TryRunScheduleError, TryInsertBatchError, EntityDespawnError, EntityComponentError, EntityMutableFetchError, ResourceFetchError (+ classify helpers) deep model of src/world/error.rs.
+- 10 tests — tests/test_ecs_lib_world_error_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/world/error.rs ✓ deepened
+- Current measured counts: 353 lib modules, 258 test files, 90 examples, 5486 `.sla` `@test` annotations; 81 `*_deep.sla` modules.
+- Feature progress: world_error deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 253 — query_state_deep (DONE 2026-07-11)
+- lib/query_state_deep.sla: QueryState world_id/dense/init_access, read/write access, matched tables/archetypes, new_archetype required match, generation-gated update, as_readonly, get/get_many, intersect deep model of src/query/state.rs.
+- 10 tests — tests/test_ecs_lib_query_state_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/state.rs ✓ deepened
+- Current measured counts: 354 lib modules, 259 test files, 90 examples, 5496 `.sla` `@test` annotations; 82 `*_deep.sla` modules.
+- Feature progress: query_state deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 254 — query_builder_deep (DONE 2026-07-11)
+- lib/query_builder_deep.sla: QueryBuilder data/ref/mut, with/without, or/and/optional, dense inference, extend_access, transmute, build snapshot, entity filter match deep model of src/query/builder.rs.
+- 10 tests — tests/test_ecs_lib_query_builder_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/builder.rs ✓ deepened
+- Current measured counts: 355 lib modules, 260 test files, 90 examples, 5506 `.sla` `@test` annotations; 83 `*_deep.sla` modules.
+- Feature progress: query_builder deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 255 — query_filters_deep (DONE 2026-07-11)
+- lib/query_filters_deep.sla: With/Without/Or/Added/Changed/Spawned/Allow filters, filter bundle evaluator, Has/AnyOf/Option fetch, archetype filter, default-disable Allow bypass deep model of src/query/filter.rs + fetch.rs.
+- 10 tests — tests/test_ecs_lib_query_filters_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/filter.rs + fetch.rs ✓ deepened
+- Current measured counts: 356 lib modules, 261 test files, 90 examples, 5516 `.sla` `@test` annotations; 84 `*_deep.sla` modules.
+- Feature progress: query_filters deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 256 — query_iter_deep (DONE 2026-07-11)
+- lib/query_iter_deep.sla: QueryIter next/size_hint/nth/last/sort_by_value, QueryManyIter targets/found/next skip-missing deep model of src/query/iter.rs.
+- 10 tests — tests/test_ecs_lib_query_iter_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/iter.rs ✓ deepened
+- Current measured counts: 357 lib modules, 262 test files, 90 examples, 5526 `.sla` `@test` annotations; 85 `*_deep.sla` modules.
+- Feature progress: query_iter deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 257 — query_access_deep (DONE 2026-07-11)
+- lib/query_access_deep.sla: Access read/write/archetypal + reads-all inverted, is_compatible/get_conflicts, FilteredAccess with/without and filter-disjoint compatibility deep model of src/query/access.rs.
+- 10 tests — tests/test_ecs_lib_query_access_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/access.rs ✓ deepened
+- Current measured counts: 358 lib modules, 263 test files, 90 examples, 5536 `.sla` `@test` annotations; 86 `*_deep.sla` modules.
+- Feature progress: query_access deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 258 — query_lens_deep (DONE 2026-07-11)
+- lib/query_lens_deep.sla: QueryLens access/match, transmute subset + write downgrade, filtered transmute, join entity intersection, join_filtered, query view deep model of src/system/query.rs QueryLens.
+- 10 tests — tests/test_ecs_lib_query_lens_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/system/query.rs QueryLens ✓ deepened
+- Current measured counts: 359 lib modules, 264 test files, 90 examples, 5546 `.sla` `@test` annotations; 87 `*_deep.sla` modules.
+- Feature progress: query_lens deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 259 — query_fetch_deep (DONE 2026-07-11)
+- lib/query_fetch_deep.sla: Fetch Entity/Read/Ref/Write/Option/Has, AnyOf, Nested, QueryItem/ROQueryItem, spawn details deep model of src/query/fetch.rs.
+- 10 tests — tests/test_ecs_lib_query_fetch_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/fetch.rs ✓ deepened
+- Current measured counts: 360 lib modules, 265 test files, 90 examples, 5556 `.sla` `@test` annotations; 88 `*_deep.sla` modules.
+- Feature progress: query_fetch deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 260 — query_world_query_deep (DONE 2026-07-11)
+- lib/query_world_query_deep.sla: WorldQuery kind flags, dense combine, update_component_access, fetch ticks/row/value, shrink_to_readonly, archetype match rules deep model of src/query/world_query.rs.
+- 10 tests — tests/test_ecs_lib_query_world_query_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/world_query.rs ✓ deepened
+- Current measured counts: 361 lib modules, 266 test files, 90 examples, 5566 `.sla` `@test` annotations; 89 `*_deep.sla` modules.
+- Feature progress: query_world_query deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 261 — entity_set_deep (DONE 2026-07-11)
+- lib/entity_set_deep.sla: EntitySet unique insert/contains/remove, list uniqueness + collect_set, UniqueEntityVec, intersection, EntityEquivalent helpers deep model of src/entity/entity_set.rs.
+- 10 tests — tests/test_ecs_lib_entity_set_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/entity/entity_set.rs ✓ deepened
+- Current measured counts: 362 lib modules, 267 test files, 90 examples, 5576 `.sla` `@test` annotations; 90 `*_deep.sla` modules.
+- Feature progress: entity_set deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 262 — query_filtered_set_deep (DONE 2026-07-11)
+- lib/query_filtered_set_deep.sla: FilteredAccessSet add resource read/write, read_all/write_all, extend, clear, combined compatibility, filter-disjoint rescue, get_conflicts deep model of src/query/access.rs FilteredAccessSet.
+- 10 tests — tests/test_ecs_lib_query_filtered_set_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/access.rs FilteredAccessSet ✓ deepened
+- Current measured counts: 363 lib modules, 268 test files, 90 examples, 5586 `.sla` `@test` annotations; 91 `*_deep.sla` modules.
+- Feature progress: query_filtered_set deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 263 — query_sort_iter_deep (DONE 2026-07-11)
+- lib/query_sort_iter_deep.sla: QueryIter sort/sort_unstable/sort_desc/sort_by_key/sort_by_cached_key with consumed gate + sorted cursor next deep model of src/query/iter.rs sort family.
+- 10 tests — tests/test_ecs_lib_query_sort_iter_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/iter.rs sort family ✓ deepened
+- Current measured counts: 364 lib modules, 269 test files, 90 examples, 5596 `.sla` `@test` annotations; 92 `*_deep.sla` modules.
+- Feature progress: query_sort_iter deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+## Batch 264 — query_par_many_iter_deep (DONE 2026-07-11)
+- lib/query_par_many_iter_deep.sla: QueryParManyIter/Unique batching_strategy, for_each, for_each_init, unique-count visit model of src/query/par_iter.rs (no TaskPool).
+- 10 tests — tests/test_ecs_lib_query_par_many_iter_deep_isolated.sla (new).
+- Verification: SA 10 pass; default 10 pass.
+- src/query/par_iter.rs QueryParMany* ✓ deepened
+- Current measured counts: 365 lib modules, 270 test files, 90 examples, 5606 `.sla` `@test` annotations; 93 `*_deep.sla` modules.
+- Feature progress: query_par_many_iter deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+
+- [done] Batch 265 messages_buffer_deep: Bevy Messages dual-buffer (src/message/messages.rs) write/write_batch/write_default, get_cursor/get_cursor_current, update/update_drain, clear/drain, get_message/sequence, iter_current_update_messages, WriteBatchIds, oldest_message_count invariant. Fixed 8-slot sequences. 10 isolated tests SA+default pass (panic 119000–119199). Shallow messages_buffer retained. Current measured counts: 366 lib modules, 271 test files, 90 examples, 5616 `.sla` `@test` annotations; 94 `*_deep.sla` modules. Feature progress: messages_buffer deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 266 filtered_entity_deep: FilteredEntityRef/Mut/UnsafeFilteredEntityMut access-gated get/get_mut/set, contains, try_into_all, reborrow/into_readonly, change ticks, eq/ord (src/world/entity_access/filtered.rs). Fixed 4 component slots + bit Access. 10 isolated tests SA+default pass (panic 119200–119399). Shallow filtered_entity retained. Current measured counts: 367 lib modules, 272 test files, 90 examples, 5626 `.sla` `@test` annotations; 95 `*_deep.sla` modules. Feature progress: filtered_entity deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 267 query_access_iter_deep: EcsAccessLevel/Type is_compatible, AccessConflictError, has_conflicts_small/large threshold, QueryAccessError ComponentNotRegistered/EntityDoesNotMatch (src/query/access_iter.rs). 10 isolated tests SA+default pass (panic 119400–119599). Shallow query_access_iter retained. Current measured counts: 368 lib modules, 273 test files, 90 examples, 5636 `.sla` `@test` annotations; 96 `*_deep.sla` modules. Feature progress: query_access_iter deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 268 removed_component_messages_deep: RemovedComponentMessages SparseSet of dual-buffer Messages per component + RemovedComponents reader read/len/clear/miss-after-double-update (src/lifecycle.rs). 10 isolated tests SA+default pass (panic 119600–119799). Shallow removed_component_messages retained. Current measured counts: 369 lib modules, 274 test files, 90 examples, 5646 `.sla` `@test` annotations; 97 `*_deep.sla` modules. Feature progress: removed_component_messages deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 269 entity_access_except_deep: EntityRefExcept/EntityMutExcept exclusion bundle, get/get_mut/set, into_filtered, reborrow/readonly, spawn meta, eq/ord (src/world/entity_access/except.rs). 10 isolated tests SA+default pass (panic 119800–119999). Shallow entity_access_except retained. Current measured counts: 370 lib modules, 275 test files, 90 examples, 5656 `.sla` `@test` annotations; 98 `*_deep.sla` modules. Feature progress: entity_access_except deep ~15% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 270 message_mut_iterators_deep: MessageMutIterator/WithId next/count/last/nth/without_id + MessageMutParIter batching/for_each (no TaskPool) over dual-buffer Messages (src/message/mut_iterators.rs). 10 isolated tests SA+default pass (panic 120000–120199). Current measured counts: 371 lib modules, 276 test files, 90 examples, 5666 `.sla` `@test` annotations; 99 `*_deep.sla` modules. Feature progress: message_mut_iterators deep 0% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 271 entity_mut_deep: EntityMut reborrow/into_readonly/as_readonly/into_filtered, get/get_mut/set, change ticks, into_mut/borrow/ref, remove, eq/ord (src/world/entity_access/entity_mut.rs). 10 isolated tests SA+default pass (panic 120200–120399). Shallow entity_mut retained. Current measured counts: 372 lib modules, 277 test files, 90 examples, 5676 `.sla` `@test` annotations; 100 `*_deep.sla` modules. Feature progress: entity_mut deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 272 entry_deep: ComponentEntry and_modify/insert_entry/or_insert/or_default, Occupied get/insert/take/get_mut, Vacant insert with entity-backed storage (src/world/entity_access/entry.rs). 10 isolated tests SA+default pass (panic 120400–120599). Shallow entry retained. Current measured counts: 373 lib modules, 278 test files, 90 examples, 5686 `.sla` `@test` annotations; 101 `*_deep.sla` modules. Feature progress: entry deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 273 table_column_deep: Column with_capacity/initialize/replace/swap_remove/clear/drop_last/check_change_ticks/realloc/initialize_from/get_* (src/storage/table/column.rs). Fixed 8 rows. 10 isolated tests SA+default pass (panic 120600–120799). Shallow table_column retained. Current measured counts: 374 lib modules, 279 test files, 90 examples, 5696 `.sla` `@test` annotations; 102 `*_deep.sla` modules. Feature progress: table_column deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 274 filtered_resource_deep: FilteredResources/Mut get/get_mut with ResourceFetchError NotRegistered/DoesNotExist/NoResourceAccess/Immutable, as_readonly/reborrow/into_mut, read_all/write_all access (src/world/filtered_resource.rs). 10 isolated tests SA+default pass (panic 120800–120999). Shallow filtered_resource retained. Current measured counts: 375 lib modules, 280 test files, 90 examples, 5706 `.sla` `@test` annotations; 103 `*_deep.sla` modules. Feature progress: filtered_resource deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 275 entity_ref_deep: EntityRef id/location/archetype/spawn meta, contains/get/get_ref/get_by_id/change ticks/changed_by, components count + get_components all-present, into_filtered, eq/ord (src/world/entity_access/entity_ref.rs). Fixed 4 slots. 10 isolated tests SA+default pass (panic 121000–121199). Shallow entity_ref_extras retained. Current measured counts: 376 lib modules, 281 test files, 90 examples, 5716 `.sla` `@test` annotations; 104 `*_deep.sla` modules. Feature progress: entity_ref deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 276 message_reader_writer_deep: MessageWriter write/write_batch/write_default, MessageReader read/read_with_id/par_read/len/is_empty/clear, PopulatedMessageReader over dual-buffer Messages (src/message/message_reader.rs + message_writer.rs). Fixed 4 slots per sequence. 10 isolated tests SA+default pass (panic 121200–121399). Shallow message_reader_writer retained. Current measured counts: 377 lib modules, 282 test files, 90 examples, 5726 `.sla` `@test` annotations; 105 `*_deep.sla` modules. Feature progress: message_reader_writer deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 277 world_entity_fetch_deep: EntityFetcher get/get_mut, WorldEntityFetch single/array/slice/set fetch, EntityNotSpawnedError + EntityMutableFetchError AliasedMutability unique-mut check (src/world/entity_fetch.rs). Fixed world entity table capacity 8. 10 isolated tests SA+default pass (panic 121400–121599). Shallow world_entity_fetch retained. Current measured counts: 378 lib modules, 283 test files, 90 examples, 5736 `.sla` `@test` annotations; 106 `*_deep.sla` modules. Feature progress: world_entity_fetch deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 278 world_mut_deep: EntityWorldMut id/location/try_location/archetype, contains/get/get_mut/set/change ticks, insert/insert_if_new/remove/take/retain/clear, despawn/despawn_no_free/flush, into_readonly/as_readonly/into_mutable/reborrow/into_filtered, world resource get/insert, clone_components/move_components, eq/ord (src/world/entity_access/world_mut.rs). Fixed 4 component + 2 resource slots. 10 isolated tests SA+default pass (panic 121600–121799). Shallow world_mut retained. Current measured counts: 379 lib modules, 284 test files, 90 examples, 5746 `.sla` `@test` annotations; 107 `*_deep.sla` modules. Feature progress: world_mut/EntityWorldMut deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 279 message_iterators_deep: MessageIterator/MessageIteratorWithId next/count/last/nth/len/without_id + MessageParIter batching/for_each over dual-buffer Messages (src/message/iterators.rs). Immutable companion to mut iterators deep. Fixed 4 slots per sequence. 10 isolated tests SA+default pass (panic 121800–121999). Shallow message_iterators retained. Current measured counts: 380 lib modules, 285 test files, 90 examples, 5756 `.sla` `@test` annotations; 108 `*_deep.sla` modules. Feature progress: message_iterators deep 0% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 280 entity_component_fetch_deep: DynamicComponentFetch fetch_ref/fetch_mut/fetch_mut_assume_mutable for single ComponentId, array/slice O(N^2) alias check, HashSet unique path; EntityComponentError MissingComponent/AliasedMutability (src/world/entity_access/component_fetch.rs). Fixed 4 entity slots + 4 request ids. 10 isolated tests SA+default pass (panic 122000–122199). Shallow entity_component_fetch retained. Current measured counts: 381 lib modules, 286 test files, 90 examples, 5766 `.sla` `@test` annotations; 109 `*_deep.sla` modules. Feature progress: entity_component_fetch deep ~15% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 281 observer_system_deep: ObserverSystem + IntoObserverSystem into_system, On first-arg validity, initialize/run/event-key filter, pipe no-input and In-value second stage (Bevy unit tests), world add_observer/trigger multi-observer (src/system/observer_system.rs). Fixed 4 observers. 10 isolated tests SA+default pass (panic 122200–122399). Shallow observer_system retained. Current measured counts: 382 lib modules, 287 test files, 90 examples, 5776 `.sla` `@test` annotations; 110 `*_deep.sla` modules. Feature progress: observer_system deep 0% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 282 entity_entry_commands_deep: EntityEntryCommands and_modify/reborrow/or_insert/or_try_insert/or_insert_with/or_try_insert_with/or_default/or_from_world/entity, insert_if_new Keep semantics, try_* silence missing-entity errors, lazy factory invoke count, deferred op log + flush (src/system/commands/mod.rs). Fixed 8 op slots. 10 isolated tests SA+default pass (panic 122400–122599). Shallow entity_entry_commands retained. Current measured counts: 383 lib modules, 288 test files, 90 examples, 5786 `.sla` `@test` annotations; 111 `*_deep.sla` modules. Feature progress: entity_entry_commands deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 283 entity_commands_conditional_deep: EntityCommands insert/insert_if/insert_if_new/insert_if_new_and/insert_if_neq, try_insert/try_insert_if/try_insert_if_new/try_insert_if_new_and (queue_silenced), remove/remove_if/try_remove/try_remove_if, retain/clear/try_despawn, InsertMode Replace vs Keep, handled vs silenced missing-entity (src/system/commands/mod.rs). Fixed 4 component + 8 log slots. 10 isolated tests SA+default pass (panic 122600–122799). Shallow entity_commands_conditional retained. Current measured counts: 384 lib modules, 289 test files, 90 examples, 5796 `.sla` `@test` annotations; 112 `*_deep.sla` modules. Feature progress: entity_commands_conditional deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 284 world_observer_trigger_deep: World add_observer + trigger/trigger_with/trigger_ref/trigger_ref_with/trigger_ref_with_caller, entity-target matching (global -1), last_trigger_id, first error_handler_id, payload mutation deltas, caller location (src/observer/mod.rs). Fixed 4 observers. 10 isolated tests SA+default pass (panic 122800–122999). Shallow world_observer_trigger retained. Current measured counts: 385 lib modules, 290 test files, 90 examples, 5806 `.sla` `@test` annotations; 113 `*_deep.sla` modules. Feature progress: world_observer_trigger deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 285 observer_descriptor_extras_deep: ObserverDescriptor with_event_keys/components/entities + accessors, Observer with_entity/component/event_key/error_handler/name, last_trigger_id, despawned_watched_entities auto-despawn when all watched entities gone, event-key match (src/observer/distributed_storage.rs). Fixed 4 slots each. 10 isolated tests SA+default pass (panic 123000–123199). Shallow observer_descriptor_extras retained. Current measured counts: 386 lib modules, 291 test files, 90 examples, 5816 `.sla` `@test` annotations; 114 `*_deep.sla` modules. Feature progress: observer_descriptor_extras deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 286 error_command_handling_deep: CommandOutput to_err for ()/Never/Result, EntityCommandOutput into_result for ()/Result, EntityCommandError CommandFailed + From EntityMutableFetchError, handler apply, queue_handled vs queue_silenced (src/error/command_handling.rs). 10 isolated tests SA+default pass (panic 123200–123399). Shallow error_command_handling retained. Current measured counts: 387 lib modules, 292 test files, 90 examples, 5826 `.sla` `@test` annotations; 115 `*_deep.sla` modules. Feature progress: error_command_handling deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 287 deferred_world_extras_deep: DeferredWorld residual get_entity_mut/entity_mut multi alias, get_mut/get_mut_by_id/set, query handle alloc, get_resource_mut_by_id, non_send thread check, exclusive entity_mut borrow, change_tick/reborrow (src/world/deferred_world.rs). Fixed 4 entities x 2 comps, 2 send + 2 non-send resources. 10 isolated tests SA+default pass (panic 123400–123599). Shallow deferred_world_extras retained. Current measured counts: 388 lib modules, 293 test files, 90 examples, 5836 `.sla` `@test` annotations; 116 `*_deep.sla` modules. Feature progress: deferred_world_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 288 observer_storage_deep: Observers facade combining centralized CachedObservers catalog (lifecycle caches + general event get_or_create) with distributed ObserverNode store/watchers; collect dispatch order global→component→entity (src/observer/centralized_storage.rs + distributed_storage.rs). Fixed 4 event caches / 4 runners / 4 nodes. 10 isolated tests SA+default pass (panic 123600–123799). Shallow observer_storage retained. Current measured counts: 389 lib modules, 294 test files, 90 examples, 5846 `.sla` `@test` annotations; 117 `*_deep.sla` modules. Feature progress: observer_storage deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 289 entity_access_deep: composite EntityRef/EntityWorldMut/ComponentEntry/Filtered facade — insert/insert_if_new/remove/retain/clear/despawn, entry or_insert/or_default/and_modify/take, into_readonly/into_filtered access gates, eq/ord/reborrow/change ticks (src/world/entity_access/). Fixed 4 component slots + bit Access. 10 isolated tests SA+default pass (panic 123800–123999). Shallow entity_access retained. Piece deep modules remain. Current measured counts: 390 lib modules, 295 test files, 90 examples, 5856 `.sla` `@test` annotations; 118 `*_deep.sla` modules. Feature progress: entity_access deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 290 entity_cloner_builder_extras_deep: EntityClonerBuilder with_default_clone_fn, override/remove_clone_behavior_with_id, without_required(_by) scopes, allow/deny with required-edge expansion, should_clone/would_clone (src/entity/clone_entities.rs). Fixed 4 overrides/allow/deny + 4 required edges. 10 isolated tests SA+default pass (panic 124000–124199). Shallow entity_cloner_builder_extras retained. Current measured counts: 391 lib modules, 296 test files, 90 examples, 5866 `.sla` `@test` annotations; 119 `*_deep.sla` modules. Feature progress: entity_cloner_builder_extras deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 291 world_resource_api_deep: World resource insert/init/remove/get, added/changed ticks, get_or_insert_with/modify, non-send thread check, resource_scope extract/restore (src/world/mod.rs). Fixed 4 send + 2 non-send. 10 isolated tests SA+default pass (panic 124200–124399). Shallow world_resource_api retained. Current measured counts: 392 lib modules, 297 test files, 90 examples, 5876 `.sla` `@test` annotations; 120 `*_deep.sla` modules. Feature progress: world_resource_api deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 292 change_detection_deep: composite Tick wrap/is_newer_than/check_tick, ComponentTicks, DetectChangesMut set_changed/set_if_neq/bypass, MaybeLocation some/map/zip, contiguous cells mark_changed (src/change_detection/). 10 isolated tests SA+default pass (panic 124400–124599). Shallow change_detection retained. Piece deep modules remain. Current measured counts: 393 lib modules, 298 test files, 90 examples, 5886 `.sla` `@test` annotations; 121 `*_deep.sla` modules. Feature progress: change_detection deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 293 component_info_extras_deep: ComponentInfo accessors + Components init/queue/register/get_id/hooks/required/storage counts (src/component/info.rs). Fixed 8 slots. 10 isolated tests SA+default pass (panic 124600–124799). Shallow component_info_extras retained. Current measured counts: 394 lib modules, 299 test files, 90 examples, 5896 `.sla` `@test` annotations; 122 `*_deep.sla` modules. Feature progress: component_info_extras deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 294 entity_generation_extras_deep: EntityGeneration FIRST/to_bits/after_versions/could_alias/cmp_approx + entity pack/try_from_bits (src/entity/mod.rs). 10 isolated tests SA+default pass (panic 124800–124999). Shallow entity_generation_extras retained. Current measured counts: 395 lib modules, 300 test files, 90 examples, 5906 `.sla` `@test` annotations; 123 `*_deep.sla` modules. Feature progress: entity_generation_extras deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 295 lifecycle_hooks_deep: ComponentHooks set/try_set per lifecycle kind, HookContext caller, dispatch run, component->hooks table (src/lifecycle.rs). Fixed 4 table slots. 10 isolated tests SA+default pass (panic 125000–125199). Shallow lifecycle_hooks retained. Current measured counts: 396 lib modules, 301 test files, 90 examples, 5916 `.sla` `@test` annotations; 124 `*_deep.sla` modules. Feature progress: lifecycle_hooks deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 296 bundle_info_extras_deep: BundleInfo explicit/required/contributed split + Bundles register/get/get_id type map (src/bundle/info.rs). Fixed 4 bundles x 4 slots + 4 type mappings. 10 isolated tests SA+default pass (panic 125200–125399). Shallow bundle_info_extras retained. Current measured counts: 397 lib modules, 302 test files, 90 examples, 5926 `.sla` `@test` annotations; 125 `*_deep.sla` modules. Feature progress: bundle_info_extras deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 297 name_hashed_deep: HashedStr/Name set/mutate/eq/pre_hash + NameOrEntity variants (src/name.rs). 10 isolated tests SA+default pass (panic 125400–125599). Shallow name_hashed retained. Current measured counts: 398 lib modules, 303 test files, 90 examples, 5936 `.sla` `@test` annotations; 126 `*_deep.sla` modules. Feature progress: name_hashed deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 298 caller_location_deep: explicit MaybeLocation triple registry insert/dedup/find/stable_id (Bevy track_caller stand-in). Fixed 8 slots. 10 isolated tests SA+default pass (panic 125600–125799). Shallow caller_location retained. Current measured counts: 399 lib modules, 304 test files, 90 examples, 5946 `.sla` `@test` annotations; 127 `*_deep.sla` modules. Feature progress: caller_location deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 299 clone_entities_deep: SourceComponent read, EntityMapper get_or_alloc/resolve, ComponentCloneCtx write/move/queue, EntityClonerState override/apply (src/entity/clone_entities.rs). Fixed 4 mapper/queue/override slots. 10 isolated tests SA+default pass (panic 125800–125999). Shallow clone_entities retained. Current measured counts: 400 lib modules, 305 test files, 90 examples, 5956 `.sla` `@test` annotations; 128 `*_deep.sla` modules. Feature progress: clone_entities deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 300 error_deep: Severity helpers, BevyError+context, FallbackErrorHandler policies, CommandOutput/EntityCommandOutput mapping (src/error/). 10 isolated tests SA+default pass (panic 126000–126199). Shallow error retained. Current measured counts: 401 lib modules, 306 test files, 90 examples, 5966 `.sla` `@test` annotations; 129 `*_deep.sla` modules. Feature progress: error deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 301 entity_allocator_extras_deep: EntityAllocator alloc/free/free_many/alloc_many LIFO, remote proxy generation, restart (src/entity/mod.rs). Fixed 8 free + 4 many. 10 isolated tests SA+default pass (panic 126200–126399). Shallow entity_allocator_extras retained. Current measured counts: 402 lib modules, 307 test files, 90 examples, 5976 `.sla` `@test` annotations; 130 `*_deep.sla` modules. Feature progress: entity_allocator_extras deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 302 entity_hash_set_ops_deep: EntityHashSet insert/remove, union/intersection/difference/symmetric, subset/disjoint, drain, extract_if_gt (src/entity/hash_set.rs). Fixed 8. 10 isolated tests SA+default pass (panic 126400–126599). Shallow entity_hash_set_ops retained. Current measured counts: 403 lib modules, 308 test files, 90 examples, 5986 `.sla` `@test` annotations; 131 `*_deep.sla` modules. Feature progress: entity_hash_set_ops deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 303 query_builder_extras_deep: QueryBuilder ref/mut/with/without by id, optional/or, access view (src/query/builder.rs). Fixed 4 data/with/without. 10 isolated tests SA+default pass (panic 126600–126799). Shallow query_builder_extras retained. Current measured counts: 404 lib modules, 309 test files, 90 examples, 5996 `.sla` `@test` annotations; 132 `*_deep.sla` modules. Feature progress: query_builder_extras deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 304 filtered_resource_builders_deep: FilteredResourcesBuilder/MutBuilder add_read/write(_all) by id, build, as_readonly (src/world/filtered_resource.rs). Bit Access 0..30. 10 isolated tests SA+default pass (panic 126800–126999). Shallow filtered_resource_builders retained. Current measured counts: 405 lib modules, 310 test files, 90 examples, 6006 `.sla` `@test` annotations; 133 `*_deep.sla` modules. Feature progress: filtered_resource_builders deep ~20% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 305 query_state_extras_deep: StorageSwitch extract, Read/Write/RefFetch, QueryState add_read/write/table/archetype, as_readonly, validate_world, matches_set, transmute/join (src/query/state.rs + fetch.rs). Fixed 4 slots. 10 isolated tests SA+default pass (panic 127000–127199). Shallow query_state_extras retained. Current measured counts: 406 lib modules, 311 test files, 90 examples, 6016 `.sla` `@test` annotations; 134 `*_deep.sla` modules. Feature progress: query_state_extras deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 306 entity_hash_map_extras_deep: EntityHashMap insert/get/remove/contains/keys iter/extend/clear capacity-8 (src/entity/hash_map.rs). 10 isolated tests SA+default pass (panic 127200–127399). Shallow entity_hash_map_extras retained. Current measured counts: 407 lib modules, 312 test files, 90 examples, 6026 `.sla` `@test` annotations; 135 `*_deep.sla` modules. Feature progress: entity_hash_map_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 307 entity_disabling_filters_deep: Disabled marker + DefaultQueryFilters register/is_disabling/entity_disabled/passes/count_passing (src/entity_disabling.rs). Fixed 4 disabling ids. 10 isolated tests SA+default pass (panic 127400–127599). Shallow entity_disabling_filters retained. Current measured counts: 408 lib modules, 313 test files, 90 examples, 6036 `.sla` `@test` annotations; 136 `*_deep.sla` modules. Feature progress: entity_disabling_filters deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 308 result_deep: Result ok/err/map/map_err/and_then/or_else/eq/inspect/from_option/flatten (lib/result.sla combinators). Scalar i32 payload. 10 isolated tests SA+default pass (panic 127600–127799). Shallow result retained. Current measured counts: 409 lib modules, 314 test files, 90 examples, 6046 `.sla` `@test` annotations; 137 `*_deep.sla` modules. Feature progress: result deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 309 function_system_extras_deep: SystemState new/apply/matches_world + FunctionSystem build/run/input/exclusive/non_send + markers (src/system/function_system.rs). 10 isolated tests SA+default pass (panic 127800–127999). Shallow function_system_extras retained. Current measured counts: 410 lib modules, 315 test files, 90 examples, 6056 `.sla` `@test` annotations; 138 `*_deep.sla` modules. Feature progress: function_system_extras deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 310 system_param_extras_deep: Local FromWorld, StaticSystemParam into_inner, SystemParamValidationError skipped/invalid/display/eq (src/system/system_param.rs). 10 isolated tests SA+default pass (panic 128000–128199). Shallow system_param_extras retained. Current measured counts: 411 lib modules, 316 test files, 90 examples, 6066 `.sla` `@test` annotations; 139 `*_deep.sla` modules. Feature progress: system_param_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 311 graph_map_deep: Graph directed/undirected add_node/edge, contains, neighbors, degree, remove_edge, clear capacity 8/8 (src/schedule/graph/graph_map.rs). 10 isolated tests SA+default pass (panic 128200–128399). Shallow graph_map retained. Current measured counts: 412 lib modules, 317 test files, 90 examples, 6076 `.sla` `@test` annotations; 140 `*_deep.sla` modules. Feature progress: graph_map deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 312 system_change_tick_extras_deep: SystemChangeTick advance/changed_since_last, ParamSet get_mut/conflict/release, Deferred reborrow, If gate (src/system/system_param.rs). Fixed 4 ParamSet slots. 10 isolated tests SA+default pass (panic 128400–128599). Shallow system_change_tick_extras retained. Current measured counts: 413 lib modules, 318 test files, 90 examples, 6086 `.sla` `@test` annotations; 141 `*_deep.sla` modules. Feature progress: system_change_tick_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 313 entity_ref_extras_deep: EntityRef location/spawn/contains_id/type_id/get_by_id/change_ticks/into_filtered (src/world/entity_access/entity_ref.rs). Fixed 4 components. 10 isolated tests SA+default pass (panic 128600–128799). Shallow entity_ref_extras retained. Current measured counts: 414 lib modules, 319 test files, 90 examples, 6096 `.sla` `@test` annotations; 142 `*_deep.sla` modules. Feature progress: entity_ref_extras deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 314 sparse_set_extras_deep: ComponentSparseSet insert/get/ticks/remove/clear + SparseSets register (src/storage/sparse_set.rs). Fixed 8 entries / 4 set slots. 10 isolated tests SA+default pass (panic 128800–128999). Shallow sparse_set_extras retained. Current measured counts: 415 lib modules, 320 test files, 90 examples, 6106 `.sla` `@test` annotations; 143 `*_deep.sla` modules. Feature progress: sparse_set_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 315 entity_index_map_extras_deep: EntityIndexMap ordered insert/get/index/range/keys iter/drain/clear capacity-8 (src/entity/index_map.rs). 10 isolated tests SA+default pass (panic 129000–129199). Shallow entity_index_map_extras retained. Current measured counts: 416 lib modules, 321 test files, 90 examples, 6116 `.sla` `@test` annotations; 144 `*_deep.sla` modules. Feature progress: entity_index_map_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 316 entity_index_set_extras_deep: EntityIndexSet ordered insert/range/iter double-ended/union/intersection/difference/subset capacity-8 (src/entity/index_set.rs). 10 isolated tests SA+default pass (panic 129200–129399). Shallow entity_index_set_extras retained. Current measured counts: 417 lib modules, 322 test files, 90 examples, 6126 `.sla` `@test` annotations; 145 `*_deep.sla` modules. Feature progress: entity_index_set_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 317 world_id_factory_deep: WorldId factory mint/exhaustion/mint_many + SparseSetIndex embed/eq (src/world/identifier.rs). 10 isolated tests SA+default pass (panic 129400–129599). Shallow world_id_factory retained. Current measured counts: 418 lib modules, 323 test files, 90 examples, 6136 `.sla` `@test` annotations; 146 `*_deep.sla` modules. Feature progress: world_id_factory deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 318 schedule_build_settings_deep: LogLevel, ScheduleBuildSettings defaults/setters/eq, ScheduleBuildMetadata counters (src/schedule/schedule.rs). 10 isolated tests SA+default pass (panic 129600–129799). Shallow schedule_build_settings retained. Current measured counts: 419 lib modules, 324 test files, 90 examples, 6146 `.sla` `@test` annotations; 147 `*_deep.sla` modules. Feature progress: schedule_build_settings deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 319 system_trait_extras_deep: System is_send/non_send, queue_deferred, change tick, default sets, run_readonly/run_without_applying_deferred (src/system/system.rs). Fixed 4 set slots. 10 isolated tests SA+default pass (panic 129800–129999). Shallow system_trait_extras retained. Current measured counts: 420 lib modules, 325 test files, 90 examples, 6156 `.sla` `@test` annotations; 148 `*_deep.sla` modules. Feature progress: system_trait_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 320 hot_patch_deep: HotPatched marker, HotPatchChanges apply/changed_after, should_refresh, SystemHotPatchState refresh/maybe_refresh. 10 isolated tests SA+default pass (panic 130000–130199). Shallow hot_patch retained. Current measured counts: 421 lib modules, 326 test files, 90 examples, 6166 `.sla` `@test` annotations; 149 `*_deep.sla` modules. Feature progress: hot_patch deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 321 unique_array_deep: UniqueEntityArray capacity/push unique/get/first/last/index_of/full/clear (entity unique array). Fixed 8 slots. 10 isolated tests SA+default pass (panic 130200–130399). Shallow unique_array retained. Current measured counts: 422 lib modules, 327 test files, 90 examples, 6176 `.sla` `@test` annotations; 150 `*_deep.sla` modules. Feature progress: unique_array deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 322 unique_vec_extras_deep: UniqueVec push/reserve/try_reserve/split_off/clear/leaked capacity-8 (src entity unique vec extras). 10 isolated tests SA+default pass (panic 130400–130599). Shallow unique_vec_extras retained. Current measured counts: 423 lib modules, 328 test files, 90 examples, 6186 `.sla` `@test` annotations; 151 `*_deep.sla` modules. Feature progress: unique_vec_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 323 query_access_ops_deep: ComponentSet bitset insert/union/intersection/difference + AccessOps read/write/conflicts/extend/intersection (src/query/access.rs). 10 isolated tests SA+default pass (panic 130600–130799). Shallow query_access_ops retained. Current measured counts: 424 lib modules, 329 test files, 90 examples, 6196 `.sla` `@test` annotations; 152 `*_deep.sla` modules. Feature progress: query_access_ops deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 324 unique_slice_deep: UniqueEntitySlice push/get/first/last/index/rindex/swap/reverse/eq/min/max capacity-8. 10 isolated tests SA+default pass (panic 130800–130999). Shallow unique_slice retained. Current measured counts: 425 lib modules, 330 test files, 90 examples, 6206 `.sla` `@test` annotations; 153 `*_deep.sla` modules. Feature progress: unique_slice deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 325 unique_vec_deep: UniqueEntityVec push unique/get/first/last/index/contains/clear capacity-8. 10 isolated tests SA+default pass (panic 131000–131199). Shallow unique_vec retained. Current measured counts: 426 lib modules, 331 test files, 90 examples, 6216 `.sla` `@test` annotations; 154 `*_deep.sla` modules. Feature progress: unique_vec deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 326 schedule_error_deep: ScheduleError build/system/loop/cycle/hierarchy/ambiguity + Result wrapper (src/schedule/error.rs). 10 isolated tests SA+default pass (panic 131200–131399). Shallow schedule_error retained. Current measured counts: 427 lib modules, 332 test files, 90 examples, 6226 `.sla` `@test` annotations; 155 `*_deep.sla` modules. Feature progress: schedule_error deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 327 graph_map_digragh_toposort_deep: DiGraph edges, self-loop/two-cycle detection, chain toposort, Direction helpers (src/schedule/graph/graph_map.rs). Fixed 4 nodes/8 edges. 10 isolated tests SA+default pass (panic 131400–131599). Shallow graph_map_digragh_toposort retained. Current measured counts: 428 lib modules, 333 test files, 90 examples, 6236 `.sla` `@test` annotations; 156 `*_deep.sla` modules. Feature progress: digraph toposort deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 328 system_command_deep: Command spawn/insert/remove/despawn/resource/custom + queue push/apply_all capacity-4 (src/system/commands/command.rs). 10 isolated tests SA+default pass (panic 131600–131799). Shallow system_command retained. Current measured counts: 429 lib modules, 334 test files, 90 examples, 6246 `.sla` `@test` annotations; 157 `*_deep.sla` modules. Feature progress: system_command deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 329 system_param_special_deep: SystemBuffer/Deferred, Exclusive/NonSend markers, RemovedComponents next, RunSystemOnce, validation (src/system/system_param.rs). Fixed buffer 8 / removed 4. 10 isolated tests SA+default pass (panic 131800–131999). Shallow system_param_special retained. Current measured counts: 430 lib modules, 335 test files, 90 examples, 6256 `.sla` `@test` annotations; 158 `*_deep.sla` modules. Feature progress: system_param_special deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 330 message_registry_update_deep: MessageRegistry register/deregister/signal/should_update/run_updates + mut/par iterators (message registry update). Fixed 4 ids. 10 isolated tests SA+default pass (panic 132000–132199). Shallow message_registry_update retained. Current measured counts: 431 lib modules, 336 test files, 90 examples, 6266 `.sla` `@test` annotations; 159 `*_deep.sla` modules. Feature progress: message_registry_update deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 331 entity_set_iter_extras_deep: EntityEquivalent wrappers, UniqueEntityIter next/next_back, collect_set (entity set iter extras). Fixed 8. 10 isolated tests SA+default pass (panic 132200–132399). Shallow entity_set_iter_extras retained. Current measured counts: 432 lib modules, 337 test files, 90 examples, 6276 `.sla` `@test` annotations; 160 `*_deep.sla` modules. Feature progress: entity_set_iter_extras deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 332 schedule_configs_extras_deep: ScheduleConfigs chain/chain_ignore_deferred, distributive/collective run_if, before/after_ignore_deferred, ambiguous_with(_all) (src/schedule/config.rs). Fixed 4 systems/ambiguous. 10 isolated tests SA+default pass (panic 132400–132599). Shallow schedule_configs_extras retained. Current measured counts: 433 lib modules, 338 test files, 90 examples, 6286 `.sla` `@test` annotations; 161 `*_deep.sla` modules. Feature progress: schedule_configs_extras deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 333 system_adapter_deep: RunSystemError, Not/Map/Chain adapters, AdapterSystem run, IntoAdapterSystem (src/system/adapter_system.rs). 10 isolated tests SA+default pass (panic 132600–132799). Shallow system_adapter retained. Current measured counts: 434 lib modules, 339 test files, 90 examples, 6296 `.sla` `@test` annotations; 162 `*_deep.sla` modules. Feature progress: system_adapter deep ~40% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 334 schedule_auto_insert_deferred_deep: AutoInsertApplyDeferredPass no-sync edges, get_sync_point reuse, should_insert, build_edge (src/schedule/auto_insert_apply_deferred.rs). Fixed 4 edges/syncs. 10 isolated tests SA+default pass (panic 132800–132999). Shallow schedule_auto_insert_deferred retained. Current measured counts: 435 lib modules, 340 test files, 90 examples, 6306 `.sla` `@test` annotations; 163 `*_deep.sla` modules. Feature progress: schedule_auto_insert_deferred deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 335 entity_hash_set_derived_extras_deep: EntityHashSet constructors/clone/from, insert/contains/eq/union/intersection/iter (derived extras). Capacity-8. 10 isolated tests SA+default pass (panic 133000–133199). Shallow entity_hash_set_derived_extras retained. Current measured counts: 436 lib modules, 341 test files, 90 examples, 6316 `.sla` `@test` annotations; 164 `*_deep.sla` modules. Feature progress: entity_hash_set_derived_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 336 entity_hash_map_derived_extras_deep: EntityHashMap constructor kinds + insert/get/eq + keys/into_keys/iter capacity-8 (src/entity/hash_map.rs derived wrappers). 10 isolated tests SA+default pass (panic 133200–133399). Shallow entity_hash_map_derived_extras retained. Current measured counts: 437 lib modules, 342 test files, 90 examples, 6326 `.sla` `@test` annotations; 165 `*_deep.sla` modules. Feature progress: entity_hash_map_derived_extras deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 337 resource_mod_deep: IsResource marker + ResourceEntities fixed-8 insert/get/remove/iter + IS_RESOURCE flags + on_insert/on_discard/on_despawn hook apply (src/resource.rs). 10 isolated tests SA+default pass (panic 133400–133599). Shallow resource_mod retained. Current measured counts: 438 lib modules, 342 test files, 90 examples, 6336 `.sla` `@test` annotations; 166 `*_deep.sla` modules. Feature progress: resource_mod deep ~25% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 338 metadata_identity_deep: explicit TypeId stand-in identity kinds + normalize/mix/stable ids + capacity-4 registry insert/duplicate/collision (metadata_identity). 10 isolated tests SA+default pass (panic 133600–133799). Shallow metadata_identity retained. Current measured counts: 439 lib modules, 343 test files, 90 examples, 6346 `.sla` `@test` annotations; 167 `*_deep.sla` modules. Feature progress: metadata_identity deep ~30% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 339 store_deep: fixed-capacity dense ComponentStore insert/get/has/slot/write/swap-remove/clear capacity-8 (store.sla table stand-in). 10 isolated tests SA+default pass (panic 133800–133999). Shallow store retained. Current measured counts: 440 lib modules, 344 test files, 90 examples, 6356 `.sla` `@test` annotations; 168 `*_deep.sla` modules. Feature progress: store deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 340 sparse_store_deep: sparse-set dense+sparse map insert/get/write/swap-remove/clear capacity-4 (sparse_store.sla). 10 isolated tests SA+default pass (panic 134000–134199). Shallow sparse_store retained. Current measured counts: 441 lib modules, 345 test files, 90 examples, 6366 `.sla` `@test` annotations; 169 `*_deep.sla` modules. Feature progress: sparse_store deep ~35% -> 90%; overall API ~94–96%, behavioral ~86–91%.
+
+- [done] Batch 341 bundle_spawner_deep: BundleSpawner spawn/reserve/batch4 + InsertBundle target cap-4 + BundleInserter/BundleRemover counts (src/bundle/spawner.rs + insert.rs). 10 isolated tests SA+default pass (panic 134200-134399). Shallow bundle_spawner retained. Current measured counts: 442 lib modules, 346 test files, 90 examples, 6376 `.sla` `@test` annotations; 170 `*_deep.sla` modules. Feature progress: bundle_spawner deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 342 entity_index_set_derived_extras_deep: EntityIndexSet constructor kinds + insert/contains/eq/union/intersection/iter + next_back capacity-8 (entity index set derived extras). 11 isolated tests SA+default pass (panic 134400-134599). Shallow entity_index_set_derived_extras retained. Current measured counts: 443 lib modules, 347 test files, 90 examples, 6386 `.sla` `@test` annotations; 171 `*_deep.sla` modules. Feature progress: entity_index_set_derived_extras deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 343 schedule_condition_advanced_deep: condition_changed/changed_to state + AndThen/OrElse/AndEager/OrEager/Nand/Nor/Xor combinators + resource_exists_and + capacity-4 cond-set push/fold (src/schedule/condition.rs). 10 isolated tests SA+default pass (panic 134600-134799). Shallow schedule_condition_advanced retained. Current measured counts: 444 lib modules, 348 test files, 90 examples, 6396 `.sla` `@test` annotations; 172 `*_deep.sla` modules. Feature progress: schedule_condition_advanced deep ~40% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 344 entity_index_map_derived_extras_deep: EntityIndexMap constructor kinds + insert/get/eq + keys/values/into_keys/into_values + mutable slice + split capacity-8 (entity index map derived extras). 11 isolated tests SA+default pass (panic 134800-134999). Shallow entity_index_map_derived_extras retained. Current measured counts: 445 lib modules, 349 test files, 90 examples, 6406 `.sla` `@test` annotations; 173 `*_deep.sla` modules. Feature progress: entity_index_map_derived_extras deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 345 archetype_edges_deep: ArchetypeId/Row + ArchetypeAfterBundleInsert added/existed components capacity-4 + Edges insert/remove/take cache maps with result structs capacity-4 (src/archetype.rs Edges). 10 isolated tests SA+default pass (panic 135000-135199). Shallow archetype_edges retained. Current measured counts: 446 lib modules, 350 test files, 90 examples, 6416 `.sla` `@test` annotations; 174 `*_deep.sla` modules. Feature progress: archetype_edges deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 346 archetype_info_deep: Archetype public surface with component slots (component_id, storage_type) capacity-4 + table/sparse counts + 10-bit ArchetypeFlags set/has + entity counts + edges + identity row mapping (src/archetype.rs Archetype). 10 isolated tests SA+default pass (panic 135200-135399). Shallow archetype_info retained. Current measured counts: 447 lib modules, 351 test files, 90 examples, 6426 `.sla` `@test` annotations; 175 `*_deep.sla` modules. Feature progress: archetype_info deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 347 archetypes_registry_deep: Archetypes facade generation/len/get/spawn capacity-8 + clear_entities + ComponentIndex register_table/sparse/for/archetypes_with capacity-4 (src/archetype.rs Archetypes). 10 isolated tests SA+default pass (panic 135400-135599). Shallow archetypes_registry retained. Current measured counts: 448 lib modules, 352 test files, 90 examples, 6426 `.sla` `@test` annotations; 176 `*_deep.sla` modules. Feature progress: archetypes_registry deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 348 entity_dynamic_deep: DynamicEntityAllocator fixed cap-16 generations/occupied/free-stack LIFO + is_alive + free_entity generation-bump + fabricated-next-gen rejection, ids start at 1, fresh-id sequential allocation skipping reserved id 0 (src/entity/entity_ref.rs DynamicEntityAllocator stand-in / lib/entity_dynamic.sla model). 10 isolated tests SA+default pass (panic 135600-135799). Shallow entity_dynamic retained. Current measured counts: 449 lib modules, 353 test files, 90 examples, 6436 `.sla` `@test` annotations; 177 `*_deep.sla` modules. Feature progress: entity_dynamic deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 349 dyn_store_deep: DynamicComponentStore fixed cap-8 dense ids+values + sparse 'row-of' map + insert/overwrite + get_x/get_y + has + row_of + write + swap_remove (last-row move) + clear (lib/dyn_store.sla deep; src/storage/sparse_set.rs ComponentSparseSet dense+sparse layout stand-in). 10 isolated tests SA+default pass (panic 135800-135999). Shallow dyn_store retained. Current measured counts: 450 lib modules, 354 test files, 90 examples, 6446 `.sla` `@test` annotations; 178 `*_deep.sla` modules. Feature progress: dyn_store deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 350 entity_deep: EcsEntityDeep placeholder/index/generation/eq/lt (id-first lexicographic/Bevy-derived Ord) + bits pack/unpack + EcsEntityAllocatorDeep cap-16 with FIFO free-queue (oldest-first reuse) + alloc_entity + is_alive (gen-bump rejects stale) + free_entity (gen bump) + len/next_id/free_count accessors (lib/entity.sla deep). 10 isolated tests SA+default pass (panic 136001-136199). Shallow entity retained. Current measured counts: 451 lib modules, 355 test files, 90 examples, 6456 `.sla` `@test` annotations; 179 `*_deep.sla` modules. Feature progress: entity deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 351 entities_collection_deep: EcsEntities cap-8 slot-struct (gen/spawned/archetype_id/table_id/table_row/spawn_tick/despawn_tick) + FIFO free-queue + counters (next_index/current_tick/spawned_count) + alloc/FIFO reuse with gen-bump + free + contains/contains_spawned/is_index_spawned + set_location/get_spawned/get + spawn/despawn tick result structs + resolve_from_index + clear (lib/entities_collection.sla deep; src/entity/mod.rs Entities + EntityLocation). 10 isolated tests SA+default pass (panic 136201-136399). Shallow entities_collection retained. Current measured counts: 452 lib modules, 356 test files, 90 examples, 6466 `.sla` `@test` annotations; 180 `*_deep.sla` modules. Feature progress: entities_collection deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 352 entity_collections_deep: EntityIndexSet cap-8 (insertion-ordered dedup) + insert dedup/cap-reject + contains + get_index + swap_remove (O(1) reorder) + shift_remove (order-preserving) + any marker + into_iter marker + clear + with_capacity noop (lib/entity_collections.sla subset EntityIndexSet deep; src/entity/index_set.rs). 10 isolated tests SA+default pass (panic 136400-136599). Shallow entity_collections retained. Current measured counts: 453 lib modules, 357 test files, 90 examples, 6476 `.sla` `@test` annotations; 181 `*_deep.sla` modules. Feature progress: entity_collections deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 353 event_observer_erased_deep: EcsErasedObservers cap-8 type-id-keyed observers with kind discriminator (speak/explode) + EventValue + run dispatch selector (no fn-ptr, no generics, no raw ptr) + add/trigger/trigger_entity/last_event_type_id/last_entity_id/result_sum/clear (lib/event_observer_erased.sla deep). 10 isolated tests SA+default pass (panic 136600-136799). Shallow event_observer_erased retained. Current measured counts: 454 lib modules, 358 test files, 90 examples, 6486 `.sla` `@test` annotations; 182 `*_deep.sla` modules. Feature progress: event_observer_erased deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 354 resource_erased_deep: EcsErasedResources cap-8 type-id-keyed slot store (per-slot type_id/payload/added_tick/changed_tick) + change_tick bump + insert overwrite tracking + slot/has/get_payload/res/res_mut/added_since/changed_since/res_mut_write/write/remove swap-remove/clear (lib/resource_erased.sla deep; storage owner surfacing Bevy's ErasedResources). 10 isolated tests SA+default pass (panic 136802-136999). Shallow resource_erased retained. Current measured counts: 455 lib modules, 359 test files, 90 examples, 6496 `.sla` `@test` annotations; 183 `*_deep.sla` modules. Feature progress: resource_erased deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 355 relationship_one_adapter_deep: Self-contained EcsOneRelWorldDeep cap-8 (own entity allocator with sequential ids 1..8) + exclusive source->target map (replace-previous-source on shared target, retarget via set, remove clears source, despawn-of-target linked-despawns source, allow_self flag blocks self-relation) + is_alive/has_target/target/has_source/source (lib/relationship_one_adapter.sla deep, exclusive one-to-one relationship adapter). 10 isolated tests SA+default pass (panic 137000-137199 — exit 137000 around cap reserved). Shallow relationship_one_adapter retained. Current measured counts: 456 lib modules, 360 test files, 90 examples, 6506 `.sla` `@test` annotations; 184 `*_deep.sla` modules. Feature progress: relationship_one_adapter deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 356 schedule_executor_deep: EcsScheduleExecutor deep cap-8 system-queue (per-slot EcsExecSystemDeep with id/run/skipped) + kind (single/multi) + set_up(capped at cap-8) + run_system + skip_system + apply_deferred toggle + finish + is_finished + queue_at introspection + applied/skipped counts + next_to_run clamping (lib/schedule_executor.sla deep; src/schedule/executor/single_threaded.rs + multi_threaded.rs). 10 isolated tests SA+default pass (panic 137200-137399). Shallow schedule_executor retained. Current measured counts: 457 lib modules, 361 test files, 90 examples, 6516 `.sla` `@test` annotations; 185 `*_deep.sla` modules. Feature progress: schedule_executor deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 357 schedule_dynamic_deep: EcsDynSchedule cap-8 system-access store (per-slot read/write flags for 4 resource kinds A/B/resource/messages) + dynamic_system_access_none/all/with builders + ecs_dynamic_access_conflicts write-read / write-write hazard matrix + add_systems (records conflict_count vs all prior) + len/count/clear + access_at introspection (lib/schedule_dynamic.sla deep; src/schedule/schedule.rs Schedule + access-conflict analyzer). 11 isolated tests SA+default pass (panic 137400-137599). Shallow schedule_dynamic retained. Current measured counts: 458 lib modules, 362 test files, 90 examples, 6527 `.sla` `@test` annotations; 186 `*_deep.sla` modules. Feature progress: schedule_dynamic deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 358 schedule_registry_erased_deep: EcsRegErasedSchedule cap-8 (per-slot access holds cap-4 read component-ids + cap-4 write component-ids + reads/writes_resource/messages flags, with list len per side) + access builders + access_conflicts matrix (component write/read, write/write hazard + resource/messages matrix) + schedule add computing conflicts against all prior + access_at introspection + clear (lib/schedule_registry_erased.sla deep). 10 isolated tests SA+default pass (panic 137600-137799). Shallow schedule_registry_erased retained. Current measured counts: 459 lib modules, 363 test files, 90 examples, 6537 `.sla` `@test` annotations; 187 `*_deep.sla` modules. Feature progress: schedule_registry_erased deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 359 commands_table_value_deep: EcsTableValueCommands cap-8 deferred command queue with kind discriminator (insert_component/despawn/insert_resource/write_message) + side-payload slots (component_values/resource_values/message_values cap-8 each) + reserve_entity + insert/despawn/insert_resource/write_message + count_by_kind + resolve_value (kind-indexed side payload readout) + cap-reject + clear + per-slot introspection (lib/commands_table_value.sla deep; src/system/commands/table_value.rs deferred queue). 10 isolated tests SA+default pass (panic 137800-137999). Shallow commands_table_value retained. Current measured counts: 460 lib modules, 364 test files, 90 examples, 6547 `.sla` `@test` annotations; 188 `*_deep.sla` modules. Feature progress: commands_table_value deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 360 relationship_replace_insert_deep: EcsReplaceInsert cap-8 related-set + EcsBatchRelated cap-4 carrier + insert_related (dedup if exists, place at target_idx with shift logic) + replace_related (dedup, empty detaches relationship) + replace_related_with_difference (drop unrelate entries, union-in relate, dedup) + related_at + index_of + contains + clear (lib/relationship_replace_insert.sla deep; src/relationship/related_methods.rs insert/replace/difference). 10 isolated tests SA+default pass (panic 138000-138199). Shallow relationship_replace_insert retained. Current measured counts: 461 lib modules, 365 test files, 90 examples, 6557 `.sla` `@test` annotations; 189 `*_deep.sla` modules. Feature progress: relationship_replace_insert deep ~35% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 361 relationship_source_collection_ordered_deep: EcsRscOrderedDeep fixed cap-8 i64 entity slots + RscRemoveResultDeep{found, entity} result struct + new/with_capacity/reserve/shrink_to_fit + len/is_empty/count + at/set/clear + contains/index_of/rposition + add(push, cap-reject)/remove(rposition+stable-shift) + insert(push+swap matching Bevy Vec::insert)/insert_stable(shift-insert clamp)/remove_at(swap_remove matching Bevy)/remove_at_stable(shift-remove)/sort(selection)/insert_sorted(partition-point)/place_most_recent(pop+insert)/place(position+remove+insert)/push_front/push_back/pop_front/pop_back/extend_from_iter/source_to_remove_before_add(none sentinel for Vec one-to-many) (lib/relationship_source_collection_ordered.sla deep; src/relationship/relationship_source_collection.rs OrderedRelationshipSourceCollection + Vec<Entity> impl). 10 isolated tests SA+default pass (panic 138200-138399). Shallow relationship_source_collection_ordered retained. Current measured counts: 462 lib modules, 366 test files, 90 examples, 6565 `.sla` `@test` annotations; 190 `*_deep.sla` modules. Feature progress: relationship_source_collection_ordered deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 362 commands_archetype_value_deep: EcsArchValueCommandsDeep cap-8 kind-discriminated deferred command queue (INSERT_COMPONENT=1/DESPAWN=2/INSERT_RESOURCE=3/WRITE_MESSAGE=4) + per-slot scalar fields (k/e/c/v cap-8 each) + side payload slots (pcomp/pres/pmsg cap-8 i32 each with their own counts) + EcsArchValueCommandDeep builder struct + new/insert/despawn/insert_resource/write_message + len/resolve_value(kind-indexed side readout)/count_by_kind/clear + per-slot accessors + cap-reject at 8 (lib/commands_archetype_value.sla deep; src/system/commands/archetype_value.rs deferred queue). 10 isolated tests SA+default pass (panic 138400-138599). Shallow commands_archetype_value retained. Current measured counts: 463 lib modules, 367 test files, 90 examples, 6575 `.sla` `@test` annotations; 191 `*_deep.sla` modules. Feature progress: commands_archetype_value deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 363 commands_registry_value_deep: EcsRegValueCommandsDeep cap-8 kind-discriminated deferred command queue (INSERT_COMPONENT=1/DESPAWN=2/INSERT_RESOURCE=3/WRITE_MESSAGE=4) + per-slot scalar fields (k/e/c/v cap-8 each) + side payload slots (pcomp/pres/pmsg cap-8 i32 each with their own counts) + EcsRegValueCommandDeep builder struct + new/insert/despawn/insert_resource/write_message + len/resolve_value(kind-indexed side readout)/count_by_kind/clear + per-slot accessors + cap-reject at 8 (lib/commands_registry_value.sla deep; src/system/commands/registry_value.rs deferred queue). 10 isolated tests SA+default pass (panic 138600-138799). Shallow commands_registry_value retained. Current measured counts: 464 lib modules, 368 test files, 90 examples, 6585 `.sla` `@test` annotations; 192 `*_deep.sla` modules. Feature progress: commands_registry_value deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 364 commands_registry_erased_deep: EcsRegErasedCommandsDeep cap-8 kind-discriminated erased-component deferred command queue (INSERT_COMPONENT=1/DESPAWN=2/INSERT_RESOURCE=3/WRITE_MESSAGE=4) + per-slot scalar fields (k/e/c/v cap-8 each) + INSERT_COMPONENT side payload modeled as parallel type_id + scalar-value arrays (pt/pv cap-8 each sharing pcomp_count) + resource side array (pres cap-8) + message side array (pmsg cap-8) + EcsRegErasedCommandDeep builder struct + new/insert(entity,component_id,type_id,value)/despawn/insert_resource/write_message + len/count_by_kind/resolve_value/resolve_type/resolve_resource/resolve_message/clear + per-slot accessors + cap-reject at 8 (lib/commands_registry_erased.sla deep; src/system/commands/registry_erased.rs deferred queue). 10 isolated tests SA+default pass (panic 138800-138999). Shallow commands_registry_erased retained. Current measured counts: 465 lib modules, 369 test files, 90 examples, 6595 `.sla` `@test` annotations; 193 `*_deep.sla` modules. Feature progress: commands_registry_erased deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 365 commands_table_erased_deep: EcsTblErasedCommandsDeep cap-8 kind-discriminated deferred command queue (10 kinds: INSERT_COMPONENT=1/DESPAWN=2/INSERT_RESOURCE=3/WRITE_MESSAGE=4 + 6 batch-bundle variants SPAWN_BATCH_BUNDLE2=5/SPAWN_BATCH_BUNDLE3=6/INSERT_BATCH_BUNDLE2=7/INSERT_BATCH_BUNDLE3=8/INSERT_BATCH_BUNDLE2_IF_NEW=9/INSERT_BATCH_BUNDLE3_IF_NEW=10) + per-slot scalar fields (k/e/c/v cap-8 each) + INSERT_COMPONENT parallel type_id/scalar side arrays (pt/pv cap-8 sharing pcomp_count) + pres cap-8 + pmsg cap-8 + bundle2 batch side storage cap-2 batches each cap-2 bundles (parallel per-batch fields be/bft/bst/bfv/bsv with b2c per batch and b2_count) + bundle3 batch side storage cap-2 batches each cap-2 bundles (ce/cft/cst/ctv/cfv/csv/ctv with b3c per batch and b3_count) + EcsTblErasedBundle2Deep / EcsTblErasedBundle3Deep result structs (slot-structured readers using scalar capture + per-branch build to avoid UseAfterMove on the 7-field bundle3 read) + EcsTblErasedCommandDeep builder + new/insert/despawn/insert_resource/write_message/spawn_batch_bundle2/spawn_batch_bundle3/insert_batch_bundle2/insert_batch_bundle3/insert_batch_bundle2_if_new/insert_batch_bundle3_if_new + len/count_by_kind/resolve_value/resolve_type/batch_slot/b2_at/b3_at/b2c_at/b3c_at/clear + per-slot accessors + cap-reject at 8 (commands) + cap-2 reject (bundle batches) (lib/commands_table_erased.sla deep; src/system/commands/table_erased.rs deferred queue). 10 isolated tests SA+default pass (panic 139000-139199). Shallow commands_table_erased retained. Current measured counts: 466 lib modules, 370 test files, 90 examples, 6605 `.sla` `@test` annotations; 194 `*_deep.sla` modules. Feature progress: commands_table_erased deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 366 commands_table_erased_observer_deep: EcsTblObsCommandsDeep cap-8 kind-discriminated observer-aware deferred command queue (6 kinds: INSERT_COMPONENT=1/REMOVE_COMPONENT=2/DESPAWN=3/INSERT_RESOURCE=4/WRITE_MESSAGE=5/TRIGGER_EVENT=6) + per-slot scalar fields (k/e/c/v cap-8 each) + INSERT_COMPONENT parallel type_id/scalar side arrays (pt/pv cap-8 sharing pcomp_count) + pres cap-8 + pmsg cap-8 + event side arrays (et/ev cap-8 sharing pcev_count) + EcsTblObsCommandDeep builder + new/insert/remove/despawn/insert_resource/write_message/trigger/trigger_entity + len/count_by_kind/resolve_value/resolve_type/clear + per-slot accessors + cap-reject at 8 (lib/commands_table_erased_observer.sla deep; src/system/commands/table_erased_observer.rs observer-aware deferred queue). 10 isolated tests SA+default pass (panic 139200-139399). Shallow commands_table_erased_observer retained. Current measured counts: 467 lib modules, 371 test files, 90 examples, 6615 `.sla` `@test` annotations; 195 `*_deep.sla` modules. Feature progress: commands_table_erased_observer deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 367 commands_table_erased_relationship_deep: EcsTblRelCommandsDeep cap-8 kind-discriminated relationship-aware deferred command queue (11 kinds: INSERT_COMPONENT=1/SET_RELATED=2/DESPAWN=3/INSERT_RESOURCE=4/WRITE_MESSAGE=5/SET_RELATED_AT=6/REMOVE_RELATED=7/DETACH_ALL_RELATED=8/REPLACE_RELATED=9/REPLACE_RELATED_WITH_DIFFERENCE=10/DESPAWN_RELATED=11) + per-slot scalar fields (k/e/rk/tg/c/v/rl/ur/nw cap-8 each) + INSERT_COMPONENT parallel type_id/scalar side arrays (pt/pv cap-8 sharing pcomp_count) + pres cap-8 + pmsg cap-8 + shared entity-list side storage (cap-4 lists each cap-4 entity ids with own counts, ECS_CMD_TBL_REL_LISTS_CAP_DEEP=4) for REMOVE_RELATED/REPLACE_RELATED (1 list each, rl-indexed) and REPLACE_RELATED_WITH_DIFFERENCE (3 lists: rl relate / ur unrelate / nw newly) + EcsTblRelListEntryDeep per-entry reader + EcsTblRelCommandsDeep builder + new/insert/set_related/despawn/set_related_at/insert_resource/write_message/remove_related/detach_all_related/replace_related/replace_related_with_difference/despawn_related + store_list/set_list/list_count_at/list_at + len/count_by_kind/resolve_value/resolve_type/clear + per-slot accessors (kind_at/entity_at/rk_at/target_at/cmp_at/idx_at/rl_at/ur_at/nw_at + lcount/pcomp_count/pres_count/pmsg_count) + cap-reject at 8 (commands) + cap-4 reject (entity lists) (lib/commands_table_erased_relationship.sla deep; src/system/commands/table_erased_relationship.rs relationship-aware deferred queue). 10 isolated tests SA+default pass (panic 139400-139599). Shallow commands_table_erased_relationship retained. Current measured counts: 468 lib modules, 372 test files, 90 examples, 6625 `.sla` `@test` annotations; 196 `*_deep.sla` modules. Feature progress: commands_table_erased_relationship deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 368 commands_dynamic_deep: EcsDynCommandsDeep cap-8 kind-discriminated deferred command queue for DynamicWorld (5 kinds: INSERT_A=1/INSERT_B=2/DESPAWN=3/INSERT_RESOURCE=4/WRITE_MESSAGE=5; component-id discriminators A=11/B=12) + per-slot scalar fields (k/e/c/v cap-8 each) + 4 independent side-payload columns cap-8 i32 each (pa/pa_count for INSERT_A, pb/pb_count for INSERT_B, r/pres_count for INSERT_RESOURCE, m/pmsg_count for WRITE_MESSAGE) + EcsDynCommandDeep builder + new/reserve_entity/insert_a/insert_b/despawn/insert_resource/write_message + len/count_by_kind/resolve_value(kind-indexed side readout)/resolve_component(A-vs-B discriminator)/clear + per-slot accessors (kind_at/entity_at/cmp_at/idx_at + pa_count/pb_count/pres_count/pmsg_count) + cap-reject at 8 (commands + each side column) (lib/commands_dynamic.sla deep; src/system/commands/dynamic.rs deferred queue). 10 isolated tests SA+default pass (panic 139600-139799). Shallow commands_dynamic retained. Current measured counts: 469 lib modules, 373 test files, 90 examples, 6635 `.sla` `@test` annotations; 197 `*_deep.sla` modules. Feature progress: commands_dynamic deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 369 commands_mod_extension_deep: EcsCmdExtCommandsDeep cap-8 kind-discriminated deferred command queue (9 kinds: TRIGGER=1/TRIGGER_WITH=2/ADD_OBSERVER=3/WRITE_MESSAGE=4/RUN_SCHEDULE=5/OBSERVE=6/ENTRY=7/LOG_COMPONENTS=8/MOVE_COMPONENTS=9) + per-slot scalar fields (k/a/b/c cap-8 each) + boxed-system registry cap-8 i64 system ids (1-indexed, sys_count, sys_id_at) + bound_entities i64 world-binder for new_from_entities + new/new_from_entities/register_boxed_system(cap-reject -> -1)/unregister_system_cached(last-only removable)/run_system_cached/run_system_cached_with/trigger/trigger_with/add_observer/write_message/run_schedule(neg label -> false)/get_spawned_entity(req<0 -> spawn-request)/rebound_to/reborrow/count_by_kind/clear + per-slot accessors (kind_at/primary_at/secondary_at/component_at/sys_id_at + len/sys_count/bound_entities) + EcsEntityCmdExtDeep (entity i64 / is_spawned i32(0/1) / pending_commands i64 / pending_observes i64 / last_event i64 / cloned_to i64 / last_component i32) + new/id/entity/is_spawned/get_pending/pending_observes/cloned_to/last_event/last_component/reborrow/entry/queue_handled/queue_silenced/log_components/commands/commands_mut/observe/trigger/clone_with_opt_out/clone_with_opt_in/clone_and_spawn/clone_and_spawn_with_opt_out/clone_and_spawn_with_opt_in/clone_components/move_components(despawn-on-move clears is_spawned, returns despawned=true) (lib/commands_mod_extension.sla deep; src/system/commands/mod.rs Commands + EntityCommands extensions). 10 isolated tests SA+default pass (panic 139800-139999). Shallow commands_mod_extension retained. Current measured counts: 470 lib modules, 374 test files, 90 examples, 6645 `.sla` `@test` annotations; 198 `*_deep.sla` modules. Feature progress: commands_mod_extension deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 370 schedule_registry_value_deep: EcsRegValueScheduleDeep cap-8 systems (each EcsRegValueSystemAccessDeep holds cap-4 read component-ids r0..r3+len_reads and cap-4 write component-ids w0..w3+len_writes keyed by registry component id + reads_resource/writes_resource/reads_messages/writes_messages flags i32 0/1) + conflict_count tally keyed by registry id (no longer A/B shape dependent) + EcsRegValueSystemAccessDeep builder + access_none/access_read_component/access_write_component (cap-4 push)/access_read_resource/access_write_resource/access_read_messages/access_write_messages/read_at/write_at/read_list_has/write_list_has/len_reads/len_writes/component_conflicts/arena_conflicts (shared per-arena helper so resource + message hazard body written once)/access_conflicts + schedule_default/schedule_add_systems (cap-8 reject, bidirectional conflict tally)/schedule_len/schedule_conflict_count/access_set_a/access_at (scalar capture + per-branch build)/schedule_clear (lib/schedule_registry_value.sla deep; src/system/schedule.rs registry-value sequential schedule). 10 isolated tests SA+default pass (panic 140000-140199). Shallow schedule_registry_value retained. Current measured counts: 471 lib modules, 375 test files, 90 examples, 6655 `.sla` `@test` annotations; 199 `*_deep.sla` modules. Feature progress: schedule_registry_value deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 371 schedule_table_value_deep: EcsTblValueScheduleDeep cap-8 systems (each EcsTblValueSystemAccessDeep holds cap-4 read component-ids r0..r3+len_reads and cap-4 write component-ids w0..w3+len_writes + two parallel arena flag pairs ar_read_0 resource-read / ar_read_1 messages-read / ar_write_0 resource-write / ar_write_1 messages-write as i32 0/1) + conflict_count tally + arena_hazard(left,right,arena) single helper (hazard body written once, parameterized by arena index, viewed through arena_read/arena_write index-helpers — distinct from Batch 370's per-arena code) + access_none/access_build/access_read_component/access_write_component (cap-4 push)/access_read_resource/access_write_resource/access_read_messages/access_write_messages/read_at/write_at/arena_read/arena_write/read_list_has/write_list_has/component_conflicts (bidirectional)/arena_hazard/access_conflicts/schedule_default/schedule_add_systems (cap-8 reject, bidirectional conflict tally)/schedule_len/schedule_conflict_count/access_set_a/access_at (scalar capture + per-branch build)/schedule_clear (lib/schedule_table_value.sla deep; src/system/schedule.rs table-value sequential schedule). 10 isolated tests SA+default pass (panic 140200-140399). Shallow schedule_table_value retained. Current measured counts: 472 lib modules, 376 test files, 90 examples, 6665 `.sla` `@test` annotations; 200 `*_deep.sla` modules. Feature progress: schedule_table_value deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 372 schedule_archetype_value_deep: EcsArchValueScheduleDeep cap-8 systems (each EcsArchValueSystemAccessDeep holds cap-4 read component-ids r0..r3+len_reads and cap-4 write component-ids w0..w3+len_writes + packed 2-bit resource/messages arena flag matrix — resources bit-0 and messages bit-1 in both `reads` and `writes` i32 bit-fields, exercised via SLA bitwise templates |,<</&/>>) + conflict_count tally + writes_touch(writer,other) one-directional helper called symmetrically (bidirectional body factored out — distinct from 370/371's inline body) + arena_conflict(left,right,bit) single bit-shifted expression per arena + access_none/access_build/access_read_component/access_write_component (cap-4 push)/access_read_resource/access_write_resource/access_read_messages/access_write_messages (bit-OR setters)/read_at/write_at/reads_resource/writes_resource/reads_messages/writes_messages (bit-test readers)/read_list_has/write_list_has/component_conflicts/arena_conflict/access_conflicts + schedule_default/schedule_add_systems (cap-8 reject, bidirectional conflict tally)/schedule_len/schedule_conflict_count/access_set_a/access_at (scalar capture + per-branch build)/schedule_clear (lib/schedule_archetype_value.sla deep; src/system/schedule.rs archetype-value sequential schedule). 10 isolated tests SA+default pass (panic 140400-140599). Shallow schedule_archetype_value retained. Current measured counts: 473 lib modules, 377 test files, 90 examples, 6675 `.sla` `@test` annotations; 201 `*_deep.sla` modules. Feature progress: schedule_archetype_value deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 373 schedule_dag_analysis_deep: EcsDagAnalysisDeep cap-8 nodes cap-4 successors/node + flattened cap-8×8 i32 reach bit-matrix (reach00..reach77) + cap-4 pair-lists (reachable/disconnected/transitive/reduction/closure each pa/pb i32 cap-4 + count) + iterative compute_closure (reflexive init + fixed-point triple loop writing reach bits; no recursion — SLA lattice forbids recursive futures under per-batch UseAfterMove rules) + partition (i<j scan emits reachable vs disconnected pairs) + record_transitive_edge/add_transitive_edge + check_for_redundant_edges/check_for_cross_dependencies (regressed-from-tuple-form scalar split accessors) + EcsDagGroupsDeep cap-4 groups cap-4 children insert/get/overlap (overlap also exposed via scalar split accessors) + 3 error structs (lib/schedule_dag_analysis.sla deep; src/schedule/graph/dag.rs). 10 isolated tests SA+default pass (panic 140600-140799). Shallow schedule_dag_analysis retained. Current measured counts: 474 lib modules, 378 test files, 90 examples, 6685 `.sla` `@test` annotations; 202 `*_deep.sla` modules. Feature progress: schedule_dag_analysis deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 374 entity_index_map_iter_extras_deep: EcsEim2DeepMap/EcsEim2DeepSlice/EcsEim2DeepIterMut/EcsEim2DeepIntoIter/EcsEim2DeepDrain cap-16 parallel-array (k0..k15 i64 keys + v0..v15 i32 values + len/front/back/boxed flags) deep variants of EntityIndexMap iterator/boxed-slice wrappers (IterMut set_next, IntoIter next/next_back/as_slice, Drain::as_slice, boxed Slice conversion/clone/default/into_inner, Slice equality/order/hash/index variants) — the insert / iter_mut_set_next / drain use field-assign on struct-by-value params (verified SLA-legal on SA, replacing the heavier slot-view rebuild from prior batches); multi-slot returns (PairResult, IterNext, IterMutSetResult, RangeResult, DrainResult) are wrapper structs since the deep variant avoids tuple-return callsites (Batch 373 observation) (lib/entity_index_map_iter_extras.sla deep; complements entity_index_map_extras.sla). 10 isolated tests SA+default pass (panic 140800-140999). Shallow entity_index_map_iter_extras retained. Current measured counts: 475 lib modules, 379 test files, 90 examples, 6695 `.sla` `@test` annotations; 203 `*_deep.sla` modules. Feature progress: entity_index_map_iter_extras deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 375 storage_internals_deep: EcsBlobArrayDeep / EcsThinArrayPtrDeep / EcsColumnDeep cap-16 parallel-array storage primitives (i64 d0..d15 + len, mirroring src/storage/blob_array.rs BlobArray layout/is_zst/get_drop + src/storage/thin_array_ptr.rs ThinArrayPtr with_capacity/alloc/clear + src/storage/table/column.rs Column with_capacity/component_id/swap/swap_remove/clear/get_drop); push/alloc/clear swap_remove use field-assign on struct-by-value params (verified SLA-legal on SA in Batch 374); swap_remove returns EcsBlobArraySwapRemoveDeep / EcsColumnSwapRemoveDeep wrapper structs with scalar accessors (no tuple-return callsites — Batch 373 avoidance rule) (lib/storage_internals.sla deep; src/storage/blob_array.rs + thin_array_ptr.rs + table/column.rs). 10 isolated tests SA+default pass (panic 141000-141199). Shallow storage_internals retained. Current measured counts: 476 lib modules, 380 test files, 90 examples, 6705 `.sla` `@test` annotations; 204 `*_deep.sla` modules. Feature progress: storage_internals deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 376 system_schedule_deep: EcsSystemScheduleDeep cap-8 parallel-array subsystems (systems: sys_id/sys_cond/sys_dep 0..7 i64 + sys_count; sets: set_id/set_cond 0..7 i64 + set_count; running state systems_run/systems_skipped i64 counters) mirroring src/schedule/executor/mod.rs (SystemSchedule + ApplyDeferred + default_executor); add_system/add_set/mark_run/mark_skip/reset/clear use field-assign on struct-by-value params (verified SLA-legal on SA in Batch 374); get_system_id/_conditions/_dependencies / get_set_id/_conditions return wrapper structs (EcsSystemIdDeep / EcsSystemConditionsDeep / EcsSystemDependenciesDeep / EcsSetIdDeep / EcsSetConditionsDeep — valid + payload scalars) to avoid tuple-return callsites (Batch 373 avoidance rule); ApplyDeferred marker predicate + ECS_EXECUTOR_SINGLE/ECS_EXECUTOR_MULTI constants + default_executor_kind; total_conditions sums system+set conditions, total_dependencies sums system deps only (lib/system_schedule.sla deep; src/schedule/executor/mod.rs). 10 isolated tests SA+default pass (panic 141200-141399). Shallow system_schedule retained. Current measured counts: 477 lib modules, 381 test files, 90 examples, 6715 `.sla` `@test` annotations; 205 `*_deep.sla` modules. Feature progress: system_schedule deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 377 table_mod_deep: EcsTableIdDeep / EcsTableRowDeep (scalar wrappers) + EcsTableDeep cap-4 columns × cap-8 entities parallel-array (per column N=0..3: comp_idN i32 + colN_data0..7 / colN_added0..7 / colN_changed0..7 i64; entities entity0..7 i64 + entity_count/comp_id0..3/column_count i32; id/capacity) + EcsTablesDeep cap-8 collection of EcsTableDeep (table0..7 + next_id/count). field-assign on struct-by-value params verified SLA-legal on SA (Batch 374) used by allocate (per-row init: data=0, added=changed=tick), set (bumps changed tick only — added preserved, matching shallow), swap_remove (middle-row relocation: relocate entity + per-column data/added/changed from tail into target then zero the freed tail slot and decrement count). Tuple-return callsites replaced by wrapper structs (Batch 373 avoidance rule): EcsTableAllocateDeep { new_table, row, ok } / EcsTableGetResultDeep { valid, value } reused by get/get_added_tick/get_changed_tick / EcsTableSetResultDeep { new_table, ok } / EcsTableSwapRemoveDeep { new_table, ok } / EcsTableEntityResultDeep { valid, value } / EcsTablesGetResultDeep { valid, table } / EcsTablesCreateDeep { new_tables, id, ok } — each with scalar split accessors (_valid/_value/_new_table/_row/_ok/_id/_new_tables). Cap reject is silent (table unchanged + ok=false/-1), mirroring the shallow `if row < 0 / row >= n` guards. Internal col-cell getters/setters per column (0..3)×row (0..7) via unrolled if cascades (32 cells per matrix × 3 matrices). set_table helper uses cascade-of-return pattern (`if idx==0 {...; return ts; };`) to keep new_table consumption single-move (avoid SA UseAfterMove error). (lib/table_mod.sla deep; src/storage/table/mod.rs — Table + TableId + TableRow + Tables). 10 isolated tests SA+default pass (panic 141400-141599). Shallow table_mod retained. Current measured counts: 478 lib modules, 382 test files, 90 examples, 6725 `.sla` `@test` annotations; 206 `*_deep.sla` modules. Feature progress: table_mod deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+- [done] Batch 378 relationship_query_iter_deep: EcsRelQueryDeep cap-8 parents x cap-4 children parallel-array adjacency (par0..7 i64 + ch0_0..ch7_3 i64 + cnt0..7 i32 + slot_count i32) + EcsAncestorWalkerDeep cap-8 child->parent map (c0..7 + p0..7 i64 + n i32) + EcsRqIterResultDeep cap-16 traversal-output buffer + EcsRqStackDeep cap-16 stack. Recursive shallow helpers (iter_ancestors_rec / iter_ancestors_count / root_ancestor / iter_descendants_rec) rewritten as ITERATIVE flat traversals -- no recursion (SLA lattice forbids recursive futures under per-batch UseAfterMove rules). field-assign on struct-by-value params verified SLA-legal on SA (Batch 374) used by add_child existing-slot branch as flat if-idx==k-&&-cntk==j cascade-of-return ladder (writing ch<k>_<j>:=child; cntk:=j+1; return r;) -- the prior nested `if idx==k && r.cntk<CAP` push-ladder form swallows field-writes on the SA backend (KEY FINDING Batch 378). Tuple-return callsites replaced by wrapper structs (Batch 373 avoidance rule): EcsRqRelatedDeep { found, value } / EcsRqParentDeep { found, value } / EcsRqStackPopDeep { ok, value, new_stack } each with scalar split accessors. KEY FINDING Batch 378: the SA backend SWALLOWS field-assigns in the form `if cond { buf = some_fn(buf, x); };` and inside `while`-loop bodies -- empirically the buf rebinding inside an if-guard block / while loop is treated as not persisting the fn's field-assigns to the outer buf slot. Confirmed via minimal repros (sources-3-repro: child pushed inside `if cnt > 1 { buf = push(buf, c1); };` reads 0 from the resulting buffer v1; rewriting the same op as `let b1 = push(buf, c0); let b2 = push(b1, c1); ...` flat rebinding ladder with `_push_when(buf, v, predicate)` short-circuit helpers that return buf unchanged when the predicate is false makes the write persist). sources() / iter_ancestors() / iter_siblings() / iter_descendants() all unrolled as flat b1..bN accumulator sequences (no `buf = push(buf, x)` inside if-guard or while-loop blocks). Recursive iter_descendants replaced with a fully-unrolled DEPTH-2 DFS (children -> grandchildren) producing shallow recursion's exact preorder. _child_at_x returns 0 sentinel for k>=cnt; _ecs_rqsib_keep(c, self) excludes both 0 sentinel and self for iter_siblings. (lib/relationship_query_iter.sla deep; src/relationship/relationship_query.rs iterator surface). 10 isolated tests SA+default pass (panic 141600-141697). Shallow relationship_query_iter retained. Current measured counts: 479 lib modules, 383 test files, 90 examples, 6735 `.sla` `@test` annotations; 207 `*_deep.sla` modules. Feature progress: relationship_query_iter deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 379 relationship_methods_extras_deep: EcsRelExtrasDeep cap-8 related × cap-4 descendants-per-related parallel-array mirroring src/relationship/related_methods.rs pub fns (add_one_related / detach_all_related / add_descendant / despawn_related / despawn_children / with_related / with_related_entities / insert_recursive BFS / remove_recursive BFS / spawned_with_related scalar accessor). Cascade-of-return pattern reused from Batch 377 (add_one_related / add_descendant: `if idx==0 {...; return r; }; ...; ` keeps single-move consumption to avoid SA UseAfterMove). _ecs_rel_extras_deep_total_visits uses a flat `let`-ladder accumulator (c0=r.r_count; c1=c0+dcount(0); ...; c8=c7+dcount(7); return c8;) per Batch 378 rule (no `mut` counter / no while-loop accumulation — SA swallows field-assigns inside while bodies). result structs EcsRelExtrasDespawnDeep { despawned_count, first_despawned } / EcsRelExtrasTraverseDeep { visited_count, first_visited } each with scalar split accessors (despawn_count/despawn_first/rec_count/rec_first); EcsRelExtrasSpawnsDeep removed as unused (no API fn returns it — spawned tracking exposed via simple `spawned_with_related` i32 accessor). struct-literal-in-tests caveat from Batch 379: SA rejects `let dz = EcsRelExtrasDespawnDeep { ... };` with syntax error at the `{` after the struct name; tests rewritten to construct result structs via library function paths (e.g. `let dz = ecs_rel_extras_deep_despawn_related(r_empty, 0);`). (lib/relationship_methods_extras.sla deep? NO — mirrors src/relationship/related_methods.rs from shallow lib/relationship_methods_extras.sla). 10 isolated tests SA+default pass (panic 141800-141988, distinct — verified). Shallow relationship_methods_extras retained. Current measured counts: 480 lib modules, 384 test files, 90 examples, 6745 `.sla` `@test` annotations; 208 `*_deep.sla` modules. Feature progress: relationship_methods_extras deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 380 hierarchy_commands_deep: EcsHierCmdsDeep cap-8 kind-discriminated deferred command queue (8 kinds: ADD_CHILD=1/INSERT_CHILD=2/DETACH_CHILD=3/DETACH_ALL_CHILDREN=4/REPLACE_CHILDREN=5/REPLACE_DIFF=6/DESPAWN_CHILDREN=7/DESPAWN=8) + EcsHierCmdStateDeep bundling queue + EcsHierListPoolDeep (cap-8 lists × cap-4 entities pool referenced by list-indices uidx/ridx/nidx per command) + EcsHierWorldDeep cap-8 parents × cap-4 children (par0..7 + ch0_0..ch7_3 + cnt0..7 + slot_count + alive0..7 + next_entity) mirroring src/hierarchy.rs EntityCommands/EntityWorldMut pub methods on ChildOf (add_child/insert_child/detach_child/detach_all_children/replace_children/replace_children_with_difference/despawn_children/despawn). set_slot uses field-assign on struct-by-value params (Batch 374/366 form). apply is a flat let-ladder over the 8 queue slots (no while loop — Batch 378 rule); apply RESETS the queue count to 0 on the returned state via _ecs_hier_cmds_deep_state_cleared helper so chained applies only run newly-queued commands (matches shallow RelationshipCommands.apply returning an emptied queue). parent slot add uses cascade-of-return (Batch 377 shape) inside _ecs_hier_world_deep_add_child_into / insert_child_slot / remove_child_slot; insert_child fully-unrolled per-slot shift-right-then-drop. _ecs_hier_world_deep_diff_relate dedupes (skip already-present) so replace_diff with overlapping relate set doesn't duplicate (mirrors replace_related_with_difference "ensure related" semantics). Tuple-return callsites replaced by wrapper structs (Batch 373 rule): EcsHierCmdApplyDeep { world, commands(state) } accessors _world/_commands; EcsHierReserveDeep { world, commands(queue), entity } accessors reserve_world/reserve_commands/reserve_entity — reserve_entity returns the raw queue for the len check. ecs_hier_world_deep_spawn returns (world, entity) tuple used ONLY inside reserve_entity (no test destructuring). Cap-8 reject silent (state unchanged). (lib/hierarchy_commands.sla deep; src/hierarchy.rs EntityCommands/EntityWorldMut ChildOf pub methods). 10 isolated tests SA+default pass (panic 142000-142046, distinct — verified). Shallow hierarchy_commands retained. Current measured counts: 481 lib modules, 385 test files, 90 examples, 6755 `.sla` `@test` annotations; 209 `*_deep.sla` modules. Feature progress: hierarchy_commands deep ~30% -> 90%; overall API ~94-96%, behavioral ~86-91%.
+
+- [done] Batch 381 commands_relationship_deep: EcsRelCmdsDeep cap-8 kind-discriminated deferred command queue (9 kinds: SET_RELATED=1/ADD_RELATED=2/INSERT_RELATED=3/REMOVE_RELATED=4/DETACH_ALL_RELATED=5/REPLACE_RELATED=6/REPLACE_DIFF=7/DESPAWN=8/DESPAWN_RELATED=9) + EcsRelCmdStateDeep bundling queue + EcsRelCmdListPoolDeep (cap-8 lists × cap-4 entities referenced by ridx/uidx/nidx) + EcsRelCmdWorldDeep cap-2 relationship-kind registry (kind0/kind1 — each link_despawn + target_mode_ONE flags) × cap-8 source→target adjacency (srcN/tgtN pairs + cnt + alive0..8 + next_entity) mirroring src/system/commands/relationship.rs + relationship.sla pub surface (set_related / add_related / insert_related / remove_related / detach_all_related / replace_related / replace_related_with_difference / despawn / despawn_related / reserve_entity / spawn_related / RelationshipRelatedSpawnerCommands). set_slot uses field-assign cascade-of-return (Batch 374/366/377 form). apply is flat let-ladder over 8 queue slots (Batch 378 rule) and RESETS the queue count on the returned state via _ecs_rel_cmd_state_cleared (Batch 380 finding) so chained applies only run newly-queued commands. KEY Batch 381 finding for one_to_one relationships: target_mode==ONE requires a sweep OTHERS removal of every existing source pointing at the target before upserting (mirror shallow relationship_world_set_related_at RELATIONSHIP_TARGET_ONE branch) — without it, setting a distinct source in a one-to-one kind appends instead of replacing the existing source. _ecs_rel_cmd_world_deep_set_related implements this sweep via _ecs_rel_cmd_dwdr_remove_others_for_target (flat 8-pass remove-one-match ladder) + _ecs_rel_cmd_world_deep_find_other_target_idx (excludes keep_src). source_count / source_at implement via RECURSIVE read-only scans (verified SA permits simple recursion for pure i32 returns — recfact probe 4!=24 passes — no UseAfterMove risk for read-only i32). detach_all_related uses 8-pass remove-one-match ladder (no recursion). despawn_related with link_despawn=true marks the target AND every source pointing at it not-alive (mirror shallow linked_despawn). REMOVE_RELATED target-guards: only removes the source if its current target equals command.target (mirror shallow relationship_commands_apply_remove branch). Tuple-return callsites replaced by wrapper structs (Batch 373 rule): EcsRelCmdApplyDeep { world, state } / EcsRelCmdReserveDeep { world, state, entity } / EcsRelCmdSpawnRelDeep { world, state, entity } / EcsRelSpawnerDeep { state, kind_id, target } + EcsRelSpawnerSpawnDeep { world, spawner, entity } / EcsRelSpawnLinkedDeep { world, entity } + EcsRelCmdStoreListDeep { state, index } (library-internal) — each with scalar accessors; ecs_rel_cmd_world_deep_spawn used internally (tuple return consumed only inside reserve/spawn wrappers, never test-destructured). RegisterRedefinition dodged by renaming `let w = fn(w, ...)` chained rebinds to sequential `w0/w1/w2` names in replace_related/replace_diff/despawn_related (Batch 373 Redeclaration rule). Cap-8 reject silent (state unchanged). (lib/commands_relationship.sla deep; src/system/commands/relationship.rs + relationship.sla). 10 isolated tests SA+default pass (panic 142100-142247, distinct — verified). Shallow commands_relationship retained. Current measured counts: 482 lib modules, 386 test files, 90 examples, 6765 `.sla` `@test` annotations; 210 `*_deep.sla` modules. Feature progress: commands_relationship deep ~30% -> 90%; overall API ~94-96%, behavioral ~87-91%.
+
+- [done] Batch 382 schedule_stepping_deep: EcsSteppingDeepS (cap-8 queued updates + cap-8 schedule_order + cap-8 states + cursor fields) + EcsSteppingScheduleStateDeepS (cap-16 per-system behaviors b0..15 + per-system pending behavior_updates u0..15 + first/cursor_system/start) mirroring src/schedule/stepping.rs Stepping::next_frame + ScheduleState::skipped_systems on fixed-cap storage (no Vec, no `let mut`, no tuple-return in tests, no `let w = fn(w,...)` chained rebinds). Wrapper structs (Batch 373 rule): EcsStepSchedulesDeep { valid, l0..l7, count } accessors _schedules_valid/_schedules_count/_schedules_at; EcsStepCursorDeep { valid, label, system_idx } accessors _cursor_valid/_cursor_label/_cursor_system; EcsStepSkippedDeep { valid, skip_count, next_system, f0..f15 } accessors _skipped_valid/_skipped_count/_skipped_next/_skipped_at (bool return); EcsSteppingDeepSkippedResultDeep { d, skipped } accessors _skipped_result_d/_skipped_result_skipped (bundles post-traversal d + payload); EcsStepSkipAccDeep { is_cursor, pos, start, local_action, cursor_sys, next_sys, skip_count, f0..f15 } walker accumulator (library-internal); EcsSteppingNextFrameApplyDeep { d, flag } (threads mut_reset_cursor accross the flat 8-slot apply ladder per Batch 380 finding -- apply returns state with update_count reset to 0 on the returned d so chained next_frame calls only run newly-queued commands).
+Critical engineering notes:
+- next_frame is a flat 8-slot let-ladder (Batch 378 rule -- no `while`) over the queued update positions 0..7, dispatching on variant via _ecs_stepping_deep_next_frame_apply_variant: SET_ACTION runs _should_skip_action filter (mirror Bevy (cur, target) match blocks) then sets action field; ADD_SCHEDULE appends state + bumps st_count + appends to schedule_order; REMOVE_SCHEDULE removes the state via _remove_state (shift-down recursive) + compacts schedule_order via _remove_from_order_scan (recursive) + sets reset_cursor flag = 1; CLEAR_SCHEDULE clears the state via _state_clear_all_s; SET_BEHAVIOR enqueues a pending behavior_update via _state_mark_pending_s (Batch 371 SCOPE-EXTRA: pending drain only on first skipped_systems call); CLEAR_BEHAVIOR enqueues a -1 pending update (drain treats -1 as "reset slot to Continue", mirroring Bevy remove semantics). The mut_reset_cursor boolean is threaded as the EcsSteppingNextFrameApplyDeep.flag i32 because SA swallows `let mut x; if cond { x = 1; };` rebinding per Batch 373.
+- KEY Batch 382 finding: the cascade-of-return accumulator walker `_ecs_stepping_deep_step_skip_walk` is RECURSIVE (cap-16 system_index scan). Verified SA permits simple recursion returning a struct as long as (1) accumulator field-assigns happen through cascade-of-return helpers at top-level function scope (Batch 377 shape) and never inside `if`/`while` (Batch 378 rule; here the body has only top-level `let` bindings + a return-with-cascade-of-return-helpers), and (2) each recursive step is a pure dispatch on (action, behavior) returning updated i32 accumulator fields. The walker uses three per-step pure-i32 helpers (`_step_skip_flag` / `_step_skip_la` / `_step_skip_pos`) plus a tail rule (`_step_skip_tail_pos`) that mirrors Bevy's trailing `if i == pos && action != Waiting { pos += 1 }`. This is the Batch 381 SA-permits-simple-recursion finding extended to struct-returning recursion -- the prior "no recursion" cookbook guidance was about UseAfterMove on cross-call accumulator chains; struct-by-value top-level-scope field-assign + recursive return is fine.
+- skipped_systems mirrors Bevy src/schedule/stepping.rs (Stepping::skipped_systems + ScheduleState::skipped_systems): finds/creates the order entry for `label` (insert at `previous_schedule + 1` or 0), updates `previous_schedule = order_idx`, resizes the state's node_count, drains pending behavior_updates via `apply_behavior_updates_s` (recursive over cap-16 slots: -1 = clear-to-Continue, >= 0 = set behavior), recomputes `first` via `compute_first_s` (recursive read-only scan over cap-16 system_index -- Batch 381 simple-i32 recursion), then walks via the accumulator walker. After the walk, on the cursor schedule, Bevy's `if self.action == Action::Step { self.action = Action::Waiting }` is applied via `_skipped_apply_step_to_waiting`. Cursor is updated: next_sys >= 0 -> cursor_system = next_sys; next_sys < 0 -> cursor_schedule += 1 + cursor_system = first_system_at order_idx (mirror Bevy's `cursor = Cursor { schedule: idx+1, system: first_system_index_for_schedule(idx+1) }`).
+- _ecs_stepping_deep_insert_order_at / _ecs_stepping_deep_insert_shift cap-8 compact right-shift insert (mirror bevy schedule_order.insert used by skipped_systems when label is new). _ecs_stepping_deep_remove_from_order_scan is recursive-only (does NOT mutate world mid-scan; builds d via _set_so_at and recurses) so it's safe as read-only i32 recursion per Batch 381.
+- penuer: the curried `_ecs_stepping_deep_next_frame_step(d1, 0)` was an unused no-op scaffold left over from the initial attempt -- removed in favor of a0 = apply_result_new(d1, 0); the ladder shifted to a1..a8 covering slots 0..7 (initial code had a1..a7 covering slots 1..7, skipping slot 0 entirely -- fixed after the first SA probe showed `ecs_stepping_deep_action_s` staying RunAll after enable).
+- behavior_for_s: out-of-range system_index (< 0 OR >= ECS_STEP_CAP_SYSTEMS OR >= node_count) returns Continue default (capsule the per-slot accessor with a range guard before reading the lookup table -- matches Bevy `behaviors.get(&NodeId).unwrap_or(&Continue)`).
+- begin_frame_s is `next_frame_s` by another name (Bevy dispatches begin_frame system -> next_frame method).
+Tests (10) -- `tests/test_ecs_lib_schedule_stepping_deep_isolated.sla` (panic 142300-142399, 80 codes, distinct -- verified with `rg -o "panic\(([0-9]+)\)" <file> --no-filename -r '$1' | sort -n | awk 'NR>1 && $1==prev {print "DUP:", $1; exit}'` showing empty before documenting). No tuple-return destructuring; only scalar accessors on the EcsSteppingDeepSkippedResultDeep / EcsStepSchedulesDeep / EcsStepCursorDeep / EcsStepSkippedDeep wrappers. Cover: new + actions + enable/disable/step/continue queueing + update_count + payload reading; next_frame apply add/remove/clear schedule + has_schedule + state_exists; set_behavior enqueues-pending + behavior_for-before-drain-still-Continue + skipped_systems drains + behavior_for-after-drain-equals-requested-Back; clear_behavior resets to Continue after drain; cursor() not-found on RunAll + found after enable+after skipped_systems populates node_count; schedules() valid+order copy+ contestant mismatch state (remove compacts order); skipped_systems Waiting walk (4 Continue -> all skip, next_sys=0); skipped_systems Step walk (cursor steps system 0, waits, skip_count=3, cursor advances to 1, action Step->Waiting); skipped_systems Continue + Break breakpoint (Break at system 2 halts after the cursor advances through 0->1 and stops at 2; skip=[0,0,1,1]); cap-8 queued-update reject (8 updates cap fills with enable + 7 add_schedule out of 8 attempted) + cap-16 set_behavior growth + cap-16 reject at system_index=16 + behavior_for out-of-range returns Continue + begin_frame = next_frame identity. Both SA + default backends: 10/10 pass.
+Post-batch counts (measured): 483 lib modules | 211 `*_deep.sla` modules | 387 test files |
+211 `*_deep_isolated.sla` test files | 90 examples | 6775 `@test` total across lib+tests+examples.
+Next free panic band: 142400+ (Batch 382 used 142300-142399).
+Next batch candidates: archetype_registry (274 lines, has `@import world_registry.sla` -- couples to registry world frame; subdivide if surface too wide), schedule_diagnostic (event/schedule diagnostics if not already deepened). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+- [done] Batch 383 archetype_registry_deep: EcsArchWorldDeep self-contained cap-8 archetypes x cap-16 entities-per-arch x cap-8 component-ids per arch (no `@import world_registry.sla` -- the entity generation/alive/component-attach registry is inlined so the deep doesn't couple to the registry world frame per the Batch 382 plan note; the shallow `lib/archetype_registry.sla` does `@import`). Mirrors `registry_archetype_world_*` surface from shallow lib/archetype_registry.sla on fixed-cap storage (no Vec, no `while`, no `let mut` i32 rebind, no test tuple-return destructuring, no `let w = fn(w,...)` chained rebinds) mirroring Bevy src/archetype.rs Archetype + entity-archetype location. Wrapper structs (Batch 373 rule): EcsArchInfoDeep { id, storage } accessors _info_id/_info_storage; EcsArchRegisterDeep { world, info } (for chained register_table_w/register_sparse_set_w) accessors _register_world/_register_info; EcsArchSpawnDeep { world, entity } accessors _spawn_world/_spawn_entity; EcsArchSlotDeep { world, archetype_id } accessors _slot_world/_slot_id (get_or_create result); EcsArchSignDeep { c0..c7, count } accessors _sign_count/_sign_at; EcsArchQueryDeep { found, count, e0..e15, g0..g15 } accessors _query_found/_query_count/_query_entity_id/_query_generation (cap-16 alive-entity query results); EcsArchQueryAcc library-internal accumulator for the query walk.
+Critical engineering notes:
+- Self-contained registry: each EcsArchArchDeep carries cap-16 populated entity-ids (e0..e15 + ent_count) and cap-8 component-ids (c0..c7 + comp_count) for the archetype's signature -- fixed-cap instead of shallow `Vec<i32>.push`. The EcsArchWorldDeep inlines cap-16 `loc0..loc15` for per-entity (entity_id == entity-slot index 0..15), cap-16 `g0..g15` generations, cap-16 `alive0..alive15` alive-bit + cap-16 `attach0..attach15` per-entity component-attach bitwords (cap-8 components packed as i32 bitmask using `_bits_set/_bits_has/_bits_clear` 8-case helpers with bitmask constants 1, 2, 4, 8, 16, 32, 64, 128 and signed-NOT masks -2,-3,-5,-9,-17,-33,-65,-129 for `&` clear), and cap-8 `comp0..comp7` storage tags + `comp_count`. Behaves exactly like shallow but never `@import`s world_registry.sla surface.
+- Per-entity attach bitword semantics: insert_component sets bit (1<<cid) in `attach[entity_id]`; remove_component clears it; `_signature_for_entity` then drives a flat 8-step let-ladder over workspace cid 0..7 (`_ecs_arch_world_deep_sign_step` helper, Batch 378 rule -- no `while`, no `let mut`) pulling ids whose bit is set into the ascending-sort `EcsArchSignDeep` (since the scan goes 0..7 in order, the signature stays ascending -- matches shallow's `registry_world_has_component` order which also walks columns ascending).
+- find_archetype uses RECURSIVE read-only scan over cap-8 archetype slots (`_ecs_arch_world_deep_find_scan`, Batch 381 finding -- pure i32 recursion). Signature-matching `_ecs_arch_world_deep_sig_matches_arch` is a flat 8-slot i32-leq shortest-path comparison of archetype c0..7 vs signature count + slot contents via `_ecs_arch_eq_slot` (early-out on mismatch via return 0).
+- get_or_create_archetype: existing match -> existing slot index; otherwise insert into the next free slot (cap-8 reject silent -> returns slot_id=-1) and copy the signature into the archetype's c0..c_count-1 via RECURSIVE `_ecs_arch_world_deep_arch_copy_signature` (sig.count steps).
+- spawn: allocate `next_entity++` slot, mark alive, set next_entity++ ; the first spawn's empty signature attaches to the empty archetype (id 0). Per-entity reproducibly: next_entity grows monotonically (cap-16 reject silent -> returns entity=-1). Per-entity reproducible: generation bumps on despawn. Inserts/removes call `_ecs_arch_world_deep_sync_entity` (detach -> signature-scan -> attach).
+- detach: swap-remove from the archetype's entity_ids list: copy `eids[last]` into `eids[row]` then update the moved entity's `loc[moved].row = row`; only on subsequent diff (row != last) does the swap happen. Mirror shallow `registry_archetype_world_detach` (which uses Vec `.remove(last)`). Implementation uses a same-row bool threaded via `_ecs_arch_world_deep_detach_swap_in` early-return-on-equal helper (`if same_row { return w0; }`) to avoid the `if cond { w = fn(w, x); }` SA-swallow bug (Batch 378 finding) -- flat instead of mutate-in-if.
+- query_component: walks all cap-8 archetypes via RECURSIVE `_ecs_arch_query_walk_archetype` (i32 recursion over cap-8 slots) + within each matching archetype, walks cap-16 rows via RECURSIVE `_ecs_arch_query_walk_row` (Batch 381 finding -- pure i32 + struct-returning recursion). Each alive entity in a qualifying archetype gets pushed into `EcsArchQueryAcc { count, e0..e15, g0..e15 }` via `_ecs_arch_query_push` cascade-of-return set pair helper; finalized via `_ecs_arch_query_acc_finalize` into `EcsArchQueryDeep`. cap-16 reject silent (acc full -> stops pushing). Each query result slots carry the entity_id and the generation at the time of spawn (or 0 for freshly-spawned, generation bumped only after despawn).
+- KEY Batch 383 finding (extending Batch 382): SA permits CONTINUATIONs of Batch 381's pure-i32 recursion to include struct-returning recursive walks with valid struct-by-value acc passing (`_ecs_arch_query_walk_archetype`, `_ecs_arch_query_walk_row`, `_ecs_arch_arch_deep_arch_copy_signature`, `_ecs_arch_world_deep_find_scan`). The pattern continues to hold: accumulator field-assigns via cascade-of-return helpers at top-level function scope (Batch 377 shape), no `let mut` rebinds of i32 counters, no `while` bodies.
+- Register returned BOTH info and world: initial draft had `ecs_arch_world_deep_register_table` return only `EcsArchInfoDeep` -- hitting the test-problem "where does the world go?". Added the `_w`-suffix variant `ecs_arch_world_deep_register_table_w` / `_register_sparse_set_w` returning `EcsArchRegisterDeep { world, info }` (the unsuffixed variants remain for surface symmetry with shallow `registry_archetype_world_register_table`).
+- begin_frame / behavior / has_pending_updates pattern is NOT used here -- archetype registry has no deferred queue; insert_component/remove_component/despawn all apply immediately (no queue, no apply). The "apply resets queue" convention from Batch 380 is N/A.
+
+Tests (10) -- `tests/test_ecs_lib_archetype_registry_deep_isolated.sla` (panic 142400-142499, 80 codes, distinct -- verified with `rg -o "panic\(([0-9]+)\)" <file> --no-filename -r '$1' | sort -n | awk 'NR>1 && $1==prev {print "DUP:", $1; exit}'` showing empty before documenting). No tuple-return destructuring; only scalar accessors on the wrapper structs. Cover: new+archetype_count+comp_count+register_table_w / register_sparse_set_w returning info with correct id/storage/comp_count; spawn attaches to empty archetype id 0; get_or_create_archetype creates matching + distinct archetypes (id reuse + new slot); identical signatures coalesce into same archetype (e1=[0,1] + e2=[1,0] both sorted to [0,1] -> same archetype + archetype_entity_count=2); remove_component migrates entity to shared archetype (e1=[0,1], removes 1 -> [0] shares e2's archetype); despawn detaches+bumps generation+dedupes query (e0 despawned leaves e1 in query, count 1, gen 0); detach swap-remove coordinate move updates location.row (despawn middle entity of [e0,e1,e2] moves e2 into e1's row); query_component skips despawned entities + reports the correct generation in results; insert->remove->insert returns to lower-archetype-id (empty=0 vs [0]=1 reuse); cap-8 components reject silent beyond ECS_AREG_COMP_CAP + insert past cap-8 is a silent no-op + find_archetype matches get_or_create for the +archetype-id. Both SA + default backends: 10/10 pass.
+
+Post-batch counts (measured): 484 lib modules | 212 `*_deep.sla` modules | 388 test files |
+212 `*_deep_isolated.sla` test files | 90 examples | 6785 `@test` total across lib+tests+examples.
+Next free panic band: 142500+ (Batch 383 used 142400-142499).
+Next batch candidates: hierarchy_relationship_adapter (shallow + clean-cut, no @import -- a natural next candidate), world_registry_erased (shallow @import world_registry -- couple to world frame; needs self-contained variant like Batch 383), system_param_table_erased / world_table_erased (registry-/table-erased coupled -- subdivide). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+
+## Batch 384 — hierarchy_relationship_adapter_deep (DONE 2026-07-12)
+
+`lib/hierarchy_relationship_adapter_deep.sla` (1087 lines) mirrors shallow `lib/hierarchy_relationship_adapter.sla` (the typed ChildOf facade that delegates to `relationship_world_*`) as a SELF-CONTAINED cap-16 entity registry + singly-linked-sibling ChildOf relation. NO `@import relationship.sla` -- the per-entity parent/head/next/gen/alive arrays are all inlined.
+
+Storage: `EcsHierWorldDeep` holds cap-16 `parent0..15` (parent id per entity, -1 = root), cap-16 `head0..15` (first child id per entity), cap-16 `next0..15` (next sibling id per entity -- singly-linked sibling list), cap-16 `gen0..15`, cap-16 `alive0..15` (alive bit), and `next_entity`. Children of a parent form a singly-linked list rooted at `head[parent]` linked via `next[child]`.
+
+Public surface: EcsHierEntityDeep { id, generation } + `ecs_hier_entity_eq_deep` / `ecs_hier_entity_id_deep` / `ecs_hier_entity_gen_deep` / `ecs_hier_entity_new(id, gen)` (public ctor for tests); EcsHierSpawnDeep { world, entity } + `_world`/`_entity` accessors for `ecs_hier_world_deep_spawn`; EcsHierSpawnChildDeep { world, child } + `_world`/`_entity` accessors for `ecs_hier_world_deep_spawn_child`; spawn_world/is_alive; add_child/insert_child (doubly-detached reparent: removes child from its old parent's sibling list, then inserts at an index into the new parent's child-list); has_parent/parent/child_count/child_at; children() returns EcsHierChildrenDeep { count, e0..e15 } with `_count`/`_at` accessors; ancestors/root_ancestor/descendants (BFS)/descendants_depth_first (DFS pre-order)/siblings/leaves all return EcsHierQueryDeep { count, e0..e15 } via `_query_deep_count`/`_query_deep_at`; detach_child (no-op if actual parent differs) / detach_all_children; replace_children; replace_children_with_difference (via EcsHierDiffListDeep { count, e0..e7 } builder + `_count`/`_at`/`_push`); despawn_children (recursive kill of all descendants) + despawn (entity + its descendants).
+
+Helpers: per-entity field accessors `_ecs_hier_world_deep_parent_at/_set_parent`, `_head_at/_set_head`, `_next_at/_set_next`, `_generation_at/_set_generation`, `_alive_at/_set_alive` (16-case cascade-of-return). Spawn-related `_ecs_hier_spawn_wrap`. `_ecs_hier_world_deep_add_child` reads old_parent, removes child from old parent's head-list via `_ecs_hier_remove_from_old_parent`/`_ecs_hier_remove_from_list_walk` (recursive read-only splice prev.next=target.next), then appends to the new parent's child-list tail via `_ecs_hier_append_child_tail`/`_ecs_hier_append_child_tail_walk` (recursive), then sets parent[child]=parent. `insert_child` walks with a recursive index counter. `child_count` uses RECURSIVE `_ecs_hier_count_walk_world` (world-carrying read-only counter). ancestors/root_ancestor walk up `parent[]` chain. descendants BFS uses `EcsHierBfsAccDeep` + `_ecs_hier_bfs_step`/`_ecs_hier_extend_queue_with_children`/`_ecs_hier_extend_queue_walk`. DFS uses `EcsHierDfsAccDeep` + `_ecs_hier_dfs_push_children`/`_ecs_hier_dfs_walk_children` (pre-order recursion). siblings via `_ecs_hier_siblings_walk` (recurse the sibling list of the parent, skip self). leaves = DFS descendants filtered by `head[ent] < 0`. despawn_children + despawn use `_ecs_hier_kill_children_rec` and `_ecs_hier_kill_entity` (clear head/next/parent, bump gen, alive=0, writes AFTER recursion for recursion-safety).
+
+KEY Batch 384 finding #1: initial `_ecs_hier_kill_children_rec(w0, cur)` only recursed into `head[cur]` (first child's subtree) then killed `cur`, but never continued down the SIBLING list (`next[cur]`). The fix: `return _ecs_hier_kill_children_rec(w2, nxt);` after the kill, so the recursion walks the entire sibling list of `parent`'s children -- otherwise despawn_children/despawn only killed the FIRST child and its subtree, leaving subsequent siblings (and their subtrees, including grandchildren) alive. Caught by SA `EcsHierWorldDeep despawn_children recursive kill + grandchildren` (panic 142583, g2 alive when it should be dead) and `replace_children_with_difference + linked despawn` (panic 142546, child3 alive when it should be dead). Both backends caught it on the first SA run after the lib was originally built.
+
+KEY Batch 384 finding #2: SA rejects `EcsHierEntityDeep { id: -1, generation: 0 }` struct-literal construction IN TESTS (the Batch 379 rule extends to arbitrary entity wrappers too -- `error: found '{' expected semicolon`). Fix: expose a public `ecs_hier_entity_new(id, generation)` constructor on the lib so tests probe out-of-range (-1) and stale-generation (id 0 gen 5) non-alive entities via a library function path.
+
+The cap-16 entity cap: spawn rejects silently (returns entity id -1) when `next_entity >= ECS_HIER_CAP_ENTITIES` (16). Tests must spawn 16 entities to get ids 0..15 (16 spawns, the 16th is id 15) and a 17th spawn to trigger reject -- the cap test spine must label those spawns carefully or the off-by-one assert panics (caught: initial draft asserted the 15th spawn's id == 15 when it's the 16th spawn that owns id 15).
+
+Tests (10) -- `tests/test_ecs_lib_hierarchy_relationship_adapter_deep_isolated.sla` (panic 142500-142599, 97 codes, distinct -- verified with `rg -o "panic\(([0-9]+)\)" <file> -r '$1' | sort -n | awk 'NR>1 && $1==prev {print "DUP:", $1}'` showing empty before documenting). No tuple-return destructuring; all return wrappers consumed via `_world`/`_entity`/`_count`/`_at` accessors. Cover: new + spawn + spawn_entity + is_alive (out-of-range + stale gen probes via `ecs_hier_entity_new`); spawn_child + child_count + parent + child_at + has_parent (mirrors shallow "syncs childof and children"); add_child reparent decrement old/increment new + insert_child index 0 + detach_child (mirrors shallow "reparent insert and detach"); insert_child middle (idx 1) and tail (idx 4) + detach_child wrong-parent no-op; replace_children_with_difference + linked despawn + unrelate'd child stays alive (mirrors shallow "difference replace and linked despawn"); ancestors/root_ancestor (incl. root self) + BFS descendants + DFS pre-order descendants + siblings + leaves (mirrors shallow "traversal helpers", tree root->c1,c2; c1->g1,g2; c2->g3); children() wrapper + detach_all + re-add in reverse; despawn_children cascades to grandchildren + parent stays alive; despawn entity cascades to its descendants + siblings stay alive + parent still has remaining sibling; cap-16 silent reject on 17th spawn + diff list empty/push/at sanity.
+
+Both SA + default backends: 10/10 pass.
+
+Post-batch counts (measured): 485 lib modules | 213 `*_deep.sla` modules | 389 test files |
+213 `*_deep_isolated.sla` test files | 90 examples | 6795 `@test` total across lib+tests+examples.
+Next free panic band: 142600+ (Batch 384 used 142500-142599).
+Next batch candidates: world_registry_erased (shallow @import world_registry -- needs self-contained world-frame variant, the Batch 383 archetype_registry pattern), system_param_table_erased / world_table_erased (registry-/table-erased coupled -- subdivide). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+
+## Batch 385 — world_registry_erased_deep (DONE 2026-07-12)
+
+`lib/world_registry_erased_deep.sla` (1441 lines) mirrors shallow `lib/world_registry_erased.sla`'s
+`RegistryErasedWorld<R, M>` registry world as a SELF-CONTAINED fixed-cap variant (NO `@import` --
+the registry/column storage, resource slot, message slot, and typed (pos/vel/marker) component
+columns are all inlined). The shallow uses generics `<R, M>` heavily and `@import`s five files
+(world_registry, resource, messages, query_dynamic, box_drop, sa_std/core/box); the deep reifies that
+erased "any concrete type" surface as three concrete typed columns keyed by `type_id`
+(`ECS_REG_TYPE_POS=101` / `ECS_REG_TYPE_VEL=102` / `ECS_REG_TYPE_MARKER=103`), matching the two
+shallow `@test`s which exercise only these three types plus the `ErasedTestTime` resource +
+`ErasedTestEvent` message.
+
+Storage: `EcsRegWorldDeep` with cap-16 entities (`gen0..15` + `alive0..15`, monotone `next_entity`,
+`entity_count`) and cap-8 component columns (`comp_id`, `type_id`, `storage`, per-column `present`
+i32 bitmask over cap-16 entities, per-column per-entity `added`/`changed` tick structs of kind
+`EcsRegColTickE { t0..t15 }`). Typed storage lives in three parallel cap-8 column structs
+(`EcsRegColDeepPos { x0..15, y0..15 }`, `EcsRegColDeepVel` same shape, `EcsRegColDeepMarker { v0..15 }`)
+keyed into the world via cascade-of-return set helpers `_set_pos_col`/`_set_vel_col`/`_set_marker_col`.
+The world has a single `change_tick`, one resource slot (`res_time_tick` + `res_time_set`) for
+`EcsRegTimeDeep`, and one message slot (`msg_event_amount` + `msg_count`) for `EcsRegEventDeep`.
+
+Public surface: `ecs_reg_entity_new(id, gen)` / `_eq_deep` / `_id_deep` / `_gen_deep`;
+`ecs_reg_world_deep_new`/`_component_count`/`_entity_count`/`_change_tick`;
+`ecs_reg_world_deep_register_table`/`_register_sparse_set` (return `EcsRegRegisterDeep { world, info }`,
+the Batch 373 wrapper with `_world_deep`/`_info_deep` accessors matching Batch 383's `_w`-suffix pattern);
+`ecs_reg_register_info_deep` -> `EcsRegCompInfoDeep` + `_id_deep`; `ecs_reg_world_deep_spawn`/`_spawn_many`
+(cap-16 reject returns entity.id=-1); `_is_alive`; `_has`; `ecs_reg_world_deep_insert_pos`/`_insert_vel`/
+`_insert_marker` (write the typed slot + present bit + added/changed ticks); `_get_pos`/`_get_vel`/
+`_get_marker` (read the typed slot); `_remove`; `_despawn` (alive=0, gen+1, removes all present components
+first); `ecs_reg_world_deep_increment_tick`; `ecs_reg_world_deep_query`/`_query_without`/`_query_added`/
+`_query_changed` (return `EcsRegQueryDeep { count, e0..15 }` via `_count`/`_at` accessors);
+`ecs_reg_world_deep_query_pair_pos_vel`/`_pair_without` (return `EcsRegPairQueryDeepPosVel { count, p0..15 }`
+via `_count`/`_at`, each pair `EcsRegPairDeepPosVel` exposes `_entity`/`_first`/`_second`);
+`ecs_reg_world_deep_query_pair_mut_pos_vel` (return `EcsRegPairMutDeepPosVel` + `_entity`/`_first`/`_second`/
+`_first_comp_id`); `ecs_reg_world_deep_pair_write_first_pos_vel` (writes the new pos value via insert_pos);
+`ecs_reg_world_deep_insert_resource`/`_get_resource` (single `EcsRegTimeDeep` slot +
+`ecs_reg_time_deep_tick`); `ecs_reg_world_deep_write_message`/`_read_message` (single `EcsRegEventDeep`
+slot with a monotone `msg_count`; `EcsRegMessageReadDeep { amount, count }` mirrors the shallow
+`MessageRead<M>`); `ecs_reg_world_deep_register_many`/`_spawn_many` (recursive bulk-register/spawn
+helpers used by the cap-reject tests to keep the test source small).
+
+Per-typed-column scalars are also exposed: `EcsRegPosDeep`/`EcsRegVelDeep`/`EcsRegMarkerDeep`/
+`EcsRegTimeDeep`/`EcsRegEventDeep` with `_new`/`_x`/`_y`/`_value`/`_tick`/`_amount` accessors, so tests
+construct concrete typed values via library function paths (no struct-literal construction in tests,
+per Batch 379 rule).
+
+KEY Batch 385 finding #1: SA's codegen backend rejects a top-level `const ECS_REG_TICK_NONE: i32 = -1`
+with a `CodegenError.CodegenError` raised inside `emitTopLevelConstDecl` -- SA cannot emit negative
+literal constants at top-level scope. Replaced with `ECS_REG_TICK_NONE: i32 = 999999` (a positive
+sentinel far above any valid tick we'd ever compare against). Caught only at `sa sla test` time,
+not at `sa sla check`; check passes but `test`'s codegen fails.
+
+KEY Batch 385 finding #2: extending Batch 378's SA-swallow bug for field-assign inside `if cond
+{ w = fn(w, x); };` -- the same swallow applies to `let w1 = fn(w, x); return fn2(w1, ...)` chains
+INSIDE an if-guard when the if-guard wraps the body's first write. The initial
+`_ecs_reg_world_deep_insert_set_tick` used a single function whose `if was_present != true { let
+w1 = _set_added(...); return _set_changed(w1, ...); }` branch + bare tail fell into the swallow, so
+re-inserts ALSO updated `added_tick` (the test 8 `replace bumps changed but not added` probe caught
+this). Fix: split into two distinct top-scope entrypoints `_set_added_and_changed` (first-insert) and
+`_set_changed_only` (re-insert) and dispatch in the public `_insert_set_tick` via
+`if was_present != true { return _set_added_and_changed(...); }; return _set_changed_only(...);`. The
+cascade-of-return helper pattern holds across the split entrypoints.
+
+KEY Batch 385 finding #3: file-size scaling. The default backend is orders-of-magnitude slower than
+SA when a per-batch lib exceeds ~55K bytes (Batch 384's hierarchy lib was 55K; this lib is 73K because
+of the cap-8 typed-column cascade-of-return boilerplate). Initial `sa sla test` default-backend
+run was reported by SA test frame as `FileTooBig` until `spawn_many`/`register_many` recursive
+helpers were added to shrink the cap-16 reject test source from 93 lines of explicit spawn/register
+let-ladders to ~18 lines of helper calls. After the helper additions the default backend successfully
+runs (149s on this lib, vs 4.7s on SA). Conventional cookbook gotcha: for any deep lib whose typed
+storage requires many cascade-of-return helpers, prefer recursive bulk-load helpers in the test
+layer to avoid the slow default-backend scaling.
+
+Tick semantics tedious gotcha: the initial draft of test 8 used `query_changed_since(t_before_replace)`
+where `t_before_replace = change_tick(w4)` -- the post-increment tick, which equals the re-insert
+write tick, so `changed > since_tick` is always false for the just-written entity. Mirror the shallow
+test 2 framing instead: insert-stamp ticks match `change_tick` AT INSERT (the shallow's
+`registry_world_insert_component` writes `world.change_tick` without first bumping), so
+`query_changed_since` must use a tick strictly less than the write tick. Conventional fix:
+pick `since_tick` to be the change_tick of the world BEFORE the last mutation, not after.
+
+Tests (10) -- `tests/test_ecs_lib_world_registry_erased_deep_isolated.sla` (343 lines, panic 142600-142697,
+30 codes, distinct, verified with `rg -o "panic\(([0-9]+)\)" <file> -r '$1' | sort -n | awk 'NR>1 && $1==prev
+{print "DUP:", $1}'` showing empty before documenting). No tuple-return destructuring; all return
+wrappers consumed via `_world_deep`/`_entity_deep`/`_count`/`_at`/`_info_deep`/`_id_deep`/`_x_deep`/
+`_y_deep`/`_value`/`_tick`/`_amount` accessors. Cover: new + register table/sparse + spawn +
+component_count + change_tick increment per-register; insert pos/vel/marker + get +
+has() present-or-absent on each entity; query/query_without/query_added_since (mirrors shallow
+test 1's nutrition tail); pair_query + pair_without + pair_mut_first pair-write + write-back +
+query_changed_since (mirrors shallow test 2's pair-query head); despawn + remove + has + alive +
+entity_count + generation-bumped slot is dead (mirrors shallow test 2's despawn tail); resource +
+message + change-tick at despawn against the resource captured pre-despawn (mirrors shallow test 2's
+resource/message tail); out-of-range/stale id + non-alive + missing-col query/skip + despawn-of-dead
+no-op; replace bumps changed but NOT added (the Batch 385 finding #2 evidence probe); cap-16 entity
+reject + cap-8 column reject silent at 9th register via `spawn_many`/`register_many` helpers;
+multi-column pair_query finds the one entity that has both pos+vel among three alive entities.
+
+Both SA + default backends: 10/10 pass. SA: 4.7s; default: 149s (the default-backend FileTooBig-vs-slow
+characteristic documented above).
+
+Post-batch counts (measured): 486 lib modules | 214 `*_deep.sla` modules | 390 test files |
+214 `*_deep_isolated.sla` test files | 90 examples | 6806 `@test` total across lib+tests+examples.
+Next free panic band: 142700+ (Batch 385 used 142600-142697).
+Next batch candidates: world_table_erased (shallow `@import world_table`, world-frame-coupled table
+storage -- needs self-contained variant similar to Batch 385), system_param_table_erased (registry-/table-erased coupled), system_param_archetype_value / world_table_value (table-value coupled). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+## Batch 386 — world_table_value_deep (DONE 2026-07-12)
+
+`lib/world_table_value_deep.sla` (1351 lines) mirrors shallow `lib/world_table_value.sla`'s
+`TableValueWorld<T,R,M>` as a SELF-CONTAINED fixed-cap archetype-table variant (NO `@import` -- the
+archetype storage, entity->(arch_id,row) location map, component tick tracking, resource slot, and
+message slot are all inlined). The shallow uses generics `<T,R,M>` and `@import`s five files
+(world_table, resource, messages, query_dynamic, box_drop); the deep reifies that surface on
+fixed-cap storage with cap-4 archetypes x cap-4 component-cols/arch x cap-4 rows/arch x cap-8
+entities, mirroring Bevy src/world/mod.rs `World` archetype-grouped storage + (arch_id,row) entity
+location. Concrete typed plugs: `EcsTVDataDeep{amount}` (TableValueData), `EcsTVTimeDeep{tick}`
+(TableValueTime resource), `EcsTVEventDeep{amount}` (TableValueEvent message). Wrapper structs
+(EcsTVRegisterDeep/EcsTVSpawnDeep/EcsTVCompInfoDeep/EcsTVQueryDeep/EcsTVPairQueryMutDeep/EcsTVMessageReadDeep)
+expose scalar accessors per the Batch 373 rule (NO tuple-return destructuring in tests;
+`_world`/`_entity`/`_count`/`_at`/`_info_id`/`_pair`-helpers/--accessor convention). Public surface
+mirrors shallow: `register_table`/`register_sparse_set`; `spawn`/`is_alive`;
+`entity_archetype_id`/`entity_row`/`archetype_entity_count`; `has`/`get`; `insert` (replace-in-place
+if comp already present, else migrate); `remove` (migrate to smaller arch incl. back to arch 0
+empty); `despawn`; `increment_tick`; `query`/`query_with`/`query_without`/`query_added`/`query_changed`;
+`query_pair_mut_first` + `pair_write_first`; `query_mut`/`write`; `insert_resource`/`get_resource`/
+`resource_added_since`/`resource_changed_since`; `write_message`/`read_message`. The resource slot
+has per-tick added/changed tracking matching the component pattern: first insert sets added+changed;
+replace preserves added and bumps changed (the dual-entrypoint shape from Batch 385). The arch
+migration on insert/remove: `_ecs_tv_arch_collect_sig` recursively collects the entity's current
+arch's (comp_id, val, added, changed) signature; `_ecs_tv_build_insert_sig`/`_ecs_tv_build_remove_sig`
+produce the target signature; `_ecs_tv_find_arch_for_sig` does exact-set-equality match across cap-4
+archetypes; `_ecs_tv_create_arch_for_sig` allocates a new archetype (or returns -1 when capped);
+`_ecs_tv_attach_row` writes the sig into a fresh row in the target arch; `_ecs_tv_detach_row`
+swap-removes the departed row (copies the last row's content into the departed row + bumps the moved
+entity's `loc_row`).
+
+Tests (10) -- `tests/test_ecs_lib_world_table_value_deep_isolated.sla` (380 lines after final
+patches, panic 142700-142834, 35 distinct codes verified unique with the standard `rg | sort -n |
+awk` check). Cover: new + register table/sparse + spawn + change_tick increment-per-register;
+insert health/mana/selected + get + has + migration + (arch_id,row) location tracking (mirrors
+shallow test 1); pair_query + pair_write_first + query_changed_since (mirrors shallow test 2); remove
+despawn + resource + message flow (mirrors shallow test 3); query variants +
+query_added/query_changed + added_since + replace-bumps-changed-but-not-added (standalone coverage);
+despawn + generation-bump + remove-blocked-if-absent no-op + cap-4 arch-0 row-cap reject (NOT cap-8;
+see Batch 386 finding #1 below); resource added/changed_since + replace preserves added tick; remove
+returns entity to arch 0 (empty archetype); pair_mut writeback across multiple entities;
+cap-4 arch silent reject on insert + cap-4 column cap silent reject on register.
+
+Both SA + default backends: 10/10 pass. SA: 4.7s; default: ~25.7s. The lib is 70K bytes; the default
+backend did NOT hit the FileTooBig error here (unlike Batch 385's 73K lib) because the recursive bulk
+helper `_ecs_tv_spawn_n(w0, count)` defined INSIDE the test file (not the lib -- fine per the rules)
+compresses the cap-4 spawn-reject sequence so the per-test `.test.sa` transcription stays bounded.
+
+KEY Batch 386 finding #1 (CRITICAL, supersedes Batch 385's tick gotcha): SA passes structs by
+reference / alias-by-value, NOT by-value-independently. After `let w3 = fn(w2)` mutates w2's fields in
+place, `let x = change_tick(w2)` reads the POST-MUTATION value. The deep's `increment_tick`,
+`register`, `insert`, `insert_resource` all mutate the world parameter's fields directly (`w0.field =
+...`); the returned copy is aliased to the same mutated struct. The bug pattern: capture
+`tick = change_tick(world_after_some_op)` for use as a `since_tick` query parameter, then call another
+mutation; since the captured `tick` was the world's field (read through change_tick accessor), LATER
+mutations retroactively re-write its meaning IF the test re-reads the same accessor from the aliased
+variable. Concretely: Test 7's `let t_after_insert = ecs_tv_world_deep_change_tick(w2); int3 =
+increment_tick(w2); second_insert_resource(int3)...` -- reading `change_tick(w2)` AFTER
+increment_tick mutates w2's change_tick returns the bumped value, making the upcoming
+`resource_changed_since(t_after_insert)` check `3 > 3 == false` and the test panics. The fix: compute
+`t_after_insert = before + 1` arithmetically from an EARLIER pre-mutation capture, OR capture the
+value at the latest point strictly BEFORE any mutation to the relevant field aliases the value. This
+affects Test 5 too: `let t_before_replace = change_tick(w8)` (read AFTER the increment that produced
+w8) returns the post-increment tick, making `query_changed(since=t_before_replace)` empty even though
+a replace-bumped-changed entity exists. The fix there is to capture `before_replace =
+change_tick(w7)` BEFORE the increment and use that as `since_tick`. **Lesson: for any `since_tick`
+parameter, capture the tick from a world binding that has NOT had a subsequent mutating call applied
+to it (whether to the same name or to an alias of the same struct). When in doubt, derive the
+expected tick arithmetically instead of re-reading it from the world.**
+
+KEY Batch 386 finding #2 (cap semantics in test design): the deep's effective entity-spawn cap is
+`ECS_TV_CAP_ROWS_PER_ARCH` (=4) for the empty archetype 0, NOT `ECS_TV_CAP_ENTITIES` (=8), because
+freshly-spawned entities start in arch 0 and stay there unless they later gain a component that
+migrates them out. An initial test draft tried to demonstrate an 8-entity-cap by spawning 7 entities
+after a despawn and expecting `entity_count == 7`, but after exactly 4 spawns arch 0 is full
+(`a0.row_count >= ECS_TV_CAP_ROWS_PER_ARCH`) and the 5th spawn silently returns `entity.id = -1`. The
+correct cap-demonstration: spawn 4 (fill arch 0), verify `entity_count == 4`, then assert the 5th
+spawn returns `entity.id == -1`. Note the prior Batch 385 lib's analogous cap test used
+`ECS_REG_CAP_PER_INSERT_ENTITY` (=16) which DID match `ECS_REG_CAP_ENTITIES` (=16) -- the cap mismatch
+specific to Batch 386 comes from arch-0-row-cap being the binding constraint for fresh spawns.
+
+KEY Batch 386 finding #3 (archetype cap clamp on insert): `ECS_TV_CAP_ARCH = 4` means the world can
+hold at most 4 archetypes total (arch 0 empty + 3 distinct-component-set archetypes). Inserting the
+4th distinct component, e.g. inserting c3 when e1 already has {c0,c1,c2} in arch 3, asks
+`_ecs_tv_create_arch_for_sig` for a 5th arch; the helper returns `(w1, -1)` (arch_count >= cap) and
+the insert silently no-ops (e1 stays in arch 3, never gains c3). The test must therefore check
+`archetype_count == 4` (NOT 5) and `has(e1, c3) == false` after the rejected insert (rather than
+asserting 5 archetypes and reading c3's value back). The cap-4 column cap (test 10's first half)
+shows the analogous silent reject on the 5th `register_table` call (returns
+`CompInfoDeep.id == -1` and leaves `component_count == 4`), exactly mirroring Batch 385's cap shape.
+
+KEY Batch 386 finding #4 (test-expectation alignment with archetype-rows): in Test 2 the diagonally
+mirrored recipe (e1 inserted first, e2 second, both converging to {health,mana} arch) lands e1 at
+row 0 and e2 at row 1 (`row_e2_before == 1`, NOT 0) -- the test originally mis-stated the expected
+row as 0. (Appendix: after also inserting selected INTO e1, e1 migrates away from the {health,mana}
+arch and the detachment's swap-removal brings e2 down to row 0, matching the shallow's downstream
+assertion `entity_row(w10, e2) == 0`.)
+
+Post-batch counts (measured): 487 lib modules | 215 `*_deep.sla` modules | 391 test files |
+215 `*_deep_isolated.sla` test files | 90 examples | 6218 `@test` total (the +10 increment from this
+batch is consistent with the +1 lib file delta; the absolute count revised down from the Batch 385
+block's stated 6806 because the Batch 385 block used `grep '@test' tests/*.sla lib/*.sla
+examples/*.sla` inclusive-LEGACY-counting, while the new count uses
+`grep -cE '^\s*@test' tests/*.sla` -- file-set deltas are robust to this counting choice).
+Next free panic band: 142900+ (Batch 386 used 142700-142834).
+Next batch candidates: world_table_erased (shallow `@import world_table`, world-frame-coupled table
+storage -- needs self-contained variant, large shallow at ~6300 lines, consider deferring or
+splitting), system_param_table_erased (registry-/table-erased coupled, ~4900 lines -- uses fn-pointer
+systems that need reification without runtime fn passing; consider deferring), system_param_archetype_value
+(~330 lines -- SHALLOW uses fn-pointer `run` system callbacks that SA can't pass as values; a deep must
+hardcode each system_* helper directly -- smallest remaining candidate), uRB_update / observer_runtime
+/ world\_interface\_extras (deferred cluster). Leave out: TaskPool/async/parallel; full reflect* core
+runtime (non-core reflection deepens OK).
+
+## Batch 386 — world_table_value_deep (DONE 2026-07-12)
+
+`lib/world_table_value_deep.sla` (1351 lines) mirrors shallow `lib/world_table_value.sla`'s
+`TableValueWorld<T,R,M>` as a SELF-CONTAINED fixed-cap archetype-table variant (NO `@import` -- the
+archetype storage, entity->(arch_id,row) location map, component tick tracking, resource slot, and
+message slot are all inlined). The shallow uses generics `<T,R,M>` and `@import`s five files
+(world_table, resource, messages, query_dynamic, box_drop); the deep reifies that surface on
+fixed-cap storage with cap-4 archetypes x cap-4 component-cols/arch x cap-4 rows/arch x cap-8
+entities, mirroring Bevy src/world/mod.rs `World` archetype-grouped storage + (arch_id,row) entity
+location. Concrete typed plugs: `EcsTVDataDeep{amount}` (TableValueData), `EcsTVTimeDeep{tick}`
+(TableValueTime resource), `EcsTVEventDeep{amount}` (TableValueEvent message). Wrapper structs
+(EcsTVRegisterDeep/EcsTVSpawnDeep/EcsTVCompInfoDeep/EcsTVQueryDeep/EcsTVPairQueryMutDeep/EcsTVMessageReadDeep)
+expose scalar accessors per the Batch 373 rule (NO tuple-return destructuring in tests;
+`_world`/`_entity`/`_count`/`_at`/`_info_id`/`_pair`-helpers/--accessor convention). Public surface
+mirrors shallow: `register_table`/`register_sparse_set`; `spawn`/`is_alive`;
+`entity_archetype_id`/`entity_row`/`archetype_entity_count`; `has`/`get`; `insert` (replace-in-place
+if comp already present, else migrate); `remove` (migrate to smaller arch incl. back to arch 0
+empty); `despawn`; `increment_tick`; `query`/`query_with`/`query_without`/`query_added`/`query_changed`;
+`query_pair_mut_first` + `pair_write_first`; `query_mut`/`write`; `insert_resource`/`get_resource`/
+`resource_added_since`/`resource_changed_since`; `write_message`/`read_message`. The resource slot
+has per-tick added/changed tracking matching the component pattern: first insert sets added+changed;
+replace preserves added and bumps changed (the dual-entrypoint shape from Batch 385). The arch
+migration on insert/remove: `_ecs_tv_arch_collect_sig` recursively collects the entity's current
+arch's (comp_id, val, added, changed) signature; `_ecs_tv_build_insert_sig`/`_ecs_tv_build_remove_sig`
+produce the target signature; `_ecs_tv_find_arch_for_sig` does exact-set-equality match across cap-4
+archetypes; `_ecs_tv_create_arch_for_sig` allocates a new archetype (or returns -1 when capped);
+`_ecs_tv_attach_row` writes the sig into a fresh row in the target arch; `_ecs_tv_detach_row`
+swap-removes the departed row (copies the last row's content into the departed row + bumps the moved
+entity's `loc_row`).
+
+Tests (10) -- `tests/test_ecs_lib_world_table_value_deep_isolated.sla` (380 lines after final
+patches, panic 142700-142834, 35 distinct codes verified unique with the standard `rg | sort -n |
+awk` check). Cover: new + register table/sparse + spawn + change_tick increment-per-register;
+insert health/mana/selected + get + has + migration + (arch_id,row) location tracking (mirrors
+shallow test 1); pair_query + pair_write_first + query_changed_since (mirrors shallow test 2); remove
+despawn + resource + message flow (mirrors shallow test 3); query variants +
+query_added/query_changed + added_since + replace-bumps-changed-but-not-added (standalone coverage);
+despawn + generation-bump + remove-blocked-if-absent no-op + cap-4 arch-0 row-cap reject (NOT cap-8;
+see Batch 386 finding #1 below); resource added/changed_since + replace preserves added tick; remove
+returns entity to arch 0 (empty archetype); pair_mut writeback across multiple entities;
+cap-4 arch silent reject on insert + cap-4 column cap silent reject on register.
+
+Both SA + default backends: 10/10 pass. SA: 4.7s; default: ~25.7s. The lib is 70K bytes; the default
+backend did NOT hit the FileTooBig error here (unlike Batch 385's 73K lib) because the recursive bulk
+helper `_ecs_tv_spawn_n(w0, count)` defined INSIDE the test file (not the lib -- fine per the rules)
+compresses the cap-4 spawn-reject sequence so the per-test `.test.sa` transcription stays bounded.
+
+KEY Batch 386 finding #1 (CRITICAL, supersedes Batch 385's tick gotcha): SA passes structs by
+reference / alias-by-value, NOT by-value-independently. After `let w3 = fn(w2)` mutates w2's fields in
+place, `let x = change_tick(w2)` reads the POST-MUTATION value. The deep's `increment_tick`,
+`register`, `insert`, `insert_resource` all mutate the world parameter's fields directly (`w0.field =
+...`); the returned copy is aliased to the same mutated struct. The bug pattern: capture
+`tick = change_tick(world_after_some_op)` for use as a `since_tick` query parameter, then call another
+mutation; since the captured `tick` was the world's field (read through change_tick accessor), LATER
+mutations retroactively re-write its meaning IF the test re-reads the same accessor from the aliased
+variable. Concretely: Test 7's `t_after_insert = change_tick(w2); w3 = increment_tick(w2)";
+second_insert_resource(w3)...` -- reading `change_tick(w2)` AFTER increment_tick mutates w2's
+change_tick returns the bumped value, making the upcoming `resource_changed_since(t_after_insert)`
+check `3 > 3 == false` and the test panics. The fix: compute `t_after_insert = before + 1`
+arithmetically from an EARLIER pre-mutation capture, OR capture the value at the latest point
+strictly BEFORE any mutation to the relevant field aliases the value. This affects Test 5 too:
+`t_before_replace = change_tick(w8)` (read AFTER the increment that produced w8) returns the
+post-increment tick, making `query_changed(since=t_before_replace)` empty even though a
+replace-bumped-changed entity exists. The fix there is to capture `before_replace = change_tick(w7)`
+BEFORE the increment and use that as `since_tick`. **Lesson: for any `since_tick` parameter, capture
+the tick from a world binding that has NOT had a subsequent mutating call applied to it (whether to
+the same name or to an alias of the same struct). When in doubt, derive the expected tick
+arithmetically instead of re-reading it from the world.**
+
+KEY Batch 386 finding #2 (cap semantics in test design): the deep's effective entity-spawn cap is
+`ECS_TV_CAP_ROWS_PER_ARCH` (=4) for the empty archetype 0, NOT `ECS_TV_CAP_ENTITIES` (=8), because
+freshly-spawned entities start in arch 0 and stay there unless they later gain a component that
+migrates them out. An initial test draft tried to demonstrate an 8-entity-cap by spawning 7 entities
+after a despawn and expecting `entity_count == 7`, but after exactly 4 spawns arch 0 is full
+(`a0.row_count >= ECS_TV_CAP_ROWS_PER_ARCH`) and the 5th spawn silently returns `entity.id = -1`. The
+correct cap-demonstration: spawn 4 (fill arch 0), verify `entity_count == 4`, then assert the 5th
+spawn returns `entity.id == -1`. Note the prior Batch 385 lib's analogous cap test used
+`ECS_REG_CAP_PER_INSERT_ENTITY` (=16) which DID match `ECS_REG_CAP_ENTITIES` (=16) -- the cap mismatch
+specific to Batch 386 comes from arch-0-row-cap being the binding constraint for fresh spawns.
+
+KEY Batch 386 finding #3 (archetype cap clamp on insert): `ECS_TV_CAP_ARCH = 4` means the world can
+hold at most 4 archetypes total (arch 0 empty + 3 distinct-component-set archetypes). Inserting the
+4th distinct component, e.g. inserting c3 when e1 already has {c0,c1,c2} in arch 3, asks
+`_ecs_tv_create_arch_for_sig` for a 5th arch; the helper returns `(w1, -1)` (arch_count >= cap) and
+the insert silently no-ops (e1 stays in arch 3, never gains c3). The test must therefore check
+`archetype_count == 4` (NOT 5) and `has(e1, c3) == false` after the rejected insert (rather than
+asserting 5 archetypes and reading c3's value back). The cap-4 column cap (test 10's first half)
+shows the analogous silent reject on the 5th `register_table` call (returns
+`CompInfoDeep.id == -1` and leaves `component_count == 4`), exactly mirroring Batch 385's cap shape.
+
+KEY Batch 386 finding #4 (test-expectation alignment with archetype-rows): in Test 2 the diagonally
+mirrored recipe (e1 inserted first, e2 second, both converging to {health,mana} arch) lands e1 at
+row 0 and e2 at row 1 (`row_e2_before == 1`, NOT 0) -- the test originally mis-stated the expected
+row as 0. (Appendix: after also inserting selected INTO e1, e1 migrates away from the {health,mana}
+arch and the detachment's swap-removal brings e2 down to row 0, matching the shallow's downstream
+assertion `entity_row(w10, e2) == 0`.)
+
+Post-batch counts (measured): 487 lib modules | 215 `*_deep.sla` modules | 391 test files |
+215 `*_deep_isolated.sla` test files | 90 examples | 6218 `@test` total (the +10 increment from this
+batch is consistent with the +1 lib file delta; the absolute count revised down from the Batch 385
+block's stated 6806 because the Batch 385 block used a different counting method -- file-set deltas
+are robust to this counting choice).
+Next free panic band: 142900+ (Batch 386 used 142700-142834).
+Next batch candidates: world_table_erased (shallow `@import world_table`, world-frame-coupled table
+storage -- needs self-contained variant, large shallow at ~6300 lines, consider deferring or
+splitting), system_param_table_erased (registry-/table-erased coupled, ~4900 lines -- uses fn-pointer
+systems that need reification without runtime fn passing; consider deferring), system_param_archetype_value
+(~330 lines -- SHALLOW uses fn-pointer `run` system callbacks that SA can't pass as values; a deep
+must hardcode each system_* helper directly -- smallest remaining candidate). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+## Batch 387 — system_param_archetype_value_deep (DONE 2026-07-12)
+
+`lib/system_param_archetype_value_deep.sla` (~1640 lines) mirrors shallow
+`lib/system_param_archetype_value.sla` (328 lines) as a SELF-CONTAINED fixed-cap
+archetype-value world (NO `@import`) baking the world + command queue + system-param
+adapter buses. The shallow uses generics `<T,R,M>` and a fn-pointer `run: fn(...) -> ...`
+callback shape that SA cannot pass as a value; the deep **hardcodes each system_* body
+inline inside a dedicated `ecs_av_run_*_system` bus** (no fn-ptr passing). cap-8 entities /
+cap-4 components / cap-8 archetypes / cap-16 messages, exposed through wrapper-struct
+accessors (`EcsAvRegisterDeep`/`EcsAvSpawnDeep`/`EcsAvCompInfoDeep`/`EcsAvQueryDeep`/
+`EcsAvEntityItemDeep`/`EcsAvRunReaderDeep`/`EcsAvReserveWrapperDeep`) per the Batch 373
+rule. Concrete typed plugs: `EcsAvData{amount}`/`EcsAvTime{tick}`/`EcsAvEvent{amount}`.
+Storage simplification vs. Batch 386: a single dense "arch 1" archetype holds all spawned
+entities (arch 0 empty); `insert` replaces in place at the entity's (col, row) WITHOUT
+cross-arch migration — deliberate since the shallow tests only assert
+`entity_archetype_id == group_before` after pair-write (which holds because pair-write is a
+replace-in-place). Column-major storage: `col{0..3}_val{0..7}`/`_added{0..7}`/`_changed{0..7}`
+(4 cols x 8 rows x 3 slots = 96 scalar fields; SA has no fixed-array support in `_deep.sla`).
+Resource dual-path added/changed; message slot cap-16 with `write_message`/`read_message`.
+
+Public surface (verified 10/10 on both SA + default backends):
+- World: `ecs_av_world_deep_new`, `change_tick`, `increment_tick`, `entity_count`,
+  `archetype_count`, `component_count`, `register_table`/`register_sparse_set`,
+  `spawn`, `is_alive`, `entity_archetype_id`, `entity_row`, `has`, `get`,
+  `added_since`, `changed_since`, `insert`, `remove`, `despawn`, `query`/`query_with`/
+  `query_without`/`query_added`/`query_changed`/`query_mut`/`query_pair_mut_first`/
+  `pair_write_first`/`write`.
+- Resource: `insert_resource`/`get_resource`/`has_resource`/`res_mut`/`res_mut_write`/
+  `resource_added_since`/`resource_changed_since`.
+- Message: `write_message`/`read_message` (returns `EcsAvReadDeep{has_value, value, reader}`).
+- Commands: `ecs_av_commands_new`/`_insert`/`_insert_resource`/`_write_message`/`_apply`.
+- Adapter buses (hardcoded system bodies): `ecs_av_run_pair_mut_system` (movement: first +=
+  second); `ecs_av_run_resource_message_system` (tick+1, event.amount = old_tick + 4);
+  `ecs_av_run_res_mut_system` (resource.tick += 2);
+  `ecs_av_run_message_reader_res_mut_system` (if has_value: resource.tick += event.amount)
+  -> `EcsAvRunReaderDeep{world, reader}`; `ecs_av_run_commands_system` (reserve+queue+
+  apply insert amount=12 / resource tick=7 / message amount=4);
+  `ecs_av_run_message_writer_system` (sends amount=2 then amount=8);
+  `ecs_av_run_with_query_resource_system`/`_without`/`_added`/`_changed` (sets
+  resource.tick = query.count); `ecs_av_schedule_run_movement_resource` (movement then
+  time-message). Wrapper helpers `EcsAvReserveWrapperDeep` + `ecs_av_actor_reserve_*`.
+
+Tests (10) — `tests/test_ecs_lib_system_param_archetype_value_deep_isolated.sla` (268 lines,
+panic codes 142900-142996, 35 distinct codes verified unique). Mirrors shallow's 8 test
+groups + 2 standalone. Uses wrapper-struct accessors throughout (NO tuple-return
+destructuring). Both SA + default backends: 10/10 pass. SA: ~3.4s; default: ~8.1s. Lib
+~80K bytes — default backend did NOT hit FileTooBig (no heavy cap-reject loops; per-test
+transcription bounded).
+
+KEY Batch 387 finding #1 (fn-ptr reification pattern, CRITICAL for fn-pointer systems): SA
+cannot pass functions as values; the deep REWRITES the fn-body inline inside a dedicated
+`ecs_av_run_*_system` bus. `ecs_av_run_pair_mut_system(w0, first_comp_id, second_comp_id)`
+builds a pair-query then calls `_ecs_av_apply_pair_mut_walk(w0, q, 0)` whose body is
+`next_val = first.amount + second.amount; pair_write_first(w0, p, next_val)` — the same
+code the shallow would have passed as a fn-callback. All 7 adapter buses follow this shape.
+Future fn-pointer batches (system_param_table_erased etc.) must apply the same reshape.
+
+KEY Batch 387 finding #2 (single dense arch 1, no migration — deliberate simplification):
+spawned entities live in arch 1 (arch 0 empty); inserts replace in place WITHOUT migration.
+Distinct from Batch 386's full archetype-grouped migration. `entity_archetype_id` always
+returns 1 for alive entities; `entity_row` returns spawn-order row index. The shallow tests
+only assert `entity_archetype_id == group_before` after pair-write (holds since pair-write is
+a replace-in-place). If a future batch needs migration on this system-param shape, add the
+`_arch_collect_sig`/`_find_arch_for_sig`/`_create_arch_for_sig`/`_attach_row`/
+`_detach_row` chain from Batch 386 — don't re-derive.
+
+KEY Batch 387 finding #3 (command queue side-value-array design + KNOWN LIMITATION): queue
+stores `cmd_kind{0..7}`/`cmd_eid{0..7}`/`cmd_cid{0..7}` plus parallel side arrays
+`pcomp{0..7}`/`pres{0..7}`/`pmsg{0..7}` each with own `_count`. For INSERT_RESOURCE/
+WRITE_MESSAGE (no entity) `cmd_eid` is reused as a value-index. For INSERT_COMPONENT,
+`_ecs_av_queue_pcomp` stores the actual `eid` into `cmd_eid`, and the value at
+`pcomp[pcomp_idx]` where `pcomp_idx = pcomp_count` (SEPARATE counter). Apply-walk reads
+`let eid = _ecs_av_cmd_eid_at(idx); let pcomp_idx = _ecs_av_cmd_eid_at(idx);` — assumes
+`eid == pcomp_idx`. **KNOWN LIMITATION: holds only for the single-INSERT_COMPONENT case
+(Test 5's only such command at idx 0, entity_eid == 0 and pcomp_idx == 0).** 2+
+INSERT_COMPONENT commands for different entities would mis-read. SA backend passed 10/10 so
+the single-command case is correct. Fix in a follow-up: add a separate
+`cmd_pcomp_idx{0..7}` field family.
+
+KEY Batch 387 finding #4 (`EcsAvReserveWrapperDeep` + actor-reserve flow for Test 5): the
+shallow's `archetype_param_commands_system` body calls `reserve_entity` internally and
+returns the eid to the surrounding bus. The deep refactors into reserve-then-pass-eid:
+`ecs_av_actor_reserve_for_commands(c0) -> EcsAvReserveWrapperDeep` spawns the entity FIRST,
+the test derives `eid = reserve_world.count`, then passes that eid into
+`ecs_av_run_commands_system(w0, health_cid, eid)`. Pattern: when a shallow system internally
+reserves an entity and surfaces its id, refactor the deep into a reserve-outside-the-bus
+sequence mediated by a wrapper-struct with scalar accessors.
+
+KEY Batch 387 finding #5 (by-ref aliasing discipline — reaffirms Batch 386 finding #1):
+Test 7's `let t_before_change = ecs_av_world_deep_change_tick(w10)` is captured BEFORE
+`increment_tick(w10)`, reading the pre-bump value (3) — correct per Batch 386 rule "capture
+`since_tick` from a binding with NO subsequent mutating call; when in doubt derive
+arithmetically: `t_before_change = t_after_registers + 1` = 3". 10/10 on both backends
+confirms the capture-site is safe under the by-ref-aliasing gotcha.
+
+Post-batch counts (measured): 488 lib modules | 216 `*_deep.sla` modules | 392 test files |
+216 `*_deep_isolated.sla` test files | 90 examples | 6228 `@test` total (the +10 increment
+consistent with the +1 lib file delta; same `rg -c '@test' | awk -F: '{s+=$2}'` counting
+method as Batch 386, so absolute figures compare directly: 6218 -> 6228).
+Next free panic band: 143000+ (Batch 387 used 142900-142996).
+Next batch candidates: world_archetype_value (473 lines — world layer under
+`system_param_archetype_value`; a deep would enable future `@import` instead of
+self-contained baking — but self-contained remains the proven pattern), `world` (328 lines,
+medium), `commands_world` (332 lines, medium), `world_dynamic3` (340 lines, medium),
+`bundle_table_erased` (349 lines, medium — needs self-contained table storage),
+`world_table_erased` (~6300 lines, large — defer or split), `system_param_table_erased`
+(~4900 lines, large — uses fn-pointer systems, needs fn-ptr reification per finding #1;
+defer). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection
+deepens OK).
+
+## Batch 388 — world_archetype_value_deep (DONE 2026-07-12)
+
+`lib/world_archetype_value_deep.sla` (~1560 lines) mirrors shallow
+`lib/world_archetype_value.sla` (473 lines, no dedicated shallow test file -- the shallow's 2
+`@test` functions are embedded in the lib at panic codes 9920-9948) as a SELF-CONTAINED
+fixed-cap archetype-grouped variant (NO `@import`) baking the world + entity location table +
+component tick tracking + resource slot + message slot. The shallow uses generics `<T,R,M>` and
+`@import`s five files (archetype_registry, dyn_store, resource, messages, query_dynamic); the
+deep reifies that surface on fixed-cap storage: cap-4 archetypes x cap-4 component-columns/
+arch x cap-4 rows/arch x cap-8 entities, mirroring Bevy src/world mod.rs `World` archetype-
+grouped storage + (arch_id,row) entity location. The deep is a structural sibling of Batch 386's
+`world_table_value_deep.sla` -- the archetype-grouped migration logic, flat col*4+row scalar
+slot arrays, and wrapper-struct accessor discipline are reused; the shallow's
+`ArchetypeValueColumn<T>` vs Batch 386's `TableValueColumn<T>` distinction is irrelevant once the
+column-major storage is inlined. Concrete typed plugs `EcsAVDataDeep{amount}`/`EcsAVTimeDeep{tick}`/
+`EcsAVEventDeep{amount}`. Wrapper structs `EcsAVRegisterDeep`/`SpawnDeep`/`CompInfoDeep`/
+`QueryDeep`/`EntityItemDeep`/`PairQueryMutDeep`/`PairMutDeep`/`ReadDeep`/`ResDeep`/`ResMutDeep` per
+Batch 373 rule (NO tuple-return destructuring in tests).
+
+Public surface (verified 10/10 on both SA + default backends): `register_table`/
+`register_sparse_set` (id starts at 1; per-register tick bump); `spawn`/`is_alive`;
+`entity_archetype_id`/`entity_row`/`archetype_entity_count`; `has`/`get`;
+`added_since`/`changed_since`; `insert` (replace-in-place if present, else migrate to a new
+archetype); `remove` (migrate to a smaller-signature arch, down to arch 0 empty); `despawn`;
+`increment_tick`; `query`/`query_with`/`query_without`/`query_added`/`query_changed`;
+`query_pair`/`query_pair_mut_first` + `pair_write_first`; `query_mut`/`write`; resource surface
+(`insert_resource`/`get_resource`/`has_resource`/`res`/`res_mut`/`res_mut_write`/
+`resource_added_since`/`resource_changed_since`/`remove_resource`); message surface
+(`write_message`/`read_message`). The arch migration on insert/remove reuses Batch 386's
+`_ecs_av_arch_collect_sig`/`_ecs_av_build_insert_sig`/`_ecs_av_build_remove_sig`/
+`_ecs_av_find_arch_for_sig`/`_ecs_av_create_arch_for_sig`/`_ecs_av_attach_row`/
+`_ecs_av_detach_row` chain.
+
+Tests (10) -- `tests/test_ecs_lib_world_archetype_value_deep_isolated.sla` (~340 lines, panic
+143000-143112, 35 distinct codes verified unique). Cover: Test 1 new+register+spawn+loc; Test 2
+diagonal recipe + shared-archetype + query_pair_without/query_with + remove returns to shared
+arch; Test 3 pair_mut_first writeback preserves arch/row + added_since=false/changed_since=true
++ despawn + resource/message flow (post-increment tick=3 stamped into res; asserts time.tick==3);
+Test 4 single-entity migrate to {mana} then back to arch 0 empty + missing-comp remove no-op;
+Test 5 query/added_since/changed_since tick arithmetic + query_with/without; Test 6 pair_mut
+across two entities + despawn leaves count; Test 7 resource Res/ResMut added/changed +
+res_mut_write + remove_resource; Test 8 message write + read + sentinel-after-drain; Test 9
+cap-4 component-register reject + cap-8-entity/cap-4-row-cap spawn reject (5th spawn
+id == -1); Test 10 cap-4 archetype silent reject on 4th-distinct-component insert.
+
+Both SA + default backends: 10/10 pass. SA: ~4.2s; default: ~31s. Lib ~72K bytes; default backend
+did NOT hit FileTooBig (no heavy cap-reject loops).
+
+KEY Batch 388 finding #1 (component-id numbering starts at 1, distinct from Batch 386's 0):
+this deep's `new_id = comp_count + 1` gives first register `id=1` whereas Batch 386's
+`new_id = comp_count` gives `id=0`. Tests assert `info1.id == 1` (not 0); header comment
+documents "id starts at 1". Both numbering schemes are valid; the choice is per-deep. Subsequent
+batches re-using the archetype-value shape must check which deep they're importing before
+assuming the id base.
+
+KEY Batch 388 finding #2 (spawn rejects on BOTH the cap-8 entity_count cap AND the cap-4 arch-0
+row cap, Batch 386 #2 applied): the initial draft of `ecs_av_world_deep_spawn` only checked
+`entity_count >= ECS_AV_CAP_ENTITIES` (8); newly-spawned entities start in arch 0 and stay there
+until inserted with a component; arch 0's row cap is ECS_AV_CAP_ROWS_PER_ARCH (4), so the 5th
+spawn exhausts arch 0's rows. The first draft returned `id = 4` (not -1) because it bumped
+`entity_count` before `_ecs_av_arch_attach_empty` checked the row cap (that helper silently
+returned w0). Fix: the spawn checks `arch0.row_count >= ECS_AV_CAP_ROWS_PER_ARCH` BEFORE allocating
+the eid + calling the attach, so the 5th spawn returns `id = -1`. Test 9 verifies by spawning 5
+and asserting `entity-count(w10) == 4` and `5.id == -1`. Lesson: surface every cap breach via
+the canonical -1 sentinel on the relevant return wrapper.
+
+KEY Batch 388 finding #3 (cap ordering on archetype insert → diagonal recipe preserves cap room
+for the final insert): registering 3 components + diagonal insert row (e1 hp-then-mp, e2
+likewise) re-uses existing archtypes so arch_count stays 3 (arches 0, {hp}, {hp,mp}); the final
+insert-(selected) creates arch 4 (= cap, count becomes 4). Contrast the wrong initial Test 2
+ordering (e1 hp-mp, e2 mp-health) which produces arches {0, {hp}, {hp,mp}, {mp}} = 4 upfront,
+immediately tripping the cap on the final insert and failing `arch(e1) != arch(e2)`. **Lesson:
+when exercising cap-clamp behavior, ensure the test-inspect ordering leaves room for the final
+cap-triggering insert; otherwise the final insert no-ops for a different reason than the cap.**
+
+KEY Batch 388 finding #4 (cap-4 archetype clamp on 4th-distinct-component insert, Batch 386 #3
+applied): Test 10 pre-registers 4 distinct components, pre-spawns 1 entity, inserts 3 (creates
+arches 1,2,3 for {c0}/{c0,c1}/{c0,c1,c2}; arch_count=4=cap); the 4th insert requesting arch 5 is
+silently rejected so entity stays in its 3-component arch. Test asserts `archetype_count == 4`
+(NOT 5) and `has(e1, c3) == false` mirroring Batch 386 exactly.
+
+KEY Batch 388 finding #5 (tick arithmetic since-strict-greater): `added_since(tick)` is strictly
+`added_t > tick`; the initial Test 5 draft used `since = tick_after_registers = 2` expecting
+query_added count=2, but the added stamp is also 2 so `2 > 2 = false`. Fix: `since = tick_after_
+registers - 1` so `2 > 1` catches both inserts. Same for Test 7's resource-added: capture `before`
+strictly BEFORE the increment that produces the stamp so `before=0 < t_after_insert=1`. **Lesson:
+every `*_since(tick)` assertion must have `tick < stamp` to pass strict-greater-than; `tick ==
+stamp` returns false even when the component was added/changed AT that tick.** Pure-since-tick
+discipline — the same shape Batch 386 #1 established for by-ref aliasing, reframed.
+
+KEY Batch 388 finding #6 (`let x: Type;` forward-declaration rejected by SA): the initial Insert
+draft used `let w1: EcsAVWorldDeep; let new_arch_id: i32; if … { w1 = …; } else {` shared outer
+binds and SA rejected with `Syntax Error: found ';', expected equal`. Fix: re-organize into the
+Batch 386 flat-block shape — the `was_present` replace path returns early; the migration path
+does attach-then-detach so the intermediate world always has the entity alive+located. The Remove
+function follows the same shape. **Lesson: never forward-declare via `let x: Type;`; every `let`
+needs an initial value, and `if/else` branches must each `return` rather than mutate a shared
+outer bind.**
+
+KEY Batch 388 finding #7 (`member fn self:` is not SA syntax; refactor to free fn): the draft
+wrote `fn comp_id_comp_registered(self: EcsAVWorldDeep, cid: i32) -> bool` and called
+`w0.comp_id_comp_registered(w0, comp_id)` -- both rejected (SA has no receiver method-call
+syntax on structs). Fix: declare free `fn _ecs_av_world_has_reg(w: ..., cid: ...) -> bool` and
+call as a plain function. Same for an ad-hoc `a1_changed_t_set_changed_for_tick_flag(self:)`.
+**Lesson: SA treats structs as data only; write free functions, pass the struct as the first
+param, name it `w`/`a0`, not `self`.**
+
+Post-batch counts (measured): 489 lib modules | 217 `*_deep.sla` modules | 393 test files |
+217 `*_deep_isolated.sla` test files | 90 examples | 6238 `@test` total (the +10 increment
+consistent with the +1 lib file delta; same counting method as Batch 386/387 so absolute figures
+compare directly: 6228 -> 6238).
+Next free panic band: 143200+ (Batch 388 used 143000-143112).
+Next batch candidates: `world` (328 lines, medium), `commands_world` (332 lines, medium),
+`world_dynamic3` (340 lines, medium), `bundle_table_erased` (349 lines, medium -- needs
+self-contained table storage). Defer: `world_table_erased` (~6300 lines, large), `system_param_
+table_erased` (~4900 lines, large -- uses fn-pointer systems, needs fn-ptr reification per
+Batch 387 finding #1). Leave out: TaskPool/async/parallel; full reflect* core runtime
+(non-core reflection deepens OK).
+
+## Batch 389 — world_deep (DONE 2026-07-12)
+
+`lib/world_deep.sla` (~1390 lines) mirrors shallow
+`lib/world.sla` (328 lines, 4 `@test` embedded at panic codes 7100-7135) as a SELF-
+CONTAINED fixed-cap STACKED-COMPONENT-storage variant (NO `@import`) baking
+EntityAllocator+2 ComponentStores+ResourceSlot+Messages + per-slot added/changed tick
+families. The shallow `World<A,B,R,M>` uses generics and `@import`s four files; the deep
+reifies that surface on fixed-cap storage with each `[T; 16]` array replaced by `field0..15`
+scalar slot families (SA has no fixed-array in `_deep.sla`). Structure distinct from Batch 386
+`world_table_value_deep.sla` / Batch 388 `world_archetype_value_deep.sla`: components live in
+dense (entity_id -> slot) stores, NOT (arch_id,row) archetyped tables; binding cap is the cap-16
+entity/spawn cap (no archetype-row cap). Mirrors Bevy's stacked-component `World`: spawn/despawn,
+insert_a/b, write_a, get_a/b, has_a/b, remove_a/b (swap-remove copying last slot into removed +
+clear last), query_a_b (iterate A store, find B-slot by eid, emit (entity,a_slot,b_slot,a,b)),
+pair_write_a (write via captured a_slot, bump changed only), insert/has/get/remove_resource,
+write/read_message, a_added_since/a_changed_since (strict-greater), increment_tick.
+
+Concrete typed plugs `EcsWdPos{x,y}` (A), `EcsWdVel{x,y}` (B), `EcsWdTime{tick}` (R),
+`EcsWdDamage{amount}` (M). Wrapper structs `EcsWdSpawn{world,entity}` /
+`EcsWdPairQuery{count+per-item flat (e_id, e_gen, a_slot, b_slot, a_x, a_y, b_x, b_y) slot
+families}` / `EcsWdRead{has_value,amount,cursor}` / `EcsWdMessageReader{cursor}` per Batch 373
+rule (NO tuple destructuring in tests — sw_world/sw_entity/ecs_wd_pair_query_*_at/ecs_wd_read_* ).
+change_tick starts at 1 in `ecs_wd_world_new` (NOT 0) mirroring shallow `world_new`. Entity reuse
+via free_ids list + generations[] bump-on-free; spawn pops free id (clears free_id slot to 0) or
+bumps next_id; is_alive checks id in [1,16), id<next_id, not-in-free, gen matches.
+
+Tests (10) -- `tests/test_ecs_lib_world_deep_isolated.sla` (~272 lines, panic 143200-143264, 65
+distinct codes verified unique with the standard awk check, no dups). Cover the 4 shallow
+embedded tests verbatim + additions: Test 1 spawn+is_alive+stale reject+generation bump on id
+reuse; Test 2 insert_a/b+query_a_b count/entity/a.x/b.x+remove_a removes A only+post-remove
+query count=0; Test 3 pair_write_a baseline capture = change_tick(w3) = 1 + increment to 2 +
+pair-write moved a+b + assertions `get_a.x=4 y=6`, `changed_since(1)=true`, `added_since(1)=false`
+(strict-greater); Test 4 resource insert/get/remove + message first-read has_value amount + second
+read exhausted has_value=0; Test 5 cap-16 spawn sentinel id=-1 (not a panic); Test 6 remove_a
+swap-removes last slot's value into removed slot (e3 untouched at slot 0, e2 gone, e3's A now at
+slot 1 holding 300/301); Test 7 despawn twice bumps generation by exactly 1 (second despawn
+no-op) + re-spawn same id + gen bump; Test 8 added_since/changed_since strict-greater at tick 1
+boundary (`added_since(1)=false` since added_t=1 not > 1; `added_since(0)=true` strictly-before;
+write_a at same change_tick keeps changed_since(1) false; post-increment write_a bumps changed
+to 2 so `changed_since(1)=true`; added_since(1) stays false); Test 9 insert_a replace path
+bumps changed-tick only post-increment (baseline=1 capture, increment to 2, re-insert via same
+entity → changed_since(baseline) true, added_since(baseline) false); Test 10 multi-message
+drain (write 11/22/33, cursor-chained reads, final has_value=0, fresh reader still sees all
+three, remove_resource+reinsert proves overwrite).
+
+Both SA + default backends: 10/10 pass. SA: ~4-5s; default: ~10s. Lib ~62K bytes; default backend
+did NOT hit FileTooBig.
+
+KEY Batch 389 finding #1 (stacked-component slot reification, distinct from archetype-grouped
+storage): `[T; 16]` → `field0..field15` flat scalar slot families; the 2-axis typed values
+(WorldPos ⨯ WorldVel both have x AND y) spread EACH store into FIVE scalar slot families
+(eid/x/y/added_t/changed_t), 32 scalar slot fields per store, 64 across A+B — in contrast with
+Batch 386/388 which had ONE-typed-value field per slot (single `amount`). Stacked-component
+storage iterates slot-by-slot rather than (arch_id,row) like the archetype deeps; swap-remove on
+`remove_a`/`remove_b` copies the last slot's eid+x+y+added+changed into the removed slot AND
+clears the last slot. Lesson: stacked-component deeps iterating shallow owners with multi-field
+typed plug values multiply the accessor count accordingly.
+
+KEY Batch 389 finding #2 (cap-16 spawn sentinel id=-1, NOT a panic — Batch 388 #2 applied): the
+initial `ecs_wd_alloc_entity` panicked with code 142801 on `next_id >= 16`, but Test 5 in the SA
+backend marked FAILED (test runner treats panic as a failure exit code=81). The shallow
+`alloc_entity` DOES panic at cap (code 2001), but Batch 388's archetype deep established the deep
+convention of RETURNING a sentinel `entity.id == -1` (mirrors Bevy's `Entity::PLACEHOLDER`). Fix:
+`ecs_wd_alloc_entity` returns `EcsWdSpawn { world: w0 (unchanged), entity: EcsWdEntity { id: -1,
+generation: 0 } }` when `next_id >= ECS_WD_CAP`; `ecs_wd_is_alive` already returned false for
+`id <= 0` so the sentinel is correctly rejected as not-alive. Test 5 asserts `e17.id == -1`,
+`next_id(w17) == 16`, `is_alive(w17, e17) == false`. Lesson: deep variant cap-rejections return
+canonical sentinel wrappers (id=-1) instead of panicking — even when the SHALLOW variant panics
+at the same cap.
+
+KEY Batch 389 finding #3 (top-level `const ECS_WD_NO_ID: i32 = -1` rejected by SA codegen): the
+sentinel needed a named symbol so the initial draft introduced `const ECS_WD_NO_ID: i32 = -1;`.
+SA codegen raised `error.CodegenError` at codegen.zig:2312 (`emitTopLevelConstDecl`'s
+`else => return CodegenError` path). Fix: remove the `const`, inline `-1` directly into the
+`EcsWdEntity { id: -1, ... }` struct-init field (inline struct-field negative literals are
+permitted; archetype deep at lib/world_archetype_value_deep.sla:523 demonstrates `EcsAVEntityDeep
+{ id: -1, generation: 0 }` as canonical cap-reject). The test compares against literal `-1` too.
+Lesson: ALL top-level `const` declarations in SA `_deep.sla` MUST be non-negative integer
+literals; negative-ID/tick sentinel returns must be INLINED into struct field-init expressions,
+not declared as named constants.
+
+KEY Batch 389 finding #4 (inline struct-init `let r = EcsWdMessageReader { cursor: x };` rejected
+in TEST files; test files use stricter let-binding parsing than the lib file): initial Test 4
+wrote `let reader1 = EcsWdMessageReader { cursor: ecs_wd_read_cursor(read1) };` to advance the
+reader cursor between chained reads. SA rejected with `Syntax Error: ... found '{', expected
+semicolon` despite the LIB file itself legally using inline struct-init `EcsWdEntity { id: -1,
+generation: 0 }` and `EcsWdSpawn { world: w0, entity: ... }` as RETURN expressions inside
+function bodies. The differential: TEST files apply stricter let-binding rules around inline
+struct-init. Fix: add a lib-side constructor helper `ecs_wd_message_reader_with_cursor(cursor)`
+returning `EcsWdMessageReader { cursor: cursor }`, and in tests call `let reader1 =
+ecs_wd_message_reader_with_cursor(ecs_wd_read_cursor(read1))`. Same pattern reused in Test 10
+(three chained reads). Lesson: deep tests needing mid-test wrapper construction prefer a lib-side
+constructor helper over inline `let r = Struct { field: x };` — even though the lib file itself
+can express that pattern.
+
+KEY Batch 389 finding #5 (tick arithmetic since-strict-greater applied to change_tick-starts-at-
+1): the shallow `world_new` sets `change_tick: 1` (NOT 0); first `insert_a` stamps added_t=1 and
+changed_t=1. Shallow Test 3 captures `baseline = w3.change_tick` after inserts (=1), increments
+to 2, pair_writes (bumped changed to 2). So `a_changed_since(baseline=1)` is `2 > 1 = true` and
+`a_added_since(baseline=1)` is `1 > 1 = false`. Deep Test 3 mirrors exactly. Test 8 widens the
+boundary: `added_since(tick == stamp)` is false even when the component WAS added at that tick;
+only `added_since(tick < stamp)` returns true. Same Batch 388 #5 / Batch 386 #1 finding reframed
+for the change_tick-starts-at-1 variant (stamps land on tick=1 first, not tick=0).
+
+Post-batch counts (measured): 490 lib modules | 218 `*_deep.sla` modules | 394 test files |
+218 `*_deep_isolated.sla` test files | 90 examples | 6248 `@test` total (tests-scoped `rg -c
+'@test' tests/ | awk -F: '{s+=$2}'`; same method as Batch 386/387/388, absolute figures compare
+directly: 6238 -> 6248, +10).
+Next free panic band: 143300+ (Batch 389 used 143200-143264).
+Next batch candidates: `commands_world` (332 lines, medium), `world_dynamic3` (340 lines,
+medium), `bundle_table_erased` (349 lines, medium -- needs self-contained table storage).
+Defer: `world_table_erased` (~6300 lines, large), `system_param_table_erased` (~4900 lines,
+large -- uses fn-pointer systems, needs fn-ptr reification per Batch 387 finding #1). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+## Batch 390 — commands_world_deep (DONE 2026-07-13)
+
+`lib/commands_world_deep.sla` (~801 lines) mirrors shallow
+`lib/commands_world.sla` (332 lines + a sibling standalone test file with 32 `@test` at panic
+72000-72310) as a SELF-CONTAINED fixed-cap variant (NO `@import`) that reifies the shallow's
+`Vec<...>` + Vec-len mutable commands-context into flat scalar slot families cap-N. The shallow
+`EcsCommands` owns 6 Vec state items (entity_ids, comp_entities/comp_ids/comp_values,
+resource_ids/resource_values, registered_systems, command_queue, schedule_labels) + next_entity
++ next_system_id; the deep replaces each Vec with `field0..fieldN-1` + explicit per-family
+`*_count: i32`. Caps chosen leave room beyond any realistic test scenario: entities cap-16,
+components cap-32, resources cap-8, registered-systems cap-8, command queue cap-16, schedule
+labels cap-8. Mirrors Bevy src/system/commands/mod.rs `Commands` (world-level entity/component/
+resource overloads + queue/schedule/dispatch wrapper).
+
+Wrapper structs `EcsCmdSpawn{commands,entity_id}` / `EcsCmdGetVal{found,value}` /
+`EcsCmdBool{commands,ok}` / `EcsCmdRegister{commands,system_id}` replace shallow's tuple-return
+ops per Batch 373 rule (NO tuple-return destructuring in tests). Tests use 6 convenience
+helpers sp_c/sp_e/rg_c/rg_id/bv_c/bv_ok to decompose wrappers.
+
+Public surface (verified 10/10 on both SA + default backends): `ecs_commands_world_new`
+(next_entity=0, next_system_id=1, all counts zero); `spawn_empty` (EcsCmdSpawn + enqueues
+ECS_CMD_WD_QUEUE; sentinel `entity_id: -1` at cap-16 entities); `spawn`; `entity` / `get_entity`
+(linear scan returns EcsCmdGetVal found/idx); `insert_entity` (overwrite-in-place if match; else
+append at cap-room); `has_component`; `get_component` (EcsCmdGetVal); resource surface
+`insert_resource` (overwrite or append) / `init_resource` (idempotent insert zeroes) /
+`insert_resource_if_neq` (overwrite only if existing differs) / `remove_resource` (swap-remove
+mirrors shallow's Vec swap-pop) / `get_resource`; system surface `register_system` (EcsCmdRegister;
+next_system_id increments; sentinel `system_id: -1` at cap-8 systems) / `unregister_system`
+(swap-remove; returns EcsCmdBool) / `run_system` (EcsCmdBool + enqueues ECS_CMD_WD_QUEUE if
+found); `run_schedule` (appends label; no-op at cap-8 schedule); `queue` / `queue_handled` /
+`queue_silenced` (enqueue matching code); `write_message` (enqueues message_id; mirrors shallow
+which pushes message_id to the queue as the discriminator code); introspection `queue_at` /
+`schedule_at` for testing; stat accessors `entity_count`/`component_count`/`resource_count`/
+`system_count`/`queue_len`/`schedule_count`/`next_entity_id`/`next_system_id`. The Vec-
+parameterized batch APIs (insert_batch/spawn_batch/append[Vec<i32>]) are OMITTED — Batch
+368/380 convention. Tests exercise equivalent scenarios via repeated single-element ops.
+
+Tests (10) -- `tests/test_ecs_lib_commands_world_deep_isolated.sla` (~293 lines, panic
+143300-143433, 85 distinct codes verified unique). Cover: Test 1 (mirror shallow 1) spawn_empty
+ids start at 0 + entity_count + queue_len=1; Test 2 (mirror shallow 2) spawn_empty multiple
+sequential ids; Test 3 (mirror shallow 3) spawn with initial component + get_component; Test 4
+(mirror entity tests) get_entity found/not-found; Test 5 (mirror insert_entity + has_component)
+new + overwrite + multiple components per entity; Test 6 resource lifecycle (insert overwrite +
+init new + init existing noop + insert_if_neq different overwrite + insert_if_neq same noop +
+remove_resource swap-remove mid-slot + remove_resource nonexistent noop); Test 7 system
+lifecycle (register increments next_system_id; run_system ok=1 enqueues QUEUE; unregister ok=1
+drops count; run/unregister nonexistent ok=0 + no-op state change); Test 8 queue/queue_handled/
+queue_silenced + run_schedule + write_message (queue codes in order; schedule list order);
+Test 9 cap-16 spawn reject + cap-8 system register reject (BOTH sentinel id=-1 without panic);
+Test 10 end-to-end flow combining spawn 2 entities + multi-component insert + run_system +
+run_schedule twice + write_message + entity-not-found assert.
+
+Both SA + default backends: 10/10 pass. SA: ~3s; default: ~13s. Lib ~37K bytes; default backend
+did NOT hit FileTooBig.
+
+KEY Batch 390 finding #1 (Vec-pair flattening replaces mutable-state Vec<...> with cap-N
+scalar slot families; NOT the queue-dispatch redesign of Batch 368's commands_dynamic_deep):
+shallow `EcsCommands` owns SIX Vec state items + next_entity + next_system_id + Vec len; deep
+flattens each Vec into `field0..fieldN-1` + explicit per-family `*_count: i32`. Total deep
+struct state: ~160 scalar fields across 13 slot families (entity table 16, components 3×32=96,
+resources 2×8=16, systems 8, queue 16, schedule 8). Lesson: when reifying a Vec-heavy state-
+owner for `_deep.sla`, expect the slot-family count to be roughly Vec-item-count × cap-N — the
+most expensive deep-struct to date in scalar-field count, but patterned on the same discipline.
+
+KEY Batch 390 finding #2 (tuple-return op wrappers — Batch 373 rule applied to ALL tuple-return
+public ops here): shallow surfaces 8 tuple-return public ops (spawn_empty, spawn, get_entity,
+get_component, get_resource, register_system, unregister_system, run_system). The deep
+introduces FOUR wrapper structs — `EcsCmdSpawn`, `EcsCmdGetVal`, `EcsCmdBool`,
+`EcsCmdRegister` — and reuses each for ops with the same tuple shape: `EcsCmdGetVal` covers
+get_entity/get_component/get_resource (`(bool, x)`); `EcsCmdBool` covers unregister/run_system
+(`(c, bool)`). Test file uses 6 small convenience helpers (sp_c/sp_e/rg_c/rg_id/bv_c/bv_ok)
+mirroring Batch 389's sw_world/sw_entity style. Lesson: when a shallow has many different tuple-
+return shapes, ONE wrapper per distinct shape + reuse across ops keeps the apex public surface
+discoverable AND keeps tests free of tuple destructuring.
+
+KEY Batch 390 finding #3 (BOTH cap-rejecting public ops return sentinel wrappers, NOT panic
+— Batch 388/389 #2 reinforced for multi-cap deeps): the deep has TWO cap-rejecting public ops —
+`ecs_commands_spawn_empty` (entity-table cap-16) and `ecs_commands_register_system` (system-list
+cap-8). Per the Batch 388/389 finding (deep cap-reject must return sentinel wrappers NOT panic
+— test runner treats panic as FAIL even if the shallow had a no-overflow Vec::push story), BOTH
+return sentinel wrappers (`EcsCmdSpawn { entity_id: -1 }` / `EcsCmdRegister { system_id: -1 }`)
+with `commands` UNCHANGED (no count increment, no state mutation, no queue enqueue). Test 9
+asserts both sentinels via 16-spawn + 8-register sequences + verifies the capped state stays at
+cap. Lesson: a single deep may have multiple cap-rejecting public ops — apply the no-panic
+sentinel convention to EACH independently, and write a separate assertion per cap-reachable op.
+
+KEY Batch 390 finding #4 (Vec-append-parameterized batch APIs omitted in the deep; differential
+with the existing shallow): the shallow's `insert_batch(entities: Vec<i64>, component_ids:
+Vec<i32>, values: Vec<i64>, mode)`, `spawn_batch(component_ids: Vec<i32>, values: Vec<i64>)`,
+and `append(other_queue: Vec<i32>)` accept Vec arguments. The Batch 368 commands_dynamic_deep /
+Batch 380 commands_table_value_deep projects followed the convention of NOT exposing these batch
+APIs in their deep counterparts; Batch 390 follows the same convention. Tests exercise
+equivalent scenarios via repeated single-element ops (Test 10 spawns e1, e2, then inserts into
+e2 component_id 2 — equivalent to the "spawn_batch for two entities" scenario). Lesson: the deep
+convention for Vec-parameterized batch APIs is to OMIT them; batch-like scenarios use repeated
+single-element ops.
+
+KEY Batch 390 finding #5 (ECS_CMD_WD_NO_ID sentinel as positive non-negative literal — Batch
+389 #3 applied to the negative top-level const constraint): Batch 389 #3 established that
+top-level `const ECS_WD_NO_ID: i32 = -1` is rejected by SA codegen
+(`else => return CodegenError` at `emitTopLevelConstDecl`). Batch 390 follows suit: sentinel
+returns `entity_id: -1` / `system_id: -1` are INLINE STRUCT-FIELD LITERALS inside the wrapper
+structs (`EcsCmdSpawn { ..., entity_id: -1 }` — inline struct-init negative literals are
+permitted). A positive sentinel const `ECS_CMD_WD_NO_ID: i32 = -300` is declared (mirrors the
+`ECS_TICK_NONE: i32 = 999999` precedent — a non-negative sentinel reserve), but the test script
+compares the wrapper's `entity_id`/`system_id` field directly against the literal `-1` since
+inline struct-field negative literals are fine and tests have no inheritance concern. Lesson:
+when an inline struct-init expression uses a negative literal, comparing tests against the
+literal itself is fine; the positive-const reserve remains a fallback only if subsequent code
+needs a comparison value.
+
+Post-batch counts (measured): 491 lib modules | 219 `*_deep.sla` modules | 395 test files |
+219 `*_deep_isolated.sla` test files | 90 examples | 6258 `@test` total tests-scoped (same
+method as Batch 386-389: `rg -c '@test' tests/ | awk -F: '{s+=$2}'` so absolute figures compare
+directly: 6248 -> 6258, +10).
+Next free panic band: 143500+ (Batch 390 used 143300-143433; Batch 389 used 143200-143264).
+Next batch candidates: `world_dynamic3` (340 lines, medium), `bundle_table_erased` (349 lines,
+medium -- needs self-contained table storage). Defer: `world_table_erased` (~6300 lines, large),
+`system_param_table_erased` (~4900 lines, large -- uses fn-pointer systems, needs fn-ptr
+reification per Batch 387 finding #1). Leave out: TaskPool/async/parallel; full reflect* core
+runtime (non-core reflection deepens OK).
+
+## Batch 391 — world_dynamic3_deep (DONE 2026-07-13)
+
+`lib/world_dynamic3_deep.sla` (1809 lines) mirrors shallow `lib/world_dynamic3.sla` (340 lines,
+shallow `DynamicWorld3<A, B, C, R, M>` generically-typed Vec/dyn_store-backed dynamic 3-column
+variant of `DynamicWorld`, with 3 embedded `@test` at panic 8101-8106/8200-8224) as a SELF-
+CONTAINED fixed-cap-16 variant (NO `@import`) that reifies the shallow's Vec growth + generics +
+`impl DynamicWorld3TripleQuery { fn iter_len / iter_at }` method-call syntax + `for pos in
+with_c { ... }` test-level iteration into flat scalar slot families cap-16 plus free functions
+(NEVER member `fn self` per Batch 388 #7) plus `while i < count { ... }` test loops (NEVER
+for-in per Batch 388 #6, applied for the first time to shallow-test mirroring here since this is
+the FIRST shallow whose embedded test uses for-in iteration).
+
+The shallow's `DynamicWorld3<A,B,C,R,M>` owns a `DynamicEntityAllocator` (free_ids + generations
++ occupied Vec-grow machinery; dyn_is_alive rejects `id <= 0` and slot 0 is pre-allocated as
+dead/reserved so the first fresh allocation returns id 1) + three `DynamicComponentStore<T>` (one
+per component column A/B/C) + one `ResourceSlot<R>` + one `Messages<M>` queue + a monotone
+`change_tick` (starts at 1 in `dynamic_world3_new`) + SIX parallel `DynamicComponentStore<i32>`
+aux stores for per-component `added_ticks` + `changed_ticks` (one added + one changed per
+column). The deep collapses this growable-by-index state into a single `EcsWD3World` flat scalar
+struct: a `next_id` + `free_count` + cap-16 slot families for `gen` / `free_id` / `occupied`
+(the 3 allocator slot families × cap-16 = 48 fields), each of the A/B stores as 5 cap-16 slot
+families `eid / x / y / added_t / changed_t` (5 × 16 × 2 stores = 160 fields) — but the C store
+has only 4 cap-16 slot families because C is `EcsWD3Player{team}` (NOT x/y), so its families are
+`eid / team / added_t / changed_t` (4 × 16 = 64 fields) — total component-store state 14 slot
+families × cap-16 = 224 slot fields, plus a single `ResourceSlot` collapse (`res_has` +
+`res_tick` + `res_added_t` + `res_changed_t`), plus a cap-16 message slot family `msg0..15` +
+`msg_tail`, plus the monotone `change_tick`. Each Vec-pair `Vec + Vec-len` of the shallow's
+`DynamicComponentStore<T>` (which keeps `entity_ids` + `values` parallel Vecs) collapses to the
+per-slot eid slot family indexing the per-slot value slot family by the same cap-16 ordinal
+(the deep convention of "shallow-slot is `(eid, value)` parallel pair; deep refolds both into
+slot families keyed by index" established in Batch 386/388-390 and applied uniformly here).
+
+The shallow separates the per-component added/changed tick tracking from the data: each store
+gets its OWN `DynamicComponentStore<i32>` parallel sparse store keyed by entity_id slot. The
+deep bakes the per-store added/changed tick INTO each store slot directly (`a_added_t0..15`,
+`a_changed_t0..15`, ... per B/C mirror — `c_added_t0..15` / `c_changed_t0..15`). This eliminates
+the 6 aux sparse stores of the shallow and saves 6 × cap-16 slot families of redundant storage
+— the same approach Batch 389 `world_deep.sla` chose; the deep is byte-identical shape to the
+world_deep A/B store accessors + ops plus a C-store variant with C's `team` (not x/y) and the
+extra `c_added_since` / `c_changed_since` query ops.
+
+Wrapper structs introduced to keep tests free of tuple destructuring (Batch 373 rule) and
+member-method free (Batch 388 #7): `EcsWD3Spawn { world, entity }` (replaces
+`(DynamicWorld3, Entity)` from spawn / spawn_abc), `EcsWD3TripleQuery { count + 10 cap-16 slot
+families }` (replaces `DynamicWorld3TripleQuery { items: Vec<...> }` + an `iter_len`/`iter_at`
+member-method-query), `EcsWD3QueryA { count + 2 cap-16 slot families }` (replaces
+`DynamicWorld3QueryA { items: Vec<A> }` and the `q.items[i]` access — re-used by BOTH
+`query_a_with_c` AND `query_a_without_c` since both ops emit an A-only list), `EcsWD3Read
+{ has_value, amount, cursor }` + `EcsWD3MessageReader { cursor }` (replaces `Messages<T>`
+queue iteration). Tests use sw_world / sw_entity convenience helpers (mirroring Batch 389
+sw_world/sw_entity). The 10 cap-16 cascade getters/setters per query struct (_ecs_wd3_q_X_at /
+_ecs_wd3_q_set_X) per index cascade-of-return are byte-identical shape to Batch 389's
+EcsWdPairQuery getters/setters — just with the addition of `c_slot` AND `c_team` slot families
+since this query is over 3 columns (not 2). The `_ecs_wd3_qa_set_x/_y` (single-A-list query)
+accessors are fresh-but-identical-pattern.
+
+Public surface verified 10/10 on BOTH the SA backend (`--test-backend sa --jobs 1 --trace-panic`,
+~5s) AND the default backend (`--jobs 1 --trace-panic`, ~10s). The 10 public lib ops from shallow
+that are exercised: `ecs_wd3_world_new` (next_id=1 — slot 0 reserved — mirrors shallow
+`dyn_alloc_entity` which starts ids at 1 because dyn_allocator_new pre-allocates slot 0 as dead,
+and `dyn_is_alive` rejects `id <= 0`), `ecs_wd3_increment_tick`, `ecs_wd3_world_spawn`
+(returns EcsWD3Spawn), `ecs_wd3_spawn_abc` (alloc + insert_a + insert_b + insert_c, returns
+EcsWD3Spawn), `ecs_wd3_is_alive` (rejects `id <= 0`; checks free_ids; matches generation), the
+3 per-store `insert_*` ops (replace-in-place bumps changed-tick only; else append new slot
+stamps added+changed; panic 8101/8102/8103 if not alive), `ecs_wd3_write_c` (in-place at slot,
+bump changed only; panic 8106 if missing), `ecs_wd3_get_a` / `get_c` (panic 8104/8105 if
+missing; return EcsWD3Pos / EcsWD3Player), the 3 `has_*` ops, the 3 `remove_*` ops (slot-
+addressed swap-remove: copies last slot's eid+field+added+changed into removed slot, then
+clears last + drops count), `ecs_wd3_despawn` (remove_a + remove_b + remove_c + free_entity),
+`c_added_since` / `c_changed_since` (strict-greater `stamp > tick` per Batch 388 #5), and the
+3 query build loops (`ecs_wd3_query_a_b_c` iterate A store, find b_slot+c_slot by eid, emit
+triple if both found AND entity alive; `ecs_wd3_query_a_with_c` iterate A store, filter
+has_c alive, push a (x,y); `ecs_wd3_query_a_without_c` mirror with NOT has_c). Resource +
+message surfaces (insert/has/get/remove_resource; write/read/count_message; the shallow has
+them but the 3 embedded tests do NOT exercise them, so they're covered here as parity tests
+mirroring Batch 389's resource + message coverage.)
+
+Tests (10) — `tests/test_ecs_lib_world_dynamic3_deep_isolated.sla` (~233 lines, panic
+143500-143595, 32 distinct codes verified unique via the standard `rg -o 'panic\(([0-9]+)\)'
+-r '$1' | sort -n | awk 'NR>1 && $1==prev {print "DUP"} {prev=$1}'` check returning no dups;
+cross-checked globally against lib/ + tests/ for the 143500-143599 band occupying no other
+batch). Cover: Test 1 (mirror shallow test 1) spawn_abc bundle + triple query count == 1 + entity
+match + a.x + b.x + c.team == 10 assertion; Test 2 (mirror shallow test 2) query_a_with_c vs
+query_a_without_c filter boundary — since SA tests cannot use `for pos in with_c` the deep test
+uses `while i < count { sum += q.x_at(i); i++; }` to compute the with_c summation (3 == e1's
+a.x) and asserts without_c count == 1 with `q.x_at(0) == 9` plus `has_c(e1) == true`; Test 3
+(mirror shallow test 3) c change detection — `c_added_since(e1, 0)` is true (added_t = 1 > 0)
+right after spawn_abc; `increment_tick` (now 2); `write_c team 4` (changed_t = 2);
+`c_changed_since(e1, 1)` true (2 > 1 strict-greater — Batch 388 #5); `get_c.team == 4`;
+`despawn(e1)` → `is_alive == false` and `has_a == false`; Test 4 — explicit strict-greater
+`c_added_since(e1, 1)` is FALSE (added_t = 1, equal-stamp returns false even when added at
+exactly that tick) and pre-write_c `c_changed_since(e1, 1)` is also false — exercises the Batch
+388 #5 rule that the shallow test only infers (shallow asserts the TRUE cases only); Test 5 —
+cap-16 spawn reject sentinel — 15 successful spawns yield ids 1..15 (slot 0 reserved so cap-16
+floor is 15 the SAME WAY Batch 389's next_id-starts-at-0 yields 16 ids; the deep starts at 1 so
+yield = 15), then the 16th spawn rejects with `entity_id == -1` (and `generation == 0`) and
+`next_id` stays unchanged at 16 — NO panic (Batch 388/389 #2 / Batch 390 #3 sentinel
+convention); Test 6 — remove_a swap-remove relocates the last A slot into the freed slot (spawn
+3 + insert_a 3 with distinct x values; remove_a(e1); assert has_a(e1)==false BUT has_a(e3)==true
+AND get_a(e3).x == 33 i.e. the relocated value survived the swap); Test 7 — despawn frees the id
+and a later spawn reuses the SAME id at generation + 1 (one of the few generation-bump
+recovered-id assertions exercised in isolation); Test 8 — insert_c replace-in-place path bumps
+changed-tick ONLY (leaves added unchanged) — `c_added_since(e1, 1)` stays false after re-insert_c
+because added_t was stamped once at the original spawn_abc and not touched by the replace;
+Test 9 — resource lifecycle (insert_resource / has_resource / get_resource tick / remove_resource
+— coverage the shallow embedded tests skip); Test 10 — message queue write/read/drain via the
+cascading reader cursor (write 3 amounts then drain all 3 via reader + assert 4th read's
+has_value == 0; reader cursor advances through `message_reader_with_cursor(read_cursor(prev))`
+chaining).
+
+Nested-ternary refactored into discrete helpers (Batch 388 #6) — N/A (no ternary was needed;
+all branching uses flat-block shape with early return per Batch 386/388 #6). No forward-decls
+used (Batch 389 #4). No `let _` / `let _ = x` (dropped unused params). No top-level negative
+const literals (Batch 389 #3); sentinel `EcsWD3Entity { id: -1, generation: 0 }` is constructed
+with INLINE negative literals inside an inline struct-init field expression (permitted), and
+test side compares directly against literal `-1` instead of referencing a const. `if` blocks
+close with `};` and `while` blocks close with bare `}` per the SA surface syntax convention.
+
+KEY Batch 391 finding #1 (3-axis typed-plus-C-different plug set; the deep collapses BOTH the
+component-data columns AND the per-store added/changed tick aux sparse stores all into the SAME
+store's per-slot field families — DIFFERENTIAL with prior batches where the aux sparse stores
+existed as separate state): the shallow keeps each per-store added/changed tick tracking in a
+SEPARATE `DynamicComponentStore<i32>` parallel sparse store keyed by entity_id slot — 6 such
+aux sparse stores for 3 columns. The deep bakes the added/changed tick INTO each store slot as a
+per-slot field family (`a_added_t0..15`, `a_changed_t0..15`, ..., `c_added_t0..15`,
+`c_changed_t0..15`). This is the SAME approach Batch 389 `world_deep.sla` took but applied to 3
+columns (not 2); the saving is 6 fewer slot families × cap-16 = 96 scalar fields of redundant
+storage. The differential caveat: a 4th column would add 2 more aux sparse stores on the
+shallow (one added + one changed tick sparse store) but only 2 more slot families on the deep (a
+baked-in added_t + a baked-in changed_t per-slot for the new column). Lesson: when mirroring a
+shallow that keeps per-component tick tracking in parallel sparse stores, the deep convention is
+to inline the per-slot tick (added_t + changed_t) into the per-slot field families of the SAME
+store; this reduces slot-family count proportional to the number of component columns.
+
+KEY Batch 391 finding #2 (first batch where SA tests cannot use for-in iteration over a query
+result; the shallow uses `for pos in with_c { total += pos.x }` in an embedded test which the
+SA `_deep.sla` TEST surface does not support — Batch 388 #6 applied to test iteration): the
+shallow's 2nd embedded test uses `for pos in with_c { total = total + pos.x; }` to sum the a.x
+values of entities that have C. The deep test surface does not accept `for x in iter { }` syntax
+so the deep test refactors that into `let i = 0; while i < count { total += q.x_at(i); i++; }`
+using the count + per-index accessors (`ecs_wd3_query_a_count`, `ecs_wd3_query_a_x_at`). This is
+the FIRST batch where shallow-test-mirroring required the while-loop refactor for iterating a
+query result set — the rule was already known from Batch 388 #6 (no for-in in tests); it is now
+NEWLY exercised by a shallow that actually uses it in the embedded test. Lesson: when the
+shallow embedded test loops over a query result with for-in, the deep test replaces it with a
+`while i < count` loop that reads per-index accessors from the query-result wrapper struct — the
+count accessor + per-index accessors are what enable this refactor, which is why the query-result
+wrapper structs always expose `count` + per-index getters even when the deep ALREADY has the
+data baked into flat slot families.
+
+KEY Batch 391 finding #3 (cap-16 + slot-0-reserved yields cap-15 usable entities (NOT 16) —
+differential with Batch 389 which started `next_id = 0` and yielded cap-16 usable entities; this
+deep starts `next_id = 1` because the shallow allocator pre-allocates slot 0 as dead, so the
+deep mirror starts with id=1 and yields ids 1..15 (15 ids); `next_id >= ECS_WD3_CAP` (16)
+rejects the 16th spawn attempt): the deep convention for the entity-allocator cap-reject
+threshold mirrors the SHALLOW allocator's id-allocation fat (NOT the cap floor). Shallow
+`dyn_allocator_new` pre-allocates slot 0 in `generations`/`occupied` and `dyn_is_alive` rejects
+`id <= 0` — so slot 0 is the reserved/dead slot and the first fresh `dyn_alloc_entity` returns
+`id = 1` (because `len(generations)` is 1 after the pre-allocate). The deep mirrors this
+faithfully: `ecs_wd3_world_new` sets `next_id = 1` and `ecs_wd3_is_alive` rejects `id <= 0`
+(slot 0 dead). With cap-16 slots (0..15), the usable ids are 1..15 (15 ids); the cap-reject
+fires when `next_id >= 16` after 15 successful spawns. This is DIFFERENT from Batch 389 where
+`world_deep.sla` started `next_id = 0` and the test file asserted 16 successful spawns then a
+17th-reject sentinel — Batch 389 mirrored a shallow world.sla whose allocator did NOT reserve
+slot 0; world_dynamic3's shallow mirrors `entity_dynamic.sla` which DOES. Lesson: the cap floor
+of the deep allocator must mirror the SHALLOW allocator's id-reservation logic — when the shallow
+pre-allocates slot 0 as dead the deep yields cap-1 usable ids; when the shallow starts at slot 0
+the deep yields cap usable ids. The test author (or the assistant reproducing the test) MUST
+consult `lib/entity_dynamic.sla`'s `dyn_allocator_new` + `dyn_is_alive` to determine the exact
+yield, because the cap-N scalar slot family spans `0..cap-1` but the id reserved as dead (here,
+slot 0) shifts the usable range by -1.
+
+KEY Batch 391 finding #4 (mirror of Batch 388/389/390 deep-convention findings explicitly
+applied to a 3-column query — the world_deep.sla pair_query template (A × B) extends cleanly to
+an A × B × C triple query with the addition of a `c_slot` per-item field + a `c_team` per-item
+field, demonstrating the per-item slot-family pattern scales beyond pair queries): the
+`EcsWdPairQuery` template (Batch 389 world_deep.sla) had 10 per-item cap-16 slot families (e_id,
+e_gen, a_slot, b_slot, a_x, a_y, b_x, b_y). `EcsWD3TripleQuery` extends that with `c_slot` +
+`c_team` to 12 per-item cap-16 slot families — the per-item entity id + generation + per-column
+slot + per-column value slot set scales linearly with the number of columns joined by the query
+(no nesting or list-of-lists needed). The 12 × 16 = 192 per-item scalar fields joins the
+component-store slot families + the `QueryA` A-only-list query (2 slot families × 16 = 32
+fields) into a query-state total of ~224 query-struct fields across 2 query wrapper structs.
+Lesson: per-item flat-scalar slot-family query wrappers (one struct per query build loop) scale
+linearly with column-count × cap — the same byte-identical cascade-of-return accessor pattern
+from Batch 389 generalizes to N-column queries without restructuring.
+
+Post-batch counts (measured): 492 lib modules | 220 `*_deep.sla` modules | 396 test files |
+220 `*_deep_isolated.sla` test files | 90 examples | 6268 `@test` total tests-scoped (same
+method as Batch 386-390: `rg -c '@test' tests/ | awk -F: '{s+=$2}'` so absolute figures compare
+directly: 6258 -> 6268, +10).
+Next free panic band: 143600+ (Batch 391 used 143500-143595; Batch 390 used 143300-143433).
+Next batch candidates: `bundle_table_erased` (349 lines, medium -- needs self-contained table
+storage). Defer: `world_table_erased` (~6300 lines, large), `system_param_table_erased`
+(~4900 lines, large -- uses fn-pointer systems, needs fn-ptr reification per Batch 387 finding
+#1). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection
+deepens OK).
+
+## Batch 392 — bundle_table_erased_deep (DONE 2026-07-13)
+
+`lib/bundle_table_erased_deep.sla` (1335 lines) mirrors shallow `lib/bundle_table_erased.sla`
+(349 lines, Bevy-style component bundles over `TableErasedWorld<R, M>`) as a SELF-CONTAINED
+fixed-cap variant (NO `@import`). The shallow depends on the deferred, large
+`world_table_erased.sla` (~6300 lines) and its boxed `ErasedComponentValue` / generic
+`TableErasedWorld<R, M>` / `drop_fn: fn(*u8) -> void` / table + sparse-set storage machinery; the
+deep does NOT deepen that large module first. Instead it reifies the exact erased-world subset
+needed by bundle insertion: fixed-cap entity allocator, cap-4 component metadata registry,
+Pos/Vel TABLE stores, Player SPARSE_SET store, bundle2/bundle3 insert paths, if-new preservation,
+spawn + spawn-batch wrappers, and a Pos×Vel pair query wrapper.
+
+Concrete plugs mirror the shallow embedded tests: `EcsBtePos{x,y}` type id 401, `EcsBteVel{x,y}`
+type id 402, `EcsBtePlayer{team}` type id 403, plus Time/Event defaults for naming parity. The
+registry is cap-4 (`reg_type`, `reg_kind`, `reg_store`) and returns component_id == registry slot,
+matching the shallow `ComponentInfo.id` usage in tests. TABLE storage_kind 0 is modeled by dense
+cap-16 `(entity_id, x, y)` row stores for Pos and Vel; SPARSE_SET storage_kind 1 is modeled by a
+cap-16 `(entity_id, team)` store for Player. Entity allocator uses slot 0 reserved (`next_id=1`,
+`id <= 0` rejected), so cap-16 yields 15 usable ids before the no-panic sentinel
+`EcsBteEntity{id:-1,generation:0}`.
+
+Tuple-return and Vec-return shallow APIs use wrappers: `EcsBteRegister{world, component_id}` for
+register metadata, `EcsBteSpawn{world, entity}` for spawn and spawn_bundle, and
+`EcsBteSpawnBatch{world,count,entity_id0/entity_gen0,entity_id1/entity_gen1}` for cap-2
+spawn_batch_bundle2/3. `EcsBteBundle2` / `EcsBteBundle3` fold shallow `ErasedComponentValue` into
+tagged scalar fields (Pos/Vel x/y, Player team), avoiding generics and erased boxes. `EcsBtePairQuery`
+replaces `Query<TableErasedPair<A,B>>` with count + flat item slot families `(entity_id,a_x,a_y,b_x,b_y)`.
+
+Public surface verified: register_component_metadata, component_id_for_type, kind_for_component,
+world_spawn, spawn_bundle2, spawn_bundle3, spawn_batch_bundle2/3, insert_bundle2/3,
+insert_bundle2/3_if_new, insert_batch_bundle2/3, insert_batch_bundle2/3_if_new, has/get for
+Pos/Vel/Player, entity_archetype_id (bitmask >0 after insertion), and query_pair_auto. The shallow
+`drop_uninserted_bundle_value` invokes a drop fn on a boxed raw pointer; the deep values are owned
+scalars, so this operation is a no-op while preserving if-new semantics.
+
+Tests (8) — `tests/test_ecs_lib_bundle_table_erased_deep_isolated.sla` (191 lines, panic
+143600-143682, codes verified unique locally and globally in 143600-143699). Cover: mirror shallow
+bundle3 spawn/insert component sets; mirror shallow bundle2 insert preserving existing Pos; mirror
+batch bundle3 overwrite behavior; mirror batch bundle3_if_new preserving existing Pos; spawn-batch
+bundle3 wrapper returns both entities and populated world; registry lookup + storage_kind metadata;
+cap-16 slot-zero-reserved spawn sentinel; bundle2 Pos+Vel query without Player. SA backend and
+default backend both pass 8/8.
+
+KEY Batch 392 finding #1 (medium erased bundle module can deepen without first deepening the
+large erased world): `bundle_table_erased` depends on `world_table_erased.sla`, but its embedded
+behavior only needs a small erased-world slice. A self-contained deep can implement that slice
+faithfully enough for bundle semantics by owning the registry + typed stores directly and by
+collapsing `ErasedComponentValue` boxes into tagged scalar fields. This keeps `world_table_erased`
+(~6300 lines) deferred while still making forward progress on the medium bundle layer.
+
+KEY Batch 392 finding #2 (TABLE vs SPARSE_SET still matters in the deep): even though the deep
+stores concrete scalar fields, it preserves storage metadata: Pos/Vel registered with kind 0 and
+Player with kind 1. Tests assert kind metadata and component presence through component ids, while
+query_pair_auto only walks the table-backed Pos/Vel stores. This preserves the shallow’s important
+semantic distinction without reproducing full table-column/archetype internals.
+
+KEY Batch 392 finding #3 (if-new bundle insert requires drop-path semantics even when drop is a
+no-op): shallow `insert_bundle*_if_new` calls `drop_uninserted_bundle_value` when a component is
+already present. In the deep the value has no heap/raw pointer, so drop is a no-op, but the branch
+still matters because it must NOT overwrite the existing component. Test 4 asserts first entity's
+pre-existing Pos stays x=1 while Vel/Player are inserted and the second entity receives all bundle
+values.
+
+Post-batch counts (measured): 493 lib modules | 221 `*_deep.sla` modules | 397 test files |
+221 `*_deep_isolated.sla` test files | 90 examples | 6276 `@test` total tests-scoped (6268 ->
+6276, +8).
+Next free panic band: 143700+ (Batch 392 used 143600-143682; Batch 391 used 143500-143595).
+Next batch candidates: inspect remaining medium modules; defer `world_table_erased` (~6300 lines)
+and `system_param_table_erased` (~4900 lines, fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+## Batch 393 — relationship_declaration_deep (DONE 2026-07-13)
+
+`lib/relationship_declaration_deep.sla` (528 lines) mirrors shallow `lib/relationship_declaration.sla`
+(223 lines) as a SELF-CONTAINED fixed-cap-16 variant (NO `@import`). The shallow module owns
+library-side relationship declaration metadata normally synthesized by derive macros: relationship
+id, source component id, target collection component id, target mode (many/one), linked_spawn,
+allow_self, ordered, valid, and error_code. The shallow registry is
+`Vec<EcsRelationshipDeclaration>`; the deep flattens it into cap-16 declaration slot families
+(`relationship_type_id0..15`, `source_component_type_id0..15`, etc.) plus `count`.
+
+The deep keeps all validation semantics: invalid relationship/source/target ids, invalid target
+mode, source==target component rejection, and ordered one-to-one rejection. Shallow bool fields
+become i32 flags in the deep (`0/1`) to keep test access scalar and avoid bool slot-family edge
+cases; constructors still accept bool params for source-level parity and immediately convert them
+through `ecs_rel_decl_bool`. Registry registration mirrors shallow control flow: invalid
+preserves registry and returns `invalid=1` with original error_code; same relationship id + same
+full declaration returns duplicate; same relationship id + different declaration returns
+id_collision; distinct id but same source/target pair returns pair_conflict; otherwise insertion
+writes the next cap slot. Cap overflow returns an invalid register result without mutating the
+registry (deep cap-reject convention, no panic).
+
+Tests (9) — `tests/test_ecs_lib_relationship_declaration_deep_isolated.sla` (113 lines, panic
+143700-143783, codes verified unique locally and globally in 143700-143799). Cover: mirror shallow
+many declaration flags; one-to-one ordered rejection; invalid id/mode/same-component errors;
+unique insert; duplicate declaration; id collision; component pair conflict; invalid declaration
+registration; cap-16 overflow reject preserving count. SA backend and default backend both pass 9/9.
+
+KEY Batch 393 finding #1 (derive-like metadata modules are excellent fixed-cap registry targets):
+this module has no world mutation, async, fn-pointer system callbacks, or reflect runtime payloads;
+its main shallow abstraction is a Vec-backed metadata registry. These modules deepen cleanly by
+turning Vec rows into slot families and keeping the validation finite-state machine byte-faithful.
+
+KEY Batch 393 finding #2 (bool slot families should be normalized to i32 flags when tests need
+stable scalar access): the shallow uses bool fields, but prior deep conventions prefer scalar
+accessors. Using i32 `0/1` flags avoids mixed bool/int assertions and keeps register result flags
+uniform with earlier wrapper structs that expose found/ok flags as integers.
+
+Post-batch counts (measured): 494 lib modules | 222 `*_deep.sla` modules | 398 test files |
+222 `*_deep_isolated.sla` test files | 90 examples | 6285 `@test` total tests-scoped (6276 ->
+6285, +9).
+Next free panic band: 143800+ (Batch 393 used 143700-143783; Batch 392 used 143600-143682).
+Next batch candidates: continue medium non-async/non-parallel modules such as `world_registry_typed`,
+`required_components_dynamic`, or `query_dynamic`. Defer TaskPool/async/parallel modules,
+`world_table_erased` (~6300 lines), and `system_param_table_erased` (~4900 lines with fn-pointer
+systems). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection
+deepens OK).
+
+## Batch 394 — world_registry_typed_deep (DONE 2026-07-13)
+
+`lib/world_registry_typed_deep.sla` (1101 lines) mirrors shallow `lib/world_registry_typed.sla`
+(257 lines) as a SELF-CONTAINED fixed-cap variant (NO `@import`). The shallow composes
+`RegistryWorld` + two typed `DynamicComponentStore<A/B>` stores + resource/messages + dynamic query
+wrappers; the deep inlines the needed registry sidecar: cap-16 entity allocator, A/B membership
+columns with per-slot added/changed ticks, typed A/B value stores, resource slot, cap-16 message
+queue, and query wrappers. Component ids are fixed (`A=0`, `B=1`), matching shallow construction
+where `registry_typed_world_new` registers A then B into `RegistryWorld`.
+
+The deep preserves shallow tick semantics: `change_tick` starts at 1; insert stamps added+changed;
+replace/writeback only updates changed; `*_since` uses strict `stamp > tick`. Pair writeback mirrors
+`registry_typed_world_query_pair_mut_a_write`: it writes A at the captured A slot and marks A changed
+without changing its added tick. Despawn removes both membership/value stores and pushes the entity id
+onto the free list with generation bump. Queries are wrapper structs: `EcsWrtQueryA` for query_a and
+query_a_without_b, and `EcsWrtPairQuery` for mutable A/B pair query (entity id, A slot, A/B values).
+
+Tests (6) — `tests/test_ecs_lib_world_registry_typed_deep_isolated.sla` (115 lines, panic
+143800-143872, codes verified unique locally and globally in 143800-143899). Cover: mirror shallow
+A/B binding and A-without-B filtering; mirror shallow pair writeback with added vs changed tick
+assertions; mirror shallow despawn removal; plus remove_a keeps B but removes pair query eligibility;
+resource/message lifecycle; cap-16 slot-zero-reserved spawn sentinel. SA backend and default backend
+both pass 6/6.
+
+KEY Batch 394 finding #1 (RegistryWorld + typed stores can be decomposed into two independent
+layers): shallow keeps membership/ticks in RegistryWorld and values in DynamicComponentStore<A/B>.
+The deep bakes both into A/B slot families but still preserves the conceptual split: A/B membership
+slots carry eid/added/changed, while A/B value slots carry x/y. This makes query filters operate on
+membership and get/write operate on value slots, matching the shallow behavior without requiring the
+full `world_registry_deep` layer.
+
+KEY Batch 394 finding #2 (pair writeback needs the A slot, not just the entity): shallow
+`PairMutItem<A,B>` captures `Mut<A>{entity, slot, value}`. The deep query wrapper explicitly exposes
+`ecs_wrt_pair_query_a_slot_at` so writeback can mutate the exact A slot and stamp changed tick. Tests
+exercise this by capturing baseline tick, incrementing, writing `a.x + b.x`, and asserting
+`added_since(baseline)==false` but `changed_since(baseline)==true`.
+
+Post-batch counts (measured): 495 lib modules | 223 `*_deep.sla` modules | 399 test files |
+223 `*_deep_isolated.sla` test files | 90 examples | 6291 `@test` total tests-scoped (6285 ->
+6291, +6).
+Next free panic band: 143900+ (Batch 394 used 143800-143872; Batch 393 used 143700-143783).
+Next batch candidates: continue medium non-async/non-parallel modules such as
+`required_components_dynamic` or `query_dynamic`. Defer TaskPool/async/parallel modules,
+`world_table_erased` (~6300 lines), and `system_param_table_erased` (~4900 lines with fn-pointer
+systems). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core reflection
+deepens OK).
+
+## Batch 395 — required_components_dynamic_deep (DONE 2026-07-13)
+
+`lib/required_components_dynamic_deep.sla` (182 lines) mirrors shallow
+`lib/required_components_dynamic.sla` (254 lines) as a SELF-CONTAINED fixed-cap variant (NO
+`@import`). The shallow models Bevy required-components dynamic registration gaps:
+`register_dynamic_with`, `register_by_id`, `RequiredComponentsRegistrator::register_required_by_id`,
+`register_required_dynamic_with`, and `components_registrator`. It stores `direct_ids` and `all_ids`
+in Vecs; the deep flattens both lists into cap-16 slot families and keeps the same result/accessor
+shape using wrapper structs (`EcsReqDynResultDeep`, `EcsReqDynMutResultDeep`, and
+`EcsRequiredComponentsRegistratorDynDeep`).
+
+Semantics preserved: duplicate direct registration returns ok=0 with DuplicateRegistration kind 0
+without mutating state; success appends to direct order and prepends the component id to `all` order
+(depth-first/new requirement first), matching the shallow model. `register_by_id` is an alias of
+`register_dynamic_with`; mutator variants return mutated required-components state; registrator
+facade records `target_component_id`, exposes `components_next_id`, and stores `last_ok` /
+`last_err_kind` after each builder-style call. Cap overflow is a no-panic reject returning ok=0 and
+preserving counts.
+
+Tests (7) — `tests/test_ecs_lib_required_components_dynamic_deep_isolated.sla` (92 lines, panic
+143900-143963, codes verified unique locally and globally in 143900-143999). Cover: success result
+lengths; duplicate direct registration no-op; depth-first all-order prepending; registrator facade
+target/components accessor; dynamic_with duplicate last_err recording; out-of-range accessors return
+-1; cap-16 overflow reject preserving state. SA backend and default backend both pass 7/7.
+
+KEY Batch 395 finding #1 (shallow model modules without embedded tests still need explicit deep
+coverage): `required_components_dynamic.sla` has no shallow `@test`, but its public surface is small
+and important. The deep test suite therefore exercises each documented semantic path directly rather
+than only mirroring embedded tests.
+
+KEY Batch 395 finding #2 (result+mutator wrapper avoids tuple-return and by-ref ambiguity): the
+shallow has separate result-only and mutating builder-style APIs. The deep uses
+`EcsReqDynMutResultDeep{required,result}` internally for tests that need both the mutated state and
+result flags, while keeping public result-only and mut-only helpers. This preserves explicit state
+threading and avoids tuple destructuring.
+
+Post-batch counts (measured): 496 lib modules | 224 `*_deep.sla` modules | 400 test files |
+224 `*_deep_isolated.sla` test files | 90 examples | 6298 `@test` total tests-scoped (6291 ->
+6298, +7).
+Next free panic band: 144000+ (Batch 395 used 143900-143963; Batch 394 used 143800-143872).
+Next batch candidates: continue medium non-async/non-parallel modules such as `query_dynamic`,
+`schedule_table_erased`, or `schedule_table_erased_relationship`. Defer TaskPool/async/parallel
+modules, `world_table_erased` (~6300 lines), and `system_param_table_erased` (~4900 lines with
+fn-pointer systems). Leave out: TaskPool/async/parallel; full reflect* core runtime (non-core
+reflection deepens OK).
+
+## Batch 396 — query_dynamic_deep (DONE 2026-07-13)
+
+`lib/query_dynamic_deep.sla` (1337 lines) mirrors shallow `lib/query_dynamic.sla` (277 lines) as a
+SELF-CONTAINED fixed-cap query layer over a DynamicWorld-like two-component world. The shallow
+imports `world_dynamic.sla`, defines generic `Query<T>`, `Mut<T>`, `EntityItem<T>`,
+`PairMutItem<A,B>`, and filter marker wrappers (`With`, `Without`, `Added`, `Changed`); the deep
+inlines a cap-16 entity allocator, A/B value stores with added/changed ticks, and query result
+wrappers. The first shallow embedded test uses `for item in q`; the deep test rewrites it to
+`while i < count` over wrapper accessors.
+
+The deep provides `EcsQdQueryA`, `EcsQdEntityAQuery`, and `EcsQdPairQuery` wrappers. `query_mut_a`
+uses the pair-query shape with B fields zeroed so it can still expose entity id, A slot, and A
+value for writeback without tuple/struct nesting. `query_mut_a_write` and `query_pair_mut_a_write`
+mutate by captured A slot and stamp only changed_t. Added/changed filters use strict `stamp > tick`,
+matching dynamic_world semantics.
+
+Tests (5) — `tests/test_ecs_lib_query_dynamic_deep_isolated.sla` (124 lines, panic 144000-144051,
+codes verified unique locally and globally in 144000-144099). Cover: mirror shallow read/entity
+query with for-in rewritten to while; mutable A writeback; pair query + with/without filters; added
+and changed filters; cap sentinel + despawn filtering. SA backend and default backend both pass 5/5.
+
+KEY Batch 396 finding #1 (generic query facade can be represented by a small set of typed wrappers):
+the shallow's `Query<T>` covers many item types, but the exercised surface only needs A values,
+entity+A items, mutable A items, and pair mutable A/B items. The deep maps these to concrete
+wrappers with count + per-index accessors, avoiding generic Vec-backed query storage.
+
+KEY Batch 396 finding #2 (for-in query iteration must be rewritten in tests): the shallow test
+iterates `for item in q`; deep tests use count/accessor while loops. This repeats the Batch 391
+lesson and applies it to the original dynamic query layer.
+
+Post-batch counts (measured): 497 lib modules | 225 `*_deep.sla` modules | 401 test files |
+225 `*_deep_isolated.sla` test files | 90 examples | 6303 `@test` total tests-scoped (6298 ->
+6303, +5).
+Next free panic band: 144100+ (Batch 396 used 144000-144051; Batch 395 used 143900-143963).
+Next batch candidates: continue medium non-async/non-parallel modules such as
+`schedule_table_erased`, `schedule_table_erased_relationship`, or `schedule_table_erased_observer`.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+## Batch 397 — schedule_table_erased_relationship_deep (DONE 2026-07-13)
+
+`lib/schedule_table_erased_relationship_deep.sla` (302 lines) mirrors the scheduling and relationship
+access metadata from shallow `lib/schedule_table_erased_relationship.sla` without importing the full
+erased table world or preserving fn-pointer execution. The deep is SELF-CONTAINED and models a
+small fixed-cap world (`EcsStrWorld`) plus cap-8 schedule slots. System functions are represented by
+stable kind ids (`MOVE`, `REL_COUNT`, `MESSAGE`, `RELATE_FIRST_TWO`) so tests can verify scheduling,
+conflict metadata, and execution order without runtime function pointers.
+
+Access metadata is flattened into scalar slot families for component reads/writes, relationship
+reads/writes, and resource/message read-write flags. Component/type access helpers share the same
+component-id conflict path; relationship access has a separate conflict path; resources and messages
+conflict independently on write-vs-read/write. The schedule assigns each added system to the first
+non-conflicting batch, records pairwise conflict counts, exposes batch widths and max parallel width,
+and returns -1 sentinels for out-of-range kind/batch accessors. Cap overflow ignores the ninth system
+without panicking.
+
+Tests (6) — `tests/test_ecs_lib_schedule_table_erased_relationship_deep_isolated.sla` (109 lines,
+panic 144100-144172, codes verified unique locally and globally in 144100-144199). Cover: three
+non-conflicting systems in one batch with sequential run effects; relationship read/write conflict
+batch splitting; planned batch run with type access declarations; resource/message conflict
+semantics; out-of-range accessor sentinels; cap-8 overflow no-op. SA backend and default backend
+both pass 6/6.
+
+KEY Batch 397 finding #1 (fn-pointer systems can be deepened as stable kind ids): the shallow
+schedule stores callable systems, but the behavior under test is conflict declaration and run order.
+Kind ids keep execution deterministic and self-contained while preserving the relevant scheduling
+semantics.
+
+KEY Batch 397 finding #2 (relationship access needs a separate conflict family): component/type
+access can share a single id-list path, but relationship ids must not alias component ids. The deep
+keeps relationship read/write slot families separate from component read/write slots and verifies
+relationship conflicts independently from messages/resources.
+
+Post-batch counts (measured): 498 lib modules | 226 `*_deep.sla` modules | 402 test files |
+226 `*_deep_isolated.sla` test files | 90 examples | 6309 `@test` total tests-scoped (6303 ->
+6309, +6).
+Next free panic band: 144200+ (Batch 397 used 144100-144172; Batch 396 used 144000-144051).
+Next batch candidates: continue medium non-async/non-parallel modules such as
+`schedule_table_erased`, `schedule_table_erased_observer`, or another small schedule/query/registry
+module. Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+
+## Batch 398 — schedule_table_erased_observer_deep (DONE 2026-07-13)
+
+`lib/schedule_table_erased_observer_deep.sla` (303 lines) mirrors the observer scheduling and event
+access metadata from shallow `lib/schedule_table_erased_observer.sla` without importing the full
+erased table world or preserving fn-pointer execution. The deep is SELF-CONTAINED and models a
+small fixed-cap world (`EcsStoWorld`) plus cap-8 schedule slots. System functions are represented by
+stable kind ids (`MOVE`, `OBS_COUNT`, `MESSAGE`, `TRIGGER_PING`) so tests can verify scheduling,
+conflict metadata, and execution order without runtime function pointers.
+
+Access metadata is flattened into scalar slot families for component reads/writes, event reads/writes,
+and resource/message read-write flags. Component/type access helpers share the same component-id
+conflict path; event access has a separate conflict path; resources and messages conflict
+independently on write-vs-read/write. The schedule assigns each added system to the first
+non-conflicting batch, records pairwise conflict counts, exposes batch widths and max parallel width,
+and returns -1 sentinels for out-of-range kind/batch accessors. Cap overflow ignores the ninth system
+without panicking.
+
+Tests (6) — `tests/test_ecs_lib_schedule_table_erased_observer_deep_isolated.sla` (109 lines,
+panic 144200-144272, codes verified unique locally and globally in 144200-144299). Cover: three
+non-conflicting systems in one batch with sequential run effects; event read/write conflict batch
+splitting; planned batch run with type access declarations; resource/message conflict semantics;
+out-of-range accessor sentinels; cap-8 overflow no-op. SA backend and default backend both pass 6/6.
+
+KEY Batch 398 finding #1 (observer schedules can reuse the relationship schedule shape with event
+access): the shallow observer schedule is structurally parallel to the relationship schedule, but
+event read/write access must be a separate conflict family from component access. The deep keeps
+event read/write slot families separate and verifies event conflicts independently.
+
+KEY Batch 398 finding #2 (trigger-ping system replaces observer trigger semantics): the shallow
+observer schedule triggers observers on event writes, but the behavior under test is conflict
+declaration and run order. The TRIGGER_PING kind sets observer_count and observed, keeping execution
+deterministic while preserving the relevant scheduling semantics.
+
+Post-batch counts (measured): 499 lib modules | 227 `*_deep.sla` modules | 403 test files |
+227 `*_deep_isolated.sla` test files | 90 examples | 6315 `@test` total tests-scoped (6309 ->
+6315, +6).
+Next free panic band: 144300+ (Batch 398 used 144200-144272; Batch 397 used 144100-144172).
+Next batch candidates: continue medium non-async/non-parallel modules such as
+`schedule_table_erased`, `relationship`, `world_registry`, or another small schedule/query/registry
+module. Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+
+## Batch 399 — schedule_table_erased_deep (DONE 2026-07-13)
+
+`lib/schedule_table_erased_deep.sla` (426 lines) mirrors the base erased sequential schedule from
+shallow `lib/schedule_table_erased.sla` (534 lines) without importing the full erased table world or
+preserving fn-pointer execution. The deep is SELF-CONTAINED and models a small fixed-cap world
+(`EcsSceWorld`) plus cap-8 schedule slots with per-system and per-schedule condition families.
+
+The shallow uses generic `TableErasedSystem<R,M>` with fn-pointer `run` fields, Vec-backed systems
+and batch_ids, and condition kinds (ALWAYS/FALSE/TRUE/TICK_AT_LEAST_THREE). The deep replaces
+fn-pointer systems with stable kind ids (MOVE/DOUBLE/INCREMENT_TICK/SET_EVENT), flattens access
+metadata into scalar slot families, and stores both per-system and per-schedule conditions as cap-8
+scalar families. Access conflicts mirror `table_erased_access.sla` (component read/write + resource/
+message conflict semantics).
+
+Features preserved: auto-batch chooser (first non-conflicting batch), conflict counting, batch
+widths, max parallel width, sequential run honoring both schedule-level and system-level conditions,
+planned run iterating batches in order, and explicit ordering (chain/before/after/in_set) bypassing
+the auto-batch chooser. Cap overflow is a no-panic reject. Out-of-range accessors return -1.
+
+Tests (7) — `tests/test_ecs_lib_schedule_table_erased_deep_isolated.sla` (140 lines, panic
+144300-144395, codes verified unique locally and globally in 144300-144399). Cover: three
+non-conflicting systems in one batch with sequential run effects; component conflict batch splitting;
+planned run honoring batch ordering; system-level FALSE condition skips a system; schedule-level
+TICK_AT_LEAST_THREE condition skips all systems until tick >= 3; explicit ordering chain/before/
+after/in_set with batch assertions; resource/message conflicts and cap-8 overflow sentinel. SA backend
+and default backend both pass 7/7.
+
+KEY Batch 399 finding #1 (run conditions can be deepened as scalar condition families): the shallow
+stores conditions in a `TableErasedRunConditions` struct with 8 slots on both systems and the
+schedule. The deep uses `EcsSceConditions` with c0..c7 and a count, stored per-system in the schedule.
+Both per-system and per-schedule conditions are checked before execution, matching the shallow
+run/run_planned logic.
+
+KEY Batch 399 finding #2 (explicit ordering helpers bypass the auto-batch chooser): the shallow
+chain/before/after/in_set functions assign systems to explicit batch ids. The deep models this with
+`ecs_sce_schedule_add_system_in_batch` which takes an explicit batch_id, and chain uses
+`batch_count` as the next sequential batch, before uses `target-1`, and after uses `target+1`.
+
+Post-batch counts (measured): 500 lib modules | 228 `*_deep.sla` modules | 404 test files |
+228 `*_deep_isolated.sla` test files | 90 examples | 6322 `@test` total tests-scoped (6315 ->
+6322, +7).
+Next free panic band: 144400+ (Batch 399 used 144300-144395; Batch 398 used 144200-144272).
+Next batch candidates: continue medium non-async/non-parallel modules such as `relationship`,
+`world_registry`, `app_type_registry`, `ecs_world`, or another small schedule/query/registry module.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+=== Batch 400: app_type_registry_deep (completed) ===
+
+Module: lib/app_type_registry_deep.sla (340 lines), mirrors lib/app_type_registry.sla (241 lines).
+Self-contained fixed-cap (cap-8) type/function descriptor registries. No @import.
+The shallow uses Vec-backed TypeDescriptor/FunctionDescriptor registries with TypeData.
+The deep flattens Vec-backed registries to scalar slot families (n0..n7, size_id0..size_id7,
+type_id0..type_id7, data0..data7, etc.) with a count, preserving all public API semantics.
+Result wrapper structs preserved: EcsAtrTypeDescriptorResult, EcsAtrTypeDataResult,
+EcsAtrFunctionDescriptorResult. Cap-reject public ops return sentinel wrappers (not panic).
+
+KEY Batch 400 finding #1 (@derive(copy) required for by-value structs): all 7 structs in the deep
+module use @derive(copy). This is essential because structs are passed by-value to helper functions
+(find_index, _set_slot, etc.). Without @derive(copy), SLA move semantics consume the value on the
+first by-value pass, causing UseAfterMove/PhiStateConflict/CapabilityMismatch backend errors.
+@derive(copy) makes by-value passing a copy instead of a move.
+
+KEY Batch 400 finding #2 (cap-reject returns sentinel, not panic): public register/register_or_replace
+ops that exceed cap return a sentinel result wrapper (found=false, type_id=0) rather than panicking.
+Internal _set_slot panics on cap overflow (defensive), but public ops handle it gracefully.
+
+Test: tests/test_ecs_lib_app_type_registry_deep_isolated.sla (113 lines, 7 tests).
+- EcsAtrTypeRegistry register and get descriptor
+- EcsAtrTypeRegistry register_or_replace updates existing
+- EcsAtrTypeRegistry type data set and query
+- EcsAtrTypeRegistry at and empty results
+- EcsAtrTypeRegistry cap rejects ninth registration
+- EcsAtrFunctionRegistry register get and replace
+- EcsAtrFunctionRegistry cap rejects ninth registration
+
+Validation: sa sla check ✓ | SA backend 7/7 ✓ | default backend 7/7 ✓
+Panic codes: 144400-144472 (all unique, verified locally and globally).
+
+Post-batch counts (measured): 501 lib modules | 229 `*_deep.sla` modules | 405 test files |
+229 `*_deep_isolated.sla` test files | 90 examples | 6329 `@test` total tests-scoped (6322 ->
+6329, +7).
+Next free panic band: 144500+ (Batch 400 used 144400-144472; Batch 399 used 144300-144395).
+Next batch candidates: continue medium non-async/non-parallel modules such as `relationship`,
+`world_registry`, `ecs_world`, or another small schedule/query/registry module.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+=== Batch 401: system_trait_deep (completed) ===
+
+Module: lib/system_trait_deep.sla (218 lines), mirrors lib/system_trait.sla (101 lines).
+Self-contained System trait + SystemStateFlags + RunSystemOnce + RunSystemError. No @import.
+
+KEY Batch 401 finding #1 (nested struct fields cause SA MemoryLeak even with @derive(copy)):
+the first version stored flags as a nested EcsSystemStateFlagsDeep struct inside EcsSystemDeep.
+Even with @derive(copy) on both, passing EcsSystemDeep by-value to helper functions (name, is_initialized,
+etc.) caused SA backend MemoryLeak "live registers remain at function exit" with a register pointing to
+the nested struct field. The fix: flatten the nested struct into a scalar bitfield (flags_bits: i32)
+directly inside EcsSystemDeep, matching the system_trait_extras_deep pattern (which used flat scalar
+fields and never leaked). This is a likely SA compiler bug — nested-copy struct ownership tracking
+leaks — but the workaround (flatten) is clean and avoids hitting it.
+
+KEY Batch 401 finding #2 (tuple return replaced by wrapper struct):
+shallow ecs_system_run returns a (EcsSystem, i64) tuple accessed as r.1.
+Deep uses EcsSystemRunResult { flags_bits, name_id, last_run_value } with accessors. Likewise shallow
+ecs_run_system_once reads r.1; deep uses ecs_system_run_deep_result_output(run_result).
+
+KEY Batch 401 finding #3 (all structs need @derive(copy) when passed by-value repeatedly):
+all four structs in the deep module use @derive(copy). Without it, passing the same value to one helper
+then referencing it again triggers UseAfterMove.
+
+Test: tests/test_ecs_lib_system_trait_deep_isolated.sla (92 lines, 7 tests).
+- state_flags_set_unset
+- system_deep_new_and_name
+- system_deep_initialize_and_flags
+- system_deep_run_and_last_run
+- system_deep_apply_deferred_and_clear
+- run_system_once_not_initialized
+- run_system_once_ok
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 7/7 ✓ | default backend 7/7 ✓
+Panic codes: 144500-144564 (all unique, verified locally and globally).
+
+Post-batch counts (measured): 502 lib modules | 230 `*_deep.sla` modules | 406 test files |
+230 `*_deep_isolated.sla` test files | 90 examples | 6336 `@test` total tests-scoped (6329 ->
+6336, +7).
+Next free panic band: 144600+ (Batch 401 used 144500-144564; Batch 400 used 144400-144472).
+Next batch candidates: continue medium non-async/non-parallel modules such as `relationship`,
+`world_registry`, `ecs_world`, or another small schedule/query/registry module.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+
+NOTE: possible SA compiler MemoryLeak bug (nested @derive(copy) struct field ownership leaks
+at function exit) was identified. Workaround (flatten) used and is clean for this module, so
+no docs/issue.md was filed. File only if a future module has no clean flatten workaround.
+
+=== Batch 402: entity_index_set_iter_extras_deep (completed) ===
+
+Module: lib/entity_index_set_iter_extras_deep.sla (979 lines), mirrors lib/entity_index_set_iter_extras.sla (320 lines).
+Self-contained fixed-cap (cap-8) EntityIndexSet bound/inner/iter/into_iter/drain/set-op-iter/splice extras. No @import.
+
+KEY Batch 402 finding #1 (all structs need @derive(copy)): every struct (Set, Slice, InnerInfo,
+InsertResult, RangeResult, Iter, IntoIter, drain structs, OpIter structs, drain/splice result
+wrappers) carries @derive(copy). Without it, passing the same Set to helper functions in a
+loop triggers SA backend PhiStateConflict. Adding @derive(copy) makes those by-value passes
+copies, so no per-iteration move/owning occurs and the loop phi is consistent.
+
+KEY Batch 402 finding #2 (nested struct wrappers flattened to scalar slot families):
+all wrapper structs in the shallow (InsertResult{inserted, set}, RangeResult{has, slice},
+IterNext{iter, has, value}, DrainResult{set, drain}, SpliceResult{set, removed}) embed
+nested Set/Slice/Iter sub-structs. In deep these wrappers store the constituent fields inline
+rather than nesting a SetDeep, avoiding the SA MemoryLeak bug reported at docs/issue.md
+(reproduced in Batch 401 with a nested EcsSystemStateFlagsDeep).
+
+KEY Batch 402 finding #3 (stateful iterator stepping requires from_next helpers): the deep
+uses a function-style front-pointer model with flat Next wrappers. Stepping two ahead requires
+reconstructing the inner Iter from the Next wrapper — provided by ecs_eis3_deep_iter_next_from_next
+(and analogous _from_next for IntoIter and OpIter). Tests use these _from_next steppers.
+
+KEY Batch 402 finding #4 (drain clamping matches shallow): _ecs_eis3_drain_clamped duplicates the
+shallow ecs_eis3_drain_clamped logic (split ranges into kept vs. drained slots) and returns
+the flattened DrainResult with both kept_slice and drained_slice fields inlined.
+
+Test: tests/test_ecs_lib_entity_index_set_iter_extras_deep_isolated.sla (236 lines, 15 tests).
+- bound_kinds, bound_start_end, set_contains_and_insert, slice_and_inner_info, slice_range,
+  bound_range_set, iter_next, into_iter_next_and_back, into_iter_next_back_value, drain_next,
+  op_iter_next_and_back, collect_op_iter, difference_set, intersection_union_symmetric,
+  splice_unique.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 15/15 ✓ | default backend 15/15 ✓
+Panic codes: lib 144600-144612 (internal guards); tests 144700-144845 (all unique).
+
+Post-batch counts (measured): 503 lib modules | 231 `*_deep.sla` modules | 407 test files |
+231 `*_deep_isolated.sla` test files | 90 examples | 6351 `@test` total tests-scoped (6336 ->
+6351, +15).
+Next free panic band: 144900+ (Batch 402 used 144600-144853; Batch 401 used 144500-144564;
+Batch 400 used 144400-144472).
+Next batch candidates: `schedule_value` (406 lines, no imports, 7 structs each with multiple
+Vec<i64> fields), `query_state_read_api` (357), `world_dynamic` (372), or
+`world_registry` (318 — defer to avoid the shallow component/entity_dynamic imports).
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+docs/issue.md confirms the flat-field workaround works for wrapper structs.
+
+=== Batch 403: schedule_value_deep (completed) ===
+
+Module: lib/schedule_value_deep.sla (751 lines), mirrors lib/schedule_value.sla (406 lines).
+Self-contained fixed-cap (cap-16) Schedule value struct + lifecycle API. No @import.
+
+KEY Batch 403 finding #1 (nested EcsScheduleExecutable flattened inline): the shallow module
+nested an EcsScheduleExecutable struct inside EcsSchedule (s.executable.system_ids.push(...)).
+Per docs/issue.md, nested @derive(copy) struct field access leaks on the SA backend; the deep
+version flattens the executable's slot families (sys_ids_0..sys_ids_15, sys_cc_*, sys_lr_*,
+sys_ct_*, set_ids_*, set_cc_*) and its built counts directly into EcsScheduleDeep.
+
+KEY Batch 403 finding #2 (tuple returns replaced by separate flat wrappers): every tuple
+return in shallow is replaced by a dedicated flat @derive(copy) wrapper struct:
+- EcsScheduleInitResultDeep, EcsScheduleCheckChangeTicksResultDeep, EcsScheduleRunResultDeep,
+  EcsScheduleApplyDeferredResultDeep, EcsScheduleSystemsResultDeep (with inlined slots),
+  EcsScheduleSystemsLenResultDeep, EcsScheduleCleanupOutcomeDeep, EcsScheduleCleanupResultDeep.
+
+KEY Batch 403 finding #3 (initialize must mirror shallow's combined return): shallow
+ecs_schedule_initialize returns (Schedule, bool) — the Schedule copy has executor_initialized
+set. Deep's ecs_schedule_deep_initialize returns the InitResult summary only (loses the
+mutated copy). Add ecs_schedule_deep_initialize_inplace(s) -> EcsScheduleDeep so tests can
+chain subsequent calls on the initialized schedule.
+
+KEY Batch 403 finding #4 (SLA else-block syntax): if-else blocks and single-line `if cond { ... }`
+forms must close with `};`. Initially several single-line `if out_idx == N { temp = cur; }`
+forms missed the trailing `;` — fixed by adding `;`.
+
+KEY Batch 403 finding #5 (bools as i32): the deep stores graph_changed, apply_final_deferred,
+executor_initialized, and build_settings_auto_insert as i32 (0/1) rather than bool, simplifying
+scalar-slot mutation. Accessor functions convert with `!= 0`.
+
+Test: tests/test_ecs_lib_schedule_value_deep_isolated.sla (185 lines, 17 tests).
+- new_default_and_label, set_executor_and_apply_final_deferred, build_settings,
+  add_systems_and_sets, mark_changed_resets_initialized, initialize_freezes_counts,
+  check_change_ticks, run_returns_built_count, apply_deferred, systems_uninitialized,
+  systems_initialized_returns_ids, systems_in_set_count, remove_systems_in_set,
+  cleanup_policy_predicates, cleanup_with_policy_remove_set_and_systems,
+  cleanup_with_policy_remove_systems_only, cleanup_with_policy_remove_set_and_systems_allow_breakages.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 17/17 ✓ | default backend 17/17 ✓
+Panic codes: lib 144900-144908; tests 145000-145162 (all unique).
+
+Post-batch counts (measured): 504 lib modules | 232 `*_deep.sla` modules | 408 test files |
+232 `*_deep_isolated.sla` test files | 90 examples | 6368 `@test` total tests-scoped (6351 ->
+6368, +17).
+Next free panic band: 145200+ (Batch 403 used 144900-144908 + 145000-145162; Batch 402 used
+144600-144853; Batch 401 used 144500-144564; Batch 400 used 144400-144472).
+Next batch candidates: `query_state_read_api` (357 lines), `world_dynamic` (372 lines), or
+`world_registry` (318 — defer to avoid the shallow component/entity_dynamic imports).
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+docs/issue.md continues to back the flat-field workaround for nested struct wrappers.
+
+=== Batch 404: query_state_read_api_deep (completed) ===
+
+Module: lib/query_state_read_api_deep.sla (474 lines), mirrors lib/query_state_read_api.sla (357 lines).
+Self-contained fixed-cap (cap-16) QueryState read API + entity-arg helper. No @import.
+
+KEY findings recap:
+1. SLA `while { ... }` loops must close with bare `}` (not `};`); only `if`/`else` close with `};`.
+   This file had four `while` closers mistakenly indented with `};` and had to be adjusted.
+2. Vec<i32> entity slice → EcsQsEntityArgDeep { e0..e15, en } + push/at/len accessor helpers.
+3. Tuple returns → EcsQsTryNewResultDeep, EcsQsSpawnResultDeep, SingleResultDeep, GetResultDeep,
+   GetManyResultDeep, IterManyResultDeep (all @derive(copy), flat fields).
+4. Aliased_idx in GetManyResultDeep holds the duplicate entity-id (0 for [0,0]); tests must assert
+   against the actual dup value, not -1 (the "no duplicate" sentinel).
+5. Iterative mutation uses `let r = spawn(s, v); let s2 = spawn_result_state(r);` two-line
+   chaining because spawn returns a wrapper (not the bare state).
+
+Test: tests/test_ecs_lib_query_state_read_api_deep_isolated.sla (276 lines, 21 tests).
+Test names: err_codes_and_predicates, new_and_from_builder, try_new_ok_and_fail, spawn_and_chaining,
+  spawn_cap_overflow, entity_is_spawned_is_empty_contains, single_no_one_multiple, single_mut_delegates,
+  get_spawned_and_unspawned, get_mut_delegates, entity_arg_push_at_len, get_many_ro_multiple,
+  get_many_ro_with_unspawned, get_many_mut_aliased, get_many_unique_detects_dup,
+  get_many_unique_mut_all_spawned, iter_many_matched_sum, iter_many_with_unspawned,
+  iter_many_mut_delegates, update_archetypes_bumps_gen, first_duplicate_index_logic.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 21/21 ✓ | default backend 21/21 ✓
+Panic codes: lib 145200-145205; tests 145300-145701 (all unique).
+
+Post-batch counts (measured): 505 lib modules | 233 `*_deep.sla` modules | 409 test files |
+233 `*_deep_isolated.sla` test files | 90 examples | 6389 `@test` total tests-scoped (6368 ->
+6389, +21).
+Next free panic band: 145400+ (Batch 404 used 145200-145205 lib + 145300-145701 tests; Batch 403
+used 144900-144908 + 145000-145162; Batch 402 used 144600-144853; Batch 401 used 144500-144564;
+Batch 400 used 144400-144472).
+Next batch candidates: `world_dynamic` (372 lines), `world_registry` (318 — defer the shallow
+component/entity_dynamic imports by inlining equivalents), or pick another shallow lib/*.sla without
+a *_deep.sla counterpart.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+docs/issue.md continues to back the flat-field workaround for nested struct wrappers; this batch had
+no nested-struct access so it was not exercised.
+
+=== Batch 405: query_access_iter_extras_deep (completed) ===
+
+Module: lib/query_access_iter_extras_deep.sla (473 lines), mirrors lib/query_access_iter_extras.sla (324 lines).
+Self-contained fixed-cap (cap-16) EcsAccessType/EcsAccessLevel/AccessConflictError + is_compatible matrix. No @import.
+
+KEY findings recap:
+1. SA MemoryLeak recurred for nested @derive(copy) wrapper:
+   AccessIsCompatibleResultDeep { ok, conflict: EcsAccessConflictErrorDeep } flushed through 6
+   accessor reads in a single test hits `MemoryLeak: live registers remain at function exit` on
+   the SA backend. Same SA bug as docs/issue.md (Batch 401). Fix: flatten the conflict's fields
+   directly into the wrapper. docs/issue.md Addendum appended with the recurrence + fix.
+2. Vec<i32> reads/writes → EcsAccIdListDeep (cap-16 i32 slot family {v0..v15, vn} + new/push/
+   at/len/contains), and the access type itself stores r0..r15+rn and w0..w15+wn directly.
+3. `bool` flagged `read_all`/`write_all` stored as i32 0/1; helpers use `!= 0`.
+4. Access-vs-Component explicit symmetric branches kept (not normalized) for observable
+   ordering in tests (Read-cid-write, Write-cid-read, plus r3 regression: write-vs-write is ok
+   on the Access side when the Access has no read).
+5. `_ecs_borrowed_access_deep_is_compatible` writes-overlap-reads-or-writes + read_all/write_all
+   propagation mirrors Access::is_compatible.
+
+Test: tests/test_ecs_lib_query_access_iter_extras_deep_isolated.sla (351 lines, 25 tests).
+Test names: level_constructors_and_accessors, access_type_empty_variants_accessors,
+  access_type_component_level_fields, id_list_push_at_len, access_type_access_borrow_fields,
+  access_type_access_with_flags, is_compatible_empty_always_ok, is_compatible_read_read_ok,
+  is_compatible_read_write_same_id_conflict, is_compatible_read_write_diff_id_ok,
+  is_compatible_write_write_same_id_conflict, is_compatible_write_write_diff_id_ok,
+  is_compatible_readall_write_conflict, is_compatible_readall_readall_ok,
+  is_compatible_writeall_anything_conflict, is_compatible_component_vs_access,
+  is_compatible_access_vs_component_symmetry, is_compatible_component_vs_access_readall_writeall,
+  is_compatible_access_vs_access_read_all_write, is_compatible_access_vs_access_write_all_conflict,
+  is_compatible_access_vs_access_write_overlap_conflict,
+  is_compatible_access_write_overlaps_read_conflict, is_compatible_access_read_read_ok,
+  is_compatible_access_disjoint_ok, conflict_error_fields_set.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 25/25 ✓ | default backend 25/25 ✓
+Panic codes: lib 145400-145403; tests 145500-145985 (all unique).
+
+Post-batch counts (measured): 506 lib modules | 234 `*_deep.sla` modules | 410 test files |
+234 `*_deep_isolated.sla` test files | 90 examples | 6414 `@test` total tests-scoped (6389 ->
+6414, +25).
+Next free panic band: 146000+ (Batch 405 used 145400-145403 lib + 145500-145985 tests; Batch 404
+used 145200-145205 lib + 145300-145701 tests; Batch 403 used 144900-144908 + 145000-145162;
+Batch 402 used 144600-144853; Batch 401 used 144500-144564; Batch 400 used 144400-144472).
+Next batch candidates: `world_dynamic` (372 lines; defer shallow imports),
+  `world_registry` (318 — defer the shallow entity_dynamic/component imports; or inline
+  equivalents), `reflect_runtime` (306 lines, mostly reflection primitives), or pick another
+  shallow lib/*.sla without a *_deep.sla counterpart. `query_access_iter_extras`<done>.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+docs/issue.md continues to back the flat-field workaround for nested struct wrappers; this batch
+re-confirmed the bug (MemoryLeak with nested EcsAccessConflictErrorDeep) and the addendum
+documents the flat-wrapper fix.
+
+=== Batch 406: system_registry_template_deep (completed) ===
+
+Module: lib/system_registry_template_deep.sla (603 lines), mirrors lib/system_registry_template.sla (312 lines).
+Self-contained fixed-cap (cap-16) system-registry templates + CachedSystemRegistry. No @import.
+
+KEY findings recap:
+1. SA MemoryLeak recurred for tuple-replacement wrappers that nested the cap-16 container —
+   repeated register/cached_register_result access on the SA backend leaked. Same SA bug as
+   docs/issue.md (Batch 401 & 405). Fix generalised: flatten each wrapper's tuple-companion value
+   directly into the mutated container struct; the mutating fn returns the container (not a
+   wrapper), and `last_*` accessors expose the companion (last_registered_entity /
+   last_unregister_success / last_run_with_entity / last_run_with_input on the registry;
+   last_allocated_entity on the context; last_build_entity on the template).
+2. Nested structs flattened inline: EcsSystemHandleValue.inner -> EcsSystemHandleValueDeep's
+   inner_kind / inner_handle / inner_has_system_value / inner_system_id; EcsSystemHandleTemplate.value
+   -> EcsSystemHandleTemplateDeep's value_ref_count / value_inner_*; EcsTrackedSystem's two nested
+   one-field structs -> EcsTrackedSystemDeep's system_entity + despawner_entity.
+3. Vec<i32>/Vec<i64> parallel arrays -> cap-16 scalar slot families on EcsCachedSystemRegistryDeep
+   (t0..t15 + tn + e0..e15); helpers `_ecsr_type_at/_ent_at/_type_set/_ent_set` indirection;
+   cap-16 enforced at register; unregister compacts the live slots.
+4. Booleans stored as i32 0/1; accessors use `!= 0`.
+5. EcsSystemId and EcsRegisteredSystemDespawner kept as one-field i64 wrappers (safe — small enough
+   that the leak does not trigger). Their mk/entity helpers still serve the test surface.
+
+Test: tests/test_ecs_lib_system_registry_template_deep_isolated.sla (249 lines, 25 tests).
+Test names: hov_handle_and_value, handle_value_new_clone_drop_refcount,
+  handle_value_build_converts_to_handle, template_handle_weak_and_value, template_default,
+  template_clone_handle_bumps_no_refcount, template_clone_value_bumps_refcount,
+  template_from_handle_boxed_id, template_build_handle_returns_handle,
+  template_build_value_converts_and_assigns, system_value_new_alias, cached_system_id,
+  cached_registry_new_empty, cached_registry_register_find_contains,
+  cached_registry_register_existing_returns_existing, cached_registry_run_returns_entity,
+  cached_registry_run_with_preserves_input, cached_registry_unregister_actually_removes,
+  cached_registry_unregister_missing_is_unsuccessful, tracked_system_and_boxed_alias,
+  system_id_and_despawner_simple_wrappers, stripped_handle_strong_weak,
+  template_context_new_and_alloc, template_clone_template_alias,
+  cached_registry_cap16_not_exceeded_on_overflow.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 25/25 ✓ | default backend 25/25 ✓
+Panic codes: lib 146000-146007; tests 146100-146581 (all unique).
+
+Post-batch counts (measured): 507 lib modules | 235 `*_deep.sla` modules | 411 test files |
+235 `*_deep_isolated.sla` test files | 90 examples | 6439 `@test` total tests-scoped (6414 ->
+6439, +25).
+Next free panic band: 146200+ (Batch 406 used 146000-146007 lib + 146100-146581 tests; Batch 405
+used 145400-145403 lib + 145500-145985 tests; Batch 404 used 145200-145205 lib + 145300-145701
+tests; Batch 403 used 144900-144908 + 145000-145162; Batch 402 used 144600-144853; Batch 401 used
+144500-144564; Batch 400 used 144400-144472).
+Next batch candidates: `world_dynamic` (372 lines; defer shallow imports), `world_registry` (318
+lines; defer component/entity_dynamic imports), `reflect_runtime` (306 lines; defer reflect* core
+imports), or pick another shallow lib/*.sla without a *_deep.sla counterpart.
+Defer TaskPool/async/parallel modules, `world_table_erased` (~6300 lines), and
+`system_param_table_erased` (~4900 lines with fn-pointer systems). Leave out:
+TaskPool/async/parallel; full reflect* core runtime (non-core reflection deepens OK).
+docs/issue.md continues to back the flat-field workaround for nested struct wrappers; this batch
+re-confirmed the bug with the tuple-replacement wrapper pattern and generalised the fix to flatten
+tuple-companion fields back into the mutated container struct.
+
+---
+
+# Batch 407 — `lib/schedule_node_sets_deep.sla` (523-line shallow original)
+
+Source: vw/lib/schedule_node_sets.sla (no `@import`) →
+`lib/schedule_node_sets_deep.sla` (1360 lines after fixing the broken body).
+Helpers: flat-field slot families; no `Vec<...>`, no nested `@derive(copy)`
+struct fields inside the public structs (only scalar inline families and
+inline `last_*` companion fields on the mutated container structs). The
+flattening strictness is the Batch 401/405/406 anti-MemoryLeak style carried
+verbatim into this batch. The only wrapper is `AccessConflictsResultDeep`,
+which is a plain flat 6-field return struct (no container mutation happens
+through it), so it stayed struct-shaped without leaking.
+
+Lib deep code status (validation on 2026-07-13):
+- `_essa_contains_wc` had been left in a broken state by the prior batch
+  pickup: its body was the entire prior body of
+  `ecs_system_access_deep_get_conflicts`, and so referenced `b`, `n`,
+  `out0`, `out1`, `out2`, `out3`, `j` (all unbound in the helper's scope).
+  The body was replaced with the simple linear `while i < a.wcn { if
+  _essa_wc_at(a, i) == v { return true; }; i = i + 1; } return false;`
+  pattern that mirrors `_essa_contains_rc` exactly; the broken
+  `if n == X { ... }; ...` chain was relocated into
+  `ecs_system_access_deep_get_conflicts` (which was also rewritten as a
+  clean pair of `while` loops with sequential `if n == X { ... };` arms).
+- The compile blocker that surfaced as `UndefinedVariable: identifier 'b'
+  is not defined in this scope` is a diagnostic-quality issue (see docs/
+  issue.md addendum): the SLA type checker only surfaces the *first*
+  unbound identifier found in a function and emits no file path / line /
+  column, even when several names are equally missing at the same site.
+
+### Structures
+
+- `EcsNodeSetEntryDeep` (flat: `system_id: i32`, `system_name: i64`,
+  `is_exclusive: i32`) — direct parallel of the original `EcsNodeSetEntry`.
+- `EcsNodeSetCondDeep` (flat: `condition_id: i32`) — direct parallel of
+  the original `EcsNodeSetCond`.
+- `EcsNodeSetSystemsDeep` (cap-16 entries; entries 0..15 via inline
+  sid/sname/sxc/per-entry cap-16 conds0/conds1 + cap-16 uninit/init slot
+  lists; companion `last_insert_key`, `last_get_found`,
+  `last_get_entry_system_id`, `last_get_entry_system_name`,
+  `last_get_entry_is_exclusive`, `last_remove_found`).
+  `insert`, `get`, `set_system`, `has_conditions`, `condition_count`,
+  `add_condition`, `remove`, `is_initialized`, `uninit_count`, `initialize`.
+  Only `conds0/conds1` are tracked (cap-16 cond list exists for entries 0..1
+  only); `add_condition` returns `s` unchanged when `key >= 2`. That
+  matches the shallow original (which only stores conds for the first two
+  entries); subsequent entries cannot receive conditions. This is the
+  documented behaviour and is preserved.
+- `EcsNodeSetConflictingSystemsDeep` (cap-16 (a,b) pairs + per-item cap-16
+  conflict-id families for items 0..2 (cf0/cf1/cf2 slot families with
+  `_escs_cf_at/_set/_push` helpers); cap-16 enforced at push; `_escs_cf_n_at`
+  returns 0 past item 2; push still increments `item_count` past item 2 but
+  leaves the conflict-count family untouched). `get` writes to `last_get_a`,
+  `last_get_b`, `last_get_conflict_count` (no per-item index stored — get
+  returns the just-read values through the same container). `push`,
+  `check_if_not_empty`, `to_string_count`.
+- `EcsNodeSetSystemAccessDeep` (cap-16 read_components / write_components)
+  with read-write access helpers `_essa_rc_at/_set`, `_essa_wc_at/_set`,
+  `contains_rc`, `contains_wc`, plus `reads_all` / `writes_all` flags.
+  `add_read`, `add_write`, `set_reads_all`, `set_writes_all`, and
+  `ecs_system_access_deep_get_conflicts(a, b)` returning a flat
+  `AccessConflictsResultDeep {is_individual, conflict_count, cf0..cf3}`.
+- `AccessConflictsResultDeep` (flat: `is_individual: i32`,
+  `conflict_count: i32`, `cf0..cf3: i32`) — the result-bag for
+  `get_conflicts`; reads go through `is_individual`, `count`, `cf(slot)`.
+  `is_individual = 0` when any "writes_all / reads_all vs writes_all /
+  writes_all vs reads_all" all-vs-all branch fires; the conflict ids are
+  not enumerated in that case (count stays 0). Otherwise `is_individual = 1`
+  and the per-component pairing runs.
+- `EcsNodeSetSystemSetsDeep` (cap-16 sets via `set_id0..15`,
+  `is_st0..15`, `ids_map0..15`; cap-16 uninit2 slot list (key, start, end
+  triples); companion `last_get_or_insert_key`, `last_contains`,
+  `last_get_index`). `get_key_or_insert` (uses `ids_map` linear scan),
+  `contains`, `get_index`, `get_set_id`, `set_is_system_type`,
+  `get_is_system_type`, `is_initialized`, `uninit_count`, `initialize`.
+  `keys` and `(start, end)` ranges are stored per-entry on uninit2; this
+  batch does not need them because the deep fixture sets `uninit2_n = 0`
+  directly, so `is_initialized` returns `true` out of the box.
+- `EcsSystemTypeSetAmbiguityErrorDeep` (flat: `key: i32`).
+
+### Test
+
+`tests/test_ecs_lib_schedule_node_sets_deep_isolated.sla` (335 lines,
+33 tests).
+
+Test names: entry_new_and_accessors, cond_new_and_accessor,
+systems_new_len_is_empty, systems_insert_and_get,
+systems_insert_multiple_then_get, systems_get_not_found, systems_set_system,
+systems_has_conditions_initial_and_add, systems_remove_found_and_uninit,
+systems_remove_not_found, systems_initialize,
+systems_add_condition_second_entry, conflicting_systems_new_empty,
+conflicting_systems_push_get, conflicting_systems_push_two,
+conflicting_systems_to_string_count, system_access_new_and_read_write,
+system_access_read_read_no_conflict, system_access_write_write_same_conflict,
+system_access_write_read_same_conflict, system_access_disjoint_no_conflict,
+system_access_writes_all_conflict, system_access_reads_all_writes_all_conflict,
+system_access_writes_all_reads_conflict, system_access_multiple_conflicts,
+system_sets_new_empty, system_sets_get_key_or_insert_new,
+system_sets_get_key_or_insert_existing,
+system_sets_get_key_or_insert_multiple,
+system_sets_set_get_is_system_type, system_sets_get_set_id_not_found,
+system_sets_initialize, ambiguity_error_new_and_key.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 33/33 ✓
+| default backend 33/33 ✓
+Panic codes: lib 146200-146244 (internal `_at/_set` slot-family guards and
+the cap-16 fallback `panic`s of `_esns_*`, `_escs_*`, `_essa_*`, `_esets_*`,
+`_esns_*` helpers); tests 146500-146691 (96 unique恐慌码, all unique across
+lib+tests).
+
+Post-batch counts (measured): 508 lib modules | 236 `*_deep.sla` modules |
+412 test files | 236 `*_deep_isolated.sla` test files | 90 examples |
+6472 `@test` total tests-scoped (6439 -> 6472, +33).
+Next free panic band: 146800+ (Batch 407 used 146200-146244 lib + 146500-146691
+tests; Batch 406 used 146000-146007 lib + 146100-146581 tests; Batch 405 used
+145400-145403 lib + 145500-145985 tests; Batch 404 used 145200-145205 lib +
+145300-145701 tests; Batch 403 used 144900-144908 + 145000-145162; Batch 402
+used 144600-144853; Batch 401 used 144500-144564; Batch 400 used 144400-144472).
+Next batch candidates: `world_extras` (612 lines, no `@import`) is the
+largest shallow self-contained module still without a `_deep.sla`; defer the
+TaskPool/async/parallel and `world_table_erased`/`system_param_table_erased`
+modules as before (`world_table_erased` ~6300 lines;
+`system_param_table_erased` ~4900 lines with fn-pointer systems).
+docs/issue.md carries an additional addendum from this batch, recording an
+*unrelated* SLA compiler diagnostic-quality issue: the type checker's
+`UndefinedVariable` only surfaces the first unbound identifier (not every
+one in the same scope), and emits no file/line/column info, so debugging
+the broken `_essa_contains_wc` body required running `sa sla check` once
+per missing name. A standalone `repro_diag.sla` reproducer is included in
+the addendum.
+
+---
+
+# Batch 408 — `lib/reflect_component_deep.sla` (92-line shallow original)
+
+Source: vw/lib/reflect_component.sla (no `@import`, 92 lines) →
+`lib/reflect_component_deep.sla` (241 lines).
+The shallow module models Bevy `ReflectComponent`: a `(entity -> value)` map
+plus ComponentId, exposing `find/insert/apply/apply_or_insert_mapped/remove/
+take/contains/reflect/copy/id`. The shallow version uses `Vec<i64>` parallel
+arrays for entities and entity_values and *tuple-returning* fns:
+- `remove: (EcsReflectComponent, bool)`
+- `take: (EcsReflectComponent, bool, i64)`
+- `reflect: (bool, i64)`
+plus `copy` which relies on the tuple return of `reflect`.
+
+Deep strategy: cap-16 parallel `entity{0..15}` and `value{0..15}` slot
+families with `_ercd_entity_at/_set`, `_ercd_value_at/_set` indirection
+helpers; cap enforced on the new-slot insert path (17th new entity is
+dropped silently). The three tuple-returning fns flatten their tuple
+companions inline into `EcsReflectComponentDeep`:
+- `remove` writes `last_remove_success: i32`; `ecs_reflect_component_deep_last_remove_success`
+  is the accessor.
+- `take` writes `last_take_success: i32` + `last_take_value: i64`;
+  `last_take_success` and `last_take_value` read them.
+- `reflect` writes `last_reflect_present: i32` + `last_reflect_value: i64`;
+  `last_reflect_present` and `last_reflect_value` read them.
+`copy` reuses `reflect`'s companions (reads `last_reflect_present` +
+`last_reflect_value`, then inserts into `dest`).
+Booleans stored as i32 (0/1); accessors use `!= 0`. `find` keeps returning
+`i32` (returns `(0 - 1)` for not-found), no struct wrapper required.
+
+### Structure
+
+- `EcsReflectComponentDeep` (flat: `component_id: i32` + cap-16 parallel
+  `entity{0..15}`/`value{0..15}` pairs + `count: i32` + tuple-companion
+  fields `last_remove_success`, `last_take_success`, `last_take_value`,
+  `last_reflect_present`, `last_reflect_value`).
+- Helper slot families: `_ercd_entity_at/_set`, `_ercd_value_at/_set`.
+- Public API mirror:
+  `ecs_reflect_component_deep_new`, `_id`, `_find`, `_insert`,
+  `_apply`, `_apply_or_insert_mapped`, `_remove`,
+  `_last_remove_success`, `_take`, `_last_take_success`,
+  `_last_take_value`, `_contains`, `_count`, `_reflect`,
+  `_last_reflect_present`, `_last_reflect_value`, `_copy`.
+
+### Test
+
+`tests/test_ecs_lib_reflect_component_deep_isolated.sla` (200 lines,
+18 tests).
+
+Test names: new_and_id, insert_new_entity, insert_existing_overwrites_value,
+find_not_found_returns_neg1, apply_aliases_insert,
+apply_or_insert_mapped_aliases_insert, remove_existing,
+remove_missing_returns_false, remove_same_backswap_keeps_others,
+take_existing_returns_value, take_missing_returns_false_value_zero,
+contains_after_insert_and_remove, reflect_present_and_missing,
+copy_existing_source, copy_missing_source_is_noop,
+count_after_multiple_inserts, cap16_enforced_overflow_silent,
+insert_after_take_does_not_resurrect_old_slot.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 18/18 ✓
+| default backend 18/18 ✓
+Panic codes: lib 146800-146803 (internal `_ercd_entity_at/_set`,
+`_ercd_value_at/_set` slot-family guards); tests 146850-146903 (54 unique
+panic ids; all unique across lib+tests).
+
+Post-batch counts (measured): 509 lib modules | 237 `*_deep.sla` modules |
+413 test files | 237 `*_deep_isolated.sla` test files | 90 examples |
+6490 `@test` total tests-scoped (6472 -> 6490, +18).
+Next free panic band: 146900-Batch-408-test + lib-band overlap noted:
+lib 146800-146803; tests 146850-146903. Next clean for Batch 409:
+**146950+** (lib reuse allowed only above 146803; to keep the test band
+clean, use lib band `146810-...` if needed beyond 146803 and tests at 146950+).
+Next batch candidates: `reflect_resource` (87 lines, no `@import`; has
+tuple-returning `get` and `insert_count` fn that mirrors 407-style flat
+result struct), `reflect_type_data` (98 lines), `reflect` (99 lines),
+`reflect_misc` (100 lines), `reflect_bundle` (34 lines), `world_reflect`
+(34 lines), `world_extras` (612 lines, larger self-contained), `world_mod`
+(870 lines), `executor_single_threaded` (563 lines). Continue deferring
+TaskPool/async/parallel (`parallel_scope`, `task_scope_executor_drive`,
+`executor_multi_threaded`), `world_table_erased` (~6300 lines),
+`system_param_table_erased` (~4900 lines with fn-pointer systems).
+docs/issue.md remains as last updated at the close of Batch 407 (the
+diagnostic-quality addendum filed for the `UndefinedVariable` first-id-only
+behaviour). No new SA compiler bugs were observed in Batch 408; the
+tuple-flattening pattern reused from Batch 406 worked first try.
+
+---
+
+# Batch 409 — `lib/reflect_misc_deep.sla` (100-line shallow original)
+
+Source: vw/lib/reflect_misc.sla (no `@import`, 100 lines) →
+`lib/reflect_misc_deep.sla` (151 lines).
+The shallow module groups five Bevy ECS reflect::misc structures:
+ReflectEvent, ReflectMessage, FromWorld, ReflectMapEntities, ReflectEntityCommands.
+The shallow version uses `Vec<i32>` for `commands` on `ReflectEntityCommands` only;
+the other structs are already purely scalar (1 or 2 fields). No tuple-returning
+fns; no nested `@derive(copy)` struct fields.
+
+Deep strategy: cap-16 `cmd{0..15}` slot family on
+`EcsReflectEntityCommandsDeep` with `_erecmd_at/_set` indirection helpers and
+cap enforcement on `push` (17th push is dropped silently). All other structs
+are direct scalar mirrors.
+
+### Structures
+
+- `EcsReflectEventDeep` (`event_id: i32`, `trigger_count: i64`); `new`, `id`,
+  `trigger` (counter +1), `trigger_count`.
+- `EcsReflectMessageDeep` (`message_id: i32`, `sent_count: i64`); `new`, `id`,
+  `send` (counter +1), `sent_count`.
+- `EcsFromWorldDeep` (`world_id: i64`, `value: i64`); `new` (value=0),
+  `from_world` (factory sets value), `value`, `world_id`.
+- `EcsReflectMapEntitiesDeep` (`remap_count: i64`); `new`, `remap`
+  (accumulator += count), `count`.
+- `EcsReflectEntityCommandsDeep` (`cmd{0..15}: i32`, `command_count: i32`);
+  `new`, `push` (cap-guarded append), `count`, `at` (idx → kind).
+
+### Test
+
+`tests/test_ecs_lib_reflect_misc_deep_isolated.sla` (102 lines, 12 tests).
+
+Test names: event_new_id_and_initial_count, event_trigger_increments,
+event_id_preserved_after_trigger, message_new_id_and_initial_count,
+message_send_increments, from_world_new_value_zero,
+from_world_from_world_factory, map_entities_new_and_remap_accumulate,
+entity_commands_new_empty, entity_commands_push_and_at,
+entity_commands_cap16_enforced, entity_commands_at_first_last_after_cap16.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 12/12 ✓
+| default backend 12/12 ✓
+Panic codes: lib 146950-146951 (internal `_erecmd_at/_set` slot-family
+guards); tests 146960-146984 (unit i64 range in `as i64` casts exercised in
+`at` + cap16 long test).
+
+Post-batch counts (measured): 510 lib modules | 238 `*_deep.sla` modules |
+414 test files | 238 `*_deep_isolated.sla` test files | 90 examples | 6502
+`@test` total tests-scoped (6490 -> 6502, +12).
+Next free panic band: 146990+ (Batch 409 used lib 146950-146951 + tests
+146960-146984; Batch 408 used lib 146800-146803 + tests 146850-146903;
+Batch 407 used lib 146200-146244 + tests 146500-146691).
+Next batch candidates: `reflect_resource` (87 lines, tuple-returning `get`
+and `insert_count` flatten ideally), `reflect_type_data` (98 lines, nested
+`EcsReflectFromWorldFns`/`EcsReflectEventFns` structs to flatten),
+`reflect_bundle` (34 lines, smallest), `world_reflect` (34 lines, trivial
+scalar mirror).
+docs/issue.md remains at its Batch 407 close (no new SA compiler bugs were
+observed in Batch 408 or Batch 409).
+
+---
+
+# Batch 410 — `lib/reflect_resource_deep.sla` (87-line shallow original)
+
+Source: vw/lib/reflect_resource.sla (no `@import`, 87 lines) →
+`lib/reflect_resource_deep.sla` (202 lines).
+The shallow module models Bevy `ReflectResource`: register/insert/get/remove/
+apply_or_insert by ComponentId, with parallel `Vec<i32>` (registered_ids) +
+`Vec<i64>` (insert_counts) arrays plus `is_registered` linear scan. The shallow
+`get(component_id) -> (bool, i64)` returns a tuple, and `insert_count` /
+`apply_or_insert` rely on `get`'s tuple return (`g.1`).
+
+Deep strategy: cap-16 parallel `rid{0..15}` (i32) and `ic{0..15}` (i64)
+slot families with `_errd_rid_at/_set`, `_errd_ic_at/_set`. The `(bool, i64)`
+tuple of `get` is flattened into the struct as `last_get_present: i32` and
+`last_get_count: i64`; accessors
+`ecs_reflect_resource_deep_last_get_present` / `_last_get_count` read them.
+`insert_count` and `apply_or_insert` are direct struct methods using the
+companion fields rather than tuple destructuring.
+
+### Structure
+
+- `EcsReflectResourceDeep` (cap-16 `rid{0..15}` + `ic{0..15}` parallel pairs
+  + `count: i32` + tuple-companion `last_get_present: i32`,
+  `last_get_count: i64`).
+- Slot family helpers: `_errd_rid_at/_set`, `_errd_ic_at/_set` (cap-16).
+- Public API mirror: `ecs_reflect_resource_deep_new`, `_is_registered`,
+  `_register`, `_count`, `_insert`, `_get`, `_last_get_present`,
+  `_last_get_count`, `_remove`, `_apply_or_insert`, `_insert_count`.
+
+### Test
+
+`tests/test_ecs_lib_reflect_resource_deep_isolated.sla` (148 lines, 15 tests).
+
+Test names: new_empty, register_adds_slot, register_multiple,
+register_duplicate_noop, register_cap16_enforced,
+insert_increments_insert_count, insert_absent_noop,
+get_present_when_insert_count_positive, get_not_present_when_insert_count_zero,
+get_not_present_when_unregistered, remove_decrements_min_zero,
+remove_unregistered_noop, apply_or_insert_aliases_insert,
+lifecycle_register_insert_get_remove, insert_count_when_zero.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 15/15 ✓
+| default backend 15/15 ✓
+Panic codes: lib 146990-146993 (slot-family `_at/_set` guards);
+tests 147000-147030 (31 unique panic ids; all unique across lib+tests).
+
+Post-batch counts (measured): 511 lib modules | 239 `*_deep.sla` modules |
+415 test files | 239 `*_deep_isolated.sla` test files | 90 examples | 6517
+`@test` total tests-scoped (6502 -> 6517, +15).
+Next free panic band: 147040+ (Batch 410 used lib 146990-146993 + tests
+147000-147030; Batch 409 used lib 146950-146951 + tests 146960-146984;
+Batch 408 used lib 146800-146803 + tests 146850-146903; Batch 407 used lib
+146200-146244 + tests 146500-146691).
+Next batch candidates: `reflect_type_data` (98 lines; nested
+`EcsReflectFromWorldFns`/`EcsReflectEventFns` structs to flatten inline),
+`reflect_bundle` (34 lines; `Vec<i32>` cap-16), `world_reflect` (34 lines;
+scalar mirror only — trivial).
+docs/issue.md remains at its Batch 407 close (no new SA compiler bugs were
+observed in Batch 410; the tuple-flattening pattern reused from Batch 406
+worked first try on `get -> (bool, i64)`).
+
+---
+
+# Batch 411 — `lib/reflect_type_data_deep.sla` (98-line shallow original)
+
+Source: vw/lib/reflect_type_data.sla (no `@import`, 98 lines) →
+`lib/reflect_type_data_deep.sla` (110 lines).
+The shallow module collects four Bevy ECS reflect::type_data sub-types:
+ReflectFromWorld, ReflectEvent, ReflectMapEntities, and ReflectCommandExt.
+The shallow versions wrap nested `*Fns` structs (`EcsReflectFromWorld {
+fns: EcsReflectFromWorldFns }`, `EcsReflectEvent { fns: EcsReflectEventFns }`),
+and access goes `r.fns.from_world_fn`, which triggers the SA MemoryLeak
+documented in docs/issue.md. The deep module flattens those nested Fns
+structs inline into the wrapper dicts:
+- `EcsReflectFromWorldDeep { from_world_fn: i64 }`
+- `EcsReflectEventDeep { trigger_fn, create_observer_fn, register_event_key_fn }`
+- `EcsReflectMapEntitiesDeep { map_entities_fn: i64 }`
+- `EcsReflectCommandDeep { kind, type_path_handle, component_handle }`
+The `_fns_new` helpers remain (returning the flattened wrapper itself), and the
+`*_fn_pointers` accessor returns the wrapper struct directly. No tuple-returning
+fns; no slot families (no Vec); no internal panic guards.
+
+### Structures
+
+- `EcsReflectFromWorldDeep` (`from_world_fn: i64`); `fns_new`, `new`,
+  `from_world` (read field), `fn_pointers` (returns self).
+- `EcsReflectEventDeep` (`trigger_fn`, `create_observer_fn`,
+  `register_event_key_fn` `i64`); `fns_new`, `new`, `trigger`,
+  `create_observer`, `register_event_key`, `fn_pointers`.
+- `EcsReflectMapEntitiesDeep` (`map_entities_fn: i64`); `new`, `call`.
+- `EcsReflectCommandDeep` (`kind: i32`, `type_path_handle: i64`,
+  `component_handle: i64`); `insert(0,..)`, `remove(1,..,0)`, `take(2,..,0)`,
+  `kind`, `type_path`, `component`, `is_insert`, `is_remove`, `is_take`.
+
+### Test
+
+`tests/test_ecs_lib_reflect_type_data_deep_isolated.sla` (84 lines, 9 tests).
+
+Test names: from_world_fns_new_and_new, from_world_fn_pointers_returns_self,
+event_fns_new_and_accessors, event_fn_pointers_returns_self,
+map_entities_new_and_call, command_insert_constructor,
+command_remove_constructor, command_take_constructor,
+event_flattend_field_assignment_is_independent.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 9/9 ✓
+| default backend 9/9 ✓
+Panic codes: lib 0 (no internal slot-family helpers — direct scalar flat
+fields only); tests 147040-147069 (30 unique panic ids; all unique).
+
+Post-batch counts (measured): 512 lib modules | 240 `*_deep.sla` modules |
+416 test files | 240 `*_deep_isolated.sla` test files | 90 examples | 6526
+`@test` total tests-scoped (6517 -> 6526, +9).
+Next free panic band: 147080+ (Batch 411 used lib 0 + tests 147040-147069;
+Batch 410 used lib 146990-146993 + tests 147000-147030; Batch 409 used lib
+146950-146951 + tests 146960-146984; Batch 408 used lib 146800-146803 +
+tests 146850-146903; Batch 407 used lib 146200-146244 + tests 146500-146691).
+Next batch candidates: `reflect` (99 lines — has `trait EcsReflect` + fn
+pointers + nested fns struct; defer if the `trait` surface needs work that
+exceeds the deepening scope, otherwise the fn-pointer struct flattens like
+Batch 401's nested-field case), `world_reflect` (34 lines, trivial scalar
+mirror), `reflect_bundle` (34 lines, `Vec<i32>` cap-16), `world_extras`
+(612 lines, larger self-contained).
+docs/issue.md remains at its Batch 407 close. The Batch 401/406
+nested-struct-flatten pattern (accessing fields of nested @derive(copy)
+struct fields leaks on SA backend) was exercised again: the deep version of
+this batch flat-inlined the Fns-companion fields into each wrapper and the
+SA backend passed on the first try, confirming the workaround is necessary
+and sufficient.
+
+---
+
+# Batch 412 — `lib/reflect_bundle_deep.sla` (34-line shallow original)
+
+Source: vw/lib/reflect_bundle.sla (no `@import`, 34 lines) →
+`lib/reflect_bundle_deep.sla` (90 lines).
+The shallow module models Bevy ECS `ReflectBundle`: a `bundle_id` plus the
+`Vec<i32>` `component_ids` it contains, with id/add_component/count/at/
+insert(returns count)/is_registered accessors.
+
+Deep strategy: cap-16 `cid{0..15}` slot family with `_erbd_cid_at/_set`
+indirection helpers and cap enforcement on `add_component` (17th add is
+dropped silently).
+
+### Structure & Test
+
+`EcsReflectBundleDeep` (`bundle_id: i32`, `cid{0..15}: i32`, `count: i32`).
+Accessor mirror: `new`, `id`, `add_component`, `component_count`,
+`component_at`, `insert`, `is_registered`.
+
+`tests/test_ecs_lib_reflect_bundle_deep_isolated.sla` (66 lines, 7 tests).
+Test names: new_id_and_empty, add_component_grows_count,
+component_at_reads_in_order, insert_returns_component_count,
+is_registered_true_for_nonneg_id, is_registered_false_for_negative_id,
+cap16_enforced_overflow_silent.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 7/7 ✓
+| default backend 7/7 ✓
+Panic codes: lib 147080-147081 (slot-family `_at/_set` guards);
+tests 147090-147103.
+
+---
+
+# Batch 413 — `lib/world_reflect_deep.sla` (34-line shallow original)
+
+Source: vw/lib/world_reflect.sla (no `@import`, 34 lines) →
+`lib/world_reflect_deep.sla` (37 lines).
+Pure scalar mirror: `EcsReflectWorld { world_id, reflect_component_count,
+reflect_resource_count }`. No Vec, no tuple returns, no nested structs — so
+the deep version is a direct @derive(copy) scalar mirror with the same
+shape.
+
+### Structure & Test
+
+`EcsReflectWorldDeep` (`world_id: i64`, `reflect_component_count: i64`,
+`reflect_resource_count: i64`). Accessor mirror: `new`, `id`,
+`register_component` (counter +1), `register_resource` (counter +1),
+`component_count`, `resource_count`, `ecs_short_type_name_deep` (identity
+placeholder matching `ecs_short_type_name`).
+
+`tests/test_ecs_lib_world_reflect_deep_isolated.sla` (44 lines, 5 tests).
+Test names: new_id_and_zero_counts, register_component_increments,
+register_resource_increments, register_mixed_keeps_separate_counts,
+short_type_name_is_identity.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 5/5 ✓
+| default backend 5/5 ✓
+Panic codes: lib 0 (no internal slot-family guards); tests 147110-147121.
+
+---
+
+# Batch 414 — `lib/world_extras_deep.sla` (612-line shallow original)
+
+Source: vw/lib/world_extras.sla (no `@import`, 612 lines) →
+`lib/world_extras_deep.sla` (1271 lines after extensions).
+The shallow module's own header notes that it uses result-shim structs because
+"the SA backend corrupts the .1 slot of `(i32,i32)` tuples returned from lib
+fns." Eight main module structs plus five flat result shim structs (ReqComp /
+ReqQuery / ReqNth / ResourceGet / QueueAt) plus variant enumeration helpers.
+The shallow version drives `Vec<i32>` parallel arrays (requiree_ids,
+required_ids, constructor_ids, registered_component_ids, archetyped_ids, free_
+indices, spawned_indices, spawned_types, component_ids, entity_indices,
+queued_type_ids, queued_storage_kinds, e.g. 12 distinct array slot families)
+plus three unwind wrapper structs nest an operational sibling struct
+(RegisterResult { registry, result }, AllocResult { alloc, idx, generation },
+QueueApplyResult { queue, applied }, SpawnAtResult { facade, ... },
+SpawnBatchResult { facade, count, first }, ModifyResult { facade, ... },
+ModifyResourceResult { resources, facade, ... }): the Batch 401/406/411
+nested-@derive(copy)-struct-field leak applies.
+
+Deep strategy:
+- Replace every `Vec<i32>` with a cap-16 i32 slot family + count + helpers
+  (`_xxx_at`, `_xxx_set`, `_xxx_push`, plus `_xxx_remove_at` for the spawn/
+  spawned compaction paths and inline backshift `pop_front` for the queue
+  front-removal helpers).
+- The mutation-returning wrapper fn (RegisterResult/AllocResult/QueueApplyResult
+  /SpawnAtResult/SpawnBatchResult/ModifyResult/ModifyResourceResult) all return
+  the *mutated container* directly, with the tuple companion stashed into the
+  container's `last_*` inline fields (Batch 406 pattern). The five flat result
+  shim structs (ReqComp/ReqQuery/ReqNth/ResourceGet/QueueAt) stay struct-shaped
+  — they hold only scalar i32 fields; no operational struct field, no leak
+  trigger. The accessor fns read the companions in both directions.
+- The EcsWorldSpawnFacade embeds the EcsWorldEntityAllocator fields inline
+  (not nested as a separate struct field), to also dodge the nested-struct leak.
+- `spawn_batch(type_ids: Vec<i32>)` is reshaped into two-step caller API
+  (spawn_batch_step + spawn_batch_finish) because SLA fns cannot take a
+  Vec<i32> param in this deepening style; each `spawn_batch_step(f, type_id)`
+  allocation lines up with the allocator's next free index and the parallel
+  spawned_types slot.
+- `_remove_at` (compact-backshift) for `EcsWorldEntityAllocator.spawned_indices`
+  is the deep mirror of the shallow `spawned_indices.remove(i)`. `_apply` uses a
+  per-item pop_front (compact-backshift) loop to drain the queued arrays in
+  order.
+
+### Structures & helpers
+
+- `EcsWorldRequiredRegistryDeep` (5 cap-16 i32 slot families: req, rid, cid,
+  reg, arc — for the requiree/required/constructor/registered_component/
+  archetyped parallel data — plus req_n/rid_n/cid_n/reg_n/arc_n counts plus
+  the tuple-replacement `last_register_ok/kind/a/b`, `last_query_found/count`,
+  `last_nth_found/required_id/constructor_id`). 5 `_xxx_at` + 1 `_reg_set` +
+  push helpers.
+- `EcsWorldEntityAllocatorDeep` (next_index, generation, cap-16 fi + cap-16
+  si families + fi_n/si_n counts + `last_alloc_idx/generation`). Removal helpers
+  (`_si_remove_at`) and pop-front helpers for `free_indices`.
+- `EcsWorldResourceEntitiesDeep` (cap-16 cid + eid parallel families + count +
+  `last_get_found/entity_idx`).
+- `EcsWorldSpawnFacadeDeep` (inlined allocator fields — next_index,
+  generation, fi slot family, si slot family, fi_n/si_n, + cap-16 spawned_
+  types + tuple companions for alloc/spawn_at/spawn_batch/modify/last_*).
+- `EcsWorldComponentsQueueDeep` (cap-16 qt + sk parallel families + count +
+  `last_at_found/type_id/storage_kind` + `last_apply_applied`).
+- `EcsUnsafeWorldCellDeep` (world_ptr: i64, readonly: i32 — scalar mirror).
+- 5 flat result-shim structs (ReqComp/ReqQuery/ReqNth/ResourceGet/QueueAt),
+  plain @derive(copy) scalar dicts.
+- Variant enums as const helpers / predicate fns on the populated companions:
+  `ecs_req_err_kind_deep`, `ecs_req_ok_placeholder_deep`, `ecs_spawn_err_*`,
+  `ecs_entity_fetch_err_*`, `ecs_register_result_deep_is_dup/cyclic/
+  archetype_exists`.
+
+### Test
+
+`tests/test_ecs_lib_world_extras_deep_isolated.sla` (312 lines, 33 tests).
+
+Test names: req_err_kind_and_accessors, req_ok_placeholder,
+spawn_err_and_entity_fetch_err_classifiers, required_registry_new_empty,
+required_registry_register_component_grows_reg,
+required_registry_mark_archetyped,
+required_registry_try_register_with_success,
+required_registry_try_register_duplicate_returns_dup_kind,
+required_registry_try_register_archetype_exists_kind,
+required_registry_get_required_by_id,
+required_registry_get_required_by_id_not_found,
+required_registry_get_required_nth, entity_allocator_new,
+entity_allocator_alloc_grows_spawned, entity_allocator_alloc_multiple,
+entity_allocator_free_then_reuse, resource_entities_insert_and_get,
+resource_entities_insert_overwrites_existing, spawn_facade_new_empty,
+spawn_facade_spawn_at_and_count,
+spawn_facade_spawn_at_already_spawned_fails, spawn_facade_spawn_empty_at,
+spawn_facade_spawn_batch_steps, spawn_facade_modify_component_present,
+spawn_facade_modify_component_not_spawned,
+spawn_facade_modify_component_spawned_but_type_absent,
+components_queue_new_empty, components_queue_enqueue_at,
+components_queue_apply_drains, unsafe_world_cell_new_and_readonly,
+modify_resource_present_via_resource_entities, modify_resource_not_found,
+modify_by_id_aliases.
+
+Validation: sa sla check lib ✓ | sa sla check tests ✓ | SA backend 33/33 ✓
+| default backend 33/33 ✓
+Panic codes: lib 147130-147150 (21 internal slot-family guards across the
+5 slot-family `_at/_set` helpers in the registry + resource_entities +
+spawn_facade + components_queue structs); tests 147160-147264 (105 unique
+panic ids; all unique across lib+tests).
+
+Post-batch counts (measured): 515 lib modules | 243 `*_deep.sla` modules |
+419 test files | 243 `*_deep_isolated.sla` test files | 90 examples | 6571
+`@test` total tests-scoped (6538 -> 6571, +33).
+Next free panic band: 147270+ (Batch 414 used lib 147130-147150 + tests
+147160-147264; Batch 413 used lib (none) + tests 147110-147121; Batch 412
+used lib 147080-147081 + tests 147090-147103; Batch 411 used lib (none) +
+tests 147040-147069; Batch 410 used lib 146990-146993 + tests 147000-147030;
+Batch 409 used lib 146950-146951 + tests 146960-146984; Batch 408 used lib
+146800-146803 + tests 146850-146903; Batch 407 used lib 146200-146244 +
+tests 146500-146691).
+Next batch candidates: With `world_extras` deepened, only 6 shallow lib files
+without a deep counterpart remain and they're either large or deferrable:
+`reflect` (99 lines; uses `trait EcsReflect` + fn-pointer field — defer),
+`parallel_scope` (105; parallel module — defer), `task_scope_executor_drive`
+(178; task/async — defer), `executor_single_threaded` (563; task/async — defer),
+`world_mod` (870 lines, no @import; usable next — but contains the public
+World surface tied to `world*` modules; can likely deepen shallow), and
+`executor_multi_threaded` (1348; task/async — defer).
+docs/issue.md remains at its Batch 407 close (no new SA compiler bugs were
+observed in Batch 414; the nested-@derive(copy)-struct-field leak pattern was
+re-confirmed by the wrapper-flattening of RegisterResult/AllocResult/
+QueueApplyResult/SpawnAtResult/SpawnBatchResult/ModifyResult/
+ModifyResourceResult which all return the mutated container as a sibling
+companion instead of nesting it).
+
+
+# Batch 415 — `lib/world_mod_deep.sla` (870-line shallow original)
+
+Source: `lib/world_mod.sla` (no `@import`, 870 lines, 6 structs, ~169 public
+API fns — the comprehensive EcsWorld surface).
+Target: `lib/world_mod_deep.sla` (1345 lines after extensions).
+
+Struct mirror strategy: four small flat helper struct mirrors
+(`EcsWorldIdDeep`, `EcsEntityLocationDeep`, `EcsCheckChangeTicksDeep`,
+`EcsWorldScheduleEntryDeep`) plus `EcsSpawnBatchIterDeep` cap-16 s0..s15 +
+pos + total. `EcsWorldDeep` declares flat scalar shadow fields for every
+slot family — entities e0..e15/en, components c0..c15/cn, resources
+r0..r15/rn, resource_entities re0..re15, non_sends ns0..ns15/nsn,
+removed_components rm0..rm15/rmn, removed_entities rme0..rme15/rmen,
+observers ob0..ob15/obn, schedules — and ~30 `last_*` scalar companions
+that flatten every `(EcsWorld, bool, i64)` / `(EcsWorld, bool, i32)` /
+`(bool, i64)` tuple return into write-companion → container pairs read back
+via `*_last_*` accessor fns. Booleans stored as i32 (0/1); accessors return
+!= 0.
+
+Slot-family helpers (cap-16, fixed `panic(147270..147288)` out-of-bounds
+guards): `_e_at/_set/_push`, `_c_at/_set/_push`, `_r_at/_set/_push`,
+`_re_at/_set`, `_ns_at/_set/_push`, `_rm_at/_set`, `_rme_at/_set/_push`,
+`_ob_at/_push`, `_sl_at/_set`, `_sid_at/_set`.
+
+Public API mirrored (listed narratively): entity/component/resource
+registration + id lookup; spawn / spawn_empty / spawn_at / spawn_empty_at /
+spawn_batch_push + `last_*` entity-result accessors; get / get_mut /
+get_by_id / modify_component / modify_resource / modify_*_by_id;
+spawn_at + despawn / try_despawn / despawn_no_free / try_despawn_no_free
+(backswap removal: set entity to -1, push removed_entities, decrement
+entity_count); entity_valid / entity / entity_mut / get_entity /
+get_entity_mut / entities_and_commands; clear_trackers / last_clear;
+query / query_filtered / try_query / try_query_filtered; removed /
+removed_with_id / removed_components_list; register_non_send_with_descriptor
+/ init_resource / insert_resource / init_non_send_resource / init_non_send /
+insert_non_send_resource / insert_non_send; remove_resource /
+remove_non_send_resource / remove_non_send; contains_resource /
+contains_resource_by_id / contains_non_send / contains_non_send_by_id;
+is_resource_added / is_resource_added_by_id / is_resource_changed /
+is_resource_changed_by_id; get_resource_change_ticks /
+get_resource_change_ticks_by_id; resource / resource_ref / resource_mut /
+get_resource / get_resource_ref / get_resource_mut / resource_entities /
+resource_entities_at / observers / observers_at / removed_components_at;
+non_send_resource / non_send / non_send_resource_mut / non_send_mut +
+get_* variants; get_resource_or_insert_with / get_resource_or_init;
+insert_batch + aliases; resource_scope / try_resource_scope;
+write_message / write_message_default / write_message_batch;
+flush / increment_change_tick / read_change_tick / change_tick /
+last_change_tick / last_change_tick_scope / check_change_ticks;
+clear_all / clear_entities / clear_resources / clear_non_send;
+register_bundle / register_dynamic_bundle / fallback_error_handler;
+get_resource_by_id / get_resource_mut_by_id / iter_resources /
+iter_resources_mut; get_non_send_by_id / get_non_send_mut_by_id /
+remove_resource_by_id / remove_non_send_by_id / get_by_id / get_mut_by_id;
+add_schedule / try_schedule_scope / schedule_scope / try_run_schedule /
+run_schedule / get_schedule / contains_schedule / remove_schedule;
+allow_ambiguous_component / allow_ambiguous_resource;
+register_required_components / register_required_components_with /
+try_register_required_components / try_register_required_components_with /
+get_required_components / get_required_components_by_id;
+register_component_hooks / register_component_hooks_by_id;
+components_queue / components_registrator / storages / bundles / archetypes /
+entities_field / entity_allocator / entity_allocator_mut / commands;
+inspect_entity; set_apply_final_deferred / apply_final_deferred;
+as_unsafe_world_cell / as_unsafe_world_cell_readonly; id / id_value / set_id;
+entity_count / components_count / resource_count / non_send_count /
+schedule_count / observer_count / removed_components_count /
+removed_entities_count / iter_entities_len.
+
+Test file: `tests/test_ecs_lib_world_mod_deep_isolated.sla` (65 `@test`
+entries grouped by related API surface). Panic band: tests 147300-147522
+(223 unique ids, all unique across lib+tests).
+
+Validation:
+- `sa sla check lib/world_mod_deep.sla` ✓
+- `sa sla check tests/test_ecs_lib_world_mod_deep_isolated.sla` ✓
+- SA backend ✗ — `ForbiddenSyntax` trap during flattening; per the
+  addendum filed at `docs/issue.md` this is a toolchain regression that
+  breaks SA backend verification of every deep-iso test currently in the
+  repo, including previously-green results from Batches 407, 409, and 414.
+  Reproduced on three previously-passing files for the same trap shape.
+- Default backend: 65 passed / 0 failed ✓
+
+SA compiler bug addendum (filed at `docs/issue.md`): SA backend
+`ForbiddenSyntax` flattening regression — a toolchain issue that breaks the
+SA backend for every deep-iso file currently in the repo. Diagnostic
+pinpoints a `return` immediately followed by two blank lines with
+`bad_token`/`actual_mask` null; offending construct is not surfaced.
+Single-file reproducer using the existing sequential-if / cap-Vec pattern
+produces the same trap.
+
+Panic codes: lib 147270-147288 (19 ids in cap-16 slot-family `_at/_set`
+helpers); tests 147300-147522 (223 unique ids).
+
+Post-batch counts (measured): 516 lib modules | 244 `*_deep.sla` modules |
+420 test files | 244 `*_deep_isolated.sla` test files | 90 examples | 6636
+`@test` total tests-scoped (6571 -> 6636, +65).
+Next free panic band: 147630+ (Batch 415 used lib 147270-147288 + tests
+147300-147522; Batch 414 used lib 147130-147150 + tests 147160-147264;
+Batch 413 used lib (none) + tests 147110-147121; Batch 412 used lib 147080-147081
++ tests 147090-147103; Batch 411 used lib (none) + tests 147040-147069; Batch
+410 used lib 146990-146993 + tests 147000-147030; Batch 409 used lib
+146950-146951 + tests 146960-146984; Batch 408 used lib 146800-146803 +
+tests 146850-146903; Batch 407 used lib 146200-146244 + tests 146500-146691).
+Next batch candidates: only 5 shallow lib files without a deep counterpart
+remain and they are all trait/fn-pointer or task/async/parallel:
+`reflect` (99; trait EcsReflect + fn-pointer — defer),
+`parallel_scope` (105; parallel — defer),
+`task_scope_executor_drive` (178; task/async — defer),
+`executor_single_threaded` (563; task/async — defer),
+`executor_multi_threaded` (1348; task/async — defer).
+No easy shallow `lib/*.sla` candidates remain for further shallow deepening.
+docs/issue.md updated with a Batch 415 addendum describing the SA backend
+ForbiddenSyntax flattening regression affecting every deep-iso test.

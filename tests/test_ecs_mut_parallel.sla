@@ -702,7 +702,7 @@ fn mp_child_scope_result_fgh(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> Ecs
     if ecs_executor_run_plan_run_at(result.plan, 4) != 4 { panic(24145); };
 }
 
-@test "task pool applies deferred and clears unapplied"() {
+@test "task pool defers buffers until final apply"() {
     let w0 = table_erased_world_new<i32, i32>(0, 0);
     let e0 = ecs_multi_threaded_executor_new();
     let e1 = ecs_multi_threaded_executor_init(e0, 2, 0);
@@ -724,9 +724,13 @@ fn mp_child_scope_result_fgh(world_ptr: Arc<*TableErasedWorld<i32, i32>>) -> Ecs
     if result.mismatch { panic(24146); };
     if result.thread_sum != 8 { panic(24147); };
     if result.ran_count != 2 { panic(24148); };
-    if ecs_executor_run_plan_apply_count(result.plan) != 1 { panic(24149); };
-    if ecs_executor_run_plan_apply_at(result.plan, 0) != 0 { panic(24150); };
-    if ecs_executor_state_unapplied_count(result.plan.executor.state) != 0 { panic(24151); };
+    if ecs_executor_run_plan_apply_count(result.plan) != 0 { panic(24149); };
+    if ecs_executor_state_unapplied_count(result.plan.executor.state) != 2 { panic(24150); };
+    if ecs_executor_state_is_unapplied(result.plan.executor.state, 0) != true { panic(24151); };
+    if ecs_executor_state_is_unapplied(result.plan.executor.state, 1) != true { panic(24154); };
+    let finished = ecs_multi_threaded_executor_finish_run(result.plan.executor);
+    if ecs_executor_state_unapplied_count(finished.state) != 0 { panic(24152); };
+    if finished.deferred_applied != 2 { panic(24153); };
 }
 
 @test "dynamic catalog quint first wave"() {
