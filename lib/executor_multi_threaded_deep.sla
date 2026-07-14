@@ -3,6 +3,7 @@
 // scalar slots instead of Vec bitsets. Batch 421 extends the same flat model with
 // skipped/evaluated state, deferred cleanup, dependent release, and tick handoff.
 // Batch 422 adds flat condition-folding and panic/handled-error facades.
+// Batch 423 adds flat drive-loop and lock-failure tick summaries.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -48,6 +49,9 @@ struct EcsExecutorSystemSpecDeep {
     system_index: i64,
     is_exclusive: i32,
     is_local: i32,
+    has_deferred: i32,
+    should_run: i32,
+    is_apply_deferred: i32,
     access_conflict0: i64,
     access_conflict1: i64,
     access_conflict_count: i64,
@@ -89,6 +93,25 @@ struct EcsExecutorConditionFoldDeep {
     system_handled_errors: i64,
     handled_error_phase: i64,
     handled_error_system: i64,
+}
+
+@derive(copy)
+struct EcsExecutorDriveSummaryDeep {
+    selected_count: i64,
+    selected0: i64,
+    selected1: i64,
+    selected2: i64,
+    skipped_count: i64,
+    apply_count: i64,
+    completed_count: i64,
+    ready_count: i64,
+    unapplied_count: i64,
+    stalled: i32,
+    lock_failed: i32,
+    pending_count: i64,
+    pending0: i64,
+    pending1: i64,
+    pending2: i64,
 }
 
 fn _mt_bool(v: bool) -> i32 {
@@ -171,6 +194,26 @@ fn ecs_executor_condition_fold_deep_new() -> EcsExecutorConditionFoldDeep {
         system_handled_errors: 0,
         handled_error_phase: 0,
         handled_error_system: -1,
+    };
+}
+
+fn ecs_executor_drive_summary_deep_empty() -> EcsExecutorDriveSummaryDeep {
+    return EcsExecutorDriveSummaryDeep {
+        selected_count: 0,
+        selected0: -1,
+        selected1: -1,
+        selected2: -1,
+        skipped_count: 0,
+        apply_count: 0,
+        completed_count: 0,
+        ready_count: 0,
+        unapplied_count: 0,
+        stalled: 0,
+        lock_failed: 0,
+        pending_count: 0,
+        pending0: -1,
+        pending1: -1,
+        pending2: -1,
     };
 }
 
@@ -630,16 +673,139 @@ fn ecs_executor_system_spec_deep_new(system_index: i64, is_exclusive: bool, is_l
         system_index: system_index,
         is_exclusive: _mt_bool(is_exclusive),
         is_local: _mt_bool(is_local),
+        has_deferred: 0,
+        should_run: 1,
+        is_apply_deferred: 0,
         access_conflict0: -1,
         access_conflict1: -1,
         access_conflict_count: 0,
     };
 }
 
+fn ecs_executor_system_spec_deep_with_should_run(spec: EcsExecutorSystemSpecDeep, should_run: bool) -> EcsExecutorSystemSpecDeep {
+    spec.should_run = _mt_bool(should_run);
+    return spec;
+}
+
+fn ecs_executor_system_spec_deep_with_deferred(spec: EcsExecutorSystemSpecDeep, has_deferred: bool) -> EcsExecutorSystemSpecDeep {
+    spec.has_deferred = _mt_bool(has_deferred);
+    return spec;
+}
+
+fn ecs_executor_system_spec_deep_as_apply_deferred(spec: EcsExecutorSystemSpecDeep) -> EcsExecutorSystemSpecDeep {
+    spec.is_apply_deferred = 1;
+    spec.is_exclusive = 1;
+    spec.is_local = 1;
+    spec.has_deferred = 0;
+    return spec;
+}
+
 fn ecs_executor_system_spec_deep_with_conflict(spec: EcsExecutorSystemSpecDeep, other: i64) -> EcsExecutorSystemSpecDeep {
     if spec.access_conflict_count == 0 { spec.access_conflict0 = other; spec.access_conflict_count = 1; return spec; };
     if spec.access_conflict_count == 1 { spec.access_conflict1 = other; spec.access_conflict_count = 2; return spec; };
     return spec;
+}
+
+fn _mt_spec3_by_position(a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, position: i64) -> EcsExecutorSystemSpecDeep {
+    if position == 0 { return a; };
+    if position == 1 { return b; };
+    return c;
+}
+
+fn ecs_executor_state_deep_next_ready(s: EcsExecutorStateDeep) -> i64 {
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_ready_at(s, i) && _mt_completed_at(s, i) != true && _mt_running_at(s, i) != true { return i; };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn ecs_executor_state_deep_next_runnable3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> i64 {
+    if ecs_executor_state_deep_can_spawn_system(s, a) { return a.system_index; };
+    if ecs_executor_state_deep_can_spawn_system(s, b) { return b.system_index; };
+    if ecs_executor_state_deep_can_spawn_system(s, c) { return c.system_index; };
+    return -1;
+}
+
+fn _mt_summary_from_state(r: EcsExecutorDriveSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorDriveSummaryDeep {
+    r.completed_count = ecs_executor_state_deep_completed_count(s);
+    r.ready_count = ecs_executor_state_deep_ready_count(s);
+    r.unapplied_count = ecs_executor_state_deep_unapplied_count(s);
+    return r;
+}
+
+fn _mt_drive_summary_select(r: EcsExecutorDriveSummaryDeep, system_index: i64) -> EcsExecutorDriveSummaryDeep {
+    if r.selected_count == 0 { r.selected0 = system_index; };
+    if r.selected_count == 1 { r.selected1 = system_index; };
+    if r.selected_count == 2 { r.selected2 = system_index; };
+    r.selected_count = r.selected_count + 1;
+    return r;
+}
+
+fn ecs_executor_state_deep_drive_one_summary(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, dep0: i64, dep1: i64, dep2: i64, dep_count: i64) -> EcsExecutorDriveSummaryDeep {
+    let r = ecs_executor_drive_summary_deep_empty();
+    if ecs_executor_state_deep_can_spawn_system(s, spec) != true {
+        if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
+        return _mt_summary_from_state(r, s);
+    };
+    if spec.should_run == 0 || _mt_skipped_at(s, spec.system_index) {
+        s = ecs_executor_state_deep_skip_system_with_dependents3(s, spec.system_index, dep0, dep1, dep2, dep_count);
+        r.skipped_count = 1;
+        return _mt_summary_from_state(r, s);
+    };
+    if spec.is_apply_deferred != 0 {
+        r.apply_count = ecs_executor_state_deep_unapplied_count(s);
+        s = ecs_executor_state_deep_apply_deferred_all(s);
+    };
+    s = ecs_executor_state_deep_start_system(s, spec);
+    r = _mt_drive_summary_select(r, spec.system_index);
+    s = ecs_executor_state_deep_complete_system_with_dependents3(s, spec, spec.has_deferred != 0, dep0, dep1, dep2, dep_count);
+    return _mt_summary_from_state(r, s);
+}
+
+fn ecs_executor_state_deep_drive_ready_batch_summary3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, max_width: i64) -> EcsExecutorDriveSummaryDeep {
+    let r = ecs_executor_drive_summary_deep_empty();
+    if max_width <= 0 {
+        if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
+        return _mt_summary_from_state(r, s);
+    };
+    let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+    if batch.count == 0 {
+        if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
+        return _mt_summary_from_state(r, s);
+    };
+    let count = batch.count;
+    if count > 0 && max_width > 0 {
+        r.selected0 = ecs_executor_ready_batch_deep_at(batch, 0);
+        r.selected_count = 1;
+    };
+    if count > 1 && max_width > 1 {
+        r.selected1 = ecs_executor_ready_batch_deep_at(batch, 1);
+        r.selected_count = 2;
+    };
+    if count > 2 && max_width > 2 {
+        r.selected2 = ecs_executor_ready_batch_deep_at(batch, 2);
+        r.selected_count = 3;
+    };
+    r.completed_count = ecs_executor_state_deep_completed_count(s) + r.selected_count;
+    r.ready_count = ecs_executor_state_deep_ready_count(s);
+    r.unapplied_count = ecs_executor_state_deep_unapplied_count(s);
+    return r;
+}
+
+fn ecs_executor_tick_loop_deep_lock_failed(system_index: i64) -> EcsExecutorDriveSummaryDeep {
+    let r = ecs_executor_drive_summary_deep_empty();
+    r.lock_failed = 1;
+    r.pending_count = 1;
+    r.pending0 = system_index;
+    return r;
+}
+
+fn ecs_executor_tick_loop_deep_apply_deferred_lock_failed(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorDriveSummaryDeep {
+    let r = ecs_executor_tick_loop_deep_lock_failed(system_index);
+    r.apply_count = ecs_executor_state_deep_unapplied_count(s);
+    return r;
 }
 
 fn ecs_executor_state_deep_conflicts_with_running(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> bool {

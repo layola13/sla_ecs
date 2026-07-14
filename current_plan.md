@@ -6359,3 +6359,40 @@ Feature progress: multi-threaded executor condition/error facade sub-surface
 0% -> 100% for the flat fixed-arity model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining executor opportunities
 are broader run-plan drive loops and lock-failure tick wrappers.
+
+
+# Batch 423 — `lib/executor_multi_threaded_deep.sla` drive/lock-failure summaries — DONE
+
+Source focus: the `EcsExecutorRunPlan` start/take-batch/drive-one/drive-batch
+loop and tick-loop lock-failure wrappers in `lib/executor_multi_threaded.sla`.
+
+Deep strategy: extend the flat system spec with `has_deferred`,
+`should_run`, and `is_apply_deferred` flags, then add flat
+`EcsExecutorDriveSummaryDeep` results rather than nesting full run plans.
+New helpers cover next-ready, next-runnable over three candidates,
+drive-one run/skip/apply-deferred-barrier summaries, width-limited ready-batch
+drive summaries, and lock-failed tick summaries that preserve pending
+completion ids and apply-deferred counts. This keeps the executor drive model
+fixed-arity and backend-stable while covering the next run-plan layer above
+the Batch 420-422 state, handoff, and error facades.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 32
+`@test` entries (+7). New panic band: tests 148030-148064.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 32 passed / 0 failed ✓
+- SA backend: 32 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6713
+tests-dir `@test` annotations | 7310 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-loop / lock-failure summary
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+would be broader multi-wave tick-loop summaries or full run-plan history
+tracking, which would need the same flat-summary approach to stay backend
+stable.
