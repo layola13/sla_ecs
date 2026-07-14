@@ -608,3 +608,96 @@
     let stalled = ecs_executor_run_history_deep_drive_one(ecs_executor_run_history_deep_new(), ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0), b);
     if stalled.stalled != 1 { panic(148139); };
 }
+
+@test "mt_deep_drive_all_history_runs_dependency_chain"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let h = ecs_executor_run_history_deep_drive_all3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        2, -1, -1, 1,
+        -1, -1, -1, 0,
+        0
+    );
+    if h.stalled != 0 { panic(148160); };
+    if h.run_count != 3 { panic(148161); };
+    if ecs_executor_run_history_deep_run_at(h, 0) != 0 { panic(148162); };
+    if ecs_executor_run_history_deep_run_at(h, 1) != 1 { panic(148163); };
+    if ecs_executor_run_history_deep_run_at(h, 2) != 2 { panic(148164); };
+    if h.skipped_count != 0 { panic(148165); };
+}
+
+@test "mt_deep_drive_all_history_skip_releases_dependent"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_should_run(a0, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let h = ecs_executor_run_history_deep_drive_all3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        0
+    );
+    if h.stalled != 0 { panic(148166); };
+    if h.skipped_count != 1 { panic(148167); };
+    if ecs_executor_run_history_deep_skipped_at(h, 0) != 0 { panic(148168); };
+    if h.run_count != 1 { panic(148169); };
+    if ecs_executor_run_history_deep_run_at(h, 0) != 1 { panic(148170); };
+}
+
+@test "mt_deep_drive_all_history_records_apply_deferred_order"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let prior0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let prior1 = ecs_executor_system_spec_deep_new(1, false, false);
+    let barrier0 = ecs_executor_system_spec_deep_new(2, true, true);
+    let barrier = ecs_executor_system_spec_deep_as_apply_deferred(barrier0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, prior0);
+    s = ecs_executor_state_deep_complete_system(s, prior0, true);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, prior1);
+    s = ecs_executor_state_deep_complete_system(s, prior1, true);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let h = ecs_executor_run_history_deep_drive_all3(
+        s, prior0, prior1, barrier,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        0
+    );
+    if h.stalled != 0 { panic(148171); };
+    if h.run_count != 1 { panic(148172); };
+    if ecs_executor_run_history_deep_run_at(h, 0) != 2 { panic(148173); };
+    if h.apply_count != 2 { panic(148174); };
+    if ecs_executor_run_history_deep_apply_at(h, 0) != 0 { panic(148175); };
+    if ecs_executor_run_history_deep_apply_at(h, 1) != 1 { panic(148176); };
+}
+
+@test "mt_deep_drive_all_history_stalls_on_running_conflict"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let running = ecs_executor_system_spec_deep_new(1, false, false);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_conflict(a0, 1);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, running);
+    let h = ecs_executor_run_history_deep_drive_all3(
+        s, a, running, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        0
+    );
+    if h.stalled != 1 { panic(148177); };
+    if h.run_count != 0 { panic(148178); };
+    if h.skipped_count != 0 { panic(148179); };
+}

@@ -6464,3 +6464,38 @@ Feature progress: multi-threaded executor run-plan history tracking
 sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
 is broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 426 — `lib/executor_multi_threaded_deep.sla` drive-all history integration — DONE
+
+Source focus: the `ecs_executor_run_plan_drive_all` loop in
+`lib/executor_multi_threaded.sla`, especially repeated next-runnable scans,
+dependency release between iterations, skipped-system release, ApplyDeferred
+barrier apply ordering, and stalled detection.
+
+Deep strategy: extend the flat run-history layer with a fixed-arity
+`ecs_executor_run_history_deep_drive_all3` facade. The helper scans runnable
+systems in system-index order, advances the local state internally, releases
+per-system dependents through scalar dep triples, records run/apply/skipped
+history, applies current unapplied systems before completing an ApplyDeferred
+barrier, and sets the stalled bit when a ready system remains blocked by a
+running conflict.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 43
+`@test` entries (+4). New panic band: tests 148160-148179.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 43 passed / 0 failed ✓
+- SA backend: 43 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6724
+tests-dir `@test` annotations | 7359 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-all history integration
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is broader executor integration scenarios if new Bevy parity gaps are found.

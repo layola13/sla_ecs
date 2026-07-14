@@ -6,6 +6,7 @@
 // Batch 423 adds flat drive-loop and lock-failure tick summaries.
 // Batch 424 adds fixed-arity multi-wave tick-loop summaries.
 // Batch 425 adds flat run/apply/skip history tracking.
+// Batch 426 adds fixed-arity drive-all history integration.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -361,6 +362,82 @@ fn ecs_executor_run_history_deep_drive_one(h: EcsExecutorRunHistoryDeep, s: EcsE
     };
     h = ecs_executor_run_history_deep_push_run(h, spec.system_index);
     if spec.is_apply_deferred != 0 { h = ecs_executor_run_history_deep_apply_unapplied(h, s); };
+    return h;
+}
+
+fn _mt_spec3_by_system_index(a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, system_index: i64) -> EcsExecutorSystemSpecDeep {
+    if a.system_index == system_index { return a; };
+    if b.system_index == system_index { return b; };
+    if c.system_index == system_index { return c; };
+    return ecs_executor_system_spec_deep_new(system_index, false, false);
+}
+
+fn ecs_executor_state_deep_next_runnable_by_index3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> i64 {
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_ready_at(s, i) && _mt_completed_at(s, i) != true && _mt_running_at(s, i) != true {
+            let spec = _mt_spec3_by_system_index(a, b, c, i);
+            if ecs_executor_state_deep_can_spawn_system(s, spec) { return i; };
+        };
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn _mt_complete_with_history_deps3(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64) -> EcsExecutorStateDeep {
+    if spec.system_index == a.system_index {
+        return ecs_executor_state_deep_complete_system_with_dependents3(s, spec, spec.has_deferred != 0, a_dep0, a_dep1, a_dep2, a_dep_count);
+    };
+    if spec.system_index == b.system_index {
+        return ecs_executor_state_deep_complete_system_with_dependents3(s, spec, spec.has_deferred != 0, b_dep0, b_dep1, b_dep2, b_dep_count);
+    };
+    if spec.system_index == c.system_index {
+        return ecs_executor_state_deep_complete_system_with_dependents3(s, spec, spec.has_deferred != 0, c_dep0, c_dep1, c_dep2, c_dep_count);
+    };
+    return ecs_executor_state_deep_complete_system_with_dependents3(s, spec, spec.has_deferred != 0, -1, -1, -1, 0);
+}
+
+fn _mt_skip_with_history_deps3(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64) -> EcsExecutorStateDeep {
+    if spec.system_index == a.system_index {
+        return ecs_executor_state_deep_skip_system_with_dependents3(s, spec.system_index, a_dep0, a_dep1, a_dep2, a_dep_count);
+    };
+    if spec.system_index == b.system_index {
+        return ecs_executor_state_deep_skip_system_with_dependents3(s, spec.system_index, b_dep0, b_dep1, b_dep2, b_dep_count);
+    };
+    if spec.system_index == c.system_index {
+        return ecs_executor_state_deep_skip_system_with_dependents3(s, spec.system_index, c_dep0, c_dep1, c_dep2, c_dep_count);
+    };
+    return ecs_executor_state_deep_skip_system_with_dependents3(s, spec.system_index, -1, -1, -1, 0);
+}
+
+fn ecs_executor_run_history_deep_drive_all3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_steps: i64) -> EcsExecutorRunHistoryDeep {
+    let h = ecs_executor_run_history_deep_new();
+    let guard: i64 = 0;
+    let limit = max_steps;
+    if limit <= 0 { limit = s.system_count * 2 + 1; };
+    while guard < limit {
+        if ecs_executor_state_deep_completed_count(s) >= s.system_count { return h; };
+        let next = ecs_executor_state_deep_next_runnable_by_index3(s, a, b, c);
+        if next < 0 {
+            if ecs_executor_state_deep_completed_count(s) < s.system_count { h.stalled = 1; };
+            return h;
+        };
+        let spec = _mt_spec3_by_system_index(a, b, c, next);
+        if spec.should_run == 0 || _mt_skipped_at(s, spec.system_index) {
+            h = ecs_executor_run_history_deep_push_skipped(h, spec.system_index);
+            s = _mt_skip_with_history_deps3(s, spec, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+        } else {
+            s = ecs_executor_state_deep_start_system(s, spec);
+            h = ecs_executor_run_history_deep_push_run(h, spec.system_index);
+            if spec.is_apply_deferred != 0 {
+                h = ecs_executor_run_history_deep_apply_unapplied(h, s);
+                s = ecs_executor_state_deep_apply_deferred_all(s);
+            };
+            s = _mt_complete_with_history_deps3(s, spec, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+        };
+        guard = guard + 1;
+    }
+    if ecs_executor_state_deep_completed_count(s) < s.system_count { h.stalled = 1; };
     return h;
 }
 
