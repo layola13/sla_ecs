@@ -6396,3 +6396,38 @@ remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
 would be broader multi-wave tick-loop summaries or full run-plan history
 tracking, which would need the same flat-summary approach to stay backend
 stable.
+
+
+# Batch 424 — `lib/executor_multi_threaded_deep.sla` multi-wave tick summaries — DONE
+
+Source focus: the `tick_executor_with_completion_waves`,
+`tick_executor_after_system_completed`, and
+`retry_pending_completions` metadata behavior in
+`lib/executor_multi_threaded.sla`.
+
+Deep strategy: add flat `EcsExecutorTickLoopSummaryDeep` instead of modeling
+nested `Vec<Vec<i64>>` completion waves. New fixed-arity helpers cover the
+no-completion-waves case (still produces one tick), two completion waves that
+complete systems, release dependents, start selected batch systems between
+waves, and record per-wave batch summaries, plus retry-pending metadata that
+counts the pending wave before later waves. This builds directly on the Batch
+423 drive summary surface and keeps all returned data scalar.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 35
+`@test` entries (+3). New panic band: tests 148080-148097.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 35 passed / 0 failed ✓
+- SA backend: 35 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6716
+tests-dir `@test` annotations | 7313 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor multi-wave tick-loop summary
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is full run-plan history tracking, if continued, using flat scalar summaries.

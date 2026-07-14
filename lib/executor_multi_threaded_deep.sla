@@ -4,6 +4,7 @@
 // skipped/evaluated state, deferred cleanup, dependent release, and tick handoff.
 // Batch 422 adds flat condition-folding and panic/handled-error facades.
 // Batch 423 adds flat drive-loop and lock-failure tick summaries.
+// Batch 424 adds fixed-arity multi-wave tick-loop summaries.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -114,6 +115,25 @@ struct EcsExecutorDriveSummaryDeep {
     pending2: i64,
 }
 
+@derive(copy)
+struct EcsExecutorTickLoopSummaryDeep {
+    tick_count: i64,
+    lock_failed: i32,
+    pending_count: i64,
+    pending0: i64,
+    pending1: i64,
+    pending2: i64,
+    batch_count: i64,
+    batch0_count: i64,
+    batch0_system0: i64,
+    batch0_system1: i64,
+    batch0_system2: i64,
+    batch1_count: i64,
+    batch1_system0: i64,
+    batch1_system1: i64,
+    batch1_system2: i64,
+}
+
 fn _mt_bool(v: bool) -> i32 {
     if v { return 1; };
     return 0;
@@ -214,6 +234,26 @@ fn ecs_executor_drive_summary_deep_empty() -> EcsExecutorDriveSummaryDeep {
         pending0: -1,
         pending1: -1,
         pending2: -1,
+    };
+}
+
+fn ecs_executor_tick_loop_summary_deep_empty() -> EcsExecutorTickLoopSummaryDeep {
+    return EcsExecutorTickLoopSummaryDeep {
+        tick_count: 0,
+        lock_failed: 0,
+        pending_count: 0,
+        pending0: -1,
+        pending1: -1,
+        pending2: -1,
+        batch_count: 0,
+        batch0_count: 0,
+        batch0_system0: -1,
+        batch0_system1: -1,
+        batch0_system2: -1,
+        batch1_count: 0,
+        batch1_system0: -1,
+        batch1_system1: -1,
+        batch1_system2: -1,
     };
 }
 
@@ -806,6 +846,78 @@ fn ecs_executor_tick_loop_deep_apply_deferred_lock_failed(s: EcsExecutorStateDee
     let r = ecs_executor_tick_loop_deep_lock_failed(system_index);
     r.apply_count = ecs_executor_state_deep_unapplied_count(s);
     return r;
+}
+
+fn _mt_tick_summary_set_batch0(t: EcsExecutorTickLoopSummaryDeep, r: EcsExecutorDriveSummaryDeep) -> EcsExecutorTickLoopSummaryDeep {
+    t.batch0_count = r.selected_count;
+    t.batch0_system0 = r.selected0;
+    t.batch0_system1 = r.selected1;
+    t.batch0_system2 = r.selected2;
+    if r.selected_count > 0 { t.batch_count = 1; };
+    return t;
+}
+
+fn _mt_tick_summary_set_batch1(t: EcsExecutorTickLoopSummaryDeep, r: EcsExecutorDriveSummaryDeep) -> EcsExecutorTickLoopSummaryDeep {
+    t.batch1_count = r.selected_count;
+    t.batch1_system0 = r.selected0;
+    t.batch1_system1 = r.selected1;
+    t.batch1_system2 = r.selected2;
+    if r.selected_count > 0 && t.batch_count < 2 { t.batch_count = 2; };
+    return t;
+}
+
+fn _mt_state_start_if_selected(s: EcsExecutorStateDeep, selected: i64, spec: EcsExecutorSystemSpecDeep) -> EcsExecutorStateDeep {
+    if selected == spec.system_index { return ecs_executor_state_deep_start_system(s, spec); };
+    return s;
+}
+
+fn _mt_state_start_summary_batch3(s: EcsExecutorStateDeep, r: EcsExecutorDriveSummaryDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> EcsExecutorStateDeep {
+    if r.selected_count > 0 {
+        s = _mt_state_start_if_selected(s, r.selected0, a);
+        s = _mt_state_start_if_selected(s, r.selected0, b);
+        s = _mt_state_start_if_selected(s, r.selected0, c);
+    };
+    if r.selected_count > 1 {
+        s = _mt_state_start_if_selected(s, r.selected1, a);
+        s = _mt_state_start_if_selected(s, r.selected1, b);
+        s = _mt_state_start_if_selected(s, r.selected1, c);
+    };
+    if r.selected_count > 2 {
+        s = _mt_state_start_if_selected(s, r.selected2, a);
+        s = _mt_state_start_if_selected(s, r.selected2, b);
+        s = _mt_state_start_if_selected(s, r.selected2, c);
+    };
+    return s;
+}
+
+fn ecs_executor_tick_loop_deep_no_completion_waves3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, max_width: i64) -> EcsExecutorTickLoopSummaryDeep {
+    let t = ecs_executor_tick_loop_summary_deep_empty();
+    t.tick_count = 1;
+    let batch = ecs_executor_state_deep_drive_ready_batch_summary3(s, a, b, c, max_width);
+    return _mt_tick_summary_set_batch0(t, batch);
+}
+
+fn ecs_executor_tick_loop_deep_two_completion_waves3(s: EcsExecutorStateDeep, completed0: EcsExecutorSystemSpecDeep, has_deferred0: bool, dep0a: i64, dep0b: i64, dep0c: i64, dep0_count: i64, completed1: EcsExecutorSystemSpecDeep, has_deferred1: bool, dep1a: i64, dep1b: i64, dep1c: i64, dep1_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, max_width: i64) -> EcsExecutorTickLoopSummaryDeep {
+    let t = ecs_executor_tick_loop_summary_deep_empty();
+    t.tick_count = 2;
+    s = ecs_executor_state_deep_complete_system_with_dependents3(s, completed0, has_deferred0, dep0a, dep0b, dep0c, dep0_count);
+    let first = ecs_executor_state_deep_drive_ready_batch_summary3(s, a, b, c, max_width);
+    t = _mt_tick_summary_set_batch0(t, first);
+    s = _mt_state_start_summary_batch3(s, first, a, b, c);
+    s = ecs_executor_state_deep_complete_system_with_dependents3(s, completed1, has_deferred1, dep1a, dep1b, dep1c, dep1_count);
+    let second = ecs_executor_state_deep_drive_ready_batch_summary3(s, a, b, c, max_width);
+    return _mt_tick_summary_set_batch1(t, second);
+}
+
+fn ecs_executor_tick_loop_deep_retry_pending3(pending0: i64, pending1: i64, pending2: i64, pending_count: i64, later_wave_count: i64) -> EcsExecutorTickLoopSummaryDeep {
+    let t = ecs_executor_tick_loop_summary_deep_empty();
+    t.pending_count = pending_count;
+    if pending_count > 0 { t.pending0 = pending0; };
+    if pending_count > 1 { t.pending1 = pending1; };
+    if pending_count > 2 { t.pending2 = pending2; };
+    t.tick_count = later_wave_count;
+    if pending_count > 0 { t.tick_count = t.tick_count + 1; };
+    return t;
 }
 
 fn ecs_executor_state_deep_conflicts_with_running(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> bool {
