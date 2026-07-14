@@ -2,6 +2,7 @@
 // Batch 420 focuses on ExecutorState gates and ready-batch selection using cap-16
 // scalar slots instead of Vec bitsets. Batch 421 extends the same flat model with
 // skipped/evaluated state, deferred cleanup, dependent release, and tick handoff.
+// Batch 422 adds flat condition-folding and panic/handled-error facades.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -62,9 +63,115 @@ struct EcsExecutorReadyBatchDeep {
     is_local: i32,
 }
 
+@derive(copy)
+struct EcsExecutorErrorStateDeep {
+    panic_payload_pending: i32,
+    system_panic_payloads: i64,
+    deferred_panic_payloads: i64,
+    panic_payload_phase: i64,
+    panic_payload_system: i64,
+    panic_payload_rethrows: i64,
+    system_handled_errors: i64,
+    deferred_handled_errors: i64,
+    handled_error_phase: i64,
+    handled_error_system: i64,
+}
+
+@derive(copy)
+struct EcsExecutorConditionFoldDeep {
+    should_run: i32,
+    evaluated_count: i64,
+    aborted: i32,
+    panic_payload_pending: i32,
+    system_panic_payloads: i64,
+    panic_payload_phase: i64,
+    panic_payload_system: i64,
+    system_handled_errors: i64,
+    handled_error_phase: i64,
+    handled_error_system: i64,
+}
+
 fn _mt_bool(v: bool) -> i32 {
     if v { return 1; };
     return 0;
+}
+
+fn ecs_executor_panic_phase_deep_none() -> i64 { return 0; }
+fn ecs_executor_panic_phase_deep_system() -> i64 { return 1; }
+fn ecs_executor_panic_phase_deep_apply_deferred() -> i64 { return 2; }
+fn ecs_executor_panic_phase_deep_run_condition() -> i64 { return 3; }
+
+fn ecs_executor_condition_outcome_deep_false() -> i64 { return 0; }
+fn ecs_executor_condition_outcome_deep_true() -> i64 { return 1; }
+fn ecs_executor_condition_outcome_deep_handled_error() -> i64 { return 2; }
+fn ecs_executor_condition_outcome_deep_error_handler_panic() -> i64 { return 3; }
+
+fn ecs_executor_error_state_deep_new() -> EcsExecutorErrorStateDeep {
+    return EcsExecutorErrorStateDeep {
+        panic_payload_pending: 0,
+        system_panic_payloads: 0,
+        deferred_panic_payloads: 0,
+        panic_payload_phase: 0,
+        panic_payload_system: -1,
+        panic_payload_rethrows: 0,
+        system_handled_errors: 0,
+        deferred_handled_errors: 0,
+        handled_error_phase: 0,
+        handled_error_system: -1,
+    };
+}
+
+fn ecs_executor_error_state_deep_record_system_panic_payload(e: EcsExecutorErrorStateDeep, system_index: i64) -> EcsExecutorErrorStateDeep {
+    e.panic_payload_pending = 1;
+    e.system_panic_payloads = e.system_panic_payloads + 1;
+    e.panic_payload_phase = ecs_executor_panic_phase_deep_system();
+    e.panic_payload_system = system_index;
+    return e;
+}
+
+fn ecs_executor_error_state_deep_record_deferred_panic_payload(e: EcsExecutorErrorStateDeep, system_index: i64) -> EcsExecutorErrorStateDeep {
+    e.panic_payload_pending = 1;
+    e.deferred_panic_payloads = e.deferred_panic_payloads + 1;
+    e.panic_payload_phase = ecs_executor_panic_phase_deep_apply_deferred();
+    e.panic_payload_system = system_index;
+    return e;
+}
+
+fn ecs_executor_error_state_deep_record_system_handled_error(e: EcsExecutorErrorStateDeep, system_index: i64) -> EcsExecutorErrorStateDeep {
+    e.system_handled_errors = e.system_handled_errors + 1;
+    e.handled_error_phase = ecs_executor_panic_phase_deep_system();
+    e.handled_error_system = system_index;
+    return e;
+}
+
+fn ecs_executor_error_state_deep_record_deferred_handled_error(e: EcsExecutorErrorStateDeep, system_index: i64) -> EcsExecutorErrorStateDeep {
+    e.deferred_handled_errors = e.deferred_handled_errors + 1;
+    e.handled_error_phase = ecs_executor_panic_phase_deep_apply_deferred();
+    e.handled_error_system = system_index;
+    return e;
+}
+
+fn ecs_executor_error_state_deep_take_panic_payload(e: EcsExecutorErrorStateDeep) -> EcsExecutorErrorStateDeep {
+    if e.panic_payload_pending != 0 { e.panic_payload_rethrows = e.panic_payload_rethrows + 1; };
+    e.panic_payload_pending = 0;
+    e.panic_payload_phase = ecs_executor_panic_phase_deep_none();
+    e.panic_payload_system = -1;
+    return e;
+}
+
+fn ecs_executor_condition_fold_deep_new() -> EcsExecutorConditionFoldDeep {
+    return EcsExecutorConditionFoldDeep {
+        should_run: 1,
+        evaluated_count: 0,
+        aborted: 0,
+        panic_payload_pending: 0,
+        system_panic_payloads: 0,
+        panic_payload_phase: 0,
+        panic_payload_system: -1,
+        system_handled_errors: 0,
+        handled_error_phase: 0,
+        handled_error_system: -1,
+    };
 }
 
 fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {
@@ -376,6 +483,23 @@ fn ecs_executor_state_deep_is_set_evaluated(s: EcsExecutorStateDeep, set_index: 
     return _mt_evaluated_at(s, set_index);
 }
 
+fn ecs_executor_state_deep_apply_failed_set_condition3(s: EcsExecutorStateDeep, set_index: i64, system0: i64, system1: i64, system2: i64, system_count: i64) -> EcsExecutorStateDeep {
+    if ecs_executor_state_deep_is_set_evaluated(s, set_index) { return s; };
+    if system_count > 0 { s = ecs_executor_state_deep_mark_skipped_pending(s, system0); };
+    if system_count > 1 { s = ecs_executor_state_deep_mark_skipped_pending(s, system1); };
+    if system_count > 2 { s = ecs_executor_state_deep_mark_skipped_pending(s, system2); };
+    return ecs_executor_state_deep_mark_set_evaluated(s, set_index);
+}
+
+fn ecs_executor_state_deep_apply_passed_set_condition(s: EcsExecutorStateDeep, set_index: i64) -> EcsExecutorStateDeep {
+    if ecs_executor_state_deep_is_set_evaluated(s, set_index) { return s; };
+    return ecs_executor_state_deep_mark_set_evaluated(s, set_index);
+}
+
+fn ecs_executor_state_deep_apply_failed_system_condition(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
+    return ecs_executor_state_deep_mark_skipped_pending(s, system_index);
+}
+
 fn ecs_executor_state_deep_apply_deferred_system(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
     if system_index >= 0 && system_index < s.system_count { return _mt_unapplied_set(s, system_index, false); };
     return s;
@@ -414,6 +538,91 @@ fn ecs_executor_state_deep_finish_run(s: EcsExecutorStateDeep, apply_final_defer
 fn ecs_executor_state_deep_tick_after_completion3(s: EcsExecutorStateDeep, completed_spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep) -> EcsExecutorReadyBatchDeep {
     s = ecs_executor_state_deep_complete_system_with_dependents3(s, completed_spec, has_deferred, dep0, dep1, dep2, dep_count);
     return ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+}
+
+fn _mt_condition_outcome3_at(outcome0: i64, outcome1: i64, outcome2: i64, index: i64) -> i64 {
+    if index == 0 { return outcome0; };
+    if index == 1 { return outcome1; };
+    if index == 2 { return outcome2; };
+    return ecs_executor_condition_outcome_deep_true();
+}
+
+fn _mt_condition_fold_deep_apply_outcome(f: EcsExecutorConditionFoldDeep, for_system_index: i64, outcome: i64) -> EcsExecutorConditionFoldDeep {
+    if f.aborted != 0 { return f; };
+    if outcome == ecs_executor_condition_outcome_deep_error_handler_panic() {
+        f.panic_payload_pending = 1;
+        f.system_panic_payloads = f.system_panic_payloads + 1;
+        f.panic_payload_phase = ecs_executor_panic_phase_deep_run_condition();
+        f.panic_payload_system = for_system_index;
+        f.evaluated_count = f.evaluated_count + 1;
+        f.aborted = 1;
+        f.should_run = 0;
+        return f;
+    };
+    if outcome == ecs_executor_condition_outcome_deep_handled_error() {
+        f.system_handled_errors = f.system_handled_errors + 1;
+        f.handled_error_phase = ecs_executor_panic_phase_deep_run_condition();
+        f.handled_error_system = for_system_index;
+        f.should_run = 0;
+    } else {
+        if outcome == ecs_executor_condition_outcome_deep_false() {
+            f.should_run = 0;
+        } else {
+            if outcome != ecs_executor_condition_outcome_deep_true() { f.should_run = 0; };
+        };
+    };
+    f.evaluated_count = f.evaluated_count + 1;
+    return f;
+}
+
+fn ecs_executor_condition_fold_deep_outcomes3(for_system_index: i64, outcome0: i64, outcome1: i64, outcome2: i64, count: i64) -> EcsExecutorConditionFoldDeep {
+    let f = ecs_executor_condition_fold_deep_new();
+    let i: i64 = 0;
+    while i < count && i < 3 {
+        f = _mt_condition_fold_deep_apply_outcome(f, for_system_index, _mt_condition_outcome3_at(outcome0, outcome1, outcome2, i));
+        if f.aborted != 0 { return f; };
+        i = i + 1;
+    }
+    return f;
+}
+
+fn ecs_executor_condition_fold_deep_join(set_fold: EcsExecutorConditionFoldDeep, system_fold: EcsExecutorConditionFoldDeep, initially_skipped: bool) -> EcsExecutorConditionFoldDeep {
+    let f = ecs_executor_condition_fold_deep_new();
+    f.should_run = 1;
+    if initially_skipped { f.should_run = 0; };
+    if set_fold.should_run == 0 { f.should_run = 0; };
+    if system_fold.should_run == 0 { f.should_run = 0; };
+    f.evaluated_count = set_fold.evaluated_count + system_fold.evaluated_count;
+    if set_fold.aborted != 0 {
+        f.aborted = 1;
+        f.panic_payload_pending = set_fold.panic_payload_pending;
+        f.system_panic_payloads = set_fold.system_panic_payloads;
+        f.panic_payload_phase = set_fold.panic_payload_phase;
+        f.panic_payload_system = set_fold.panic_payload_system;
+        f.system_handled_errors = set_fold.system_handled_errors;
+        f.handled_error_phase = set_fold.handled_error_phase;
+        f.handled_error_system = set_fold.handled_error_system;
+        return f;
+    };
+    f.aborted = system_fold.aborted;
+    f.panic_payload_pending = set_fold.panic_payload_pending + system_fold.panic_payload_pending;
+    f.system_panic_payloads = set_fold.system_panic_payloads + system_fold.system_panic_payloads;
+    if system_fold.panic_payload_pending != 0 {
+        f.panic_payload_phase = system_fold.panic_payload_phase;
+        f.panic_payload_system = system_fold.panic_payload_system;
+    } else {
+        f.panic_payload_phase = set_fold.panic_payload_phase;
+        f.panic_payload_system = set_fold.panic_payload_system;
+    };
+    f.system_handled_errors = set_fold.system_handled_errors + system_fold.system_handled_errors;
+    if system_fold.system_handled_errors > 0 {
+        f.handled_error_phase = system_fold.handled_error_phase;
+        f.handled_error_system = system_fold.handled_error_system;
+    } else {
+        f.handled_error_phase = set_fold.handled_error_phase;
+        f.handled_error_system = set_fold.handled_error_system;
+    };
+    return f;
 }
 
 fn ecs_executor_system_spec_deep_new(system_index: i64, is_exclusive: bool, is_local: bool) -> EcsExecutorSystemSpecDeep {

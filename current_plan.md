@@ -6322,3 +6322,40 @@ Feature progress: multi-threaded executor completion/tick handoff sub-surface
 ~94–96%, behavioral parity remains ~86–91%. Remaining useful work in this
 module is higher-level run-plan condition folding/error payload facades if
 more executor depth is desired.
+
+
+# Batch 422 — `lib/executor_multi_threaded_deep.sla` condition/error facades — DONE
+
+Source focus: the `MultiThreadedExecutor` panic/handled-error payload helpers
+and `EcsExecutorRunPlan` condition-folding / failed-condition state effects in
+`lib/executor_multi_threaded.sla`.
+
+Deep strategy: add flat `EcsExecutorErrorStateDeep` and
+`EcsExecutorConditionFoldDeep` structs instead of nesting a full run plan.
+The error facade mirrors system/deferred panic payload recording, system/
+deferred handled-error recording, phase/system tracking, and panic payload
+take/rethrow accounting. The condition facade models Bevy's non-short-circuit
+condition fold: false keeps evaluating later conditions, handled errors
+become false and keep evaluating, and error-handler panic aborts the fold with
+a run-condition panic payload. Added fixed-arity helpers for failed set
+conditions, passed set conditions, failed system conditions, and joining set +
+system fold results.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 25
+`@test` entries (+7). New panic band: tests 147970-148013.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 25 passed / 0 failed ✓
+- SA backend: 25 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6706
+tests-dir `@test` annotations | 7303 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor condition/error facade sub-surface
+0% -> 100% for the flat fixed-arity model; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining executor opportunities
+are broader run-plan drive loops and lock-failure tick wrappers.
