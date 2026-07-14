@@ -885,3 +885,83 @@
     if r.ready_after != 1 { panic(148261); };
     if r.running_after != 1 { panic(148262); };
 }
+
+@test "mt_deep_begin_run_summary_resets_dirty_transient_state"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 2);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, true, true);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_complete_system(s, a, true);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, b);
+    s = ecs_executor_state_deep_skip_system(s, 2);
+    s = ecs_executor_state_deep_mark_set_evaluated(s, 0);
+    s = ecs_executor_state_deep_mark_set_evaluated(s, 1);
+    let r = ecs_executor_begin_run_summary_deep3(s, true, false, true, 0, 2, 0);
+    if r.ready_count != 2 { panic(148280); };
+    if r.ready0 != 1 { panic(148281); };
+    if r.ready1 != 0 { panic(148282); };
+    if r.ready2 != 1 { panic(148283); };
+    if r.running_count != 0 { panic(148284); };
+    if r.completed_count != 0 { panic(148285); };
+    if r.skipped_count != 0 { panic(148286); };
+    if r.evaluated_count != 0 { panic(148287); };
+    if r.local_thread_running != 0 { panic(148288); };
+    if r.exclusive_running != 0 { panic(148289); };
+}
+
+@test "mt_deep_begin_run_summary_restores_dependency_counts"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    s = ecs_executor_state_deep_set_dependencies(s, 0, 9);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 8);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 7);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_begin_run_summary_deep3(s, true, false, false, 0, 3, 1);
+    if r.deps0 != 0 { panic(148290); };
+    if r.deps1 != 3 { panic(148291); };
+    if r.deps2 != 1 { panic(148292); };
+    if r.ready_count != 1 { panic(148293); };
+    if r.ready0 != 1 { panic(148294); };
+    if r.ready1 != 0 { panic(148295); };
+    if r.ready2 != 0 { panic(148296); };
+}
+
+@test "mt_deep_begin_run_summary_preserves_unapplied_buffers"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_complete_system(s, a, true);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, b);
+    s = ecs_executor_state_deep_complete_system(s, b, true);
+    let r = ecs_executor_begin_run_summary_deep3(s, false, false, true, 1, 1, 0);
+    if r.unapplied_count != 2 { panic(148297); };
+    if r.ready_count != 1 { panic(148298); };
+    if r.ready2 != 1 { panic(148299); };
+    if r.run_count != 0 { panic(148300); };
+    if r.apply_count != 0 { panic(148301); };
+    if r.history_skipped_count != 0 { panic(148302); };
+    if r.stalled != 0 { panic(148303); };
+}
+
+@test "mt_deep_begin_run_summary_ignores_missing_third_start_slot"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 1);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_mark_set_evaluated(s, 0);
+    let r = ecs_executor_begin_run_summary_deep3(s, true, true, true, 0, 0, 0);
+    if r.ready_count != 2 { panic(148304); };
+    if r.ready0 != 1 { panic(148305); };
+    if r.ready1 != 1 { panic(148306); };
+    if r.ready2 != 0 { panic(148307); };
+    if r.deps2 != 0 { panic(148308); };
+    if r.running_count != 0 { panic(148309); };
+    if r.evaluated_count != 0 { panic(148310); };
+    if r.panic_payload_pending != 0 { panic(148311); };
+    if r.system_panic_payloads != 0 { panic(148312); };
+    if r.deferred_handled_errors != 0 { panic(148313); };
+}
