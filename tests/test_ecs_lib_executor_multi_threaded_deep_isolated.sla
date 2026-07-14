@@ -2472,3 +2472,40 @@
     if ecs_executor_drive_summary_deep_stalled(locked) { panic(149150); };
     if ecs_executor_drive_summary_deep_unapplied_count(locked) != 0 { panic(149151); };
 }
+
+@test "mt_deep_system_spec_accessor_reads_flags"() {
+    let spec = ecs_executor_system_spec_deep_new(2, false, true);
+    if ecs_executor_system_spec_deep_system_index(spec) != 2 { panic(149180); };
+    if ecs_executor_system_spec_deep_is_exclusive(spec) { panic(149181); };
+    if !ecs_executor_system_spec_deep_is_local(spec) { panic(149182); };
+    if ecs_executor_system_spec_deep_has_deferred(spec) { panic(149183); };
+    if !ecs_executor_system_spec_deep_should_run(spec) { panic(149184); };
+    if ecs_executor_system_spec_deep_is_apply_deferred(spec) { panic(149185); };
+    let deferred = ecs_executor_system_spec_deep_with_deferred(spec, true);
+    if !ecs_executor_system_spec_deep_has_deferred(deferred) { panic(149186); };
+    let skipped = ecs_executor_system_spec_deep_with_should_run(deferred, false);
+    if ecs_executor_system_spec_deep_should_run(skipped) { panic(149187); };
+    let barrier = ecs_executor_system_spec_deep_as_apply_deferred(spec);
+    if !ecs_executor_system_spec_deep_is_apply_deferred(barrier) { panic(149188); };
+    if !ecs_executor_system_spec_deep_is_exclusive(barrier) { panic(149189); };
+    if !ecs_executor_system_spec_deep_is_local(barrier) { panic(149190); };
+    if ecs_executor_system_spec_deep_has_deferred(barrier) { panic(149191); };
+}
+
+@test "mt_deep_system_spec_accessor_reads_conflict_bounds"() {
+    let spec = ecs_executor_system_spec_deep_new(3, false, false);
+    if ecs_executor_system_spec_deep_access_conflict_count(spec) != 0 { panic(149192); };
+    if ecs_executor_system_spec_deep_access_conflict_at(spec, 0) != -1 { panic(149193); };
+    let one = ecs_executor_system_spec_deep_with_conflict(spec, 7);
+    if ecs_executor_system_spec_deep_access_conflict_count(one) != 1 { panic(149194); };
+    if ecs_executor_system_spec_deep_access_conflict_at(one, 0) != 7 { panic(149195); };
+    if ecs_executor_system_spec_deep_access_conflict_at(one, 1) != -1 { panic(149196); };
+    let two = ecs_executor_system_spec_deep_with_conflict(one, 8);
+    if ecs_executor_system_spec_deep_access_conflict_count(two) != 2 { panic(149197); };
+    if ecs_executor_system_spec_deep_access_conflict_at(two, 0) != 7 { panic(149198); };
+    if ecs_executor_system_spec_deep_access_conflict_at(two, 1) != 8 { panic(149199); };
+    if ecs_executor_system_spec_deep_access_conflict_at(two, 2) != -1 { panic(149200); };
+    let capped = ecs_executor_system_spec_deep_with_conflict(two, 9);
+    if ecs_executor_system_spec_deep_access_conflict_count(capped) != 2 { panic(149201); };
+    if ecs_executor_system_spec_deep_access_conflict_at(capped, 1) != 8 { panic(149202); };
+}
