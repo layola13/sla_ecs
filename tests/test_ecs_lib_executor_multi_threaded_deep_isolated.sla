@@ -791,3 +791,97 @@
     if r.handled_error_system != 1 { panic(148225); };
     if r.unapplied_after != 0 { panic(148226); };
 }
+
+@test "mt_deep_ready_batch_rescan_skips_and_selects_released_later_index"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_should_run(a0, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_ready_batch_rescan_summary_deep3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        2
+    );
+    if r.skipped_count != 1 { panic(148240); };
+    if r.skipped0 != 0 { panic(148241); };
+    if r.selected_count != 1 { panic(148242); };
+    if r.selected0 != 1 { panic(148243); };
+    if r.completed_after != 1 { panic(148244); };
+    if r.running_after != 1 { panic(148245); };
+}
+
+@test "mt_deep_ready_batch_rescan_revisits_lower_index_dependent"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_should_run(b0, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 0, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_ready_batch_rescan_summary_deep3(
+        s, a, b, c,
+        -1, -1, -1, 0,
+        0, -1, -1, 1,
+        -1, -1, -1, 0,
+        2
+    );
+    if r.rescan_count != 2 { panic(148246); };
+    if r.skipped_count != 1 { panic(148247); };
+    if r.skipped0 != 1 { panic(148248); };
+    if r.selected_count != 1 { panic(148249); };
+    if r.selected0 != 0 { panic(148250); };
+    if r.ready_after != 0 { panic(148251); };
+}
+
+@test "mt_deep_ready_batch_rescan_width_limit_leaves_remaining_ready"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_should_run(a0, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_ready_batch_rescan_summary_deep3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        1
+    );
+    if r.skipped_count != 1 { panic(148252); };
+    if r.selected_count != 1 { panic(148253); };
+    if r.selected0 != 1 { panic(148254); };
+    if r.ready_after != 1 { panic(148255); };
+    if r.running_after != 1 { panic(148256); };
+}
+
+@test "mt_deep_ready_batch_rescan_exclusive_stands_alone_after_skip"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_should_run(a0, false);
+    let b0 = ecs_executor_system_spec_deep_new(1, true, true);
+    let b = b0;
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_ready_batch_rescan_summary_deep3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        3
+    );
+    if r.skipped_count != 1 { panic(148257); };
+    if r.skipped0 != 0 { panic(148258); };
+    if r.selected_count != 1 { panic(148259); };
+    if r.selected0 != 1 { panic(148260); };
+    if r.ready_after != 1 { panic(148261); };
+    if r.running_after != 1 { panic(148262); };
+}

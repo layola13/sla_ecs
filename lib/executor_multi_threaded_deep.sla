@@ -8,6 +8,7 @@
 // Batch 425 adds flat run/apply/skip history tracking.
 // Batch 426 adds fixed-arity drive-all history integration.
 // Batch 427 adds flat finish-run deferred cleanup summaries.
+// Batch 428 adds ready-batch skip/rescan summaries.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -173,6 +174,23 @@ struct EcsExecutorFinishRunSummaryDeep {
     handled_error_system: i64,
 }
 
+@derive(copy)
+struct EcsExecutorReadyBatchRescanSummaryDeep {
+    selected_count: i64,
+    selected0: i64,
+    selected1: i64,
+    selected2: i64,
+    skipped_count: i64,
+    skipped0: i64,
+    skipped1: i64,
+    skipped2: i64,
+    rescan_count: i64,
+    ready_after: i64,
+    completed_after: i64,
+    running_after: i64,
+    stalled: i32,
+}
+
 fn _mt_bool(v: bool) -> i32 {
     if v { return 1; };
     return 0;
@@ -332,6 +350,45 @@ fn ecs_executor_finish_run_summary_deep_empty() -> EcsExecutorFinishRunSummaryDe
         handled_error_phase: ecs_executor_panic_phase_deep_none(),
         handled_error_system: -1,
     };
+}
+
+fn ecs_executor_ready_batch_rescan_summary_deep_empty() -> EcsExecutorReadyBatchRescanSummaryDeep {
+    return EcsExecutorReadyBatchRescanSummaryDeep {
+        selected_count: 0,
+        selected0: -1,
+        selected1: -1,
+        selected2: -1,
+        skipped_count: 0,
+        skipped0: -1,
+        skipped1: -1,
+        skipped2: -1,
+        rescan_count: 0,
+        ready_after: 0,
+        completed_after: 0,
+        running_after: 0,
+        stalled: 0,
+    };
+}
+
+fn _mt_ready_batch_rescan_summary_from_state(r: EcsExecutorReadyBatchRescanSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorReadyBatchRescanSummaryDeep {
+    r.ready_after = ecs_executor_state_deep_ready_count(s);
+    r.completed_after = ecs_executor_state_deep_completed_count(s);
+    r.running_after = ecs_executor_state_deep_running_count(s);
+    return r;
+}
+
+fn _mt_ready_batch_rescan_push_selected(r: EcsExecutorReadyBatchRescanSummaryDeep, system_index: i64) -> EcsExecutorReadyBatchRescanSummaryDeep {
+    if r.selected_count == 0 { r.selected0 = system_index; r.selected_count = 1; return r; };
+    if r.selected_count == 1 { r.selected1 = system_index; r.selected_count = 2; return r; };
+    if r.selected_count == 2 { r.selected2 = system_index; r.selected_count = 3; return r; };
+    return r;
+}
+
+fn _mt_ready_batch_rescan_push_skipped(r: EcsExecutorReadyBatchRescanSummaryDeep, system_index: i64) -> EcsExecutorReadyBatchRescanSummaryDeep {
+    if r.skipped_count == 0 { r.skipped0 = system_index; r.skipped_count = 1; return r; };
+    if r.skipped_count == 1 { r.skipped1 = system_index; r.skipped_count = 2; return r; };
+    if r.skipped_count == 2 { r.skipped2 = system_index; r.skipped_count = 3; return r; };
+    return r;
 }
 
 fn _mt_finish_run_summary_from_state(r: EcsExecutorFinishRunSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorFinishRunSummaryDeep {
@@ -534,6 +591,51 @@ fn ecs_executor_run_history_deep_drive_all3(s: EcsExecutorStateDeep, a: EcsExecu
     }
     if ecs_executor_state_deep_completed_count(s) < s.system_count { h.stalled = 1; };
     return h;
+}
+
+fn ecs_executor_ready_batch_rescan_summary_deep3(s: EcsExecutorStateDeep, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorReadyBatchRescanSummaryDeep {
+    let r = ecs_executor_ready_batch_rescan_summary_deep_empty();
+    if max_width <= 0 {
+        if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
+        return _mt_ready_batch_rescan_summary_from_state(r, s);
+    };
+    let rescan: bool = true;
+    let guard: i64 = 0;
+    while rescan && guard < ECS_MT_DEEP_CAP as i64 {
+        rescan = false;
+        r.rescan_count = r.rescan_count + 1;
+        let i: i64 = 0;
+        while i < s.system_count {
+            if r.selected_count >= max_width { return _mt_ready_batch_rescan_summary_from_state(r, s); };
+            if _mt_ready_at(s, i) && _mt_completed_at(s, i) != true && _mt_running_at(s, i) != true {
+                let spec = _mt_spec3_by_system_index(a, b, c, i);
+                if ecs_executor_state_deep_can_spawn_system(s, spec) {
+                    if spec.should_run == 0 || _mt_skipped_at(s, i) {
+                        r = _mt_ready_batch_rescan_push_skipped(r, i);
+                        s = _mt_skip_with_history_deps3(s, spec, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                        rescan = true;
+                    } else {
+                        if spec.is_exclusive != 0 {
+                            if r.selected_count == 0 {
+                                r = _mt_ready_batch_rescan_push_selected(r, i);
+                                s = ecs_executor_state_deep_start_system(s, spec);
+                            };
+                            return _mt_ready_batch_rescan_summary_from_state(r, s);
+                        } else {
+                            r = _mt_ready_batch_rescan_push_selected(r, i);
+                            s = ecs_executor_state_deep_start_system(s, spec);
+                        };
+                    };
+                };
+            };
+            i = i + 1;
+        }
+        guard = guard + 1;
+    }
+    if r.selected_count == 0 && r.skipped_count == 0 && ecs_executor_state_deep_completed_count(s) < s.system_count {
+        r.stalled = 1;
+    };
+    return _mt_ready_batch_rescan_summary_from_state(r, s);
 }
 
 fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {
