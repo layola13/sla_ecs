@@ -6706,3 +6706,50 @@ Feature progress: multi-threaded executor initial-skip sub-surface 0% -> 100%
 for the flat fixed-arity model; overall API parity remains ~94–96%,
 behavioral parity remains ~86–91%. Remaining optional depth is broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 433/434 — `lib/executor_multi_threaded_deep.sla` completion drain/tick summaries — DONE
+
+Source focus: `ecs_executor_run_plan_drain_completion_queue` and
+`ecs_executor_run_plan_tick_with_completions` in
+`lib/executor_multi_threaded.sla`, especially completion queue ordering,
+ApplyDeferred barrier handling before completing the barrier system, duplicate
+or invalid completed-system entries, dependent release after accepted
+completions, and same-tick ready-batch selection after draining completions.
+
+Deep strategy: add flat `EcsExecutorCompletionQueueDrainSummaryDeep` and a
+fixed-arity `ecs_executor_completion_queue_drain_summary_deep3` helper, plus
+flat `EcsExecutorTickWithCompletionsSummaryDeep` and
+`ecs_executor_tick_with_completions_summary_deep3`. The helpers accept three
+queued completion slots plus three spec/dependent slot families, complete only
+currently-running systems in queue order, report ignored entries when a queued
+id is invalid or no longer running, apply all existing deferred buffers before
+completing an ApplyDeferred spec, release dependents through the existing
+scalar dependent helpers, and summarize post-drain/tick
+ready/running/completed/unapplied/gate/dependency slots without nesting a run
+plan, completion queue, or tick-loop result. The no-completion tick path uses
+the fixed-arity ready-batch helper directly after a focused failure showed the
+generic rescan loop only selected the first ready system when exactly systems
+0 and 1 were ready.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 75
+`@test` entries (+8). New panic band: tests 148480-148549.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `mt_deep_completion_queue_drain_summary`: 4 passed / 0 failed ✓ (`timeout 90s`)
+- Default backend focused filter `mt_deep_tick_with_completions_summary`: 4 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `mt_deep_completion_queue_drain_summary`: 4 passed / 0 failed ✓ (`timeout 150s`)
+- SA backend focused filter `mt_deep_tick_with_completions_summary`: 4 passed / 0 failed ✓ (`timeout 180s`)
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6756
+tests-dir `@test` annotations | 7389 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completion-queue drain and
+tick-with-completions summary sub-surfaces 0% -> 100% for the flat fixed-arity
+model; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
