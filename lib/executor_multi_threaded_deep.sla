@@ -5,6 +5,7 @@
 // Batch 422 adds flat condition-folding and panic/handled-error facades.
 // Batch 423 adds flat drive-loop and lock-failure tick summaries.
 // Batch 424 adds fixed-arity multi-wave tick-loop summaries.
+// Batch 425 adds flat run/apply/skip history tracking.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -134,6 +135,23 @@ struct EcsExecutorTickLoopSummaryDeep {
     batch1_system2: i64,
 }
 
+@derive(copy)
+struct EcsExecutorRunHistoryDeep {
+    run_count: i64,
+    run0: i64,
+    run1: i64,
+    run2: i64,
+    apply_count: i64,
+    apply0: i64,
+    apply1: i64,
+    apply2: i64,
+    skipped_count: i64,
+    skipped0: i64,
+    skipped1: i64,
+    skipped2: i64,
+    stalled: i32,
+}
+
 fn _mt_bool(v: bool) -> i32 {
     if v { return 1; };
     return 0;
@@ -255,6 +273,95 @@ fn ecs_executor_tick_loop_summary_deep_empty() -> EcsExecutorTickLoopSummaryDeep
         batch1_system1: -1,
         batch1_system2: -1,
     };
+}
+
+fn ecs_executor_run_history_deep_new() -> EcsExecutorRunHistoryDeep {
+    return EcsExecutorRunHistoryDeep {
+        run_count: 0,
+        run0: -1,
+        run1: -1,
+        run2: -1,
+        apply_count: 0,
+        apply0: -1,
+        apply1: -1,
+        apply2: -1,
+        skipped_count: 0,
+        skipped0: -1,
+        skipped1: -1,
+        skipped2: -1,
+        stalled: 0,
+    };
+}
+
+fn ecs_executor_run_history_deep_push_run(h: EcsExecutorRunHistoryDeep, system_index: i64) -> EcsExecutorRunHistoryDeep {
+    if h.run_count == 0 { h.run0 = system_index; h.run_count = 1; return h; };
+    if h.run_count == 1 { h.run1 = system_index; h.run_count = 2; return h; };
+    if h.run_count == 2 { h.run2 = system_index; h.run_count = 3; return h; };
+    return h;
+}
+
+fn ecs_executor_run_history_deep_push_apply(h: EcsExecutorRunHistoryDeep, system_index: i64) -> EcsExecutorRunHistoryDeep {
+    if h.apply_count == 0 { h.apply0 = system_index; h.apply_count = 1; return h; };
+    if h.apply_count == 1 { h.apply1 = system_index; h.apply_count = 2; return h; };
+    if h.apply_count == 2 { h.apply2 = system_index; h.apply_count = 3; return h; };
+    return h;
+}
+
+fn ecs_executor_run_history_deep_push_skipped(h: EcsExecutorRunHistoryDeep, system_index: i64) -> EcsExecutorRunHistoryDeep {
+    if h.skipped_count == 0 { h.skipped0 = system_index; h.skipped_count = 1; return h; };
+    if h.skipped_count == 1 { h.skipped1 = system_index; h.skipped_count = 2; return h; };
+    if h.skipped_count == 2 { h.skipped2 = system_index; h.skipped_count = 3; return h; };
+    return h;
+}
+
+fn ecs_executor_run_history_deep_run_at(h: EcsExecutorRunHistoryDeep, index: i64) -> i64 {
+    if index == 0 && h.run_count > 0 { return h.run0; };
+    if index == 1 && h.run_count > 1 { return h.run1; };
+    if index == 2 && h.run_count > 2 { return h.run2; };
+    return -1;
+}
+
+fn ecs_executor_run_history_deep_apply_at(h: EcsExecutorRunHistoryDeep, index: i64) -> i64 {
+    if index == 0 && h.apply_count > 0 { return h.apply0; };
+    if index == 1 && h.apply_count > 1 { return h.apply1; };
+    if index == 2 && h.apply_count > 2 { return h.apply2; };
+    return -1;
+}
+
+fn ecs_executor_run_history_deep_skipped_at(h: EcsExecutorRunHistoryDeep, index: i64) -> i64 {
+    if index == 0 && h.skipped_count > 0 { return h.skipped0; };
+    if index == 1 && h.skipped_count > 1 { return h.skipped1; };
+    if index == 2 && h.skipped_count > 2 { return h.skipped2; };
+    return -1;
+}
+
+fn ecs_executor_run_history_deep_apply_unapplied(h: EcsExecutorRunHistoryDeep, s: EcsExecutorStateDeep) -> EcsExecutorRunHistoryDeep {
+    let i: i64 = 0;
+    while i < s.system_count {
+        if _mt_unapplied_at(s, i) { h = ecs_executor_run_history_deep_push_apply(h, i); };
+        i = i + 1;
+    }
+    return h;
+}
+
+fn ecs_executor_run_history_deep_record_batch3(h: EcsExecutorRunHistoryDeep, b: EcsExecutorReadyBatchDeep) -> EcsExecutorRunHistoryDeep {
+    if b.count > 0 { h = ecs_executor_run_history_deep_push_run(h, b.system0); };
+    if b.count > 1 { h = ecs_executor_run_history_deep_push_run(h, b.system1); };
+    if b.count > 2 { h = ecs_executor_run_history_deep_push_run(h, b.system2); };
+    return h;
+}
+
+fn ecs_executor_run_history_deep_drive_one(h: EcsExecutorRunHistoryDeep, s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> EcsExecutorRunHistoryDeep {
+    if ecs_executor_state_deep_can_spawn_system(s, spec) != true {
+        if ecs_executor_state_deep_completed_count(s) < s.system_count { h.stalled = 1; };
+        return h;
+    };
+    if spec.should_run == 0 || _mt_skipped_at(s, spec.system_index) {
+        return ecs_executor_run_history_deep_push_skipped(h, spec.system_index);
+    };
+    h = ecs_executor_run_history_deep_push_run(h, spec.system_index);
+    if spec.is_apply_deferred != 0 { h = ecs_executor_run_history_deep_apply_unapplied(h, s); };
+    return h;
 }
 
 fn ecs_executor_state_deep_new() -> EcsExecutorStateDeep {

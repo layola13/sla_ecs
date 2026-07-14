@@ -1,6 +1,6 @@
 # sla_ecs Current Plan — Bevy ECS Parity (per-dimension)
 
-Last updated: 2026-07-09
+Last updated: 2026-07-14
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~94–96%, behavioral parity ~86–91%. Not 100%: full TaskPool/Scope-style worker scheduling and full runtime reflection remain incomplete (see README ⚠️ / ❌).
@@ -6431,3 +6431,36 @@ Feature progress: multi-threaded executor multi-wave tick-loop summary
 sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
 is full run-plan history tracking, if continued, using flat scalar summaries.
+
+
+# Batch 425 — `lib/executor_multi_threaded_deep.sla` run history summaries — DONE
+
+Source focus: the `EcsExecutorRunPlan` `run_order`, `apply_order`, and
+`skipped_order` tracking plus their count/at accessors in
+`lib/executor_multi_threaded.sla`.
+
+Deep strategy: add flat `EcsExecutorRunHistoryDeep` with capped scalar
+run/apply/skipped slots instead of nesting a full run plan. New helpers cover
+push/accessor behavior, out-of-range `-1` access, applying current unapplied
+systems in ascending system order, recording a ready-batch's selected systems,
+and a drive-one facade that records run, skip, stalled, and ApplyDeferred
+barrier history metadata.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 39
+`@test` entries (+4). New panic band: tests 148110-148139.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend: 39 passed / 0 failed ✓
+- SA backend: 39 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6720
+tests-dir `@test` annotations | 7355 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor run-plan history tracking
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is broader executor integration scenarios if new Bevy parity gaps are found.
