@@ -7403,3 +7403,40 @@ Feature progress: multi-threaded executor state metadata accessor sub-surface
 0% -> 100% for the flat fixed-arity model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 454 — `executor_multi_threaded_deep` isolated tests use existing accessors — DONE
+
+Source focus: early direct-field assertions in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` for state
+metadata, ready-batch metadata, and system-spec drive flags.
+
+Deep strategy: migrate those assertions to the existing public accessor
+helpers without changing executor behavior or adding new tests. Remaining
+direct `should_run` reads are condition-fold result assertions and are a
+separate surface.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` remains at 118
+`@test` entries. No new panic band.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `state_init`: 1 passed / 0 failed ✓ (`timeout 90s`)
+- Default backend focused filter `ready_batch`: 24 passed / 0 failed ✓ (`timeout 90s`)
+- Default backend focused filter `tick_after_completion`: 1 passed / 0 failed ✓ (`timeout 90s`)
+- Default backend focused filter `system_spec_drive_flags`: 1 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend exact filters for the six edited test names all passed with `--jobs 1` and `timeout 180s`: `mt_deep_system_spec_drive_flags`, `mt_deep_state_init_clamps_and_starts_empty`, `mt_deep_ready_batch_selects_nonconflicting_send_systems`, `mt_deep_ready_batch_allows_one_local_only`, `mt_deep_ready_batch_exclusive_stands_alone`, and `mt_deep_tick_after_completion_releases_and_batches_ready`.
+- A first attempt to run four SA backend filters concurrently hit command timeouts with no panic output; verification was repeated serially with exact test-name filters to avoid memory/resource contention.
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (unchanged): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6799
+tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor isolated accessor-usage cleanup
+0% -> 100% for this test-maintenance slice; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+condition-fold result accessor cleanup or broader executor integration
+scenarios if new Bevy parity gaps are found.

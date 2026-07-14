@@ -5,8 +5,8 @@
 
 @test "mt_deep_state_init_clamps_and_starts_empty"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 20, 20);
-    if s.system_count != 16 { panic(147880); };
-    if s.set_count != 16 { panic(147881); };
+    if ecs_executor_state_deep_system_count(s) != 16 { panic(147880); };
+    if ecs_executor_state_deep_set_count(s) != 16 { panic(147881); };
     if ecs_executor_state_deep_ready_count(s) != 0 { panic(147882); };
     if ecs_executor_state_deep_running_count(s) != 0 { panic(147883); };
 }
@@ -88,7 +88,7 @@
     s = ecs_executor_state_deep_mark_ready(s, 1);
     s = ecs_executor_state_deep_mark_ready(s, 2);
     let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
-    if batch.count != 3 { panic(147904); };
+    if ecs_executor_ready_batch_deep_count(batch) != 3 { panic(147904); };
     if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147905); };
     if ecs_executor_ready_batch_deep_at(batch, 1) != 1 { panic(147906); };
     if ecs_executor_ready_batch_deep_at(batch, 2) != 2 { panic(147907); };
@@ -103,10 +103,10 @@
     s = ecs_executor_state_deep_mark_ready(s, 1);
     s = ecs_executor_state_deep_mark_ready(s, 2);
     let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
-    if batch.count != 2 { panic(147908); };
+    if ecs_executor_ready_batch_deep_count(batch) != 2 { panic(147908); };
     if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147909); };
     if ecs_executor_ready_batch_deep_at(batch, 1) != 2 { panic(147910); };
-    if batch.is_local != 1 { panic(147911); };
+    if ecs_executor_ready_batch_deep_is_local(batch) != true { panic(147911); };
 }
 
 @test "mt_deep_ready_batch_exclusive_stands_alone"() {
@@ -118,9 +118,9 @@
     s = ecs_executor_state_deep_mark_ready(s, 1);
     s = ecs_executor_state_deep_mark_ready(s, 2);
     let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
-    if batch.count != 1 { panic(147912); };
+    if ecs_executor_ready_batch_deep_count(batch) != 1 { panic(147912); };
     if ecs_executor_ready_batch_deep_at(batch, 0) != 0 { panic(147913); };
-    if batch.is_exclusive != 1 { panic(147914); };
+    if ecs_executor_ready_batch_deep_is_exclusive(batch) != true { panic(147914); };
 }
 
 @test "mt_deep_completed_system_cannot_be_readied_or_spawned"() {
@@ -236,7 +236,7 @@
     s = ecs_executor_state_deep_mark_ready(s, 0);
     s = ecs_executor_state_deep_start_system(s, a);
     let batch = ecs_executor_state_deep_tick_after_completion3(s, a, false, 1, 2, -1, 2, b, c, a);
-    if batch.count != 2 { panic(147958); };
+    if ecs_executor_ready_batch_deep_count(batch) != 2 { panic(147958); };
     if ecs_executor_ready_batch_deep_at(batch, 0) != 1 { panic(147959); };
     if ecs_executor_ready_batch_deep_at(batch, 1) != 2 { panic(147960); };
 }
@@ -364,17 +364,17 @@
 
 @test "mt_deep_system_spec_drive_flags"() {
     let spec = ecs_executor_system_spec_deep_new(0, false, false);
-    if spec.should_run != 1 { panic(148030); };
-    if spec.has_deferred != 0 { panic(148031); };
-    if spec.is_apply_deferred != 0 { panic(148032); };
+    if ecs_executor_system_spec_deep_should_run(spec) != true { panic(148030); };
+    if ecs_executor_system_spec_deep_has_deferred(spec) { panic(148031); };
+    if ecs_executor_system_spec_deep_is_apply_deferred(spec) { panic(148032); };
     let deferred = ecs_executor_system_spec_deep_with_deferred(spec, true);
-    if deferred.has_deferred != 1 { panic(148033); };
+    if ecs_executor_system_spec_deep_has_deferred(deferred) != true { panic(148033); };
     let skipped = ecs_executor_system_spec_deep_with_should_run(deferred, false);
-    if skipped.should_run != 0 { panic(148034); };
+    if ecs_executor_system_spec_deep_should_run(skipped) { panic(148034); };
     let barrier = ecs_executor_system_spec_deep_as_apply_deferred(spec);
-    if barrier.is_apply_deferred != 1 { panic(148035); };
-    if barrier.is_exclusive != 1 { panic(148036); };
-    if barrier.is_local != 1 { panic(148037); };
+    if ecs_executor_system_spec_deep_is_apply_deferred(barrier) != true { panic(148035); };
+    if ecs_executor_system_spec_deep_is_exclusive(barrier) != true { panic(148036); };
+    if ecs_executor_system_spec_deep_is_local(barrier) != true { panic(148037); };
 }
 
 @test "mt_deep_next_ready_and_runnable_select_first_spawnable"() {
