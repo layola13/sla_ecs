@@ -6860,3 +6860,41 @@ parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 438 — `lib/executor_multi_threaded_deep.sla` tick-loop skipped-batch accessor parity — DONE
+
+Source focus: shallow `ecs_executor_ready_batch_skipped_count`,
+`ecs_executor_ready_batch_skipped_at`,
+`ecs_executor_tick_loop_batch_skipped_count`, and
+`ecs_executor_tick_loop_batch_skipped_at` behavior in
+`lib/executor_multi_threaded.sla`.
+
+Deep strategy: extend the flat `EcsExecutorTickLoopSummaryDeep` with
+per-batch skipped count/id slots for two capped tick waves, add scalar
+skipped-batch accessors with count-aware `-1` bounds, and route tick-loop
+batch summaries through the existing ready-batch rescan summary so skipped
+system ids are preserved alongside selected systems. This fixes a deep helper
+gap where tick-loop summaries could expose selected batch systems but had no
+way to report systems skipped during the same rescan wave.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 88
+`@test` entries (+2). New panic band: tests 148650-148663.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `skipped_accessors`: 2 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `skipped_accessors`: 2 passed / 0 failed ✓ (`timeout 150s`)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (measured): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6769
+tests-dir `@test` annotations | 7405 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor tick-loop skipped-batch accessor
+parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
+parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
+depth is broader executor integration scenarios if new Bevy parity gaps are
+found.
