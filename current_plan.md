@@ -6937,3 +6937,36 @@ parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 440 — `lib/executor_multi_threaded_deep.sla` error-state and condition-error accessor parity — DONE
+
+Source focus: shallow error-state and condition-fold error-payload accessors in
+`lib/executor_multi_threaded.sla`, especially panic-payload pending state,
+panic/handled-error counts, phase/system fields, and panic payload rethrows.
+
+Deep strategy: add read-only helpers over the existing
+`EcsExecutorErrorStateDeep` and `EcsExecutorConditionFoldDeep` fields. This
+keeps the flat error-state model unchanged while closing the last direct-field
+reads used by tests for panic payload and handled-error metadata.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 92
+`@test` entries (+2). New panic band: tests 148690-148711.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `error_accessor_parity`: 2 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `error_accessor_parity`: 2 passed / 0 failed ✓ (`timeout 150s`)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (measured): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6773
+tests-dir `@test` annotations | 7409 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor error-state and condition-error
+accessor parity sub-surface 0% -> 100% for the flat fixed-arity model;
+overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+Remaining optional depth is broader executor integration scenarios if new
+Bevy parity gaps are found.

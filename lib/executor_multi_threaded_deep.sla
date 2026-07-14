@@ -20,6 +20,7 @@
 // Batch 437 adds ready-batch and tick-loop accessor parity helpers.
 // Batch 438 adds skipped-batch accessor parity helpers.
 // Batch 439 adds condition-fold and run-history accessor parity helpers.
+// Batch 440 adds error-state and condition-error accessor parity helpers.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -468,6 +469,17 @@ fn ecs_executor_error_state_deep_new() -> EcsExecutorErrorStateDeep {
     };
 }
 
+fn ecs_executor_error_state_deep_panic_payload_pending(e: EcsExecutorErrorStateDeep) -> bool { return e.panic_payload_pending != 0; }
+fn ecs_executor_error_state_deep_system_panic_payloads(e: EcsExecutorErrorStateDeep) -> i64 { return e.system_panic_payloads; }
+fn ecs_executor_error_state_deep_deferred_panic_payloads(e: EcsExecutorErrorStateDeep) -> i64 { return e.deferred_panic_payloads; }
+fn ecs_executor_error_state_deep_panic_payload_phase(e: EcsExecutorErrorStateDeep) -> i64 { return e.panic_payload_phase; }
+fn ecs_executor_error_state_deep_panic_payload_system(e: EcsExecutorErrorStateDeep) -> i64 { return e.panic_payload_system; }
+fn ecs_executor_error_state_deep_panic_payload_rethrows(e: EcsExecutorErrorStateDeep) -> i64 { return e.panic_payload_rethrows; }
+fn ecs_executor_error_state_deep_system_handled_errors(e: EcsExecutorErrorStateDeep) -> i64 { return e.system_handled_errors; }
+fn ecs_executor_error_state_deep_deferred_handled_errors(e: EcsExecutorErrorStateDeep) -> i64 { return e.deferred_handled_errors; }
+fn ecs_executor_error_state_deep_handled_error_phase(e: EcsExecutorErrorStateDeep) -> i64 { return e.handled_error_phase; }
+fn ecs_executor_error_state_deep_handled_error_system(e: EcsExecutorErrorStateDeep) -> i64 { return e.handled_error_system; }
+
 fn ecs_executor_error_state_deep_record_system_panic_payload(e: EcsExecutorErrorStateDeep, system_index: i64) -> EcsExecutorErrorStateDeep {
     e.panic_payload_pending = 1;
     e.system_panic_payloads = e.system_panic_payloads + 1;
@@ -524,6 +536,13 @@ fn ecs_executor_condition_fold_deep_new() -> EcsExecutorConditionFoldDeep {
 fn ecs_executor_condition_fold_deep_should_run(f: EcsExecutorConditionFoldDeep) -> bool { return f.should_run != 0; }
 fn ecs_executor_condition_fold_deep_evaluated_count(f: EcsExecutorConditionFoldDeep) -> i64 { return f.evaluated_count; }
 fn ecs_executor_condition_fold_deep_aborted(f: EcsExecutorConditionFoldDeep) -> bool { return f.aborted != 0; }
+fn ecs_executor_condition_fold_deep_panic_payload_pending(f: EcsExecutorConditionFoldDeep) -> bool { return f.panic_payload_pending != 0; }
+fn ecs_executor_condition_fold_deep_system_panic_payloads(f: EcsExecutorConditionFoldDeep) -> i64 { return f.system_panic_payloads; }
+fn ecs_executor_condition_fold_deep_panic_payload_phase(f: EcsExecutorConditionFoldDeep) -> i64 { return f.panic_payload_phase; }
+fn ecs_executor_condition_fold_deep_panic_payload_system(f: EcsExecutorConditionFoldDeep) -> i64 { return f.panic_payload_system; }
+fn ecs_executor_condition_fold_deep_system_handled_errors(f: EcsExecutorConditionFoldDeep) -> i64 { return f.system_handled_errors; }
+fn ecs_executor_condition_fold_deep_handled_error_phase(f: EcsExecutorConditionFoldDeep) -> i64 { return f.handled_error_phase; }
+fn ecs_executor_condition_fold_deep_handled_error_system(f: EcsExecutorConditionFoldDeep) -> i64 { return f.handled_error_system; }
 
 fn ecs_executor_drive_summary_deep_empty() -> EcsExecutorDriveSummaryDeep {
     return EcsExecutorDriveSummaryDeep {
