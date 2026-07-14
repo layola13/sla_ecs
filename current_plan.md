@@ -6604,6 +6604,44 @@ Feature progress: multi-threaded executor begin-run reset sub-surface
 broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 435 — `lib/executor_multi_threaded_deep.sla` drive-ready-batch integration summaries — DONE
+
+Source focus: `ecs_executor_run_plan_drive_ready_batch` in
+`lib/executor_multi_threaded.sla`, especially the integration between
+ready-batch selection, run-order recording, complete-ready-batch behavior,
+skip/dependent release, ApplyDeferred barrier application, and zero-width
+stall handling.
+
+Deep strategy: add flat `EcsExecutorDriveReadyBatchIntegrationSummaryDeep` and
+fixed-arity `ecs_executor_drive_ready_batch_integration_summary_deep3`. The
+helper uses explicit scalar 0/1/2 selection slots, records skipped systems
+that release dependents before later slots are considered, delays state
+mutation until after selection so adjacent ready send systems are both
+selected, then starts/completes selected systems in run order. Wide summary
+slot writes are inline in the main helper because prior focused tests showed
+second-slot updates through push helpers are unstable for this large flat
+struct shape.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 79
+`@test` entries (+4). New panic band: tests 148560-148589.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `mt_deep_drive_ready_batch_integration`: 4 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `mt_deep_drive_ready_batch_integration`: 4 passed / 0 failed ✓ (`timeout 180s`)
+- `git diff --check` ✓
+
+Post-batch counts (measured): 521 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6760
+tests-dir `@test` annotations | 7393 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-ready-batch integration
+sub-surface 0% -> 100% for the flat fixed-arity model; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
+is broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 430 — `lib/executor_multi_threaded_deep.sla` completed-tick error summaries — DONE
 
 Source focus: the completed tick executor wrappers in

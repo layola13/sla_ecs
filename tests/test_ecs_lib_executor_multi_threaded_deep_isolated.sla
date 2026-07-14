@@ -1473,3 +1473,101 @@
     if r.completed_after != 2 { panic(148553); };
     if r.ready_after != 0 { panic(148554); };
 }
+
+@test "mt_deep_drive_ready_batch_integration_runs_and_completes_width"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_drive_ready_batch_integration_summary_deep3(
+        s, a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        2
+    );
+    if r.run_count != 2 { panic(148560); };
+    if r.run0 != 0 { panic(148561); };
+    if r.run1 != 1 { panic(148562); };
+    if r.completed_count != 2 { panic(148563); };
+    if r.completed0 != 0 { panic(148564); };
+    if r.completed1 != 1 { panic(148565); };
+    if r.running_after != 0 { panic(148566); };
+    if r.ready_after != 1 { panic(148567); };
+    if r.completed_after != 2 { panic(148568); };
+}
+
+@test "mt_deep_drive_ready_batch_integration_skip_releases_and_runs_dependent"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_should_run(a0, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_drive_ready_batch_integration_summary_deep3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        2
+    );
+    if r.skipped_count != 1 { panic(148569); };
+    if r.skipped0 != 0 { panic(148570); };
+    if r.run_count != 1 { panic(148571); };
+    if r.run0 != 1 { panic(148572); };
+    if r.completed_count != 1 { panic(148573); };
+    if r.completed0 != 1 { panic(148574); };
+    if r.completed_after != 2 { panic(148575); };
+    if r.deps1 != 0 { panic(148576); };
+}
+
+@test "mt_deep_drive_ready_batch_integration_apply_deferred_barrier_order"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let prior = ecs_executor_system_spec_deep_new(0, false, false);
+    let idle = ecs_executor_system_spec_deep_new(1, false, false);
+    let barrier0 = ecs_executor_system_spec_deep_new(2, true, true);
+    let barrier = ecs_executor_system_spec_deep_as_apply_deferred(barrier0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, prior);
+    s = ecs_executor_state_deep_complete_system(s, prior, true);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_drive_ready_batch_integration_summary_deep3(
+        s, prior, idle, barrier,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        1
+    );
+    if r.run_count != 1 { panic(148577); };
+    if r.run0 != 2 { panic(148578); };
+    if r.apply_count != 1 { panic(148579); };
+    if r.apply0 != 0 { panic(148580); };
+    if r.completed_count != 1 { panic(148581); };
+    if r.completed0 != 2 { panic(148582); };
+    if r.unapplied_after != 0 { panic(148583); };
+    if r.running_after != 0 { panic(148584); };
+}
+
+@test "mt_deep_drive_ready_batch_integration_zero_width_stalls_without_mutating"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_drive_ready_batch_integration_summary_deep3(
+        s, a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        0
+    );
+    if r.stalled != 1 { panic(148585); };
+    if r.run_count != 0 { panic(148586); };
+    if r.completed_count != 0 { panic(148587); };
+    if r.ready_after != 1 { panic(148588); };
+    if r.running_after != 0 { panic(148589); };
+}
