@@ -7273,3 +7273,36 @@ Feature progress: multi-threaded executor begin-run accessor sub-surface
 0% -> 100% for the flat fixed-arity model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 450 — `lib/executor_multi_threaded_deep.sla` finish-run summary accessors — DONE
+
+Source focus: finish-run summary accessor parity in
+`lib/executor_multi_threaded_deep.sla`, especially final-deferred enablement,
+apply counts, post-finish state cleanup counts, preserved unapplied buffers,
+and deferred panic/handled-error metadata.
+
+Deep strategy: add read-only accessors over the existing flat
+`EcsExecutorFinishRunSummaryDeep` fields. Boolean fields return `bool`, scalar
+post-state and error metadata helpers expose the same values asserted by the
+existing direct-field tests, and finish-run write paths remain unchanged.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 112
+`@test` entries (+2). New panic band: tests 149080-149104.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `finish_run_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `finish_run_accessor`: 2 passed / 0 failed ✓ (`timeout 150s`)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (measured): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6793
+tests-dir `@test` annotations | 7429 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor finish-run accessor sub-surface
+0% -> 100% for the flat fixed-arity model; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
