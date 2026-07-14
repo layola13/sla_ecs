@@ -1069,3 +1069,98 @@
     if r.completed_after != 2 { panic(148376); };
     if r.running_after != 0 { panic(148377); };
 }
+
+@test "mt_deep_complete_ready_batch_summary_starts_and_completes_batch"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_complete_ready_batch_summary_deep3(
+        s, 0, 1, -1, 2,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.started_count != 2 { panic(148400); };
+    if r.started0 != 0 { panic(148401); };
+    if r.started1 != 1 { panic(148402); };
+    if r.completed_count != 2 { panic(148403); };
+    if r.completed0 != 0 { panic(148404); };
+    if r.completed1 != 1 { panic(148405); };
+    if r.running_after != 0 { panic(148406); };
+    if r.completed_after != 2 { panic(148407); };
+    if r.ready_after != 0 { panic(148408); };
+}
+
+@test "mt_deep_complete_ready_batch_summary_keeps_prestarted_system"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, true);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_complete_ready_batch_summary_deep3(
+        s, 0, 1, -1, 2,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.started_count != 1 { panic(148409); };
+    if r.started0 != 1 { panic(148410); };
+    if r.completed_count != 2 { panic(148411); };
+    if r.local_thread_running != 0 { panic(148412); };
+    if r.exclusive_running != 0 { panic(148413); };
+    if r.running_after != 0 { panic(148414); };
+}
+
+@test "mt_deep_complete_ready_batch_summary_apply_deferred_barrier_applies_prior"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_deferred(a0, true);
+    let b0 = ecs_executor_system_spec_deep_new(1, true, true);
+    let b = ecs_executor_system_spec_deep_as_apply_deferred(b0);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_complete_ready_batch_summary_deep3(
+        s, 0, 1, -1, 2,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.apply_count != 1 { panic(148415); };
+    if r.apply0 != 0 { panic(148416); };
+    if r.unapplied_after != 0 { panic(148417); };
+    if r.completed_count != 2 { panic(148418); };
+    if r.completed0 != 0 { panic(148419); };
+    if r.completed1 != 1 { panic(148420); };
+    if r.completed_after != 2 { panic(148421); };
+}
+
+@test "mt_deep_complete_ready_batch_summary_releases_dependent_after_completion"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_complete_ready_batch_summary_deep3(
+        s, 0, -1, -1, 1,
+        a, b, c,
+        2, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if r.completed_count != 1 { panic(148422); };
+    if r.completed0 != 0 { panic(148423); };
+    if r.ready_after != 1 { panic(148424); };
+    if r.running_after != 0 { panic(148425); };
+    if r.completed_after != 1 { panic(148426); };
+    if r.unapplied_after != 0 { panic(148427); };
+}
