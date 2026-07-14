@@ -6110,3 +6110,40 @@ No easy shallow `lib/*.sla` candidates remain for further shallow deepening.
 docs/issue.md updated with a Batch 415 addendum describing the SA backend
 ForbiddenSyntax flattening regression affecting every deep-iso test in the
 repo (a toolchain issue, not specific to Batch 415).
+
+
+# Batch 416 — `lib/reflect_deep.sla` (99-line shallow original) — DONE
+
+Source: `lib/reflect.sla` (trait `EcsReflect` + `EcsReflectComponentFns`
+fn-pointer table over `ErasedComponentValue`). Target:
+`lib/reflect_deep.sla` (self-contained, no `@import`).
+
+Deep strategy: fold `ErasedComponentValue` into flat
+`EcsReflectValueDeep { type_id, raw }`; model `EcsReflect::reflect_type_id`
+with stable scalar type ids; flatten the Bevy-shaped `ReflectComponentFns`
+table into `EcsReflectComponentFnsDeep` with i64 fn handles; flatten the
+wrapper into `EcsReflectRootComponentDeep` instead of nesting the fn table.
+The deep dispatch helpers return deterministic handle+argument results for
+`insert`, `apply`, `remove`, `take`, `contains`, `reflect`, `copy`, and
+`register_component`, proving wrapper/fn-table routing without relying on
+runtime dyn reflect or actual callback execution.
+
+Test file: `tests/test_ecs_lib_reflect_deep_isolated.sla` (10 `@test`
+entries). Panic band: tests 147630-147658.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/reflect_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_reflect_deep_isolated.sla` ✓
+- Default backend: 10 passed / 0 failed ✓
+- SA backend: 10 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 517 lib modules | 245 `*_deep.sla` modules |
+421 test files | 245 `*_deep_isolated.sla` test files | 90 examples | 6646
+tests-dir `@test` annotations | 7243 lib/tests/examples `@test` annotations.
+Next free panic band: 147670+ (Batch 416 used tests 147630-147658).
+Remaining shallow lib files without a deep counterpart are task/async/parallel:
+`parallel_scope`, `task_scope_executor_drive`, `executor_single_threaded`,
+and `executor_multi_threaded`. Root `reflect` is now deep-covered through the
+flat handle-dispatch model; full runtime reflection remains intentionally
+outside scope per README/current plan.

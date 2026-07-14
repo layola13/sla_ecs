@@ -7391,3 +7391,12 @@ docs/issue.md is updated with a Batch 415 addendum describing the SA backend
 ForbiddenSyntax flattening regression — a toolchain issue that breaks SA
 backend verification of every deep-iso file currently in the repo, including
 previously-green results from Batches 407, 409 and 414.
+
+
+# Batch 416 — `lib/reflect_deep.sla` (DONE 2026-07-14)
+- [x] lib/reflect_deep.sla: new self-contained root reflect facade. It deepens `lib/reflect.sla` by modeling `EcsReflect::reflect_type_id` with flat scalar type ids, folding `ErasedComponentValue` into `EcsReflectValueDeep { type_id, raw }`, lowering the `ReflectComponentFns` fn-pointer table to i64 handles, and flattening the component wrapper so it stores fn handles directly instead of a nested fns struct field.
+- [x] Dispatch helpers cover insert/apply/remove/take/contains/reflect/copy/register_component by returning deterministic handle+argument results, preserving Bevy-shaped wrapper/fn-table routing without requiring runtime dyn reflect or actual callback execution.
+- [x] tests/test_ecs_lib_reflect_deep_isolated.sla: 10 tests covering value type id + clone, fn table accessors, wrapper construction/fn extraction, and all eight ReflectComponent operations.
+- [x] Verification: `timeout 120s env SA_PLUGIN_DEV=1 sa sla check lib/reflect_deep.sla`; `timeout 120s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_reflect_deep_isolated.sla`; `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_reflect_deep_isolated.sla --jobs 1 --trace-panic` passes 10; `timeout 180s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_reflect_deep_isolated.sla --test-backend sa --jobs 1 --trace-panic` passes 10; `git diff --check` passes.
+- [x] Feature progress: root reflect fn-table facade surface 0% -> 100%; overall API parity remains ~94–96%, behavioral parity remains ~86–91% because full runtime reflection stays intentionally outside scope.
+### Current measured counts: 517 lib modules | 245 `*_deep.sla` modules | 421 test files | 245 `*_deep_isolated.sla` files | 90 examples | 6646 tests-dir `@test` annotations | 7243 lib/tests/examples `@test` annotations. Remaining non-deep shallow modules are task/async/parallel (`parallel_scope`, `task_scope_executor_drive`, `executor_single_threaded`, `executor_multi_threaded`).
