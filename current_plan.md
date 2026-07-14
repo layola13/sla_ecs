@@ -7570,3 +7570,36 @@ cleanup 0% -> 100% for this test-maintenance slice; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth
 is other summary-result direct-field cleanup or broader executor integration
 scenarios if new Bevy parity gaps are found.
+
+
+# Batch 459 — `executor_multi_threaded_deep` completed-tick error summary tests use accessors — DONE
+
+Source focus: early direct-field assertions in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` for
+`EcsExecutorCompletedTickErrorSummaryDeep`.
+
+Deep strategy: migrate system-panic, ApplyDeferred panic, handled lock-failed,
+and ApplyDeferred handled lock-failed completed-tick error summary tests to the
+existing `ecs_executor_completed_tick_error_summary_deep_*` read-only helpers.
+No executor implementation, API surface, or test count changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` remains at 118
+`@test` entries. No new panic band.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `completed_tick_error_`: 6 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filter `completed_tick_error_`: 6 passed / 0 failed ✓ (`timeout 150s`, `--jobs 1`)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (unchanged): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6799
+tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completed-tick error summary
+accessor-usage cleanup 0% -> 100% for this test-maintenance slice; overall
+API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
+optional depth is other summary-result direct-field cleanup or broader
+executor integration scenarios if new Bevy parity gaps are found.
