@@ -6826,3 +6826,37 @@ tick-with-completions summary sub-surfaces 0% -> 100% for the flat fixed-arity
 model; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 437 — `lib/executor_multi_threaded_deep.sla` ready-batch/tick-loop accessor parity helpers — DONE
+
+Source focus: shallow accessor parity in `lib/executor_multi_threaded.sla` for
+ready batches and tick-loop summaries, especially `_count`, `_at`, local /
+exclusive flags, tick count, lock-failed status, pending completions, and
+per-batch system accessors.
+
+Deep strategy: add scalar accessor helpers for `EcsExecutorReadyBatchDeep` and
+`EcsExecutorTickLoopSummaryDeep` without changing the underlying flat
+fixed-arity data model. `ecs_executor_ready_batch_deep_at` now respects the
+recorded count before returning slot contents, so stale unused slots report
+`-1` consistently with the new pending-completion and batch accessors.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 86
+`@test` entries (+3). New panic band: tests 148630-148649.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `accessors`: 3 passed / 0 failed ✓ (`timeout 90s`)
+- SA backend focused filter `accessors`: 3 passed / 0 failed ✓ (`timeout 150s`)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts (measured): 524 lib modules | 249 `*_deep.sla` modules |
+425 test files | 249 `*_deep_isolated.sla` test files | 90 examples | 6767
+tests-dir `@test` annotations | 7403 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor ready-batch/tick-loop accessor
+parity sub-surface 0% -> 100% for the flat fixed-arity model; overall API
+parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
+depth is broader executor integration scenarios if new Bevy parity gaps are
+found.

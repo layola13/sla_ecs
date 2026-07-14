@@ -17,6 +17,7 @@
 // Batch 434 adds tick-with-completions summaries.
 // Batch 435 adds drive-ready-batch integration summaries.
 // Batch 436 adds drive-all-batched integration summaries.
+// Batch 437 adds ready-batch and tick-loop accessor parity helpers.
 
 const ECS_MT_DEEP_CAP: i32 = 16;
 
@@ -3017,10 +3018,46 @@ fn ecs_executor_ready_batch_deep_empty() -> EcsExecutorReadyBatchDeep {
     return EcsExecutorReadyBatchDeep { count: 0, system0: -1, system1: -1, system2: -1, is_exclusive: 0, is_local: 0 };
 }
 
+fn ecs_executor_ready_batch_deep_count(b: EcsExecutorReadyBatchDeep) -> i64 { return b.count; }
+fn ecs_executor_ready_batch_deep_is_exclusive(b: EcsExecutorReadyBatchDeep) -> bool { return b.is_exclusive != 0; }
+fn ecs_executor_ready_batch_deep_is_local(b: EcsExecutorReadyBatchDeep) -> bool { return b.is_local != 0; }
+
 fn ecs_executor_ready_batch_deep_at(b: EcsExecutorReadyBatchDeep, index: i64) -> i64 {
-    if index == 0 { return b.system0; };
-    if index == 1 { return b.system1; };
-    if index == 2 { return b.system2; };
+    if index == 0 && b.count > 0 { return b.system0; };
+    if index == 1 && b.count > 1 { return b.system1; };
+    if index == 2 && b.count > 2 { return b.system2; };
+    return -1;
+}
+
+fn ecs_executor_tick_loop_summary_deep_tick_count(t: EcsExecutorTickLoopSummaryDeep) -> i64 { return t.tick_count; }
+fn ecs_executor_tick_loop_summary_deep_lock_failed(t: EcsExecutorTickLoopSummaryDeep) -> bool { return t.lock_failed != 0; }
+fn ecs_executor_tick_loop_summary_deep_batch_count(t: EcsExecutorTickLoopSummaryDeep) -> i64 { return t.batch_count; }
+fn ecs_executor_tick_loop_summary_deep_pending_completion_count(t: EcsExecutorTickLoopSummaryDeep) -> i64 { return t.pending_count; }
+
+fn ecs_executor_tick_loop_summary_deep_pending_completion_at(t: EcsExecutorTickLoopSummaryDeep, index: i64) -> i64 {
+    if index == 0 && t.pending_count > 0 { return t.pending0; };
+    if index == 1 && t.pending_count > 1 { return t.pending1; };
+    if index == 2 && t.pending_count > 2 { return t.pending2; };
+    return -1;
+}
+
+fn ecs_executor_tick_loop_summary_deep_batch_system_count(t: EcsExecutorTickLoopSummaryDeep, tick_index: i64) -> i64 {
+    if tick_index == 0 && t.batch_count > 0 { return t.batch0_count; };
+    if tick_index == 1 && t.batch_count > 1 { return t.batch1_count; };
+    return 0;
+}
+
+fn ecs_executor_tick_loop_summary_deep_batch_at(t: EcsExecutorTickLoopSummaryDeep, tick_index: i64, batch_index: i64) -> i64 {
+    if tick_index == 0 && t.batch_count > 0 {
+        if batch_index == 0 && t.batch0_count > 0 { return t.batch0_system0; };
+        if batch_index == 1 && t.batch0_count > 1 { return t.batch0_system1; };
+        if batch_index == 2 && t.batch0_count > 2 { return t.batch0_system2; };
+    };
+    if tick_index == 1 && t.batch_count > 1 {
+        if batch_index == 0 && t.batch1_count > 0 { return t.batch1_system0; };
+        if batch_index == 1 && t.batch1_count > 1 { return t.batch1_system1; };
+        if batch_index == 2 && t.batch1_count > 2 { return t.batch1_system2; };
+    };
     return -1;
 }
 
