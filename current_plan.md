@@ -6215,3 +6215,37 @@ tests-dir `@test` annotations | 7264 lib/tests/examples `@test` annotations.
 Next free panic band: 147810+ (Batch 418 used tests 147750-147799).
 The immediate shallow-deepening queue is now down to the executor modules:
 `executor_single_threaded` and `executor_multi_threaded`.
+
+
+# Batch 419 — `lib/executor_single_threaded_deep.sla` (563-line shallow original) — DONE
+
+Source: `lib/executor_single_threaded.sla`, the Bevy
+`SingleThreadedExecutor` model with Vec-backed evaluated/completed/unapplied
+bitsets and run-condition/deferred-error helpers. Target:
+`lib/executor_single_threaded_deep.sla` (self-contained, no `@import`).
+
+Deep strategy: replace Vec bitsets with fixed cap-16 scalar slots for
+completed systems, unapplied systems, and evaluated sets; keep all executor
+state flat to avoid nested-copy struct leaks; preserve apply-final-deferred,
+run/skip/process-system, ApplyDeferred barrier, finish-run cleanup,
+failed/passed set-condition, initial-skip, system/deferred panic payload,
+handled-error, payload take, and condition-fold semantics. Vector-taking
+helpers are represented through fixed arity `*_3` / `*_4` facades for the
+same scheduling cases.
+
+Test file: `tests/test_ecs_lib_executor_single_threaded_deep_isolated.sla`
+(14 `@test` entries). Panic band: tests 147810-147871.
+
+Validation:
+- `SA_PLUGIN_DEV=1 sa sla check lib/executor_single_threaded_deep.sla` ✓
+- `SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_single_threaded_deep_isolated.sla` ✓
+- Default backend: 14 passed / 0 failed ✓
+- SA backend: 14 passed / 0 failed ✓
+- `git diff --check` ✓
+
+Post-batch counts (measured): 520 lib modules | 248 `*_deep.sla` modules |
+424 test files | 248 `*_deep_isolated.sla` test files | 90 examples | 6681
+tests-dir `@test` annotations | 7278 lib/tests/examples `@test` annotations.
+Next free panic band: 147880+ (Batch 419 used tests 147810-147871).
+The immediate shallow-deepening queue is now down to
+`executor_multi_threaded`; it is the largest remaining executor model.
