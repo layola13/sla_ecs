@@ -8887,3 +8887,38 @@ Feature progress: multi-threaded executor complete-ready no-op summary
 accounting 0% -> 100% for this focused behavior fix; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 497 — `executor_multi_threaded_deep` pending-skip finalization fix — DONE
+
+Source focus: skipped-pending lifecycle behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: distinguish pending skip (`skipped=true`, `completed=false`)
+from terminal skipped state. Pending skips still cannot spawn, but direct and
+wrapper skip finalization now mark them completed and release dependents.
+`ecs_executor_state_deep_drive_one_summary` now handles pending skip before the
+`can_spawn` gate so a pending skip is not reported as a stall. No SLA compiler
+change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 158
+`@test` entries. New panic band: 149610-149619.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `pending_skip`: 2 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`; counted only after clean process exit)
+- Default backend focused filter `skip_with_dependents`: 4 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- Default backend focused filter `drive_one`: 4 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `pending_skip`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial; waited for external SAB tests to finish)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6839 tests-dir
+`@test` annotations | 7475 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor pending-skip finalization 0% -> 100%
+for this focused behavior fix; overall API parity remains ~94–96%, behavioral
+parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.

@@ -254,6 +254,18 @@
     if ecs_executor_state_deep_skipped_count(s) != 1 { panic(147942); };
 }
 
+@test "mt_deep_skip_with_dependents_finalizes_pending_skip"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_skipped_pending(s, 0);
+    s = ecs_executor_state_deep_skip_system_with_dependents3(s, 0, 1, -1, -1, 1);
+    if !ecs_executor_state_deep_is_skipped(s, 0) { panic(149610); };
+    if !ecs_executor_state_deep_is_completed(s, 0) { panic(149611); };
+    if ecs_executor_state_deep_get_dependencies(s, 1) != 0 { panic(149612); };
+    if !ecs_executor_state_deep_is_ready(s, 1) { panic(149613); };
+    if ecs_executor_state_deep_completed_count(s) != 1 { panic(149614); };
+}
+
 @test "mt_deep_skip_system_ignores_running_system"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
     let spec = ecs_executor_system_spec_deep_new(0, false, false);
@@ -597,6 +609,19 @@
     if ecs_executor_drive_summary_deep_skipped_count(r) != 1 { panic(148047); };
     if ecs_executor_drive_summary_deep_completed_count(r) != 1 { panic(148048); };
     if ecs_executor_drive_summary_deep_ready_count(r) != 1 { panic(148049); };
+}
+
+@test "mt_deep_drive_one_finalizes_pending_skip_and_releases"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_mark_skipped_pending(s, 0);
+    let r = ecs_executor_state_deep_drive_one_summary(s, spec, 1, -1, -1, 1);
+    if ecs_executor_drive_summary_deep_selected_count(r) != 0 { panic(149615); };
+    if ecs_executor_drive_summary_deep_skipped_count(r) != 1 { panic(149616); };
+    if ecs_executor_drive_summary_deep_completed_count(r) != 1 { panic(149617); };
+    if ecs_executor_drive_summary_deep_ready_count(r) != 1 { panic(149618); };
+    if ecs_executor_drive_summary_deep_stalled(r) { panic(149619); };
 }
 
 @test "mt_deep_drive_one_apply_deferred_barrier_counts_existing_unapplied"() {
