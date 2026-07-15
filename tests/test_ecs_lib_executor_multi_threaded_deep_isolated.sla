@@ -187,6 +187,20 @@
     if ecs_executor_ready_batch_deep_is_exclusive(batch) != true { panic(147914); };
 }
 
+@test "mt_deep_ready_batch_exclusive_after_unready_candidate_sets_flags"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, true, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
+    if ecs_executor_ready_batch_deep_count(batch) != 1 { panic(149751); };
+    if ecs_executor_ready_batch_deep_at(batch, 0) != 1 { panic(149752); };
+    if !ecs_executor_ready_batch_deep_is_exclusive(batch) { panic(149753); };
+    if !ecs_executor_ready_batch_deep_is_local(batch) { panic(149754); };
+}
+
 @test "mt_deep_completed_system_cannot_be_readied_or_spawned"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
     let spec = ecs_executor_system_spec_deep_new(0, false, false);

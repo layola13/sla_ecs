@@ -3810,11 +3810,13 @@ fn ecs_executor_state_deep_take_ready_batch3(s: EcsExecutorStateDeep, a: EcsExec
     let batch = ecs_executor_ready_batch_deep_empty();
     if ecs_executor_state_deep_can_spawn_system(s, a) {
         batch.system0 = a.system_index; batch.count = 1; batch.is_exclusive = a.is_exclusive; batch.is_local = a.is_local;
+        if a.is_exclusive != 0 { batch.is_local = 1; };
         s = ecs_executor_state_deep_start_system(s, a);
     };
     if batch.is_exclusive == 0 && ecs_executor_state_deep_can_spawn_system(s, b) {
         if batch.count == 0 { batch.system0 = b.system_index; } else { batch.system1 = b.system_index; };
         batch.count = batch.count + 1;
+        if b.is_exclusive != 0 { batch.is_exclusive = 1; batch.is_local = 1; };
         if b.is_local != 0 { batch.is_local = 1; };
         s = ecs_executor_state_deep_start_system(s, b);
     };
@@ -3823,6 +3825,7 @@ fn ecs_executor_state_deep_take_ready_batch3(s: EcsExecutorStateDeep, a: EcsExec
         if batch.count == 1 { batch.system1 = c.system_index; };
         if batch.count == 2 { batch.system2 = c.system_index; };
         batch.count = batch.count + 1;
+        if c.is_exclusive != 0 { batch.is_exclusive = 1; batch.is_local = 1; };
         if c.is_local != 0 { batch.is_local = 1; };
     };
     return batch;
