@@ -8342,3 +8342,37 @@ ready-preservation coverage 0% -> 100% for this focused scenario; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 481 — `executor_multi_threaded_deep` tick-loop no-completion gate coverage — DONE
+
+Source focus: tick-loop no-completion summary coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add two focused tick-loop-facing scenarios that route through
+the existing drive-ready-batch integration path. The exclusive system must
+stand alone in the no-completion batch, and a pair of local systems must keep
+the second local system out of the same batch while still allowing the ordinary
+system to run. No executor implementation, API surface, or SLA compiler change
+was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 127
+`@test` entries. New panic band: 149350-149367.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `tick_loop_no_completion_exclusive_gate_stands_alone`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend exact filter `tick_loop_no_completion_local_gate_keeps_second_local_ready`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `tick_loop_no_completion`: 3 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `tick_loop_no_completion`: 3 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6808 tests-dir
+`@test` annotations | 7444 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor no-completion tick-loop gate summary
+coverage 0% -> 100% for these focused scenarios; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
