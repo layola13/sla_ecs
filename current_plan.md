@@ -9268,3 +9268,36 @@ pending-skip finalization 0% -> 100% for this focused behavior fix; overall
 API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
 optional depth is broader executor integration scenarios if new Bevy parity
 gaps are found.
+
+
+# Batch 508 — `executor_multi_threaded_deep` no-drain local gate scan coverage — DONE
+
+Source focus: tick-with-completions no-drain ready selection when a local system
+is already running in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add regression coverage for the no-drain fast path with an
+existing local gate occupied. The scenario proves a second local ready system is
+left ready while a later ordinary ready system can still be selected, and the
+summary continues to report the existing local-running gate. This validates the
+Batch 506 gate-state preservation and scan behavior without changing executor
+implementation, API surface, or SLA compiler behavior.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 173
+`@test` entries. New panic band: 149732-149739.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_tick_with_completions_no_drain_existing_local_blocks_second_local`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`; counted only after clean process exit)
+- Default backend focused filter `no_drain`: 4 passed / 0 failed (`timeout 120s`, `--jobs 1`; counted only after clean process exit)
+- SA backend filters were intentionally not started because an external SA backend test process was already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6854 tests-dir `@test` annotations | 7454 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor no-drain local gate scan coverage
+0% -> 100% for this focused scenario; overall API parity remains ~94–96%,
+behavioral parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.
