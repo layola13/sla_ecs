@@ -1487,9 +1487,11 @@ fn _mt_tick_with_completions_push_completed(r: EcsExecutorTickWithCompletionsSum
 }
 
 fn _mt_tick_with_completions_push_ignored(r: EcsExecutorTickWithCompletionsSummaryDeep, system_index: i64) -> EcsExecutorTickWithCompletionsSummaryDeep {
-    if r.ignored_count == 0 { r.ignored0 = system_index; r.ignored_count = 1; return r; };
-    if r.ignored_count == 1 { r.ignored1 = system_index; r.ignored_count = 2; return r; };
-    if r.ignored_count == 2 { r.ignored2 = system_index; r.ignored_count = 3; return r; };
+    let pos = r.ignored_count;
+    if pos == 0 { r.ignored0 = system_index; };
+    if pos == 1 { r.ignored1 = system_index; };
+    if pos == 2 { r.ignored2 = system_index; };
+    if pos < 3 { r.ignored_count = pos + 1; };
     return r;
 }
 
