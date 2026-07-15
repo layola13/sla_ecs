@@ -3043,6 +3043,7 @@ fn ecs_executor_state_deep_start_system(s: EcsExecutorStateDeep, spec: EcsExecut
 fn ecs_executor_state_deep_complete_system(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, has_deferred: bool) -> EcsExecutorStateDeep {
     let idx = spec.system_index;
     if idx < 0 || idx >= s.system_count { return s; };
+    if _mt_running_at(s, idx) != true { return s; };
     if _mt_running_at(s, idx) {
         s = _mt_running_set(s, idx, false);
         if s.num_running_systems > 0 { s.num_running_systems = s.num_running_systems - 1; };
@@ -3073,6 +3074,9 @@ fn ecs_executor_state_deep_release_dependents3(s: EcsExecutorStateDeep, dep0: i6
 }
 
 fn ecs_executor_state_deep_complete_system_with_dependents3(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep, has_deferred: bool, dep0: i64, dep1: i64, dep2: i64, dep_count: i64) -> EcsExecutorStateDeep {
+    let idx = spec.system_index;
+    if idx < 0 || idx >= s.system_count { return s; };
+    if _mt_running_at(s, idx) != true { return s; };
     s = ecs_executor_state_deep_complete_system(s, spec, has_deferred);
     return ecs_executor_state_deep_release_dependents3(s, dep0, dep1, dep2, dep_count);
 }

@@ -8681,3 +8681,37 @@ Feature progress: multi-threaded executor skip running guard 0% -> 100% for
 this focused behavior fix; overall API parity remains ~94–96%, behavioral
 parity remains ~86–91%. Remaining optional depth is broader executor
 integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 491 — `executor_multi_threaded_deep` complete running guard fix — DONE
+
+Source focus: complete-state helper behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: fix `ecs_executor_state_deep_complete_system` and
+`ecs_executor_state_deep_complete_system_with_dependents3` so callers cannot
+complete a system that is not currently running, and cannot release dependents
+from that invalid no-op completion. Add focused regressions for both direct and
+dependent-release paths. No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 144
+`@test` entries. New panic band: 149500-149508.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `complete_system_ignores`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend exact filter `complete_with_dependents_ignores`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend exact filter `complete_system_ignores`: 1 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend exact filter `complete_with_dependents_ignores`: 1 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6825 tests-dir
+`@test` annotations | 7461 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor complete running guard 0% -> 100% for
+this focused behavior fix; overall API parity remains ~94–96%, behavioral
+parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.
