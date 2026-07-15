@@ -9738,3 +9738,40 @@ local gate integration coverage 0% -> 100% for this focused scenario; overall
 API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
 optional depth is broader executor integration scenarios if new Bevy parity
 gaps are found.
+
+
+# Batch 522 — `executor_multi_threaded_deep` ready-batch rescan selected-count fix — DONE
+
+Source focus: ready-batch rescan summary selected-slot accounting in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused regression where system 0 is skipped by
+`should_run=false`, releases system 1 as local-thread work, and system 2 is
+already ordinary ready work. The rescan path was starting systems 1 and 2 but
+only reporting one selected system. `_mt_ready_batch_rescan_push_selected` now
+uses a stable slot position and increments `selected_count` after assigning the
+slot, keeping the summary aligned with state mutation. No SLA compiler behavior
+or API surface changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 187
+`@test` entries. New panic band: 149853-149862.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_ready_batch_rescan_local_after_skip_keeps_ordinary_same_batch`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `ready_batch_rescan`: 10 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_ready_batch_rescan_local_after_skip_keeps_ordinary_same_batch`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6868 tests-dir `@test` annotations | 7468 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor ready-batch rescan summary selected
+count parity for local-plus-ordinary post-skip batches 0% -> 100% for this
+focused behavior fix; overall API parity remains ~94–96%, behavioral parity
+remains ~86–91%. Remaining optional depth is broader executor integration
+scenarios if new Bevy parity gaps are found.
