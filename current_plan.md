@@ -9128,3 +9128,37 @@ summary finalization 0% -> 100% for this focused behavior fix; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 504 — `executor_multi_threaded_deep` zero-width drive-ready-batch pending-skip summary fix — DONE
+
+Source focus: drive-ready-batch summary pending-skip lifecycle behavior when
+`max_width <= 0` in `lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: `ecs_executor_state_deep_drive_ready_batch_summary3` now
+finalizes skipped-pending systems before applying the zero-width early return.
+Zero width still prevents ordinary ready work from being selected, but pending
+skip finalization does not consume batch width, so a pending skip can be counted
+as skipped/completed instead of causing a false stalled result. No SLA compiler
+change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 166
+`@test` entries. New panic band: 149682-149687.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `mt_deep_drive_ready_batch_summary_zero_width_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 60s`, `--jobs 1`)
+- Default backend focused filter `drive_ready_batch_summary`: 3 passed / 0 failed ✓ (`timeout 75s`, `--jobs 1`)
+- SA backend exact filter was intentionally not started because another SAB backend test process was already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6847 tests-dir
+`@test` annotations | 7483 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor zero-width drive-ready-batch
+pending-skip summary finalization 0% -> 100% for this focused behavior fix;
+overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+Remaining optional depth is broader executor integration scenarios if new Bevy
+parity gaps are found.
