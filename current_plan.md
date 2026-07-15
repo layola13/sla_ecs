@@ -8749,3 +8749,38 @@ Feature progress: multi-threaded executor skip no-op release guard 0% -> 100%
 for this focused behavior fix; overall API parity remains ~94–96%, behavioral
 parity remains ~86–91%. Remaining optional depth is broader executor
 integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 493 — `executor_multi_threaded_deep` skipped spawn guard fix — DONE
+
+Source focus: skipped-state spawn behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: fix skipped-pending state so it clears stale ready bits, make
+`ecs_executor_state_deep_can_spawn_system` reject skipped systems explicitly,
+and make direct `ecs_executor_state_deep_start_system` calls ignore skipped or
+completed systems. Add focused regressions for pending-skip, failed system
+condition, and direct-start paths. No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 150
+`@test` entries. New panic band: 149530-149539.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `skipped_pending`: 5 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- Default backend exact filter `failed_system_condition_clears`: 1 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- Default backend focused filter `state`: 12 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `skipped_pending`: 5 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend exact filter `failed_system_condition_clears`: 1 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6831 tests-dir
+`@test` annotations | 7467 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor skipped spawn guard 0% -> 100% for
+this focused behavior fix; overall API parity remains ~94–96%, behavioral
+parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.

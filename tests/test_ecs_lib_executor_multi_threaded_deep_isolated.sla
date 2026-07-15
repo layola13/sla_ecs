@@ -288,6 +288,38 @@
     if ecs_executor_state_deep_running_count(s) != 1 { panic(149497); };
 }
 
+@test "mt_deep_mark_skipped_pending_clears_ready_and_blocks_spawn"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_skipped_pending(s, 0);
+    if !ecs_executor_state_deep_is_skipped(s, 0) { panic(149530); };
+    if ecs_executor_state_deep_is_ready(s, 0) { panic(149531); };
+    if ecs_executor_state_deep_can_spawn_system(s, spec) { panic(149532); };
+    if ecs_executor_state_deep_running_count(s) != 0 { panic(149533); };
+}
+
+@test "mt_deep_failed_system_condition_clears_ready_and_blocks_spawn"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_apply_failed_system_condition(s, 0);
+    if !ecs_executor_state_deep_is_skipped(s, 0) { panic(149534); };
+    if ecs_executor_state_deep_is_ready(s, 0) { panic(149535); };
+    if ecs_executor_state_deep_can_spawn_system(s, spec) { panic(149536); };
+}
+
+@test "mt_deep_start_system_ignores_skipped_pending_system"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
+    let spec = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_skipped_pending(s, 0);
+    s = ecs_executor_state_deep_start_system(s, spec);
+    if ecs_executor_state_deep_is_running(s, 0) { panic(149537); };
+    if !ecs_executor_state_deep_is_skipped(s, 0) { panic(149538); };
+    if ecs_executor_state_deep_running_count(s) != 0 { panic(149539); };
+}
+
 @test "mt_deep_evaluated_set_tracking_and_bounds"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 0, 3);
     s = ecs_executor_state_deep_mark_set_evaluated(s, 1);

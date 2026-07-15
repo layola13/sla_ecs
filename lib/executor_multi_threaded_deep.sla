@@ -3032,6 +3032,8 @@ fn ecs_executor_state_deep_start_system(s: EcsExecutorStateDeep, spec: EcsExecut
     let idx = spec.system_index;
     if idx < 0 || idx >= s.system_count { return s; };
     if _mt_running_at(s, idx) { return s; };
+    if _mt_completed_at(s, idx) { return s; };
+    if _mt_skipped_at(s, idx) { return s; };
     s = _mt_ready_set(s, idx, false);
     s = _mt_running_set(s, idx, true);
     s.num_running_systems = s.num_running_systems + 1;
@@ -3096,6 +3098,7 @@ fn ecs_executor_state_deep_skip_system(s: EcsExecutorStateDeep, system_index: i6
 fn ecs_executor_state_deep_mark_skipped_pending(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
     if system_index >= 0 && system_index < s.system_count && _mt_completed_at(s, system_index) != true && _mt_running_at(s, system_index) != true {
         s = _mt_skipped_set(s, system_index, true);
+        s = _mt_ready_set(s, system_index, false);
     };
     return s;
 }
@@ -3554,6 +3557,7 @@ fn ecs_executor_state_deep_conflicts_with_running(s: EcsExecutorStateDeep, spec:
 fn ecs_executor_state_deep_can_spawn_system(s: EcsExecutorStateDeep, spec: EcsExecutorSystemSpecDeep) -> bool {
     if spec.system_index < 0 || spec.system_index >= s.system_count { return false; };
     if _mt_completed_at(s, spec.system_index) { return false; };
+    if _mt_skipped_at(s, spec.system_index) { return false; };
     if _mt_ready_at(s, spec.system_index) != true { return false; };
     if s.exclusive_running != 0 { return false; };
     if spec.is_exclusive != 0 && s.num_running_systems > 0 { return false; };
