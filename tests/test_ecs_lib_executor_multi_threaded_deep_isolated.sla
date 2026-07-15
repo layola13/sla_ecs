@@ -1422,6 +1422,30 @@
     if ecs_executor_initial_skips_summary_deep_ready_after(r) != 0 { panic(148467); };
 }
 
+@test "mt_deep_initial_skips_summary_ignores_running_systems"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    let r = ecs_executor_initial_skips_summary_deep3(
+        s, 0, 1, -1, 2,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if ecs_executor_initial_skips_summary_deep_ignored_count(r) != 1 { panic(149460); };
+    if ecs_executor_initial_skips_summary_deep_ignored_at(r, 0) != 0 { panic(149461); };
+    if ecs_executor_initial_skips_summary_deep_skipped_count(r) != 1 { panic(149462); };
+    if ecs_executor_initial_skips_summary_deep_skipped_at(r, 0) != 1 { panic(149463); };
+    if ecs_executor_initial_skips_summary_deep_completed_after(r) != 1 { panic(149464); };
+    if ecs_executor_initial_skips_summary_deep_skipped_after(r) != 1 { panic(149465); };
+    if ecs_executor_initial_skips_summary_deep_ready_after(r) != 0 { panic(149466); };
+}
+
 @test "mt_deep_completion_queue_drain_summary_completes_running_in_queue_order"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);

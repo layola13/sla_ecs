@@ -8548,3 +8548,36 @@ Feature progress: multi-threaded executor ready-batch rescan local-gate
 coverage 0% -> 100% for this focused scenario; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 487 — `executor_multi_threaded_deep` initial-skip running guard fix — DONE
+
+Source focus: initial-skip summary behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: fix the initial-skip helper so skip-list entries that already
+refer to running systems are ignored instead of being marked skipped/completed.
+Add a focused regression where system 0 is already running and system 1 is
+ready; the summary now records system 0 as ignored and still skips system 1.
+No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 137
+`@test` entries. New panic band: 149460-149466.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `initial_skips_summary_ignores_running_systems`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `initial_skip`: 7 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `initial_skip`: 7 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6818 tests-dir
+`@test` annotations | 7454 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor initial-skip running-system guard
+0% -> 100% for this focused behavior fix; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
