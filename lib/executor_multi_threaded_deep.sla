@@ -1499,9 +1499,11 @@ fn _mt_tick_with_completions_push_apply(r: EcsExecutorTickWithCompletionsSummary
 }
 
 fn _mt_tick_with_completions_push_selected(r: EcsExecutorTickWithCompletionsSummaryDeep, system_index: i64) -> EcsExecutorTickWithCompletionsSummaryDeep {
-    if r.selected_count == 0 { r.selected0 = system_index; r.selected_count = 1; return r; };
-    if r.selected_count == 1 { r.selected1 = system_index; r.selected_count = 2; return r; };
-    if r.selected_count == 2 { r.selected2 = system_index; r.selected_count = 3; return r; };
+    let pos = r.selected_count;
+    if pos == 0 { r.selected0 = system_index; };
+    if pos == 1 { r.selected1 = system_index; };
+    if pos == 2 { r.selected2 = system_index; };
+    if pos < 3 { r.selected_count = pos + 1; };
     return r;
 }
 
