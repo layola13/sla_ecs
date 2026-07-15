@@ -9775,3 +9775,36 @@ count parity for local-plus-ordinary post-skip batches 0% -> 100% for this
 focused behavior fix; overall API parity remains ~94–96%, behavioral parity
 remains ~86–91%. Remaining optional depth is broader executor integration
 scenarios if new Bevy parity gaps are found.
+
+
+# Batch 523 — `executor_multi_threaded_deep` ready-batch rescan third-slot coverage — DONE
+
+Source focus: ready-batch rescan summary third selected-slot accounting in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add the missing three-system counterpart to Batch 522. Three
+ordinary ready systems are selected in one rescan pass, and the summary must
+record `selected_count=3`, preserve slots 0/1/2 in order, clear every ready
+flag, and report three running systems. No executor implementation, API
+surface, or SLA compiler behavior changed in this batch.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 188
+`@test` entries. New panic band: 149863-149872.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_ready_batch_rescan_records_three_selected_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `ready_batch_rescan`: 11 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_ready_batch_rescan_records_three_selected_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6869 tests-dir `@test` annotations | 7469 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor ready-batch rescan third selected-slot
+coverage 0% -> 100% for this focused scenario; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
