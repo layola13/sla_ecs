@@ -7744,6 +7744,14 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 474 - `executor_multi_threaded_deep` drive-all-batched ApplyDeferred wave coverage (DONE 2026-07-15)
+- [x] Added `mt_deep_drive_all_batched_integration_apply_deferred_releases_next_wave` to cover a deferred ordinary system, a later `ApplyDeferred` barrier that flushes it, and a dependent ordinary system released into the final wave.
+- [x] Asserted three waves, run order 0 -> 1 -> 2, apply slot 0, final unapplied count 0, completed count 3, and released dependency count for system 2; test count is now 119.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; default backend exact filter `apply_deferred_releases_next_wave` passes 1, default backend focused filters `drive_all_batched_integration` (5) and `drive_all_batched_accessor` (2) pass with `timeout 90s` and `--jobs 1`; serial SA backend focused filters `drive_all_batched_integration` (5) and `drive_all_batched_accessor` (2) pass with `timeout 180s` and `--jobs 1`. An exact SA single-test filter printed PASS but returned 143 once, so same-surface SA completion evidence uses the broader integration filter. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor drive-all-batched ApplyDeferred multi-wave integration coverage 0% -> 100% for this focused scenario; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6800 tests-dir `@test` annotations | 7436 lib/tests/examples `@test` annotations. Remaining optional depth: broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 466 - `executor_multi_threaded_deep` drive-all history summary fix (DONE 2026-07-15)
 - [x] Found an existing drive-all history behavior gap during accessor cleanup: the dependency-chain run-history path could record only a partial run order instead of `0, 1, 2`.
 - [x] Reworked `ecs_executor_run_history_deep_drive_all3` to reuse `ecs_executor_drive_all_batched_integration_summary_deep3` with `max_width=1`, then map run/skipped/stalled/apply metadata into `EcsExecutorRunHistoryDeep`.

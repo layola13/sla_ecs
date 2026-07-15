@@ -1664,6 +1664,36 @@
     if ecs_executor_drive_all_batched_integration_summary_deep_running_after(r) != 1 { panic(148622); };
 }
 
+@test "mt_deep_drive_all_batched_integration_apply_deferred_releases_next_wave"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_deferred(a0, true);
+    let b0 = ecs_executor_system_spec_deep_new(1, true, true);
+    let b = ecs_executor_system_spec_deep_as_apply_deferred(b0);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_set_dependencies(s, 1, 1);
+    s = ecs_executor_state_deep_set_dependencies(s, 2, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    let r = ecs_executor_drive_all_batched_integration_summary_deep3(
+        s, a, b, c,
+        1, -1, -1, 1,
+        2, -1, -1, 1,
+        -1, -1, -1, 0,
+        2, 3
+    );
+    if ecs_executor_drive_all_batched_integration_summary_deep_stalled(r) { panic(149250); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_wave_count(r) != 3 { panic(149251); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_count(r) != 3 { panic(149252); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 0) != 0 { panic(149253); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 1) != 1 { panic(149254); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 2) != 2 { panic(149255); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_apply_count(r) != 1 { panic(149256); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_apply_at(r, 0) != 0 { panic(149257); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_unapplied_after(r) != 0 { panic(149258); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_completed_after(r) != 3 { panic(149259); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_dependencies_at(r, 2) != 0 { panic(149260); };
+}
+
 @test "mt_deep_ready_batch_accessors_report_flags_and_bounds"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, true);
