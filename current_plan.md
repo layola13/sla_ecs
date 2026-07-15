@@ -8376,3 +8376,38 @@ Feature progress: multi-threaded executor no-completion tick-loop gate summary
 coverage 0% -> 100% for these focused scenarios; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 482 — `executor_multi_threaded_deep` tick-loop completion gate coverage — DONE
+
+Source focus: tick-loop two-completion-wave summary coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add two focused completion-wave scenarios that route through the
+existing ready-batch rescan path. The exclusive scenario releases an exclusive
+system and an ordinary system after the first completion, verifies the
+exclusive system occupies the first batch alone, then verifies the ordinary
+system appears in the second batch. The local scenario releases two local
+systems and verifies they split across the two completion waves. No executor
+implementation, API surface, or SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 129
+`@test` entries. New panic band: 149370-149388.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `tick_loop_two_completion_waves_exclusive_gate_splits_batches`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend exact filter `tick_loop_two_completion_waves_local_gate_splits_batches`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `tick_loop_two_completion_waves`: 3 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `tick_loop_two_completion_waves`: 3 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6810 tests-dir
+`@test` annotations | 7446 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completion-wave tick-loop gate
+summary coverage 0% -> 100% for these focused scenarios; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
