@@ -9571,3 +9571,36 @@ Feature progress: multi-threaded executor drive-all second-candidate local gate
 integration coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 517 — `executor_multi_threaded_deep` drive-all third local coverage — DONE
+
+Source focus: drive-all batched integration local-thread gate selection behavior
+in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add the third-candidate local-gate counterpart to Batch 516.
+Candidates 0 and 1 start dependency-blocked, candidate 2 is local, and
+candidate 2 releases both earlier candidates after completing in the first
+wave. The second wave then completes candidates 0 and 1 together. No executor
+implementation, API surface, or SLA compiler behavior changed in this batch.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 182
+`@test` entries. New panic band: 149812-149824.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_drive_all_batched_integration_third_local_after_unready_splits_waves`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `drive_all_batched_integration`: 14 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_drive_all_batched_integration_third_local_after_unready_splits_waves`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6863 tests-dir `@test` annotations | 7463 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor drive-all third-candidate local gate
+integration coverage 0% -> 100% for this focused scenario; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
