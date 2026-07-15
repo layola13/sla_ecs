@@ -1422,6 +1422,50 @@
     if ecs_executor_completion_queue_drain_summary_deep_running_after(r) != 0 { panic(148499); };
 }
 
+@test "mt_deep_completion_queue_drain_summary_local_completion_clears_gate"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, true);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    let r = ecs_executor_completion_queue_drain_summary_deep3(
+        s, 0, -1, -1, 1,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if ecs_executor_completion_queue_drain_summary_deep_completed_count(r) != 1 { panic(149410); };
+    if ecs_executor_completion_queue_drain_summary_deep_completed_at(r, 0) != 0 { panic(149411); };
+    if ecs_executor_completion_queue_drain_summary_deep_running_after(r) != 0 { panic(149412); };
+    if ecs_executor_completion_queue_drain_summary_deep_completed_after(r) != 1 { panic(149413); };
+    if ecs_executor_completion_queue_drain_summary_deep_local_running(r) { panic(149414); };
+    if ecs_executor_completion_queue_drain_summary_deep_exclusive_running(r) { panic(149415); };
+}
+
+@test "mt_deep_completion_queue_drain_summary_exclusive_completion_clears_gates"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
+    let a = ecs_executor_system_spec_deep_new(0, true, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    let r = ecs_executor_completion_queue_drain_summary_deep3(
+        s, 0, -1, -1, 1,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if ecs_executor_completion_queue_drain_summary_deep_completed_count(r) != 1 { panic(149420); };
+    if ecs_executor_completion_queue_drain_summary_deep_completed_at(r, 0) != 0 { panic(149421); };
+    if ecs_executor_completion_queue_drain_summary_deep_running_after(r) != 0 { panic(149422); };
+    if ecs_executor_completion_queue_drain_summary_deep_completed_after(r) != 1 { panic(149423); };
+    if ecs_executor_completion_queue_drain_summary_deep_local_running(r) { panic(149424); };
+    if ecs_executor_completion_queue_drain_summary_deep_exclusive_running(r) { panic(149425); };
+}
+
 @test "mt_deep_completion_queue_drain_summary_apply_deferred_clears_exclusive_gate"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a0 = ecs_executor_system_spec_deep_new(0, false, false);

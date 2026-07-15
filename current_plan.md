@@ -8447,3 +8447,37 @@ Feature progress: multi-threaded executor tick-with-completions gate summary
 coverage 0% -> 100% for these focused scenarios; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
 executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 484 — `executor_multi_threaded_deep` completion-queue gate cleanup coverage — DONE
+
+Source focus: completion-queue drain summary coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add two focused completion-queue drain scenarios for ordinary
+completed work that is still running behind local/exclusive gates. One scenario
+completes a local system and verifies the local gate clears; the other
+completes an exclusive system and verifies both exclusive and local gate state
+clear. No executor implementation, API surface, or SLA compiler change was
+needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 133
+`@test` entries. New panic band: 149410-149425.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `completion_queue_drain_summary_local_completion_clears_gate`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend exact filter `completion_queue_drain_summary_exclusive_completion_clears_gates`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `completion_queue`: 8 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `completion_queue`: 8 passed / 0 failed ✓ (`timeout 240s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6814 tests-dir
+`@test` annotations | 7450 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor completion-queue gate cleanup summary
+coverage 0% -> 100% for these focused scenarios; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
