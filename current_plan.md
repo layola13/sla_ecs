@@ -8273,3 +8273,37 @@ Feature progress: multi-threaded executor drive-all-batched exclusive-gate wave
 splitting coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 479 — `executor_multi_threaded_deep` drive-ready-batch exclusive gate coverage — DONE
+
+Source focus: broader drive-ready-batch integration coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused all-ready scenario with one exclusive system and
+two ordinary systems. A single ready-batch drive must run and complete the
+exclusive system alone, leaving the ordinary systems ready for a later batch.
+No executor implementation or API surface changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 124
+`@test` entries. New panic band: 149330-149339.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `exclusive_gate_stands_alone`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_ready_batch_integration`: 6 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_ready_batch_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filter `drive_ready_batch_integration`: 6 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend focused filter `drive_ready_batch_accessor`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6805 tests-dir
+`@test` annotations | 7441 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-ready-batch exclusive-gate
+stand-alone coverage 0% -> 100% for this focused scenario; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
