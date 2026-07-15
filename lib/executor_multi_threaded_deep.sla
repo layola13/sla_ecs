@@ -2341,7 +2341,9 @@ fn _mt_drive_ready_batch_integration_can_select(s: EcsExecutorStateDeep, spec: E
     if idx < 0 || idx >= s.system_count { return false; };
     if _mt_ready_at(s, idx) != true { return false; };
     if _mt_completed_at(s, idx) { return false; };
+    if _mt_skipped_at(s, idx) { return false; };
     if _mt_running_at(s, idx) { return false; };
+    if _mt_deps_at(s, idx) > 0 { return false; };
     if s.exclusive_running != 0 { return false; };
     if batch_exclusive != 0 { return false; };
     if spec.is_exclusive != 0 && (s.num_running_systems + batch_run_count) > 0 { return false; };
@@ -2360,41 +2362,57 @@ fn ecs_executor_drive_ready_batch_integration_summary_deep3(s: EcsExecutorStateD
     };
     if r.run_count < max_width && batch_exclusive == 0 && s.system_count > 0 {
         let spec0 = _mt_spec3_by_system_index(a, b, c, 0);
-        if _mt_drive_ready_batch_integration_can_select(s, spec0, batch_local, batch_exclusive, r.run_count) {
-            if spec0.should_run == 0 || _mt_skipped_at(s, 0) {
-                if r.skipped_count == 0 { r.skipped0 = 0; };
-                if r.skipped_count == 1 { r.skipped1 = 0; };
-                if r.skipped_count == 2 { r.skipped2 = 0; };
-                r.skipped_count = r.skipped_count + 1;
-                s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-            } else {
-                if r.run_count == 0 { r.run0 = 0; };
-                if r.run_count == 1 { r.run1 = 0; };
-                if r.run_count == 2 { r.run2 = 0; };
-                r.run_count = r.run_count + 1;
-                if spec0.is_local != 0 { batch_local = 1; };
-                if spec0.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+        if _mt_skipped_at(s, 0) && _mt_completed_at(s, 0) != true {
+            if r.skipped_count == 0 { r.skipped0 = 0; };
+            if r.skipped_count == 1 { r.skipped1 = 0; };
+            if r.skipped_count == 2 { r.skipped2 = 0; };
+            r.skipped_count = r.skipped_count + 1;
+            s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+        } else {
+            if _mt_drive_ready_batch_integration_can_select(s, spec0, batch_local, batch_exclusive, r.run_count) {
+                if spec0.should_run == 0 || _mt_skipped_at(s, 0) {
+                    if r.skipped_count == 0 { r.skipped0 = 0; };
+                    if r.skipped_count == 1 { r.skipped1 = 0; };
+                    if r.skipped_count == 2 { r.skipped2 = 0; };
+                    r.skipped_count = r.skipped_count + 1;
+                    s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                } else {
+                    if r.run_count == 0 { r.run0 = 0; };
+                    if r.run_count == 1 { r.run1 = 0; };
+                    if r.run_count == 2 { r.run2 = 0; };
+                    r.run_count = r.run_count + 1;
+                    if spec0.is_local != 0 { batch_local = 1; };
+                    if spec0.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                };
             };
         };
     };
     if r.run_count < max_width && batch_exclusive == 0 && s.system_count > 1 {
         let spec1 = _mt_spec3_by_system_index(a, b, c, 1);
-        if _mt_drive_ready_batch_integration_can_select(s, spec1, batch_local, batch_exclusive, r.run_count) {
-            if spec1.should_run == 0 || _mt_skipped_at(s, 1) {
-                if r.skipped_count == 0 { r.skipped0 = 1; };
-                if r.skipped_count == 1 { r.skipped1 = 1; };
-                if r.skipped_count == 2 { r.skipped2 = 1; };
-                r.skipped_count = r.skipped_count + 1;
-                s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-            } else {
-                if spec1.is_exclusive == 0 || r.run_count == 0 {
-                    if spec1.is_local == 0 || batch_local == 0 {
-                        if r.run_count == 0 { r.run0 = 1; };
-                        if r.run_count == 1 { r.run1 = 1; };
-                        if r.run_count == 2 { r.run2 = 1; };
-                        r.run_count = r.run_count + 1;
-                        if spec1.is_local != 0 { batch_local = 1; };
-                        if spec1.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+        if _mt_skipped_at(s, 1) && _mt_completed_at(s, 1) != true {
+            if r.skipped_count == 0 { r.skipped0 = 1; };
+            if r.skipped_count == 1 { r.skipped1 = 1; };
+            if r.skipped_count == 2 { r.skipped2 = 1; };
+            r.skipped_count = r.skipped_count + 1;
+            s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+        } else {
+            if _mt_drive_ready_batch_integration_can_select(s, spec1, batch_local, batch_exclusive, r.run_count) {
+                if spec1.should_run == 0 || _mt_skipped_at(s, 1) {
+                    if r.skipped_count == 0 { r.skipped0 = 1; };
+                    if r.skipped_count == 1 { r.skipped1 = 1; };
+                    if r.skipped_count == 2 { r.skipped2 = 1; };
+                    r.skipped_count = r.skipped_count + 1;
+                    s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                } else {
+                    if spec1.is_exclusive == 0 || r.run_count == 0 {
+                        if spec1.is_local == 0 || batch_local == 0 {
+                            if r.run_count == 0 { r.run0 = 1; };
+                            if r.run_count == 1 { r.run1 = 1; };
+                            if r.run_count == 2 { r.run2 = 1; };
+                            r.run_count = r.run_count + 1;
+                            if spec1.is_local != 0 { batch_local = 1; };
+                            if spec1.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                        };
                     };
                 };
             };
@@ -2402,22 +2420,30 @@ fn ecs_executor_drive_ready_batch_integration_summary_deep3(s: EcsExecutorStateD
     };
     if r.run_count < max_width && batch_exclusive == 0 && s.system_count > 2 {
         let spec2 = _mt_spec3_by_system_index(a, b, c, 2);
-        if _mt_drive_ready_batch_integration_can_select(s, spec2, batch_local, batch_exclusive, r.run_count) {
-            if spec2.should_run == 0 || _mt_skipped_at(s, 2) {
-                if r.skipped_count == 0 { r.skipped0 = 2; };
-                if r.skipped_count == 1 { r.skipped1 = 2; };
-                if r.skipped_count == 2 { r.skipped2 = 2; };
-                r.skipped_count = r.skipped_count + 1;
-                s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-            } else {
-                if spec2.is_exclusive == 0 || r.run_count == 0 {
-                    if spec2.is_local == 0 || batch_local == 0 {
-                        if r.run_count == 0 { r.run0 = 2; };
-                        if r.run_count == 1 { r.run1 = 2; };
-                        if r.run_count == 2 { r.run2 = 2; };
-                        r.run_count = r.run_count + 1;
-                        if spec2.is_local != 0 { batch_local = 1; };
-                        if spec2.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+        if _mt_skipped_at(s, 2) && _mt_completed_at(s, 2) != true {
+            if r.skipped_count == 0 { r.skipped0 = 2; };
+            if r.skipped_count == 1 { r.skipped1 = 2; };
+            if r.skipped_count == 2 { r.skipped2 = 2; };
+            r.skipped_count = r.skipped_count + 1;
+            s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+        } else {
+            if _mt_drive_ready_batch_integration_can_select(s, spec2, batch_local, batch_exclusive, r.run_count) {
+                if spec2.should_run == 0 || _mt_skipped_at(s, 2) {
+                    if r.skipped_count == 0 { r.skipped0 = 2; };
+                    if r.skipped_count == 1 { r.skipped1 = 2; };
+                    if r.skipped_count == 2 { r.skipped2 = 2; };
+                    r.skipped_count = r.skipped_count + 1;
+                    s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                } else {
+                    if spec2.is_exclusive == 0 || r.run_count == 0 {
+                        if spec2.is_local == 0 || batch_local == 0 {
+                            if r.run_count == 0 { r.run0 = 2; };
+                            if r.run_count == 1 { r.run1 = 2; };
+                            if r.run_count == 2 { r.run2 = 2; };
+                            r.run_count = r.run_count + 1;
+                            if spec2.is_local != 0 { batch_local = 1; };
+                            if spec2.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                        };
                     };
                 };
             };
@@ -2506,68 +2532,92 @@ fn ecs_executor_drive_all_batched_integration_summary_deep3(s: EcsExecutorStateD
         let batch_exclusive: i32 = 0;
         if selected_count < max_width && batch_exclusive == 0 && s.system_count > 0 {
             let spec0 = _mt_spec3_by_system_index(a, b, c, 0);
-            if _mt_drive_ready_batch_integration_can_select(s, spec0, batch_local, batch_exclusive, selected_count) {
-                if spec0.should_run == 0 || _mt_skipped_at(s, 0) {
-                    if r.skipped_count == 0 { r.skipped0 = 0; };
-                    if r.skipped_count == 1 { r.skipped1 = 0; };
-                    if r.skipped_count == 2 { r.skipped2 = 0; };
-                    r.skipped_count = r.skipped_count + 1;
-                    s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-                } else {
-                    selected0 = 0;
-                    selected_count = 1;
-                    if r.run_count == 0 { r.run0 = 0; };
-                    if r.run_count == 1 { r.run1 = 0; };
-                    if r.run_count == 2 { r.run2 = 0; };
-                    r.run_count = r.run_count + 1;
-                    if spec0.is_local != 0 { batch_local = 1; };
-                    if spec0.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+            if _mt_skipped_at(s, 0) && _mt_completed_at(s, 0) != true {
+                if r.skipped_count == 0 { r.skipped0 = 0; };
+                if r.skipped_count == 1 { r.skipped1 = 0; };
+                if r.skipped_count == 2 { r.skipped2 = 0; };
+                r.skipped_count = r.skipped_count + 1;
+                s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+            } else {
+                if _mt_drive_ready_batch_integration_can_select(s, spec0, batch_local, batch_exclusive, selected_count) {
+                    if spec0.should_run == 0 || _mt_skipped_at(s, 0) {
+                        if r.skipped_count == 0 { r.skipped0 = 0; };
+                        if r.skipped_count == 1 { r.skipped1 = 0; };
+                        if r.skipped_count == 2 { r.skipped2 = 0; };
+                        r.skipped_count = r.skipped_count + 1;
+                        s = _mt_skip_with_history_deps3(s, spec0, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                    } else {
+                        selected0 = 0;
+                        selected_count = 1;
+                        if r.run_count == 0 { r.run0 = 0; };
+                        if r.run_count == 1 { r.run1 = 0; };
+                        if r.run_count == 2 { r.run2 = 0; };
+                        r.run_count = r.run_count + 1;
+                        if spec0.is_local != 0 { batch_local = 1; };
+                        if spec0.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                    };
                 };
             };
         };
         if selected_count < max_width && batch_exclusive == 0 && s.system_count > 1 {
             let spec1 = _mt_spec3_by_system_index(a, b, c, 1);
-            if _mt_drive_ready_batch_integration_can_select(s, spec1, batch_local, batch_exclusive, selected_count) {
-                if spec1.should_run == 0 || _mt_skipped_at(s, 1) {
-                    if r.skipped_count == 0 { r.skipped0 = 1; };
-                    if r.skipped_count == 1 { r.skipped1 = 1; };
-                    if r.skipped_count == 2 { r.skipped2 = 1; };
-                    r.skipped_count = r.skipped_count + 1;
-                    s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-                } else {
-                    if selected_count == 0 { selected0 = 1; };
-                    if selected_count == 1 { selected1 = 1; };
-                    if selected_count == 2 { selected2 = 1; };
-                    selected_count = selected_count + 1;
-                    if r.run_count == 0 { r.run0 = 1; };
-                    if r.run_count == 1 { r.run1 = 1; };
-                    if r.run_count == 2 { r.run2 = 1; };
-                    r.run_count = r.run_count + 1;
-                    if spec1.is_local != 0 { batch_local = 1; };
-                    if spec1.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+            if _mt_skipped_at(s, 1) && _mt_completed_at(s, 1) != true {
+                if r.skipped_count == 0 { r.skipped0 = 1; };
+                if r.skipped_count == 1 { r.skipped1 = 1; };
+                if r.skipped_count == 2 { r.skipped2 = 1; };
+                r.skipped_count = r.skipped_count + 1;
+                s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+            } else {
+                if _mt_drive_ready_batch_integration_can_select(s, spec1, batch_local, batch_exclusive, selected_count) {
+                    if spec1.should_run == 0 || _mt_skipped_at(s, 1) {
+                        if r.skipped_count == 0 { r.skipped0 = 1; };
+                        if r.skipped_count == 1 { r.skipped1 = 1; };
+                        if r.skipped_count == 2 { r.skipped2 = 1; };
+                        r.skipped_count = r.skipped_count + 1;
+                        s = _mt_skip_with_history_deps3(s, spec1, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                    } else {
+                        if selected_count == 0 { selected0 = 1; };
+                        if selected_count == 1 { selected1 = 1; };
+                        if selected_count == 2 { selected2 = 1; };
+                        selected_count = selected_count + 1;
+                        if r.run_count == 0 { r.run0 = 1; };
+                        if r.run_count == 1 { r.run1 = 1; };
+                        if r.run_count == 2 { r.run2 = 1; };
+                        r.run_count = r.run_count + 1;
+                        if spec1.is_local != 0 { batch_local = 1; };
+                        if spec1.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                    };
                 };
             };
         };
         if selected_count < max_width && batch_exclusive == 0 && s.system_count > 2 {
             let spec2 = _mt_spec3_by_system_index(a, b, c, 2);
-            if _mt_drive_ready_batch_integration_can_select(s, spec2, batch_local, batch_exclusive, selected_count) {
-                if spec2.should_run == 0 || _mt_skipped_at(s, 2) {
-                    if r.skipped_count == 0 { r.skipped0 = 2; };
-                    if r.skipped_count == 1 { r.skipped1 = 2; };
-                    if r.skipped_count == 2 { r.skipped2 = 2; };
-                    r.skipped_count = r.skipped_count + 1;
-                    s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
-                } else {
-                    if selected_count == 0 { selected0 = 2; };
-                    if selected_count == 1 { selected1 = 2; };
-                    if selected_count == 2 { selected2 = 2; };
-                    selected_count = selected_count + 1;
-                    if r.run_count == 0 { r.run0 = 2; };
-                    if r.run_count == 1 { r.run1 = 2; };
-                    if r.run_count == 2 { r.run2 = 2; };
-                    r.run_count = r.run_count + 1;
-                    if spec2.is_local != 0 { batch_local = 1; };
-                    if spec2.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+            if _mt_skipped_at(s, 2) && _mt_completed_at(s, 2) != true {
+                if r.skipped_count == 0 { r.skipped0 = 2; };
+                if r.skipped_count == 1 { r.skipped1 = 2; };
+                if r.skipped_count == 2 { r.skipped2 = 2; };
+                r.skipped_count = r.skipped_count + 1;
+                s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+            } else {
+                if _mt_drive_ready_batch_integration_can_select(s, spec2, batch_local, batch_exclusive, selected_count) {
+                    if spec2.should_run == 0 || _mt_skipped_at(s, 2) {
+                        if r.skipped_count == 0 { r.skipped0 = 2; };
+                        if r.skipped_count == 1 { r.skipped1 = 2; };
+                        if r.skipped_count == 2 { r.skipped2 = 2; };
+                        r.skipped_count = r.skipped_count + 1;
+                        s = _mt_skip_with_history_deps3(s, spec2, a, b, c, a_dep0, a_dep1, a_dep2, a_dep_count, b_dep0, b_dep1, b_dep2, b_dep_count, c_dep0, c_dep1, c_dep2, c_dep_count);
+                    } else {
+                        if selected_count == 0 { selected0 = 2; };
+                        if selected_count == 1 { selected1 = 2; };
+                        if selected_count == 2 { selected2 = 2; };
+                        selected_count = selected_count + 1;
+                        if r.run_count == 0 { r.run0 = 2; };
+                        if r.run_count == 1 { r.run1 = 2; };
+                        if r.run_count == 2 { r.run2 = 2; };
+                        r.run_count = r.run_count + 1;
+                        if spec2.is_local != 0 { batch_local = 1; };
+                        if spec2.is_exclusive != 0 { batch_exclusive = 1; batch_local = 1; };
+                    };
                 };
             };
         };
