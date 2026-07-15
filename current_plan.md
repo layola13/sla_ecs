@@ -9878,3 +9878,39 @@ multi-select summary parity 0% -> 100% for this focused behavior fix; overall
 API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
 optional depth is broader executor integration scenarios if new Bevy parity
 gaps are found.
+
+
+# Batch 526 — `executor_multi_threaded_deep` completion-drain completed-count fix — DONE
+
+Source focus: tick-with-completions completion-drain completed-slot accounting
+in `lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: drain two completed running systems in one tick, release a
+two-dependency join, and select the released dependent. The executor state
+completed both systems, but `_mt_tick_with_completions_push_completed` only
+reported one completed slot. The helper now uses a stable slot position and
+increments `completed_count` after slot assignment, matching the selected-slot
+fixes. No public API surface or SLA compiler behavior changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 191
+`@test` entries. New panic band: 149900-149910.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_tick_with_completions_records_two_completed_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `mt_deep_tick_with_completions`: 16 passed / 0 failed (`timeout 150s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_tick_with_completions_records_two_completed_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6872 tests-dir `@test` annotations | 7472 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor tick-with-completions completion-drain
+completed-slot summary parity 0% -> 100% for this focused behavior fix; overall
+API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
+optional depth is broader executor integration scenarios if new Bevy parity
+gaps are found.
