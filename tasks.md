@@ -7778,6 +7778,14 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 470 - `executor_multi_threaded_deep` completion-queue accessor usage cleanup (DONE 2026-07-15)
+- [x] Migrated early completion-queue drain summary assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_completion_queue_drain_summary_deep_*` accessors.
+- [x] Covered completed/ignored/apply counts and slots, post-drain ready/running/completed/unapplied counts, dependency counters, ready flags, and local/exclusive gate assertions; test count remains 118.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; `timeout 90s env SA_PLUGIN_DEV=1 sa sla test tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla --filter "completion_queue" --jobs 1 --trace-panic` passes 6; serial SA backend rerun with `timeout 180s`, `--jobs 1`, and the same filter passes 6; `git diff --check` passes. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor completion-queue accessor-usage cleanup 0% -> 100% for this test-maintenance slice; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 465 - `executor_multi_threaded_deep` run-history accessor usage cleanup (DONE 2026-07-15)
 - [x] Migrated early run-history count and stalled assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_run_history_deep_*` accessors.
 - [x] Kept executor implementation, API surface, and test count unchanged.
