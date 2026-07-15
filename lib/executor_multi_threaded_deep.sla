@@ -1830,30 +1830,36 @@ fn ecs_executor_complete_ready_batch_summary_deep3(s: EcsExecutorStateDeep, sele
         let spec0 = _mt_spec3_by_system_index(a, b, c, selected0);
         if _mt_running_at(s, selected0) != true {
             s = ecs_executor_state_deep_start_system(s, spec0);
-            r.started0 = selected0;
-            r.started_count = 1;
+            if _mt_running_at(s, selected0) {
+                r.started0 = selected0;
+                r.started_count = 1;
+            };
         };
     };
     if selected_count > 1 && selected1 >= 0 && selected1 < s.system_count {
         let spec1 = _mt_spec3_by_system_index(a, b, c, selected1);
         if _mt_running_at(s, selected1) != true {
             s = ecs_executor_state_deep_start_system(s, spec1);
-            if r.started_count == 0 { r.started0 = selected1; };
-            if r.started_count == 1 { r.started1 = selected1; };
-            r.started_count = r.started_count + 1;
+            if _mt_running_at(s, selected1) {
+                if r.started_count == 0 { r.started0 = selected1; };
+                if r.started_count == 1 { r.started1 = selected1; };
+                r.started_count = r.started_count + 1;
+            };
         };
     };
     if selected_count > 2 && selected2 >= 0 && selected2 < s.system_count {
         let spec2 = _mt_spec3_by_system_index(a, b, c, selected2);
         if _mt_running_at(s, selected2) != true {
             s = ecs_executor_state_deep_start_system(s, spec2);
-            if r.started_count == 0 { r.started0 = selected2; };
-            if r.started_count == 1 { r.started1 = selected2; };
-            if r.started_count == 2 { r.started2 = selected2; };
-            r.started_count = r.started_count + 1;
+            if _mt_running_at(s, selected2) {
+                if r.started_count == 0 { r.started0 = selected2; };
+                if r.started_count == 1 { r.started1 = selected2; };
+                if r.started_count == 2 { r.started2 = selected2; };
+                r.started_count = r.started_count + 1;
+            };
         };
     };
-    if selected_count > 0 && selected0 >= 0 && selected0 < s.system_count {
+    if selected_count > 0 && selected0 >= 0 && selected0 < s.system_count && _mt_running_at(s, selected0) {
         let completed_spec0 = _mt_spec3_by_system_index(a, b, c, selected0);
         if completed_spec0.is_apply_deferred != 0 {
             r = _mt_complete_ready_batch_apply_unapplied(r, s);
@@ -1863,7 +1869,7 @@ fn ecs_executor_complete_ready_batch_summary_deep3(s: EcsExecutorStateDeep, sele
         r.completed0 = selected0;
         r.completed_count = 1;
     };
-    if selected_count > 1 && selected1 >= 0 && selected1 < s.system_count {
+    if selected_count > 1 && selected1 >= 0 && selected1 < s.system_count && _mt_running_at(s, selected1) {
         let completed_spec1 = _mt_spec3_by_system_index(a, b, c, selected1);
         if completed_spec1.is_apply_deferred != 0 {
             r = _mt_complete_ready_batch_apply_unapplied(r, s);
@@ -1874,7 +1880,7 @@ fn ecs_executor_complete_ready_batch_summary_deep3(s: EcsExecutorStateDeep, sele
         if r.completed_count == 1 { r.completed1 = selected1; };
         r.completed_count = r.completed_count + 1;
     };
-    if selected_count > 2 && selected2 >= 0 && selected2 < s.system_count {
+    if selected_count > 2 && selected2 >= 0 && selected2 < s.system_count && _mt_running_at(s, selected2) {
         let completed_spec2 = _mt_spec3_by_system_index(a, b, c, selected2);
         if completed_spec2.is_apply_deferred != 0 {
             r = _mt_complete_ready_batch_apply_unapplied(r, s);
