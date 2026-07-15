@@ -8515,3 +8515,36 @@ Feature progress: multi-threaded executor complete-ready-batch gate cleanup
 summary coverage 0% -> 100% for these focused scenarios; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 486 — `executor_multi_threaded_deep` ready-batch rescan local gate coverage — DONE
+
+Source focus: ready-batch rescan summary coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add one focused skip/rescan scenario where a skipped system
+releases a dependent local system while another local system is already ready.
+The test proves the released local system is selected, the second local system
+stays ready behind the local gate, and the summary records the skip/rescan and
+post-state counts. No executor implementation, API surface, or SLA compiler
+change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 136
+`@test` entries. New panic band: 149450-149458.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `ready_batch_rescan_local_gate_keeps_second_local_ready_after_skip`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `ready_batch_rescan`: 7 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `ready_batch_rescan`: 7 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6817 tests-dir
+`@test` annotations | 7453 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor ready-batch rescan local-gate
+coverage 0% -> 100% for this focused scenario; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
