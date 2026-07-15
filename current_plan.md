@@ -9301,3 +9301,37 @@ Feature progress: multi-threaded executor no-drain local gate scan coverage
 0% -> 100% for this focused scenario; overall API parity remains ~94–96%,
 behavioral parity remains ~86–91%. Remaining optional depth is broader executor
 integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 509 — `executor_multi_threaded_deep` no-drain width-limit ready coverage — DONE
+
+Source focus: tick-with-completions no-drain ready selection when `max_width`
+truncates a larger ready batch in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add regression coverage for the no-drain fast path after
+`take_ready_batch3` finds more ready systems than the requested width permits.
+The scenario proves only the first ready system is selected, unselected ready
+systems remain visible in `ready_after` and `ready_at`, and local/exclusive gate
+summary fields are not set by systems that were not actually selected. No
+executor implementation, API surface, or SLA compiler behavior changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 174
+`@test` entries. New panic band: 149740-149750.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_tick_with_completions_no_drain_width_limit_leaves_remaining_ready`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`; counted only after clean process exit)
+- Default backend focused filter `no_drain`: 5 passed / 0 failed (`timeout 120s`, `--jobs 1`; counted only after clean process exit)
+- SA backend filters were intentionally not started because external SA/SAB backend test processes were already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6855 tests-dir `@test` annotations | 7455 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor no-drain width-limit ready coverage
+0% -> 100% for this focused scenario; overall API parity remains ~94–96%,
+behavioral parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.
