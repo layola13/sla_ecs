@@ -6604,6 +6604,39 @@ Feature progress: multi-threaded executor begin-run reset sub-surface
 broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 507 — `executor_multi_threaded_deep` no-drain exclusive gate coverage — DONE
+
+Source focus: no-drain tick-with-completions fast-path existing exclusive gate
+summary coverage in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused regression proving the no-drain fast path reports
+an already-running exclusive system as both exclusive-running and local-running,
+does not select additional ready work while the exclusive gate is occupied, and
+leaves that ordinary ready work visible in the summary. This validates the gate
+state preservation fixed in Batch 506 for the exclusive branch as well as the
+local branch. No executor implementation or SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 172
+`@test` entries. New panic band: 149725-149731.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `mt_deep_tick_with_completions_no_drain_preserves_existing_exclusive_gate`: 1 passed / 0 failed ✓ (`timeout 75s`, `--jobs 1`)
+- Default backend focused filter `no_drain`: 3 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`; counted only after clean process exit)
+- SA backend filters were intentionally not started because an external SA backend test process was already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6853 tests-dir `@test` annotations | 7453 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor no-drain exclusive gate summary
+coverage 0% -> 100% for this focused scenario; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 436 — `lib/executor_multi_threaded_deep.sla` drive-all-batched integration summaries — DONE
 
 Source focus: `ecs_executor_run_plan_drive_all_batched` in
