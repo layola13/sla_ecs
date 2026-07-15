@@ -8715,3 +8715,37 @@ Feature progress: multi-threaded executor complete running guard 0% -> 100% for
 this focused behavior fix; overall API parity remains ~94–96%, behavioral
 parity remains ~86–91%. Remaining optional depth is broader executor
 integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 492 — `executor_multi_threaded_deep` skip no-op release guard fix — DONE
+
+Source focus: skip-state helper behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: fix `ecs_executor_state_deep_skip_system` so completed or
+already skipped systems remain no-op inputs, and fix
+`ecs_executor_state_deep_skip_system_with_dependents3` so ignored skip inputs
+cannot release dependents. Add focused regressions for direct completed skips
+and wrapper running/completed skip inputs. No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 147
+`@test` entries. New panic band: 149510-149521.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `skip_system_ignores`: 2 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- Default backend focused filter `skip_with_dependents_ignores`: 2 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- SA backend focused filter `skip_system_ignores`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend focused filter `skip_with_dependents_ignores`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6828 tests-dir
+`@test` annotations | 7464 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor skip no-op release guard 0% -> 100%
+for this focused behavior fix; overall API parity remains ~94–96%, behavioral
+parity remains ~86–91%. Remaining optional depth is broader executor
+integration scenarios if new Bevy parity gaps are found.
