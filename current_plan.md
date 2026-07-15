@@ -8170,3 +8170,38 @@ dependent-release integration coverage 0% -> 100% for this focused scenario;
 overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
 Remaining optional depth is broader executor integration scenarios if new
 Bevy parity gaps are found.
+
+
+# Batch 476 — `executor_multi_threaded_deep` drive-all max-waves stall coverage — DONE
+
+Source focus: broader drive-all-batched integration coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused `max_waves=1` dependency-chain scenario where
+drive-all-batched completes the first wave, releases the next system to the
+ready queue, then reports stalled because the wave cap stops the remaining
+ready work. No executor implementation or API surface changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 121
+`@test` entries. New panic band: 149290-149299.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `max_waves_stalls_after_progress`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_all_batched_integration`: 6 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_all_batched_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filter `drive_all_batched_integration`: 6 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend focused filter `drive_all_batched_accessor`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6802 tests-dir
+`@test` annotations | 7438 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-all-batched max-waves
+partial-progress stall coverage 0% -> 100% for this focused scenario; overall
+API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
+optional depth is broader executor integration scenarios if new Bevy parity
+gaps are found.
