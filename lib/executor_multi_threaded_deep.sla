@@ -3079,6 +3079,7 @@ fn ecs_executor_state_deep_complete_system_with_dependents3(s: EcsExecutorStateD
 
 fn ecs_executor_state_deep_skip_system(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
     if system_index >= 0 && system_index < s.system_count {
+        if _mt_running_at(s, system_index) { return s; };
         s = _mt_skipped_set(s, system_index, true);
         s = _mt_completed_set(s, system_index, true);
         s = _mt_ready_set(s, system_index, false);
@@ -3087,7 +3088,7 @@ fn ecs_executor_state_deep_skip_system(s: EcsExecutorStateDeep, system_index: i6
 }
 
 fn ecs_executor_state_deep_mark_skipped_pending(s: EcsExecutorStateDeep, system_index: i64) -> EcsExecutorStateDeep {
-    if system_index >= 0 && system_index < s.system_count && _mt_completed_at(s, system_index) != true {
+    if system_index >= 0 && system_index < s.system_count && _mt_completed_at(s, system_index) != true && _mt_running_at(s, system_index) != true {
         s = _mt_skipped_set(s, system_index, true);
     };
     return s;
