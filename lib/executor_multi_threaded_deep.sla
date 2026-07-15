@@ -2241,29 +2241,42 @@ fn ecs_executor_tick_with_completions_summary_deep3(s: EcsExecutorStateDeep, don
         let i: i64 = 0;
         while i < s.system_count {
             if r.selected_count >= max_width { return _mt_tick_with_completions_summary_from_state(r, s); };
-            if _mt_ready_at(s, i) && _mt_completed_at(s, i) != true && _mt_running_at(s, i) != true {
+            if _mt_skipped_at(s, i) && _mt_completed_at(s, i) != true {
                 let spec = _mt_spec3_by_system_index(a, b, c, i);
-                if ecs_executor_state_deep_can_spawn_system(s, spec) {
-                    if spec.should_run == 0 || _mt_skipped_at(s, i) {
-                        r = _mt_tick_with_completions_push_skipped(r, i);
-                        s = _mt_skip_with_history_deps3(
-                            s, spec,
-                            a, b, c,
-                            a_dep0, a_dep1, a_dep2, a_dep_count,
-                            b_dep0, b_dep1, b_dep2, b_dep_count,
-                            c_dep0, c_dep1, c_dep2, c_dep_count
-                        );
-                        rescan = true;
-                    } else {
-                        if spec.is_exclusive != 0 {
-                            if r.selected_count == 0 {
+                r = _mt_tick_with_completions_push_skipped(r, i);
+                s = _mt_skip_with_history_deps3(
+                    s, spec,
+                    a, b, c,
+                    a_dep0, a_dep1, a_dep2, a_dep_count,
+                    b_dep0, b_dep1, b_dep2, b_dep_count,
+                    c_dep0, c_dep1, c_dep2, c_dep_count
+                );
+                rescan = true;
+            } else {
+                if _mt_ready_at(s, i) && _mt_completed_at(s, i) != true && _mt_running_at(s, i) != true {
+                    let spec = _mt_spec3_by_system_index(a, b, c, i);
+                    if ecs_executor_state_deep_can_spawn_system(s, spec) {
+                        if spec.should_run == 0 || _mt_skipped_at(s, i) {
+                            r = _mt_tick_with_completions_push_skipped(r, i);
+                            s = _mt_skip_with_history_deps3(
+                                s, spec,
+                                a, b, c,
+                                a_dep0, a_dep1, a_dep2, a_dep_count,
+                                b_dep0, b_dep1, b_dep2, b_dep_count,
+                                c_dep0, c_dep1, c_dep2, c_dep_count
+                            );
+                            rescan = true;
+                        } else {
+                            if spec.is_exclusive != 0 {
+                                if r.selected_count == 0 {
+                                    r = _mt_tick_with_completions_push_selected(r, i);
+                                    s = ecs_executor_state_deep_start_system(s, spec);
+                                };
+                                return _mt_tick_with_completions_summary_from_state(r, s);
+                            } else {
                                 r = _mt_tick_with_completions_push_selected(r, i);
                                 s = ecs_executor_state_deep_start_system(s, spec);
                             };
-                            return _mt_tick_with_completions_summary_from_state(r, s);
-                        } else {
-                            r = _mt_tick_with_completions_push_selected(r, i);
-                            s = ecs_executor_state_deep_start_system(s, spec);
                         };
                     };
                 };
