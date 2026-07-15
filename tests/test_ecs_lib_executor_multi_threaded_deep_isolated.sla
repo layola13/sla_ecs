@@ -1779,6 +1779,35 @@
     if ecs_executor_complete_ready_batch_summary_deep_completed_after(r) != 2 { panic(148421); };
 }
 
+@test "mt_deep_complete_ready_batch_records_two_apply_slots"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_deferred(a0, true);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_deferred(b0, true);
+    let c0 = ecs_executor_system_spec_deep_new(2, true, true);
+    let c = ecs_executor_system_spec_deep_as_apply_deferred(c0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_complete_ready_batch_summary_deep3(
+        s, 0, 1, 2, 3,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    );
+    if ecs_executor_complete_ready_batch_summary_deep_apply_count(r) != 2 { panic(149948); };
+    if ecs_executor_complete_ready_batch_summary_deep_apply_at(r, 0) != 0 { panic(149949); };
+    if ecs_executor_complete_ready_batch_summary_deep_apply_at(r, 1) != 1 { panic(149950); };
+    if ecs_executor_complete_ready_batch_summary_deep_apply_at(r, 2) != -1 { panic(149951); };
+    if ecs_executor_complete_ready_batch_summary_deep_started_count(r) != 3 { panic(149952); };
+    if ecs_executor_complete_ready_batch_summary_deep_completed_count(r) != 3 { panic(149953); };
+    if ecs_executor_complete_ready_batch_summary_deep_unapplied_after(r) != 0 { panic(149954); };
+    if ecs_executor_complete_ready_batch_summary_deep_running_after(r) != 0 { panic(149955); };
+    if ecs_executor_complete_ready_batch_summary_deep_completed_after(r) != 3 { panic(149956); };
+}
+
 @test "mt_deep_complete_ready_batch_summary_releases_dependent_after_completion"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);
