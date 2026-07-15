@@ -7744,6 +7744,16 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 466 - `executor_multi_threaded_deep` drive-all history summary fix (DONE 2026-07-15)
+- [x] Found an existing drive-all history behavior gap during accessor cleanup: the dependency-chain run-history path could record only a partial run order instead of `0, 1, 2`.
+- [x] Reworked `ecs_executor_run_history_deep_drive_all3` to reuse `ecs_executor_drive_all_batched_integration_summary_deep3` with `max_width=1`, then map run/skipped/stalled/apply metadata into `EcsExecutorRunHistoryDeep`.
+- [x] Preserved ApplyDeferred run-history semantics by applying pending unapplied entries from the input state before merging integration apply slots without duplicates.
+- [x] Migrated the edited drive-all history tests to existing `ecs_executor_run_history_deep_*` accessors for counts and stalled state; test count remains 118.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; default backend focused filters `drive_all_history` (4), `drive_all_batched_accessor` (2), and `drive_all_batched_integration` (4) pass with `--jobs 1`; SA backend serial focused filters `drive_all_history` (4), `drive_all_batched_accessor` (2), and `drive_all_batched_integration` (4) pass with `timeout 180s` and `--jobs 1`; `git diff --check` passes. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor drive-all history integration behavior 0% -> 100% for this focused fix; run-history accessor-usage cleanup 0% -> 100% for the edited tests; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: unchanged at 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6799 tests-dir `@test` annotations | 7435 lib/tests/examples `@test` annotations. Remaining optional depth: other summary-result direct-field cleanup or broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 465 - `executor_multi_threaded_deep` run-history accessor usage cleanup (DONE 2026-07-15)
 - [x] Migrated early run-history count and stalled assertions in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` to existing `ecs_executor_run_history_deep_*` accessors.
 - [x] Kept executor implementation, API surface, and test count unchanged.
