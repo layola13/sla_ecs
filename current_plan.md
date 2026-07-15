@@ -8819,3 +8819,38 @@ Feature progress: multi-threaded executor dependency spawn guard 0% -> 100%
 for this focused behavior fix; overall API parity remains ~94–96%, behavioral
 parity remains ~86–91%. Remaining optional depth is broader executor
 integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 495 — `executor_multi_threaded_deep` zero-dependency release guard fix — DONE
+
+Source focus: dependent-release transition behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: fix `ecs_executor_state_deep_release_dependent` so ready state
+is produced only when a positive dependency count is decremented to zero.
+Already-zero dependency entries now remain no-op inputs, including completion
+wrapper calls. Add focused direct and wrapper regressions. No SLA compiler
+change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 154
+`@test` entries. New panic band: 149570-149576.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend focused filter `release_dependent`: 2 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- Default backend exact filter `ignores_zero_dependency_entry`: 1 passed / 0 failed ✓ (`timeout 100s`, `--jobs 1`)
+- Default backend focused filter `with_dependents`: 6 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- SA backend focused filter `release_dependent`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend exact filter `ignores_zero_dependency_entry`: 1 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6835 tests-dir
+`@test` annotations | 7471 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor zero-dependency release guard
+0% -> 100% for this focused behavior fix; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is broader
+executor integration scenarios if new Bevy parity gaps are found.
