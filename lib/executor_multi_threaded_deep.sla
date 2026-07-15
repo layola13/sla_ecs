@@ -2373,9 +2373,11 @@ fn _mt_drive_ready_batch_integration_push_skipped(r: EcsExecutorDriveReadyBatchI
 }
 
 fn _mt_drive_ready_batch_integration_push_apply(r: EcsExecutorDriveReadyBatchIntegrationSummaryDeep, system_index: i64) -> EcsExecutorDriveReadyBatchIntegrationSummaryDeep {
-    if r.apply_count == 0 { r.apply0 = system_index; r.apply_count = 1; return r; };
-    if r.apply_count == 1 { r.apply1 = system_index; r.apply_count = 2; return r; };
-    if r.apply_count == 2 { r.apply2 = system_index; r.apply_count = 3; return r; };
+    let pos = r.apply_count;
+    if pos == 0 { r.apply0 = system_index; };
+    if pos == 1 { r.apply1 = system_index; };
+    if pos == 2 { r.apply2 = system_index; };
+    if pos < 3 { r.apply_count = pos + 1; };
     return r;
 }
 
