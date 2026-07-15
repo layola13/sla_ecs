@@ -8239,3 +8239,37 @@ Feature progress: multi-threaded executor drive-all-batched local-gate wave
 splitting coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 478 — `executor_multi_threaded_deep` drive-all exclusive gate coverage — DONE
+
+Source focus: broader drive-all-batched integration coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused all-ready scenario with one exclusive system and
+two ordinary systems. The exclusive system must occupy the first wave alone;
+the ordinary systems then run together in the next wave. No executor
+implementation or API surface changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 123
+`@test` entries. New panic band: 149320-149329.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `exclusive_gate_splits_waves`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_all_batched_integration`: 8 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`; a prior 90s run printed 8/8 PASS but returned 143, so completion evidence uses the clean rerun)
+- Default backend focused filter `drive_all_batched_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filter `drive_all_batched_integration`: 8 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend focused filter `drive_all_batched_accessor`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6804 tests-dir
+`@test` annotations | 7440 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-all-batched exclusive-gate wave
+splitting coverage 0% -> 100% for this focused scenario; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.

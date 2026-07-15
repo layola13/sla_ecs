@@ -1705,6 +1705,33 @@
     if ecs_executor_drive_all_batched_integration_summary_deep_completed_at(r, 2) != 1 { panic(149319); };
 }
 
+@test "mt_deep_drive_all_batched_integration_exclusive_gate_splits_waves"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, true, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_drive_all_batched_integration_summary_deep3(
+        s, a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        3, 3
+    );
+    if ecs_executor_drive_all_batched_integration_summary_deep_stalled(r) { panic(149320); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_wave_count(r) != 2 { panic(149321); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_count(r) != 3 { panic(149322); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 0) != 0 { panic(149323); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 1) != 1 { panic(149324); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_run_at(r, 2) != 2 { panic(149325); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_completed_count(r) != 3 { panic(149326); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_completed_at(r, 0) != 0 { panic(149327); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_completed_at(r, 1) != 1 { panic(149328); };
+    if ecs_executor_drive_all_batched_integration_summary_deep_completed_at(r, 2) != 2 { panic(149329); };
+}
+
 @test "mt_deep_drive_all_batched_integration_skip_releases_same_wave"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
     let a0 = ecs_executor_system_spec_deep_new(0, false, false);
