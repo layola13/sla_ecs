@@ -2567,6 +2567,41 @@
     if ecs_executor_tick_with_completions_summary_deep_ready_after(r) != 0 { panic(148554); };
 }
 
+@test "mt_deep_tick_with_completions_records_two_apply_slots"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_deferred(a0, true);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_deferred(b0, true);
+    let c0 = ecs_executor_system_spec_deep_new(2, true, true);
+    let c = ecs_executor_system_spec_deep_as_apply_deferred(c0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_complete_system(s, a, true);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, b);
+    s = ecs_executor_state_deep_complete_system(s, b, true);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    s = ecs_executor_state_deep_start_system(s, c);
+    let r = ecs_executor_tick_with_completions_summary_deep3(
+        s, 2, -1, -1, 1,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        1
+    );
+    if ecs_executor_tick_with_completions_summary_deep_completed_count(r) != 1 { panic(149930); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 0) != 2 { panic(149931); };
+    if ecs_executor_tick_with_completions_summary_deep_apply_count(r) != 2 { panic(149932); };
+    if ecs_executor_tick_with_completions_summary_deep_apply_at(r, 0) != 0 { panic(149933); };
+    if ecs_executor_tick_with_completions_summary_deep_apply_at(r, 1) != 1 { panic(149934); };
+    if ecs_executor_tick_with_completions_summary_deep_apply_at(r, 2) != -1 { panic(149935); };
+    if ecs_executor_tick_with_completions_summary_deep_unapplied_after(r) != 0 { panic(149936); };
+    if ecs_executor_tick_with_completions_summary_deep_running_after(r) != 0 { panic(149937); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_after(r) != 3 { panic(149938); };
+}
+
 @test "mt_deep_drive_ready_batch_integration_runs_and_completes_width"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);
