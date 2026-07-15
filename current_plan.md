@@ -9026,3 +9026,36 @@ Feature progress: multi-threaded executor tick-with-completions pending-skip
 finalization 0% -> 100% for this focused behavior fix; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 501 — `executor_multi_threaded_deep` run-history pending-skip classification fix — DONE
+
+Source focus: run-history drive-one pending-skip classification in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: `ecs_executor_run_history_deep_drive_one` now classifies pending
+skips (`skipped=true`, `completed=false`) as skipped before the `can_spawn`
+gate. This history-only helper does not mutate state or release dependents, but
+it now matches the drive-one lifecycle classification and avoids reporting a
+pending skip as a stalled runnable search. No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 163
+`@test` entries. New panic band: 149662-149666.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `run_history_drive_one_records_pending_skip`: 1 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- Default backend focused filter `run_history_drive`: 3 passed / 0 failed ✓ (`timeout 150s`, `--jobs 1`)
+- SA backend exact filter `run_history_drive_one_records_pending_skip`: 1 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial; waited for external SA tests to finish and counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6844 tests-dir
+`@test` annotations | 7480 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor run-history pending-skip
+classification 0% -> 100% for this focused behavior fix; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.

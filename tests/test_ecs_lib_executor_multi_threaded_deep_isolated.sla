@@ -905,6 +905,18 @@
     if !ecs_executor_run_history_deep_is_stalled(stalled) { panic(148139); };
 }
 
+@test "mt_deep_run_history_drive_one_records_pending_skip"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 1, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    s = ecs_executor_state_deep_mark_skipped_pending(s, 0);
+    let h = ecs_executor_run_history_deep_drive_one(ecs_executor_run_history_deep_new(), s, a);
+    if ecs_executor_run_history_deep_is_stalled(h) { panic(149662); };
+    if ecs_executor_run_history_deep_skipped_count(h) != 1 { panic(149663); };
+    if ecs_executor_run_history_deep_skipped_at(h, 0) != 0 { panic(149664); };
+    if ecs_executor_run_history_deep_run_count(h) != 0 { panic(149665); };
+    if ecs_executor_run_history_deep_apply_count(h) != 0 { panic(149666); };
+}
+
 @test "mt_deep_drive_all_history_runs_dependency_chain"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);
