@@ -8136,6 +8136,39 @@ optional depth is broader executor integration scenarios if new Bevy parity
 gaps are found.
 
 
+# Batch 506 — `executor_multi_threaded_deep` no-drain tick gate summary fix — DONE
+
+Source focus: no-drain tick-with-completions fast-path gate-state summary in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: `_mt_tick_with_completions_no_drain_fast` now initializes
+`local_thread_running` and `exclusive_running` from the current executor state
+before overlaying any newly selected systems. This preserves existing running
+gate state when a no-completion tick selects additional ordinary ready work.
+No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 171
+`@test` entries. New panic band: 149719-149724.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `mt_deep_tick_with_completions_no_drain_preserves_existing_local_gate`: 1 passed / 0 failed ✓ (`timeout 60s`, `--jobs 1`)
+- Default backend focused filter `no_drain`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`; counted only after clean process exit)
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6852 tests-dir `@test` annotations | 7452 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor no-drain tick gate-state summary
+preservation 0% -> 100% for this focused behavior fix; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 475 — `executor_multi_threaded_deep` drive-ready-batch ApplyDeferred dependent release — DONE
 
 Source focus: broader drive-ready-batch integration coverage in
