@@ -7752,6 +7752,14 @@ previously-green results from Batches 407, 409 and 414.
 ### Current measured counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6800 tests-dir `@test` annotations | 7436 lib/tests/examples `@test` annotations. Remaining optional depth: broader executor integration scenarios if new Bevy parity gaps are found.
 
 
+# Batch 475 - `executor_multi_threaded_deep` drive-ready-batch ApplyDeferred dependent release (DONE 2026-07-15)
+- [x] Added `mt_deep_drive_ready_batch_integration_apply_deferred_releases_dependent` to cover a prior completed deferred system, a ready `ApplyDeferred` barrier, and the dependent ordinary system released by the barrier into the ready queue for a later batch.
+- [x] Asserted single barrier run, apply slot 0, completed barrier slot, ready-after 1, completed-after 2, final unapplied count 0, dependency count 0 for system 2, and non-stalled state; test count is now 120.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`; `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`; default backend exact filter `apply_deferred_releases_dependent` passes 1, default backend focused filters `drive_ready_batch_integration` (5) and `drive_ready_batch_accessor` (2) pass with `timeout 90s` and `--jobs 1`; serial SA backend focused filters `drive_ready_batch_integration` (5) and `drive_ready_batch_accessor` (2) pass with `timeout 180s` and `--jobs 1`; `git diff --check` passes. Whole-file executor-deep runs remain intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: multi-threaded executor drive-ready-batch ApplyDeferred dependent-release integration coverage 0% -> 100% for this focused scenario; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files | 249 `*_deep_isolated.sla` files | 90 examples | 6801 tests-dir `@test` annotations | 7437 lib/tests/examples `@test` annotations. Remaining optional depth: broader executor integration scenarios if new Bevy parity gaps are found.
+
+
 # Batch 466 - `executor_multi_threaded_deep` drive-all history summary fix (DONE 2026-07-15)
 - [x] Found an existing drive-all history behavior gap during accessor cleanup: the dependency-chain run-history path could record only a partial run order instead of `0, 1, 2`.
 - [x] Reworked `ecs_executor_run_history_deep_drive_all3` to reuse `ecs_executor_drive_all_batched_integration_summary_deep3` with `max_width=1`, then map run/skipped/stalled/apply metadata into `EcsExecutorRunHistoryDeep`.

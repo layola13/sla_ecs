@@ -8134,3 +8134,39 @@ multi-wave integration coverage 0% -> 100% for this focused scenario; overall
 API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
 optional depth is broader executor integration scenarios if new Bevy parity
 gaps are found.
+
+
+# Batch 475 — `executor_multi_threaded_deep` drive-ready-batch ApplyDeferred dependent release — DONE
+
+Source focus: broader drive-ready-batch integration coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: add a focused single-batch scenario where a prior deferred
+ordinary system is already completed/unapplied, an `ApplyDeferred` barrier is
+selected and flushes that pending system, and the barrier completion releases a
+dependent ordinary system to the ready queue for a later batch. No executor
+implementation or API surface changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 120
+`@test` entries. New panic band: 149270-149280.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `apply_deferred_releases_dependent`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_ready_batch_integration`: 5 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend focused filter `drive_ready_batch_accessor`: 2 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- SA backend focused filter `drive_ready_batch_integration`: 5 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- SA backend focused filter `drive_ready_batch_accessor`: 2 passed / 0 failed ✓ (`timeout 180s`, `--jobs 1`, serial)
+- `git diff --check` ✓
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 425 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6801 tests-dir
+`@test` annotations | 7437 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor drive-ready-batch ApplyDeferred
+dependent-release integration coverage 0% -> 100% for this focused scenario;
+overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+Remaining optional depth is broader executor integration scenarios if new
+Bevy parity gaps are found.
