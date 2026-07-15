@@ -1620,9 +1620,11 @@ fn _mt_ready_batch_rescan_push_selected(r: EcsExecutorReadyBatchRescanSummaryDee
 }
 
 fn _mt_ready_batch_rescan_push_skipped(r: EcsExecutorReadyBatchRescanSummaryDeep, system_index: i64) -> EcsExecutorReadyBatchRescanSummaryDeep {
-    if r.skipped_count == 0 { r.skipped0 = system_index; r.skipped_count = 1; return r; };
-    if r.skipped_count == 1 { r.skipped1 = system_index; r.skipped_count = 2; return r; };
-    if r.skipped_count == 2 { r.skipped2 = system_index; r.skipped_count = 3; return r; };
+    let pos = r.skipped_count;
+    if pos == 0 { r.skipped0 = system_index; };
+    if pos == 1 { r.skipped1 = system_index; };
+    if pos == 2 { r.skipped2 = system_index; };
+    if pos < 3 { r.skipped_count = pos + 1; };
     return r;
 }
 
