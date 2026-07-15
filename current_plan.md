@@ -10135,3 +10135,42 @@ apply-slot summary parity 0% -> 100% for this focused behavior fix; overall API
 parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
 depth is broader executor integration scenarios if new Bevy parity gaps are
 found.
+
+
+# Batch 533 — `executor_multi_threaded_deep` drive-all apply-count fix — DONE
+
+Source focus: drive-all batched integration apply-slot accounting in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: run an ApplyDeferred barrier in drive-all batched integration
+while two prior deferred systems are unapplied. The executor state applied both
+deferred systems, but `_mt_drive_all_batched_push_apply` only reported one apply
+slot. The helper now uses a stable slot position and increments `apply_count`
+after assignment, matching the drive-ready, complete-ready, and
+tick-with-completions apply fixes. No public API surface or SLA compiler
+behavior changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 198
+`@test` entries. New panic band: 149968-149978.
+
+Validation:
+- Test-first failure reproduced with default backend exact filter `mt_deep_drive_all_batched_integration_records_two_apply_slots`: panic 149972 before the fix (`timeout 90s`, `--jobs 1`, `--trace-panic`)
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_drive_all_batched_integration_records_two_apply_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `drive_all_batched_integration`: 15 passed / 0 failed (`timeout 150s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_drive_all_batched_integration_records_two_apply_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6879 tests-dir `@test` annotations | 7479 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor drive-all batched integration
+apply-slot summary parity 0% -> 100% for this focused behavior fix; overall API
+parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional
+depth is broader executor integration scenarios if new Bevy parity gaps are
+found.
