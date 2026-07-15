@@ -9162,3 +9162,43 @@ pending-skip summary finalization 0% -> 100% for this focused behavior fix;
 overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
 Remaining optional depth is broader executor integration scenarios if new Bevy
 parity gaps are found.
+
+
+# Batch 505 — `executor_multi_threaded_deep` zero-width integration/rescan pending-skip fix — DONE
+
+Source focus: zero-width pending-skip lifecycle behavior in the
+multi-threaded executor deep ready-batch rescan, tick-with-completions,
+drive-ready-batch integration, and drive-all-batched integration summaries in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: the affected `max_width <= 0` branches now finalize
+skipped-pending systems before returning. Zero width still prevents ordinary
+ready work from being selected or run, but pending-skip finalization can
+complete skipped systems, release dependents, update ready/dependency summary
+state, and avoid false stalled results because it does not consume batch width.
+No SLA compiler change was needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 170
+`@test` entries. New panic band: 149688-149718.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `mt_deep_ready_batch_rescan_zero_width_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 60s`, `--jobs 1`)
+- Default backend exact filter `mt_deep_tick_with_completions_zero_width_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- Default backend exact filter `mt_deep_drive_ready_batch_integration_zero_width_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 90s`, `--jobs 1`)
+- Default backend exact filter `mt_deep_drive_all_batched_integration_zero_width_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 120s`, `--jobs 1`)
+- Broader default backend filter `zero_width_finalizes_pending_skip` timed out at 90s under concurrent external SA/SAB test load and was not counted; exact filters above were used instead.
+- SA backend filters were intentionally not started because external SA/SAB backend test processes were already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6851 tests-dir `@test` annotations | 7451 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor zero-width integration/rescan
+pending-skip finalization 0% -> 100% for this focused behavior fix; overall
+API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
+optional depth is broader executor integration scenarios if new Bevy parity
+gaps are found.
