@@ -3477,9 +3477,17 @@ fn ecs_executor_state_deep_drive_ready_batch_summary3(s: EcsExecutorStateDeep, a
         if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
         return _mt_summary_from_state(r, s);
     };
+    let pending_index: i64 = 0;
+    while pending_index < s.system_count {
+        if _mt_skipped_at(s, pending_index) && _mt_completed_at(s, pending_index) != true {
+            s = ecs_executor_state_deep_skip_system(s, pending_index);
+            r.skipped_count = r.skipped_count + 1;
+        };
+        pending_index = pending_index + 1;
+    }
     let batch = ecs_executor_state_deep_take_ready_batch3(s, a, b, c);
     if batch.count == 0 {
-        if ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
+        if r.skipped_count == 0 && ecs_executor_state_deep_completed_count(s) < s.system_count { r.stalled = 1; };
         return _mt_summary_from_state(r, s);
     };
     let count = batch.count;
