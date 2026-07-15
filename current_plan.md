@@ -9059,3 +9059,37 @@ Feature progress: multi-threaded executor run-history pending-skip
 classification 0% -> 100% for this focused behavior fix; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 502 — `executor_multi_threaded_deep` no-drain pending-skip tick fix — DONE
+
+Source focus: tick-with-completions no-drain pending-skip lifecycle behavior in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: `ecs_executor_tick_with_completions_summary_deep3` now keeps the
+fast no-drain ready-batch path only when no pending skips exist. If
+`done_count == 0` and a skipped-pending system is present, it falls through to
+the same rescan/finalization logic used after completion drains, so pending
+skips are counted as skipped, completed, release dependents, and allow newly
+released work to be selected in the same tick. No SLA compiler change was
+needed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 164
+`@test` entries. New panic band: 149667-149675.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla` ✓
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` ✓
+- Default backend exact filter `mt_deep_tick_with_completions_no_drain_finalizes_pending_skip`: 1 passed / 0 failed ✓ (`timeout 60s`, `--jobs 1`; counted only after clean process exit)
+- Default backend focused filter `tick_with_completions_summary`: 7 passed / 0 failed ✓ (`timeout 75s`, `--jobs 1`; counted only after clean process exit)
+- SA backend exact filter was intentionally not started because another SA backend test process was already running; whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 524 lib modules | 249 `*_deep.sla` modules | 426 test files
+| 249 `*_deep_isolated.sla` test files | 90 examples | 6845 tests-dir
+`@test` annotations | 7481 lib/tests/examples `@test` annotations.
+Feature progress: multi-threaded executor no-drain tick pending-skip
+finalization 0% -> 100% for this focused behavior fix; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.

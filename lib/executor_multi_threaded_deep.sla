@@ -2156,7 +2156,17 @@ fn ecs_executor_completion_queue_drain_summary_deep3(s: EcsExecutorStateDeep, do
 fn ecs_executor_tick_with_completions_summary_deep3(s: EcsExecutorStateDeep, done0: i64, done1: i64, done2: i64, done_count: i64, a: EcsExecutorSystemSpecDeep, b: EcsExecutorSystemSpecDeep, c: EcsExecutorSystemSpecDeep, a_dep0: i64, a_dep1: i64, a_dep2: i64, a_dep_count: i64, b_dep0: i64, b_dep1: i64, b_dep2: i64, b_dep_count: i64, c_dep0: i64, c_dep1: i64, c_dep2: i64, c_dep_count: i64, max_width: i64) -> EcsExecutorTickWithCompletionsSummaryDeep {
     let r = ecs_executor_tick_with_completions_summary_deep_empty();
     if done_count <= 0 {
-        return _mt_tick_with_completions_no_drain_fast(s, a, b, c, max_width);
+        let has_pending_skip: bool = false;
+        let pending_index: i64 = 0;
+        while pending_index < s.system_count {
+            if _mt_skipped_at(s, pending_index) && _mt_completed_at(s, pending_index) != true {
+                has_pending_skip = true;
+            };
+            pending_index = pending_index + 1;
+        }
+        if has_pending_skip != true {
+            return _mt_tick_with_completions_no_drain_fast(s, a, b, c, max_width);
+        };
     };
     if done_count > 0 {
         let system_index = done0;
