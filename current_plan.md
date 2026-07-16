@@ -10282,3 +10282,41 @@ positive-width skipped-slot coverage with concurrent ready work 0% -> 100% for
 this focused scenario; overall API parity remains ~94–96%, behavioral parity
 remains ~86–91%. Remaining optional depth is broader executor integration
 scenarios if new Bevy parity gaps are found.
+
+
+# Batch 537 — `executor_multi_threaded_deep` completion-queue apply-count fix — DONE
+
+Source focus: completion-queue drain ApplyDeferred apply-slot accounting in
+`lib/executor_multi_threaded_deep.sla` and
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: drain an ApplyDeferred barrier completion while two prior
+deferred systems are already completed and pending unapplied. The executor state
+applied both deferred systems, but completion-queue drain only reported the
+first apply slot. `_mt_completion_queue_drain_apply_unapplied` now records
+applied systems through a stable-position `_mt_completion_queue_drain_push_apply`
+helper, matching the tick-with-completions, complete-ready, drive-ready, and
+drive-all apply fixes. No public API surface or SLA compiler behavior changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 202
+`@test` entries. New panic band: 150008-150018.
+
+Validation:
+- Test-first failure reproduced with default backend exact filter `mt_deep_completion_queue_drain_records_two_apply_slots`: panic 150012 before the fix (`timeout 90s`, `--jobs 1`, `--trace-panic`)
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/executor_multi_threaded_deep.sla`
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_completion_queue_drain_records_two_apply_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `completion_queue`: 9 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_completion_queue_drain_records_two_apply_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6883 tests-dir `@test` annotations | 7483 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor completion-queue drain apply-slot
+summary parity 0% -> 100% for this focused behavior fix; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.

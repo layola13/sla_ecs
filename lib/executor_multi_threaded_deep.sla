@@ -1449,14 +1449,20 @@ fn _mt_completion_queue_drain_summary_from_state(r: EcsExecutorCompletionQueueDr
     return r;
 }
 
+fn _mt_completion_queue_drain_push_apply(r: EcsExecutorCompletionQueueDrainSummaryDeep, system_index: i64) -> EcsExecutorCompletionQueueDrainSummaryDeep {
+    let pos = r.apply_count;
+    if pos == 0 { r.apply0 = system_index; };
+    if pos == 1 { r.apply1 = system_index; };
+    if pos == 2 { r.apply2 = system_index; };
+    if pos < 3 { r.apply_count = pos + 1; };
+    return r;
+}
+
 fn _mt_completion_queue_drain_apply_unapplied(r: EcsExecutorCompletionQueueDrainSummaryDeep, s: EcsExecutorStateDeep) -> EcsExecutorCompletionQueueDrainSummaryDeep {
     let i: i64 = 0;
     while i < s.system_count {
         if _mt_unapplied_at(s, i) {
-            if r.apply_count == 0 { r.apply0 = i; };
-            if r.apply_count == 1 { r.apply1 = i; };
-            if r.apply_count == 2 { r.apply2 = i; };
-            r.apply_count = r.apply_count + 1;
+            r = _mt_completion_queue_drain_push_apply(r, i);
         };
         i = i + 1;
     }
