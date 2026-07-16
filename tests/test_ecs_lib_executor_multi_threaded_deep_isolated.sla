@@ -2412,6 +2412,38 @@
     if ecs_executor_tick_with_completions_summary_deep_ready_after(r) != 0 { panic(149910); };
 }
 
+@test "mt_deep_tick_with_completions_records_three_completed_slots"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_start_system(s, b);
+    s = ecs_executor_state_deep_start_system(s, c);
+    let r = ecs_executor_tick_with_completions_summary_deep3(
+        s, 2, 0, 1, 3,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        3
+    );
+    if ecs_executor_tick_with_completions_summary_deep_stalled(r) { panic(150100); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_count(r) != 3 { panic(150101); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 0) != 2 { panic(150102); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 1) != 0 { panic(150103); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 2) != 1 { panic(150104); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_at(r, 3) != -1 { panic(150105); };
+    if ecs_executor_tick_with_completions_summary_deep_ignored_count(r) != 0 { panic(150106); };
+    if ecs_executor_tick_with_completions_summary_deep_selected_count(r) != 0 { panic(150107); };
+    if ecs_executor_tick_with_completions_summary_deep_running_after(r) != 0 { panic(150108); };
+    if ecs_executor_tick_with_completions_summary_deep_completed_after(r) != 3 { panic(150109); };
+    if ecs_executor_tick_with_completions_summary_deep_ready_after(r) != 0 { panic(150110); };
+}
+
 @test "mt_deep_tick_with_completions_records_two_ignored_slots"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);
