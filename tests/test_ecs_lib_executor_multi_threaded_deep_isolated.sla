@@ -1579,6 +1579,41 @@
     if ecs_executor_completed_tick_error_summary_deep_tick_count(r) != 1 { panic(148358); };
 }
 
+@test "mt_deep_completed_tick_error_apply_deferred_panic_counts_until_second_failure"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 4, 0);
+    let a0 = ecs_executor_system_spec_deep_new(0, false, false);
+    let a = ecs_executor_system_spec_deep_with_deferred(a0, true);
+    let b0 = ecs_executor_system_spec_deep_new(1, false, false);
+    let b = ecs_executor_system_spec_deep_with_deferred(b0, true);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    let barrier0 = ecs_executor_system_spec_deep_new(3, true, true);
+    let barrier = ecs_executor_system_spec_deep_as_apply_deferred(barrier0);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_start_system(s, a);
+    s = ecs_executor_state_deep_complete_system(s, a, true);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_start_system(s, b);
+    s = ecs_executor_state_deep_complete_system(s, b, true);
+    s = ecs_executor_state_deep_mark_ready(s, 3);
+    s = ecs_executor_state_deep_start_system(s, barrier);
+    let r = ecs_executor_completed_tick_error_summary_deep_apply_deferred_panic3(
+        s, barrier, 1, -1, -1, -1, 0,
+        a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        2
+    );
+    if ecs_executor_completed_tick_error_summary_deep_apply_count(r) != 2 { panic(150019); };
+    if ecs_executor_completed_tick_error_summary_deep_deferred_panic_payloads(r) != 1 { panic(150020); };
+    if ecs_executor_completed_tick_error_summary_deep_panic_payload_phase(r) != ecs_executor_panic_phase_deep_apply_deferred() { panic(150021); };
+    if ecs_executor_completed_tick_error_summary_deep_panic_payload_system(r) != 1 { panic(150022); };
+    if ecs_executor_completed_tick_error_summary_deep_unapplied_after(r) != 0 { panic(150023); };
+    if ecs_executor_completed_tick_error_summary_deep_completed_after(r) != 3 { panic(150024); };
+    if ecs_executor_completed_tick_error_summary_deep_running_after(r) != 0 { panic(150025); };
+    if ecs_executor_completed_tick_error_summary_deep_tick_count(r) != 1 { panic(150026); };
+}
+
 @test "mt_deep_completed_tick_error_system_handled_lock_failed_pending"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
     let a = ecs_executor_system_spec_deep_new(0, false, false);

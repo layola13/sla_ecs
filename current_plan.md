@@ -10320,3 +10320,38 @@ Feature progress: multi-threaded executor completion-queue drain apply-slot
 summary parity 0% -> 100% for this focused behavior fix; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 538 — `executor_multi_threaded_deep` completed-tick deferred-panic coverage — DONE
+
+Source focus: completed-tick error ApplyDeferred panic counting coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: process an ApplyDeferred panic where the failing deferred system
+is the second unapplied entry. The existing completed-tick error path already
+counts both attempted apply entries before stopping at the panic, records the
+panic phase/system correctly, clears unapplied state, and completes the barrier.
+No executor implementation, public API surface, or SLA compiler behavior
+changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 203
+`@test` entries. New panic band: 150019-150026.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_completed_tick_error_apply_deferred_panic_counts_until_second_failure`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `completed_tick_error`: 7 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_completed_tick_error_apply_deferred_panic_counts_until_second_failure`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6884 tests-dir `@test` annotations | 7484 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor completed-tick ApplyDeferred
+second-entry panic counting coverage 0% -> 100% for this focused scenario;
+overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+Remaining optional depth is broader executor integration scenarios if new Bevy
+parity gaps are found.
