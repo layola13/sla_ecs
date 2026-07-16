@@ -10525,3 +10525,36 @@ Feature progress: multi-threaded executor completion-queue drain third
 ignored-slot coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 544 — `executor_multi_threaded_deep` drive-all zero-width skipped third-slot coverage — DONE
+
+Source focus: drive-all batched integration zero-width skipped third-slot
+coverage in `tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: process three pending skipped systems through the `max_width=0`
+drive-all path and verify skipped slots 0/1/2 plus out-of-bounds accessors. The
+existing drive-all implementation already records third skipped slots correctly
+and reaches the expected completed/ready state. No executor implementation,
+public API surface, SLA compiler behavior, or SLA docs ticket changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 209
+`@test` entries. New panic band: 150081-150090.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_drive_all_batched_integration_zero_width_records_three_skipped_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `drive_all_batched_integration`: 18 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_drive_all_batched_integration_zero_width_records_three_skipped_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6890 tests-dir `@test` annotations | 7490 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor drive-all batched zero-width third
+skipped-slot coverage 0% -> 100% for this focused scenario; overall API parity
+remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
