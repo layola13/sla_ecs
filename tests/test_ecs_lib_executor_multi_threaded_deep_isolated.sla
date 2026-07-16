@@ -2935,6 +2935,37 @@
     if ecs_executor_drive_ready_batch_integration_summary_deep_ready_at(r, 2) { panic(149852); };
 }
 
+@test "mt_deep_drive_ready_batch_integration_records_three_run_completed_slots"() {
+    let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 3, 0);
+    let a = ecs_executor_system_spec_deep_new(0, false, false);
+    let b = ecs_executor_system_spec_deep_new(1, false, false);
+    let c = ecs_executor_system_spec_deep_new(2, false, false);
+    s = ecs_executor_state_deep_mark_ready(s, 0);
+    s = ecs_executor_state_deep_mark_ready(s, 1);
+    s = ecs_executor_state_deep_mark_ready(s, 2);
+    let r = ecs_executor_drive_ready_batch_integration_summary_deep3(
+        s, a, b, c,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0,
+        3
+    );
+    if ecs_executor_drive_ready_batch_integration_summary_deep_stalled(r) { panic(150040); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_run_count(r) != 3 { panic(150041); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_run_at(r, 0) != 0 { panic(150042); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_run_at(r, 1) != 1 { panic(150043); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_run_at(r, 2) != 2 { panic(150044); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_run_at(r, 3) != -1 { panic(150045); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_count(r) != 3 { panic(150046); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_at(r, 0) != 0 { panic(150047); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_at(r, 1) != 1 { panic(150048); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_at(r, 2) != 2 { panic(150049); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_at(r, 3) != -1 { panic(150050); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_ready_after(r) != 0 { panic(150051); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_running_after(r) != 0 { panic(150052); };
+    if ecs_executor_drive_ready_batch_integration_summary_deep_completed_after(r) != 3 { panic(150053); };
+}
+
 @test "mt_deep_drive_ready_batch_integration_skip_releases_and_runs_dependent"() {
     let s = ecs_executor_state_deep_init(ecs_executor_state_deep_new(), 2, 0);
     let a0 = ecs_executor_system_spec_deep_new(0, false, false);
