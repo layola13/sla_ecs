@@ -10355,3 +10355,37 @@ second-entry panic counting coverage 0% -> 100% for this focused scenario;
 overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
 Remaining optional depth is broader executor integration scenarios if new Bevy
 parity gaps are found.
+
+
+# Batch 539 — `executor_multi_threaded_deep` complete-ready third-slot coverage — DONE
+
+Source focus: complete-ready batch started/completed third-slot coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: run three ordinary ready systems through a single complete-ready
+batch and verify all started and completed slots 0/1/2 plus out-of-bounds
+accessors. The existing complete-ready implementation already records third
+started/completed slots correctly and reaches the expected final state. No
+executor implementation, public API surface, or SLA compiler behavior changed.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 204
+`@test` entries. New panic band: 150027-150039.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_complete_ready_batch_records_three_started_completed_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `complete_ready_batch`: 12 passed / 0 failed (`timeout 150s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- SA backend exact filter `mt_deep_complete_ready_batch_records_three_started_completed_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6885 tests-dir `@test` annotations | 7485 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor complete-ready-batch third
+started/completed slot coverage 0% -> 100% for this focused scenario; overall
+API parity remains ~94–96%, behavioral parity remains ~86–91%. Remaining
+optional depth is broader executor integration scenarios if new Bevy parity
+gaps are found.
