@@ -10698,3 +10698,47 @@ Feature progress: multi-threaded executor tick-with-completions third
 skipped-slot coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 549 — `executor_multi_threaded_deep` ready-rescan skipped third-slot coverage — DONE
+
+Source focus: ready-batch rescan skipped third-slot coverage in
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`.
+
+Deep strategy: rescan three pending skipped systems with `max_width=2`, verify
+skipped slots 0/1/2 plus out-of-bounds access, two rescan rounds, zero selected
+work, and final completed/ready/running counts. The ECS implementation already
+behaved correctly on the default backend. The generated-SA backend exposed an
+SLA compiler `UseAfterMove` because a resolved assigned aggregate `tmp_*`
+binding was released after its first field projection.
+
+Compiler handling:
+- Filed
+  `/home/vscode/projects/sa_plugins/sa_plugin_sla/docs/issue035_sla_ecs_rescan_summary_repeated_field_load_sa_useaftermove.md`.
+- Fixed shared field-base lifetime classification in `sa_plugin_sla` commit
+  `7acf7ef` (`Fix SA assigned aggregate field lifetime`).
+- Installed the dev plugin and reverified the exact ECS regression plus the
+  focused ready-rescan group.
+
+Test file:
+`tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla` now has 214
+`@test` entries. New panic band: 150132-150142.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check tests/test_ecs_lib_executor_multi_threaded_deep_isolated.sla`
+- Default backend exact filter `mt_deep_ready_batch_rescan_records_three_skipped_slots`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Default backend focused filter `ready_batch_rescan`: 13 passed / 0 failed (`timeout 120s`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Pre-fix SA backend exact filter reproduced `UseAfterMove` on `tmp_3969`
+- Post-fix SA backend exact filter `mt_deep_ready_batch_rescan_records_three_skipped_slots`: 1 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- Post-fix SA backend focused filter `ready_batch_rescan`: 13 passed / 0 failed (`timeout 180s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; counted only after clean process exit)
+- `git diff --check`
+- Whole-file executor-deep runs intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6895 tests-dir `@test` annotations | 7495 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: multi-threaded executor ready-rescan third skipped-slot
+coverage 0% -> 100% for this focused scenario; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
+broader executor integration scenarios if new Bevy parity gaps are found.
