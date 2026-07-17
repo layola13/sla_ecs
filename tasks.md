@@ -8634,3 +8634,12 @@ previously-green results from Batches 407, 409 and 414.
 - [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/task_scope_completion.sla`; default backend existing exact filter passes 1/1 and new filter passes 2/2; SA backend existing exact filter passes 1/1 and new filter passes 2/2, all with timeout-bounded `--jobs 1`, `--trace-panic`, and clean exits; `git diff --check` passes. Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
 - [x] Feature progress: scope-completion pending panic and failed-catch resolution coverage 0% -> 100% for this focused behavior; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
 ### Current measured counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425 test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples | 6902 tests-dir `@test` annotations | 7504 lib/tests/examples `.sla` `@test` annotations. Remaining optional depth: broader executor and task-pool integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 558 - `task_scope_completion` multiple pending queue order (DONE 2026-07-17)
+- [x] Added `scope completion resolves multiple pending tasks in queue order`.
+- [x] Proved repeated drains stop at the first unresolved task, return completed prefixes once, preserve the remaining lane order, and empty the queue after the second pending task resolves.
+- [x] Confirmed the existing implementation is correct; no public implementation, SLA compiler behavior, or SLA docs ticket changed.
+- [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/task_scope_completion.sla`; default and SA backend exact filters each pass 1/1 with timeout-bounded `--jobs 1`, `--trace-panic`, process checks, and clean exits; `git diff --check` passes. Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: scope-completion repeated pending resolution and queue-order coverage 0% -> 100% for this focused behavior; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425 test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples | 6902 tests-dir `@test` annotations | 7505 lib/tests/examples `.sla` `@test` annotations. Remaining optional depth: broader executor and task-pool integration scenarios if new Bevy parity gaps are found.

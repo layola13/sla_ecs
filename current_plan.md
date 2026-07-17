@@ -1,6 +1,6 @@
 # sla_ecs Current Plan — Bevy ECS Parity (per-dimension)
 
-Last updated: 2026-07-15
+Last updated: 2026-07-17
 
 ## Overall Status
 - Per-dimension completion (see README.md "Bevy ECS Parity Assessment"): API surface parity ~94–96%, behavioral parity ~86–91%. Not 100%: full TaskPool/Scope-style worker scheduling and full runtime reflection remain incomplete (see README ⚠️ / ❌).
@@ -11031,5 +11031,34 @@ test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
 6902 tests-dir `@test` annotations | 7504 lib/tests/examples `.sla`
 `@test` annotations.
 Feature progress: scope-completion pending panic and failed-catch resolution
+coverage 0% -> 100% for this focused behavior; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%.
+
+
+# Batch 558 — `task_scope_completion` multiple pending queue order — DONE
+
+Source focus: repeated pending-task resolution in
+`lib/task_scope_completion.sla`.
+
+Deep strategy: queue two pending tasks followed by one ready task. The
+regression proves the first drain blocks without consuming work, resolving the
+first pending task lets the next drain return only that task and preserve the
+remaining queue, and resolving the second pending task lets the final drain
+return the last two tasks in lane order and empty the queue. The existing queue
+slicing and drain implementation already handles this lifecycle correctly. No
+public implementation, SLA compiler behavior, or SLA docs ticket changed.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/task_scope_completion.sla`
+- Default backend exact filter `scope completion resolves multiple pending tasks`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; clean exit)
+- SA backend exact filter: 1 passed / 0 failed (`timeout 120s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; clean exit)
+- `git diff --check`
+- Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6902 tests-dir `@test` annotations | 7505 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: scope-completion repeated pending resolution and queue-order
 coverage 0% -> 100% for this focused behavior; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%.
