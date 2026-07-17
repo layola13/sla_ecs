@@ -10997,3 +10997,39 @@ Feature progress: multi-threaded executor drive-ready-batch summary third
 selected-slot coverage 0% -> 100% for this focused scenario; overall API parity
 remains ~94–96%, behavioral parity remains ~86–91%. Remaining optional depth is
 broader executor integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 557 — `task_scope_completion` pending panic/catch completion — DONE
+
+Source focus: pending task completion outcomes in
+`lib/task_scope_completion.sla`.
+
+Implementation: add helpers that resolve a queued pending task as either a
+panic payload or a failed catch. The regressions prove draining resumes panic
+propagation, reports the matching failure count, cancels later queued work, and
+empties the modeled scope queue. The existing pending-first drain regression is
+also retained.
+
+The default backend exposed an existing SLA compiler `UseAfterMove` when a
+plain aggregate containing `Vec` fields was passed to a read-only by-value
+helper and then reused. The compiler issue is documented in
+`sa_plugin_sla/docs/issue038_sla_ecs_scope_completion_stack_slot_aggregate_call_useaftermove.md`
+and fixed by compiler commit `4a379ad`, which shallow-copies nested standard
+owner ABI slots while keeping top-level owners non-copyable.
+
+Validation:
+- `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/task_scope_completion.sla`
+- Default backend existing exact filter `scope completion pending first task blocks result drain`: 1 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; clean exit)
+- Default backend new filter `scope completion pending task can finish`: 2 passed / 0 failed (`timeout 90s`, `--jobs 1`, `--trace-panic`; clean exit)
+- SA backend existing exact filter: 1 passed / 0 failed (`timeout 120s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; clean exit)
+- SA backend new filter: 2 passed / 0 failed (`timeout 120s`, `--test-backend sa`, `--jobs 1`, `--trace-panic`; clean exit)
+- `git diff --check`
+- Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6902 tests-dir `@test` annotations | 7504 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: scope-completion pending panic and failed-catch resolution
+coverage 0% -> 100% for this focused behavior; overall API parity remains
+~94–96%, behavioral parity remains ~86–91%.
