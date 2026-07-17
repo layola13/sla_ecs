@@ -8643,3 +8643,13 @@ previously-green results from Batches 407, 409 and 414.
 - [x] Verification: `timeout 45s env SA_PLUGIN_DEV=1 sa sla check lib/task_scope_completion.sla`; default and SA backend exact filters each pass 1/1 with timeout-bounded `--jobs 1`, `--trace-panic`, process checks, and clean exits; `git diff --check` passes. Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
 - [x] Feature progress: scope-completion repeated pending resolution and queue-order coverage 0% -> 100% for this focused behavior; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
 ### Current measured counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 425 test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples | 6902 tests-dir `@test` annotations | 7505 lib/tests/examples `.sla` `@test` annotations. Remaining optional depth: broader executor and task-pool integration scenarios if new Bevy parity gaps are found.
+
+
+# Batch 559 - `parallel_runner` shared scope-executor identity (DONE 2026-07-17)
+- [x] Added two focused regressions for direct external tasks and recursive external child scopes sharing the scope executor.
+- [x] Updated serial and positive-width direct runners so shared external work marks `ticked_scope_executor`.
+- [x] Updated root/nested recursive child-scope and child-result lane-2 accounting so shared identity marks scope and distinct identity marks external.
+- [x] Filed SLA compiler issue044 for repeated function-pointer aliases, fixed alias-aware lookup and generated function-pointer Vec temporary cleanup in commits `adf98e2` and `e2406dc`, closed the issue in `08a7def`, and installed the development plugin.
+- [x] Verification: compiler build passes 7/7 with `timeout 180s` and `-j1`; strict SAB and generated-SA compiler fixtures pass 1/1 each; the existing downstream external-only exact filter and both new exact filters pass 1/1 on default and SA backends with `timeout 90s`, `--jobs 1`, `--trace-panic`, process checks, and clean exits; `git diff --check` passes. Broad whole-file/generated-SA groups intentionally avoided per memory/OOM guidance.
+- [x] Feature progress: TaskPool direct/recursive shared-executor identity accounting 0% -> 100% for this focused behavior; overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
+### Current measured counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 426 test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples | 6904 tests-dir `@test` annotations | 7507 lib/tests/examples `.sla` `@test` annotations. Remaining optional depth: broader executor and task-pool integration scenarios if new Bevy parity gaps are found.

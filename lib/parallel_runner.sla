@@ -1961,7 +1961,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_shared_serial<R, M>(shared: Arc<*Table
         total_ran = total_ran + 1;
         external_i = external_i + 1;
     }
-    return ecs_parallel_scope_run_result_with_metadata_and_executor_flags(total_sum, result_values, result_rounds, result_lanes, total_ran, local_count, external_count, 0, false, count > 0, local_count > 0, external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
+    return ecs_parallel_scope_run_result_with_metadata_and_executor_flags(total_sum, result_values, result_rounds, result_lanes, total_ran, local_count, external_count, 0, false, count > 0, local_count > 0 || (external_count > 0 && options.external_executor_is_scope), external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
 }
 
 fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool, shared: Arc<*TableErasedWorld<R, M>>, tasks: EcsParallelScopedTaskSet<R, M>, options: EcsParallelScopeOptions) -> EcsParallelScopeRunResult {
@@ -2039,7 +2039,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_shared<R, M>(pool: EcsParallelTaskPool
         total_ran = total_ran + 1;
         external_i = external_i + 1;
     }
-    return ecs_parallel_scope_run_result_with_metadata_and_executor_flags(total_sum, result_values, result_rounds, result_lanes, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0, external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
+    return ecs_parallel_scope_run_result_with_metadata_and_executor_flags(total_sum, result_values, result_rounds, result_lanes, total_ran, local_count, external_count, waves, count > 0, count > 0 && options.tick_task_pool_executor, local_count > 0 || (external_count > 0 && options.external_executor_is_scope), external_count > 0 && options.use_external_executor && options.external_executor_is_scope != true, false);
 }
 
 fn ecs_parallel_task_pool_scope_run_tasks_recursive<R, M>(pool: EcsParallelTaskPool, world: TableErasedWorld<R, M>, tasks: EcsParallelScopedTaskSet<R, M>) -> EcsParallelScopeRunResult {
@@ -2130,6 +2130,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
             };
             if child_lane == 2 {
                 total_child_scope_external = total_child_scope_external + 1;
+                if options.external_executor_is_scope { ticked_scope = true; };
                 if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
             };
             root_child_i = root_child_i + 1;
@@ -2220,6 +2221,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
             };
             if child_lane == 2 {
                 total_child_scope_external = total_child_scope_external + 1;
+                if options.external_executor_is_scope { ticked_scope = true; };
                 if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
             };
             root_child_result_i = root_child_result_i + 1;
@@ -2306,6 +2308,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
                 };
                 if child_lane == 2 {
                     total_child_scope_external = total_child_scope_external + 1;
+                    if options.external_executor_is_scope { ticked_scope = true; };
                     if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
                 };
                 child_i = child_i + 1;
@@ -2396,6 +2399,7 @@ fn ecs_parallel_task_pool_scope_run_tasks_recursive_with_options<R, M>(pool: Ecs
                 };
                 if child_lane == 2 {
                     total_child_scope_external = total_child_scope_external + 1;
+                    if options.external_executor_is_scope { ticked_scope = true; };
                     if options.use_external_executor && options.external_executor_is_scope != true { ticked_external = true; };
                 };
                 child_result_i = child_result_i + 1;

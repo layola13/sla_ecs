@@ -11062,3 +11062,54 @@ test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
 Feature progress: scope-completion repeated pending resolution and queue-order
 coverage 0% -> 100% for this focused behavior; overall API parity remains
 ~94–96%, behavioral parity remains ~86–91%.
+
+
+# Batch 559 — `parallel_runner` shared scope-executor identity — DONE
+
+Source focus: TaskPool scope executor identity accounting in
+`lib/parallel_runner.sla`.
+
+Implementation: external-lane tasks now mark `ticked_scope_executor` when the
+external executor is the scope executor. This applies to both serial and
+positive-width direct scope runners and to root/nested recursive child-scope
+and child-result lane-2 execution. A distinct external executor continues to
+mark only `ticked_external_executor`.
+
+The initial downstream compile exposed two existing SLA compiler defects for
+repeated function-pointer aliases: call lowering used a non-alias-aware local
+type lookup, then generated-SA vector insertion leaked materialized
+function-pointer vtable temporaries. Filed
+`sa_plugin_sla/docs/issue044_sla_ecs_repeated_let_fn_ptr_alias_codegenerror.md`;
+compiler commits `adf98e2` and `e2406dc` fix the lookup and cleanup paths, and
+`08a7def` closes the issue after verification.
+
+Test file:
+`tests/test_ecs_parallel_runner_scope_executor_isolated.sla` adds 2 focused
+regressions. New panic band: 151000-151009.
+
+Validation:
+- Compiler `timeout 180s zig build -j1 --summary all`: 7/7 steps succeeded,
+  peak RSS about 1.14 GiB.
+- Compiler minimal repeated-alias fixture: strict SAB and generated-SA exact
+  filters each pass 1/1 with `timeout 90s`, `--jobs 1`, and clean exits.
+- Development SLA plugin installed with a 120s timeout.
+- Existing downstream exact filter
+  `task pool scoped task set external only stays off pool`: default and SA
+  backends each pass 1/1 with `timeout 90s`, `--jobs 1`, `--trace-panic`, and
+  clean exits.
+- New direct shared-executor exact filter: default and SA backends each pass
+  1/1 with `timeout 90s`, `--jobs 1`, `--trace-panic`, and clean exits.
+- New recursive child shared-executor exact filter: default and SA backends
+  each pass 1/1 with `timeout 90s`, `--jobs 1`, `--trace-panic`, and clean
+  exits.
+- `git diff --check`
+- Broad whole-file/generated-SA groups intentionally avoided per memory/OOM
+  guidance.
+
+Post-batch counts: 521 lib `.sla` modules | 249 `*_deep.sla` modules | 426
+test `.sla` files | 249 `*_deep_isolated.sla` test files | 90 examples |
+6904 tests-dir `@test` annotations | 7507 lib/tests/examples `.sla`
+`@test` annotations.
+Feature progress: TaskPool scope/external executor identity accounting for
+direct and recursive external lanes 0% -> 100% for this focused behavior;
+overall API parity remains ~94–96%, behavioral parity remains ~86–91%.
