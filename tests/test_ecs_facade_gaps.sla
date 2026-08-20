@@ -5,6 +5,7 @@
 // combinator, stepping, and clone behavior facades.
 @import "../lib/ecs_world.sla"
 @import "sa_std/io/print.sai"
+@import "sa_std/core/arc.sa"
 
 struct Pos { x: i32, y: i32 }
 struct Vel { vx: i32, vy: i32 }
@@ -208,19 +209,20 @@ fn make_default_vel_erased() -> ErasedComponentValue {
 
 @test "combinator and or xor"() {
     let world = ecs_world_new<i32, i32>(0, 0);
-    let result = ecs_combinator_and<i32, i32>(world, return_true, return_false);
+    let shared = Arc::new(world);
+    let result = ecs_combinator_and<i32, i32>(shared.clone(), return_true, return_false);
     if result != false { panic(30140); };
-    let result2 = ecs_combinator_or<i32, i32>(world, return_false, return_true);
+    let result2 = ecs_combinator_or<i32, i32>(shared.clone(), return_false, return_true);
     if result2 != true { panic(30141); };
-    let result3 = ecs_combinator_xor<i32, i32>(world, return_true, return_false);
+    let result3 = ecs_combinator_xor<i32, i32>(shared, return_true, return_false);
     if result3 != true { panic(30142); };
 }
 
-fn return_true(_w: TableErasedWorld<i32, i32>) -> bool {
+fn return_true(_w: Arc<TableErasedWorld<i32, i32> >) -> bool {
     return true;
 }
 
-fn return_false(_w: TableErasedWorld<i32, i32>) -> bool {
+fn return_false(_w: Arc<TableErasedWorld<i32, i32> >) -> bool {
     return false;
 }
 

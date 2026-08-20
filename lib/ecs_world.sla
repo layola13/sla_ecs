@@ -15,6 +15,7 @@
 @import "bundle_info.sla"
 @import "result.sla"
 @import "system_param_table_erased.sla"
+@import "sa_std/core/arc.sa"
 
 // --- World lifecycle ---
 
@@ -2066,18 +2067,18 @@ fn ecs_rel_source_iter(collection: EcsRelationshipSourceCollection) -> Vec<Entit
 // outputs (e.g. And, Or, Xor). In sla_ecs, we expose the three common
 // combinators as free functions over two condition systems.
 
-fn ecs_combinator_and<R, M>(world: TableErasedWorld<R, M>, a: fn(TableErasedWorld<R, M>) -> bool, b: fn(TableErasedWorld<R, M>) -> bool) -> bool {
-    if a(world) != true { return false; };
+fn ecs_combinator_and<R, M>(world: Arc<TableErasedWorld<R, M> >, a: fn(Arc<TableErasedWorld<R, M> >) -> bool, b: fn(Arc<TableErasedWorld<R, M> >) -> bool) -> bool {
+    let va = a(world.clone());
+    if va != true { return false; };
     return b(world);
 }
-
-fn ecs_combinator_or<R, M>(world: TableErasedWorld<R, M>, a: fn(TableErasedWorld<R, M>) -> bool, b: fn(TableErasedWorld<R, M>) -> bool) -> bool {
-    if a(world) { return true; };
+fn ecs_combinator_or<R, M>(world: Arc<TableErasedWorld<R, M> >, a: fn(Arc<TableErasedWorld<R, M> >) -> bool, b: fn(Arc<TableErasedWorld<R, M> >) -> bool) -> bool {
+    let va = a(world.clone());
+    if va { return true; };
     return b(world);
 }
-
-fn ecs_combinator_xor<R, M>(world: TableErasedWorld<R, M>, a: fn(TableErasedWorld<R, M>) -> bool, b: fn(TableErasedWorld<R, M>) -> bool) -> bool {
-    let va = a(world);
+fn ecs_combinator_xor<R, M>(world: Arc<TableErasedWorld<R, M> >, a: fn(Arc<TableErasedWorld<R, M> >) -> bool, b: fn(Arc<TableErasedWorld<R, M> >) -> bool) -> bool {
+    let va = a(world.clone());
     let vb = b(world);
     return va != vb;
 }
